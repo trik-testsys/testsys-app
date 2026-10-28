@@ -1,3 +1,6 @@
+import java.security.MessageDigest
+import java.util.HexFormat
+
 plugins {
     id("testsys.conventions")
 }
@@ -17,6 +20,24 @@ dependencies {
 
 // Vaadin uses resource timestamps for HTTP cache revalidation.
 tasks.jar { isPreserveFileTimestamps = true }
+
+// Versions each token import of styles.css by the content hash of the imported file: Vaadin versions only the
+// stylesheet itself, so without it a changed token file stays in the browser cache for an hour after a deploy.
+val themeTokens = layout.projectDirectory.dir("src/main/resources/META-INF/resources/testsys-ui/tokens")
+tasks.processResources {
+    inputs.dir(themeTokens)
+    val tokens = themeTokens.asFile
+    filesMatching("META-INF/resources/testsys-ui/styles/styles.css") {
+        filter { line ->
+            Regex("""@import url\('\.\./tokens/([\w-]+\.css)'\);""").replace(line) { match ->
+                val file = match.groupValues[1]
+                val digest = MessageDigest.getInstance("SHA-256").digest(tokens.resolve(file).readBytes())
+                val hash = HexFormat.of().formatHex(digest, 0, 4)
+                "@import url('../tokens/$file?v-c=$hash');"
+            }
+        }
+    }
+}
 
 val guideVersionSource = layout.buildDirectory.dir("generated/source/guide/main/kotlin")
 val generateGuideVersion by tasks.registering {

@@ -11,6 +11,8 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.web.components.display.Tone
+import java.security.MessageDigest
+import java.util.HexFormat
 
 class TestSysThemeTests {
     @Test
@@ -18,6 +20,19 @@ class TestSysThemeTests {
         assertEquals("testsys-ui/styles/styles.css", TestSysTheme.DESIGN_SYSTEM)
         assertNotNull(resource(TestSysTheme.DESIGN_SYSTEM))
         assertTrue(resource("testsys-ui/tokens/components.css")!!.readText().contains(".ts-row"))
+    }
+
+    @Test
+    fun `should version every token import by the content hash of the imported file`() {
+        val imports = Regex("""@import url\('\.\./tokens/([\w-]+\.css)\?v-c=([0-9a-f]{8})'\);""")
+            .findAll(text(TestSysTheme.DESIGN_SYSTEM)).toList()
+
+        assertEquals(6, imports.size)
+        imports.forEach { import ->
+            val (file, version) = import.destructured
+            val hash = MessageDigest.getInstance("SHA-256").digest(resource("testsys-ui/tokens/$file")!!.readBytes())
+            assertEquals(HexFormat.of().formatHex(hash, 0, 4), version, file)
+        }
     }
 
     @Test

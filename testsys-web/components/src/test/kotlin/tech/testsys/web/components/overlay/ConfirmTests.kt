@@ -25,6 +25,7 @@ import tech.testsys.web.components.classes
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.openDialogs
+import tech.testsys.web.components.pendingJavaScript
 import tech.testsys.web.components.testTexts
 import tech.testsys.web.components.texts.UiLocalization
 
@@ -47,6 +48,23 @@ class ConfirmTests : MockVaadinTests() {
             button("Удалить")._click()
 
             assertEquals(1, confirmations)
+        }
+
+        @ParameterizedTest
+        @CsvSource("true, 1", "false, 0")
+        fun `should hold off only the dangerous action for three seconds on the client`(isDanger: Boolean, holds: Int) {
+            confirm(title = "Удалить тур?", action = "Удалить", isDanger = isDanger) {}
+
+            val calls = pendingJavaScript()
+
+            val action = button("Удалить")
+            val cooldowns = calls.filter { call ->
+                call.owner == action.element.node && "data-ts-cooldown" in call.invocation.expression
+            }
+
+            assertEquals(holds, cooldowns.size)
+            cooldowns.forEach { call -> assertEquals(3, call.invocation.parameters.first()) }
+            assertTrue(action.isEnabled)
         }
 
         @Test

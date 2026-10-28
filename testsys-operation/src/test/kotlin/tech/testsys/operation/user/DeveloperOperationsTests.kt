@@ -130,6 +130,7 @@ import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
+import tech.testsys.operation.error.TrikStudioVersionNotRegisteredError
 import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
@@ -1864,6 +1865,7 @@ class DeveloperOperationsTests {
 
         @BeforeEach
         fun prepareContestSave() {
+            every { contestRepository.findTrikStudioVersions() } returns listOf(version)
             every { contestRepository.save(any<ContestData>()) } answers {
                 contest {
                     id = 19
@@ -2071,6 +2073,21 @@ class DeveloperOperationsTests {
                 val name = character.repeat(256)
 
                 assertRaises(ContestNameTooLongError(name)) { developerOperations.createContest(developer, name, version) }
+
+                verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+            }
+
+            @ParameterizedTest
+            @CsvSource("trik-studio:3.0.0, 3.0.1", "trik-studio:old, 3.0.0")
+            fun `should raise TrikStudioVersionNotRegisteredError without saving if the version is not registered`(
+                tag: String,
+                number: String,
+            ) {
+                val stale = TrikStudioVersion(tag = tag, version = number)
+
+                assertRaises(TrikStudioVersionNotRegisteredError(stale)) {
+                    developerOperations.createContest(developer, "Contest", stale)
+                }
 
                 verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
             }
@@ -4163,6 +4180,11 @@ class DeveloperOperationsTests {
 
         private val taskId = TaskId(42)
 
+        @BeforeEach
+        fun prepareRegisteredVersions() {
+            every { contestRepository.findTrikStudioVersions() } returns versions("3.0.0 4.0.0")
+        }
+
         @Nested
         inner class HappyPathTests {
             @ParameterizedTest
@@ -4386,6 +4408,22 @@ class DeveloperOperationsTests {
                 every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
 
                 assertRaises(TaskNameTooLongError(name)) { developerOperations.editTaskInfo(developer, taskId, taskName = name) }
+
+                verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            }
+
+            @Test
+            fun `should raise TrikStudioVersionNotRegisteredError without saving if a changed set has an unregistered version`() {
+                val stale = TrikStudioVersion(tag = "trik-studio:old", version = "4.0.0")
+                every { taskRepository.findById(taskId) } returns taskInState("New")
+
+                assertRaises(TrikStudioVersionNotRegisteredError(stale)) {
+                    developerOperations.editTaskInfo(
+                        user = developer,
+                        taskId = taskId,
+                        supportedTrikStudioVersions = versions("3.0.0") + stale,
+                    )
+                }
 
                 verify(exactly = 0) { taskRepository.update(any<Task>()) }
             }

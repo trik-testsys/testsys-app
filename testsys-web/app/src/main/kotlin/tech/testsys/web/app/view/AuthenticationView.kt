@@ -13,13 +13,14 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.passwordInput
+import tech.testsys.web.components.forms.segmentedControl
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Sign-in page (testsys.web.page.authentication): signs a user with non-fixed roles in by the e-mail address and the
- * password and a fixed-role user by the access code in a separate block, then opens the page saved before signing in,
- * or the start page of the user.
+ * password and a fixed-role user by the access code, chosen by a switch in the same block, then opens the page saved
+ * before signing in, or the start page of the user.
  *
  * @since %CURRENT_VERSION%
  */
@@ -35,28 +36,45 @@ class AuthenticationView(
         page(headers.guest(hasSignIn = false)) {
             guide(texts.signInGuide())
             guestForm(active = GuestTab.SignIn) {
+                lateinit var method: ValueInput<SignInMethod?>
                 lateinit var email: ValueInput<String>
                 lateinit var password: ValueInput<String>
+                lateinit var accessToken: ValueInput<String>
+                row {
+                    method = segmentedControl(
+                        texts.signInMethod(),
+                        labelSize = 6,
+                        size = 18,
+                        items = SignInMethod.entries,
+                        itemLabel = { item -> item.label },
+                    ) { value = SignInMethod.Password }
+                }
                 row { email = textInput(texts.signInEmail(), labelSize = 6, size = 18) }
                 row { password = passwordInput(texts.signInPassword(), labelSize = 6, size = 18) }
+                row { accessToken = passwordInput(texts.signInAccessCode(), labelSize = 6, size = 18) { isVisible = false } }
+                method.addValueChangeListener { event ->
+                    val isPassword = event.value == SignInMethod.Password
+                    email.isVisible = isPassword
+                    password.isVisible = isPassword
+                    accessToken.isVisible = !isPassword
+                }
                 guide(texts.signInBlockGuide(), title = texts.tabSignIn()) {
+                    step(method, title = texts.signInMethod(), description = texts.signInMethodGuide())
                     step(email, title = texts.signInEmail(), description = texts.signInEmailGuide())
                     step(password, title = texts.signInPassword(), description = texts.signInPasswordGuide())
+                    step(accessToken, title = texts.signInAccessCode(), description = texts.signInAccessCodeGuide())
                 }
                 footer {
                     mainAction(texts.signInButton()) {
                         clickOnEnter()
-                        onClick { signInByPassword(email.value, password.value) }
+                        onClick {
+                            when (method.value) {
+                                SignInMethod.AccessCode -> signInByAccessCode(accessToken.value)
+                                else -> signInByPassword(email.value, password.value)
+                            }
+                        }
                     }
                 }
-            }
-            guestBlock(title = texts.accessCodeTitle()) {
-                lateinit var accessToken: ValueInput<String>
-                row { accessToken = passwordInput(texts.signInAccessCode(), labelSize = 6, size = 18) }
-                guide(texts.accessCodeBlockGuide(), title = texts.accessCodeTitle()) {
-                    step(accessToken, title = texts.signInAccessCode(), description = texts.signInAccessCodeGuide())
-                }
-                footer { mainAction(texts.accessCodeButton()) { onClick { signInByAccessCode(accessToken.value) } } }
             }
         }
     }
@@ -90,4 +108,22 @@ class AuthenticationView(
             UI.getCurrent().navigate(returnAddress)
         }
     }
+}
+
+/** Way of signing in chosen on the sign-in page. */
+internal enum class SignInMethod {
+    /** By the e-mail address and the password. */
+    Password,
+
+    /** By the access code. */
+    AccessCode,
+    ;
+
+    val label: String
+        get() = with(currentLocalization().pageGuest) {
+            when (this@SignInMethod) {
+                Password -> signInMethodPassword()
+                AccessCode -> signInMethodAccessCode()
+            }
+        }
 }

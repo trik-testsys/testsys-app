@@ -52,15 +52,13 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
         show(CompetitionId(event.routeParameters.getLong(COMPETITION_ID_PARAMETER).orElseThrow()))
     }
 
-    /** Builds the page of [competitionId]; just [created] participants are shown with their access codes only now. */
-    private fun show(competitionId: CompetitionId, created: List<IssuedParticipantVo> = emptyList()) {
+    private fun show(competitionId: CompetitionId) {
         val details = managerService.viewCompetition(competitionId)
         val texts = currentLocalization().pageManager
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.competitionTitle(name = details.competition.name)) { managerCrumbs(COMPETITIONS_SECTION) }
             guide(texts.competitionGuide())
             detailsBlock(details)
-            if (created.isNotEmpty()) issuedParticipantsBlock(competitionId, created)
             participantsBlock(competitionId, details.participants)
             managerContestsBlock(
                 details.contests,
@@ -134,33 +132,32 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
     }
 
     /** Shows the just [created] participants once with their CSV: their access codes cannot be read back later. */
-    private fun PageScope.issuedParticipantsBlock(competitionId: CompetitionId, created: List<IssuedParticipantVo>) {
-        val texts = currentLocalization().pageManager
+    private fun issuedParticipantsDialog(competitionId: CompetitionId, created: List<IssuedParticipantVo>) {
+        val localization = currentLocalization()
+        val texts = localization.pageManager
         val ui = UI.getCurrent()
-        row {
-            block(title = texts.competitionParticipantsIssuedTitle()) {
-                guide(texts.competitionParticipantsIssuedGuide())
-                row {
-                    alert(
-                        kind = FeedbackKind.Warning,
-                        title = texts.competitionParticipantsIssuedAlertTitle(),
-                        text = texts.competitionParticipantsIssuedAlertText(),
-                    )
-                }
-                actions {
-                    downloadAction(texts.downloadCsv(), produce = { context ->
-                        val csv = inUiOf(ui) { participantsCsv(created, currentLocalization().pageManager) }
-                        val bytes = csv.toByteArray(Charsets.UTF_8)
-                        context.ensureActive()
-                        DownloadContent(
-                            filename = "competition-${competitionId.value}-new-participants.csv",
-                            contentType = "text/csv; charset=UTF-8",
-                            length = bytes.size.toLong(),
-                        ) { bytes.inputStream() }
-                    })
-                }
+        dialog(title = texts.competitionParticipantsIssuedTitle(), subtitle = texts.competitionParticipantsIssuedGuide()) {
+            row {
+                alert(
+                    kind = FeedbackKind.Warning,
+                    title = texts.competitionParticipantsIssuedAlertTitle(),
+                    text = texts.competitionParticipantsIssuedAlertText(),
+                )
             }
-        }
+            footer { dialog ->
+                action(localization.uiOverlay.dialogClose()) { onClick { dialog.close() } }
+                downloadAction(texts.downloadCsv(), produce = { context ->
+                    val csv = inUiOf(ui) { participantsCsv(created, currentLocalization().pageManager) }
+                    val bytes = csv.toByteArray(Charsets.UTF_8)
+                    context.ensureActive()
+                    DownloadContent(
+                        filename = "competition-${competitionId.value}-new-participants.csv",
+                        contentType = "text/csv; charset=UTF-8",
+                        length = bytes.size.toLong(),
+                    ) { bytes.inputStream() }
+                })
+            }
+        }.open()
     }
 
     private fun PageScope.participantsBlock(competitionId: CompetitionId, participants: List<Pair<ParticipantVo, Instant?>>) {
@@ -173,9 +170,9 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                     selectable = true,
                     fetch = { request -> pageOf(participants, request) },
                 ) {
-                    codeColumn(texts.id(), size = 4) { (participant, _) -> participant.id.value.toString() }
-                    textColumn(texts.nickname(), size = 6) { (participant, _) -> participant.name }
-                    dateTimeColumn(texts.lastLogin(), size = 5) { (_, lastLogin) -> lastLogin?.toUserDateTime() }
+                    codeColumn(texts.id(), size = 5) { (participant, _) -> participant.id.value.toString() }
+                    textColumn(texts.nickname(), size = 11) { (participant, _) -> participant.name }
+                    dateTimeColumn(texts.lastLogin()) { (_, lastLogin) -> lastLogin?.toUserDateTime() }
                     val actionsLabel = { (participant, _): Pair<ParticipantVo, Instant?> ->
                         texts.competitionParticipantsActions(name = participant.name)
                     }
@@ -255,7 +252,8 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                                 messages.competitionParticipantsCreatedTotal(count = count),
                             )
                             dialog.close()
-                            show(competitionId, created)
+                            show(competitionId)
+                            issuedParticipantsDialog(competitionId, created)
                         }
                     }
                 }

@@ -52,11 +52,11 @@ internal fun PageScope.guestForm(active: GuestTab, content: BlockScope.() -> Uni
     }
 }
 
-/** Adds a row with the narrow guest block titled [title] centered on the page, which holds the [content]. */
-internal fun PageScope.guestBlock(title: String? = null, content: BlockScope.() -> Unit) {
+/** Adds a row with the narrow guest block centered on the page, which holds the [content]. */
+internal fun PageScope.guestBlock(content: BlockScope.() -> Unit) {
     row {
         space(size = SIDE_COLUMNS)
-        block(size = FORM_COLUMNS, title = title, content = content)
+        block(size = FORM_COLUMNS, content = content)
         space(size = SIDE_COLUMNS)
     }
 }

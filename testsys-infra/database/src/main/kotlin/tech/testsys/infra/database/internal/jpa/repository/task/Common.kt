@@ -91,4 +91,24 @@ interface TrikStudioVersionJpaEntityRepository : SnowflakeJpaEntityRepository<Tr
      * @since %CURRENT_VERSION%
      */
     fun existsByStudioVersion(studioVersion: String): Boolean
+
+    /**
+     * Finds the tags of the versions referenced by a contest, a submission, a task revision or a task validation
+     * request.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        nativeQuery = true,
+        value = """
+            select v.tag from ts_trik_studio_version v
+            where exists (select 1 from ts_contest c where c.trik_studio_version_id = v.id)
+               or exists (select 1 from ts_submission s where s.trik_studio_version_id = v.id)
+               or exists (select 1 from ts_trik_studio_version_to_task_content t where t.trik_studio_version_id = v.id)
+               or exists (
+                   select 1 from ts_trik_studio_version_to_task_validation_request r where r.trik_studio_version_id = v.id
+               )
+        """,
+    )
+    fun findUsedTags(): List<String>
 }

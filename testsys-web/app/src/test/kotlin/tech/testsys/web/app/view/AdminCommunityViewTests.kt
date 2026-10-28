@@ -190,7 +190,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should hide the created observer and its access code once the community details are saved`() {
+    fun `should show the created observer and its access code in a dialog only until it is closed`() {
         val community = fixtures.community(owner = signInAdministrator())
         sharedContest(community)
         open(community.id)
@@ -199,9 +199,10 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         textField("Имя")._value = "Наблюдатель Анна"
         contestsField().value = setOf(contest)
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
+        val created = UI.getCurrent()._get<Dialog>()
+        assertTrue("Наблюдатель «Наблюдатель Анна» создан" in created.element.textRecursively)
 
-        UI.getCurrent()._get<Button> { text = "Изменить" }._click()
-        UI.getCurrent()._get<Button> { text = "Сохранить" }._click()
+        created._get<Button> { text = "Закрыть" }._click()
 
         assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Код-доступа" })
         assertFalse("Наблюдатель «Наблюдатель Анна» создан" in UI.getCurrent().element.textRecursively)

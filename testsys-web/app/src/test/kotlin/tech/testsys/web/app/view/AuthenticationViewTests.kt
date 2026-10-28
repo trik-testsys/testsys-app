@@ -6,10 +6,12 @@ import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.HasAriaLabel
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.HasDynamicTitle
@@ -191,6 +193,40 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show the e-mail and password fields by default and hide the access code field`() {
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+
+        assertEquals(SignInMethod.Password, UI.getCurrent()._get<RadioButtonGroup<SignInMethod?>>().value)
+        assertEquals(listOf("Почта"), visibleLabels<TextField>())
+        assertEquals(listOf("Пароль"), visibleLabels<PasswordField>())
+    }
+
+    @Test
+    fun `should show only the access code field when signing in by the access code is chosen`() {
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+
+        UI.getCurrent()._get<RadioButtonGroup<SignInMethod?>>().value = SignInMethod.AccessCode
+
+        assertEquals(emptyList<String>(), visibleLabels<TextField>())
+        assertEquals(listOf("Код-доступа"), visibleLabels<PasswordField>())
+    }
+
+    @Test
+    fun `should sign in by the access code when it is chosen even with the e-mail and password filled`() {
+        val user = fixtures.multipleRoleUser()
+        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+        val email = UI.getCurrent()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == "Почта" }
+        email.value = user.data.email
+        passwordField("Пароль").value = fixtures.password
+
+        signInWith(accessToken)
+
+        assertEquals(SupervisorView::class.java, currentView)
+        assertNotEquals(CabinetPrincipal.of(user), CabinetSignIn.principal())
+    }
+
+    @Test
     fun `should send a guest from a protected page to sign in`() {
         UI.getCurrent().navigate(DeveloperView::class.java)
 
@@ -273,11 +309,13 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     }
 
     private fun signInWith(accessToken: String) {
+        UI.getCurrent()._get<RadioButtonGroup<SignInMethod?>>().value = SignInMethod.AccessCode
         passwordField("Код-доступа").value = accessToken
-        UI.getCurrent()._get<Button> { text = "Войти по коду" }._click()
+        UI.getCurrent()._get<Button> { text = "Войти" }._click()
     }
 
     private fun signInByPassword(email: String, password: String) {
+        UI.getCurrent()._get<RadioButtonGroup<SignInMethod?>>().value = SignInMethod.Password
         UI.getCurrent()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == "Почта" }.value = email
         passwordField("Пароль").value = password
         UI.getCurrent()._get<Button> { text = "Войти" }._click()
@@ -285,6 +323,9 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     private fun passwordField(label: String): PasswordField =
         UI.getCurrent()._find<PasswordField>().single { field -> field.ariaLabel.orElse(null) == label }
+
+    private inline fun <reified T> visibleLabels(): List<String?> where T : Component, T : HasAriaLabel =
+        UI.getCurrent()._find<T>().map { field -> field.ariaLabel.orElse(null) }
 
     private fun lastToastTitle(): String = UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.last().text
 

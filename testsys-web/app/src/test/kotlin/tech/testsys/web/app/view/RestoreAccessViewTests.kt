@@ -102,7 +102,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
         confirm(code = fixtures.otherCode(mail.confirmationCodes.getValue(email)))
 
-        assertEquals("Код не совпадает с отправленным", lastToastTitle())
+        assertEquals("Неверный код", lastToastTitle())
         assertEquals(1, UI.getCurrent()._find<Button> { text = "Восстановить доступ" }.size)
     }
 
@@ -113,7 +113,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
         confirm(code = mail.confirmationCodes.getValue(email))
 
-        assertEquals("Попытки ввода кода исчерпаны", lastToastTitle())
+        assertEquals("Слишком много неверных попыток", lastToastTitle())
         assertEquals("Отправьте код повторно.", lastToastDescription())
     }
 
@@ -135,7 +135,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
         confirm(code = "12345678")
 
-        assertEquals("Запрос восстановления не найден", lastToastTitle())
+        assertEquals("Сначала получите код для этой почты", lastToastTitle())
         assertEquals("Измените почту и получите код заново.", lastToastDescription())
     }
 

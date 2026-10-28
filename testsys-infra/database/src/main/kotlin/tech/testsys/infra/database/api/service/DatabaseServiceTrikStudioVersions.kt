@@ -10,9 +10,9 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersio
 import tech.testsys.infra.database.internal.utils.toDomain
 
 /**
- * Service listing and registration of TRIK Studio versions over [TrikStudioVersionJpaEntity] rows. A concurrent
- * registration of the same value violates a unique constraint, and the repeated transaction refuses the value as
- * already registered.
+ * Service listing, registration, tag change and deletion of TRIK Studio versions over [TrikStudioVersionJpaEntity]
+ * rows. A concurrent registration or change to the same value violates a unique constraint, and the repeated
+ * transaction refuses the value as already registered.
  *
  * @since %CURRENT_VERSION%
  */
@@ -40,10 +40,36 @@ class DatabaseServiceTrikStudioVersions(
         return TrikStudioVersionRegistration.Registered(saved.toDomain())
     }
 
+    @Transactional(readOnly = true)
+    override fun findUsedTags(): Set<String> = trikStudioVersionJpaEntityRepository.findUsedTags().toSet()
+
+    @Transactional
+    override fun changeTag(tag: String, newTag: String): TrikStudioVersionTagChange {
+        val entity = trikStudioVersionJpaEntityRepository.findByTag(tag) ?: return TrikStudioVersionTagChange.NotFound
+        val trimmedTag = newTag.trim()
+        if (trimmedTag != entity.tag) {
+            tagRejectionOf(trimmedTag)?.let { rejection -> return TrikStudioVersionTagChange.Rejected(rejection) }
+            entity.tag = trimmedTag
+        }
+        return TrikStudioVersionTagChange.Changed(entity.toDomain())
+    }
+
+    @Transactional
+    override fun delete(tag: String): TrikStudioVersionDeletion {
+        val entity = trikStudioVersionJpaEntityRepository.findByTag(tag) ?: return TrikStudioVersionDeletion.NotFound
+        if (tag in trikStudioVersionJpaEntityRepository.findUsedTags()) return TrikStudioVersionDeletion.InUse
+        trikStudioVersionJpaEntityRepository.delete(entity)
+        return TrikStudioVersionDeletion.Deleted
+    }
+
     private fun rejectionOf(tag: String, version: String): TrikStudioVersionRejection? = when {
         version.isEmpty() -> TrikStudioVersionRejection.BlankVersion
         version.codePointCount(0, version.length) > MAX_VERSION_LENGTH -> TrikStudioVersionRejection.VersionTooLong
         trikStudioVersionJpaEntityRepository.existsByStudioVersion(version) -> TrikStudioVersionRejection.VersionAlreadyRegistered
+        else -> tagRejectionOf(tag)
+    }
+
+    private fun tagRejectionOf(tag: String): TrikStudioVersionRejection? = when {
         tag.isEmpty() -> TrikStudioVersionRejection.BlankTag
         tag.codePointCount(0, tag.length) > MAX_TAG_LENGTH -> TrikStudioVersionRejection.TagTooLong
         trikStudioVersionJpaEntityRepository.findByTag(tag) != null -> TrikStudioVersionRejection.TagAlreadyRegistered

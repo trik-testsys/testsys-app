@@ -271,7 +271,7 @@ class LocalizationTests {
 
         @Test
         fun `should ask to check the format in field bad input`() {
-            assertEquals("Проверьте формат значения", l.uiForm.fieldBadInput())
+            assertEquals("Проверьте, правильно ли введено значение", l.uiForm.fieldBadInput())
         }
 
         @Test
@@ -286,7 +286,7 @@ class LocalizationTests {
 
         @Test
         fun `should report a value off the step in field step mismatch`() {
-            assertEquals("Значение не соответствует шагу", l.uiForm.fieldStepMismatch())
+            assertEquals("Недопустимое значение", l.uiForm.fieldStepMismatch())
         }
 
         @Test
@@ -612,7 +612,7 @@ class LocalizationTests {
 
         @Test
         fun `should report a missing object in error failure not found`() {
-            assertEquals("Объект не найден", l.uiFeedback.errorFailureNotFound())
+            assertEquals("Не найдено: возможно, это уже удалили", l.uiFeedback.errorFailureNotFound())
         }
 
         @Test
@@ -622,7 +622,7 @@ class LocalizationTests {
 
         @Test
         fun `should report the missing role in error failure missing role`() {
-            assertEquals("Нет нужной роли", l.uiFeedback.errorFailureMissingRole())
+            assertEquals("У вас нет нужной роли", l.uiFeedback.errorFailureMissingRole())
         }
 
         @Test
@@ -631,8 +631,16 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should ask to reload the page in error failure trik studio version outdated`() {
+            assertEquals(
+                "Список версий TRIK Studio устарел: обновите страницу",
+                l.uiFeedback.errorFailureTrikStudioVersionOutdated(),
+            )
+        }
+
+        @Test
         fun `should report any other failure in error failure failed`() {
-            assertEquals("Действие не выполнено", l.uiFeedback.errorFailureFailed())
+            assertEquals("Не удалось выполнить действие", l.uiFeedback.errorFailureFailed())
         }
 
         @Test
@@ -701,7 +709,7 @@ class LocalizationTests {
 
         @Test
         fun `should show the done status in done`() {
-            assertEquals("Передано сервером", l.uiTransfer.done())
+            assertEquals("Готово", l.uiTransfer.done())
         }
 
         @Test
@@ -898,19 +906,42 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should ask to use the issued code in sign in access code guide`() {
+        fun `should ask to enter the issued code in sign in access code guide`() {
             assertEquals(
-                "Используйте код, который вам выдали.",
+                "Введите код, который вам выдали.",
                 l.pageGuest.signInAccessCodeGuide(),
             )
         }
 
         @Test
-        fun `should render the password term in accusative in sign in block guide`() {
+        fun `should ask to choose the way of signing in in sign in block guide`() {
             assertEquals(
-                "Введите привязанную почту и свой Пароль, затем нажмите «Войти».",
+                "Выберите способ входа, заполните поля и нажмите «Войти».",
                 l.pageGuest.signInBlockGuide(),
             )
+        }
+
+        @Test
+        fun `should label the switch in sign in method`() {
+            assertEquals("Способ входа", l.pageGuest.signInMethod())
+        }
+
+        @Test
+        fun `should render the access code in accusative and the password in dative in sign in method guide`() {
+            assertEquals(
+                "Если вам выдали Код-доступа, входите по нему, иначе — по почте и Паролю.",
+                l.pageGuest.signInMethodGuide(),
+            )
+        }
+
+        @Test
+        fun `should render the password term in nominative in sign in method password`() {
+            assertEquals("Почта и Пароль", l.pageGuest.signInMethodPassword())
+        }
+
+        @Test
+        fun `should render the access code term in nominative in sign in method access code`() {
+            assertEquals("Код-доступа", l.pageGuest.signInMethodAccessCode())
         }
 
         @Test
@@ -934,24 +965,6 @@ class LocalizationTests {
                 "Слишком много неудачных попыток входа. Попробуйте позже.",
                 l.pageGuest.signInBlockedDescription(),
             )
-        }
-
-        @Test
-        fun `should render the access code term in dative in access code title`() {
-            assertEquals("Вход по Коду-доступа", l.pageGuest.accessCodeTitle())
-        }
-
-        @Test
-        fun `should render the access code term in accusative in access code block guide`() {
-            assertEquals(
-                "Если вам выдали Код-доступа, введите его и нажмите «Войти по коду».",
-                l.pageGuest.accessCodeBlockGuide(),
-            )
-        }
-
-        @Test
-        fun `should label the access code sign in button in access code button`() {
-            assertEquals("Войти по коду", l.pageGuest.accessCodeButton())
         }
 
         @Test
@@ -1032,7 +1045,7 @@ class LocalizationTests {
 
         @Test
         fun `should report a missing request in restore access request not found`() {
-            assertEquals("Запрос восстановления не найден", l.pageGuest.restoreAccessRequestNotFound())
+            assertEquals("Сначала получите код для этой почты", l.pageGuest.restoreAccessRequestNotFound())
         }
 
         @Test
@@ -1124,16 +1137,16 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should state the nickname limits in nickname invalid description`() {
+        fun `should state the nickname limit in nickname invalid description`() {
             assertEquals(
-                "Псевдоним не может быть пустым или длиннее 512 символов.",
+                "Введите Псевдоним не длиннее 512 символов.",
                 l.pageRegistration.nicknameInvalidDescription(),
             )
         }
 
         @Test
         fun `should report a missing request in request not found`() {
-            assertEquals("Запрос регистрации не найден", l.pageRegistration.requestNotFound())
+            assertEquals("Сначала получите код для этой почты", l.pageRegistration.requestNotFound())
         }
 
         @Test
@@ -1233,7 +1246,7 @@ class LocalizationTests {
 
         @Test
         fun `should report a missing request in request not found`() {
-            assertEquals("Запрос смены почты не найден", l.pageProfile.requestNotFound())
+            assertEquals("Сначала получите код для новой почты", l.pageProfile.requestNotFound())
         }
 
         @Test
@@ -1288,10 +1301,9 @@ class LocalizationTests {
     inner class PagePasswordTests {
 
         @Test
-        fun `should state the length and byte limits in guide`() {
+        fun `should state the length limits without bytes in guide`() {
             assertEquals(
-                "Придумайте Пароль от 8 до 64 символов и не больше 72 байт: латинская буква или цифра занимает " +
-                    "1 байт, русская буква — 2. Большие и маленькие буквы различаются, пробелы учитываются.",
+                "Придумайте Пароль от 8 до 64 символов. Большие и маленькие буквы различаются, пробелы учитываются.",
                 l.pagePassword.guide(),
             )
         }
@@ -1302,10 +1314,10 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should state the length and byte limits in invalid description`() {
+        fun `should state the length limits without bytes in invalid description`() {
             assertEquals(
-                "Нужен Пароль от 8 до 64 символов и не больше 72 байт: латинская буква или цифра занимает 1 байт, " +
-                    "русская буква — 2.",
+                "Нужен Пароль от 8 до 64 символов. Если в нём много русских букв или других знаков не из латиницы, " +
+                    "сократите его.",
                 l.pagePassword.invalidDescription(),
             )
         }
@@ -1358,9 +1370,9 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should state the email format in email invalid description`() {
+        fun `should show an example address in email invalid description`() {
             assertEquals(
-                "Нужна почта до 255 символов с одним символом @ между непустыми частями.",
+                "Проверьте адрес: он должен выглядеть как name@example.com.",
                 l.pageConfirmation.emailInvalidDescription(),
             )
         }
@@ -1372,7 +1384,7 @@ class LocalizationTests {
 
         @Test
         fun `should report the exhausted attempts in attempts exhausted`() {
-            assertEquals("Попытки ввода кода исчерпаны", l.pageConfirmation.attemptsExhausted())
+            assertEquals("Слишком много неверных попыток", l.pageConfirmation.attemptsExhausted())
         }
 
         @Test
@@ -1382,7 +1394,7 @@ class LocalizationTests {
 
         @Test
         fun `should report a wrong code in code mismatch`() {
-            assertEquals("Код не совпадает с отправленным", l.pageConfirmation.codeMismatch())
+            assertEquals("Неверный код", l.pageConfirmation.codeMismatch())
         }
 
         @Test
@@ -1613,9 +1625,9 @@ class LocalizationTests {
         @CsvSource(
             "NOT_STARTED, Не запускалась",
             "RUNNING,     Идёт",
-            "SUCCESS,     Успех",
-            "FAILURE,     Неуспех",
-            "STOPPED,     Техническая остановка",
+            "SUCCESS,     Пройдена",
+            "FAILURE,     Не пройдена",
+            "STOPPED,     Прервана из-за сбоя",
             "OTHER,       Неизвестный статус",
         )
         fun `should name the task validation status in validation status`(status: ValidationStatusStatus, expected: String) {
@@ -3347,8 +3359,8 @@ class LocalizationTests {
         @Test
         fun `should decline the access code and participant terms in competition participants issued alert text`() {
             assertEquals(
-                "Коды-доступа созданных Участников можно скачать только сейчас: после любого действия на странице, " +
-                    "ухода с неё или её обновления узнать их будет нельзя.",
+                "Коды-доступа созданных Участников можно скачать только сейчас: после закрытия окна узнать их " +
+                    "будет нельзя.",
                 l.pageManager.competitionParticipantsIssuedAlertText(),
             )
         }
@@ -3765,7 +3777,7 @@ class LocalizationTests {
         fun `should decline the system and access code terms in community observer alert text`() {
             assertEquals(
                 "Наблюдатель входит по нему в Систему. Код-доступа показан только сейчас: " +
-                    "после ухода со страницы узнать его будет нельзя.",
+                    "после закрытия окна узнать его будет нельзя.",
                 l.pageAdministrator.communityObserverAlertText(),
             )
         }
@@ -4393,7 +4405,7 @@ class LocalizationTests {
         @Test
         fun `should show the technical details verbatim in summary technical`() {
             assertEquals(
-                "Техническая остановка: grader unavailable",
+                "Прервано из-за сбоя: grader unavailable",
                 l.pageDeveloper.summaryTechnical(description = "grader unavailable"),
             )
         }

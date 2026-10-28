@@ -5,8 +5,13 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.infra.database.DatabaseIntegrationTests
 
@@ -14,6 +19,12 @@ class DatabaseServiceTrikStudioVersionsTests : DatabaseIntegrationTests() {
 
     @Autowired
     private lateinit var service: ServiceTrikStudioVersions
+
+    @Autowired
+    private lateinit var contests: ContestRepository
+
+    @Autowired
+    private lateinit var tasks: TaskRepository
 
     @Nested
     inner class FindAllTests {
@@ -71,6 +82,108 @@ class DatabaseServiceTrikStudioVersionsTests : DatabaseIntegrationTests() {
             assertEquals(TrikStudioVersionRegistration.Rejected(reason), result)
             assertEquals(listOf(registered), service.findAll())
         }
+    }
+
+    @Nested
+    inner class ChangeTagTests {
+
+        @Test
+        fun `should store the trimmed new tag and keep the version number`() {
+            val registered = fixtures.trikStudioVersion(tag = "trik-studio:old", version = "1.0")
+            val expected = registered.copy(tag = "trik-studio:new")
+
+            val result = service.changeTag(tag = registered.tag, newTag = " trik-studio:new ")
+
+            assertEquals(TrikStudioVersionTagChange.Changed(expected), result)
+            assertEquals(listOf(expected), service.findAll())
+        }
+
+        @Test
+        fun `should keep a version used by a contest reachable under the new tag`() {
+            val contest = fixtures.contest()
+
+            service.changeTag(tag = contest.data.trikStudioVersion.tag, newTag = "trik-studio:renamed")
+
+            assertEquals("trik-studio:renamed", checkNotNull(contests.findById(contest.id)).data.trikStudioVersion.tag)
+        }
+
+        @Test
+        fun `should accept the same tag`() {
+            val registered = fixtures.trikStudioVersion(tag = "trik-studio:same")
+
+            val result = service.changeTag(tag = registered.tag, newTag = registered.tag)
+
+            assertEquals(TrikStudioVersionTagChange.Changed(registered), result)
+        }
+
+        @Test
+        fun `should refuse a tag of another version without storing anything`() {
+            val registered = fixtures.trikStudioVersion(tag = "trik-studio:a")
+            fixtures.trikStudioVersion(tag = "trik-studio:b")
+
+            val result = service.changeTag(tag = registered.tag, newTag = "trik-studio:b")
+
+            assertEquals(TrikStudioVersionTagChange.Rejected(TrikStudioVersionRejection.TagAlreadyRegistered), result)
+            assertEquals(registered.tag, service.findAll().first().tag)
+        }
+
+        @Test
+        fun `should report a missing version`() {
+            assertEquals(TrikStudioVersionTagChange.NotFound, service.changeTag(tag = "trik-studio:none", newTag = "x"))
+        }
+    }
+
+    @Nested
+    inner class DeleteTests {
+
+        @Test
+        fun `should delete an unused version`() {
+            val registered = fixtures.trikStudioVersion()
+
+            val result = service.delete(registered.tag)
+
+            assertEquals(TrikStudioVersionDeletion.Deleted, result)
+            assertEquals(emptyList<TrikStudioVersion>(), service.findAll())
+        }
+
+        @ParameterizedTest
+        @EnumSource(VersionReference::class)
+        fun `should keep a version referenced only by one kind of entity`(reference: VersionReference) {
+            val version = fixtures.trikStudioVersion()
+            reference(version, reference)
+
+            val result = service.delete(version.tag)
+
+            assertEquals(TrikStudioVersionDeletion.InUse, result)
+            assertEquals(setOf(version.tag), service.findUsedTags())
+        }
+
+        @Test
+        fun `should report a missing version`() {
+            assertEquals(TrikStudioVersionDeletion.NotFound, service.delete("trik-studio:none"))
+        }
+    }
+
+    /** Kind of entity that references a TRIK Studio version. */
+    enum class VersionReference { Contest, TaskRevision, DeveloperSolutionTest, TaskValidationRequest }
+
+    private fun reference(version: TrikStudioVersion, by: VersionReference) {
+        when (by) {
+            VersionReference.Contest -> fixtures.contest(version = version)
+            VersionReference.TaskRevision -> workingTaskSupporting(version)
+            VersionReference.DeveloperSolutionTest -> fixtures.submission(version = version)
+            VersionReference.TaskValidationRequest -> {
+                val task = workingTaskSupporting(version)
+                fixtures.taskValidationRequest(task)
+                val current = checkNotNull(tasks.findById(task.id))
+                tasks.update(current.withData { content.new { supportedTrikStudioVersions = mutableListOf() } })
+            }
+        }
+    }
+
+    private fun workingTaskSupporting(version: TrikStudioVersion): Task {
+        val task = fixtures.workingTask()
+        return tasks.update(task.withData { content.new { supportedTrikStudioVersions = mutableListOf(version) } })
     }
 
     companion object {

@@ -63,7 +63,7 @@ class SubmissionPersistenceAdapter(
             is SubmissionKind.Grading -> null
         }
         val trikStudioVersionId = trikStudioVersion?.let {
-            trikStudioVersionJpaEntityRepository.findIdByTagOrError(it.tag)
+            trikStudioVersionJpaEntityRepository.findIdByTagOrError(it)
         }
         val jpaEntity = SubmissionMapping.toJpaEntity(data, trikStudioVersionId)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)

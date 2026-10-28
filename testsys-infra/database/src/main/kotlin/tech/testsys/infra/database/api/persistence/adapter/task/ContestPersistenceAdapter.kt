@@ -192,7 +192,7 @@ class ContestPersistenceAdapter(
 
     @Transactional
     override fun save(data: ContestData): Contest {
-        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(data.trikStudioVersion.tag)
+        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(data.trikStudioVersion)
         val jpaEntity = ContestMapping.toJpaEntity(data, trikStudioVersionId)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
         val contestId = savedJpaEntity.requireId()
@@ -209,7 +209,7 @@ class ContestPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Contest): Contest {
-        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(entity.data.trikStudioVersion.tag)
+        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(entity.data.trikStudioVersion)
         val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
             ContestMapping.toJpaEntity(entity, current, trikStudioVersionId)
         }

@@ -135,7 +135,7 @@ class RegistrationViewTests : MockSpringVaadinTests() {
 
         confirm(code = fixtures.otherCode(mail.confirmationCodes.getValue(email)), name = "Новый Пользователь")
 
-        assertEquals("Код не совпадает с отправленным", lastToastTitle())
+        assertEquals("Неверный код", lastToastTitle())
     }
 
     @Test
@@ -145,7 +145,7 @@ class RegistrationViewTests : MockSpringVaadinTests() {
 
         confirm(code = mail.confirmationCodes.getValue(email), name = "Новый Пользователь")
 
-        assertEquals("Попытки ввода кода исчерпаны", lastToastTitle())
+        assertEquals("Слишком много неверных попыток", lastToastTitle())
         assertEquals("Отправьте код повторно.", UI.getCurrent()._find<Span> { classes = "ts-toast__desc" }.last().text)
     }
 
@@ -167,7 +167,7 @@ class RegistrationViewTests : MockSpringVaadinTests() {
 
         confirm(code = mail.confirmationCodes.getValue(email), name = "Новый Пользователь")
 
-        assertEquals("Запрос регистрации не найден", lastToastTitle())
+        assertEquals("Сначала получите код для этой почты", lastToastTitle())
         assertEquals("Измените почту и получите код заново.", UI.getCurrent()._find<Span> { classes = "ts-toast__desc" }.last().text)
     }
 

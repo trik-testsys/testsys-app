@@ -141,7 +141,10 @@ class ServiceTestConfiguration {
     fun serviceUserSearch(): ServiceUserSearch = mockk<ServiceUserSearch>().also(::stubServiceTestUsers)
 
     @Bean
-    fun serviceTrikStudioVersions(): ServiceTrikStudioVersions = mockk { every { findAll() } returns emptyList() }
+    fun serviceTrikStudioVersions(): ServiceTrikStudioVersions = mockk {
+        every { findAll() } returns emptyList()
+        every { findUsedTags() } returns emptySet()
+    }
 
     @Bean
     fun serviceSettings(): ServiceWebSettings = ServiceWebSettings.from(

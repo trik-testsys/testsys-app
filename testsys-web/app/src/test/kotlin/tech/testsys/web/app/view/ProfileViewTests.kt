@@ -102,7 +102,7 @@ class ProfileViewTests : MockSpringVaadinTests() {
 
         confirm(fixtures.otherCode(mail.confirmationCodes.getValue(newEmail)))
 
-        assertEquals("Код не совпадает с отправленным", lastToastTitle())
+        assertEquals("Неверный код", lastToastTitle())
         assertEquals(MAX_ATTEMPTS - 1, emailChangeRequests.findByUser(user.id)?.data?.attemptsLeft)
         assertEquals(user.data.email, multipleRoleUsers.findById(user.id)?.data?.email)
     }
@@ -170,7 +170,7 @@ class ProfileViewTests : MockSpringVaadinTests() {
 
         confirm(mail.confirmationCodes.getValue(newEmail))
 
-        assertEquals("Попытки ввода кода исчерпаны", lastToastTitle())
+        assertEquals("Слишком много неверных попыток", lastToastTitle())
         assertEquals("Отправьте код повторно.", lastToastDescription())
     }
 
@@ -196,7 +196,7 @@ class ProfileViewTests : MockSpringVaadinTests() {
 
         confirm(mail.confirmationCodes.getValue(newEmail))
 
-        assertEquals("Запрос смены почты не найден", lastToastTitle())
+        assertEquals("Сначала получите код для новой почты", lastToastTitle())
         assertEquals("Измените почту и получите код заново.", lastToastDescription())
     }
 

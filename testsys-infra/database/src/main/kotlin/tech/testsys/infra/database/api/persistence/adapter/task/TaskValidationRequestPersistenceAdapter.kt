@@ -424,7 +424,7 @@ class TaskValidationRequestPersistenceAdapter(
     private fun persistSnapshot(requestId: Long, snapshot: TaskValidationSnapshot) {
         tests.saveAll(TaskValidationRequestMapping.toTestAssociations(requestId, snapshot.tests.ids))
         solutions.saveAll(TaskValidationRequestMapping.toDeveloperSolutionAssociations(requestId, snapshot.developerSolutions))
-        val idsByTag = studioVersions.findIdsByTagOrError(snapshot.supportedTrikStudioVersions.map { version -> version.tag })
+        val idsByTag = studioVersions.findIdsByTagOrError(snapshot.supportedTrikStudioVersions)
         val versionIds = snapshot.supportedTrikStudioVersions.map { version -> idsByTag.getValue(version.tag) }
         versions.saveAll(TaskValidationRequestMapping.toTrikStudioVersionAssociations(requestId, versionIds))
     }

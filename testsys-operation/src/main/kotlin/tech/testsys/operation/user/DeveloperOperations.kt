@@ -126,6 +126,7 @@ import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
+import tech.testsys.operation.error.TrikStudioVersionNotRegisteredError
 import tech.testsys.operation.error.UpdateDeveloperSolutionError
 import tech.testsys.operation.error.UpdateExerciseError
 import tech.testsys.operation.error.UpdateStatementError
@@ -359,7 +360,7 @@ class DeveloperOperations(
         }
 
     /**
-     * Creates a contest owned by [user] with [contestName], [contestDescription] and [trikStudioVersion].
+     * Creates a contest owned by [user] with [contestName], [contestDescription] and a registered [trikStudioVersion].
      * Omitted [attemptDuration], [startsAt] and [endsAt] leave their limits unset; storage exceptions propagate.
      *
      * @throws IllegalArgumentException if a duration cannot be represented exactly in Long milliseconds.
@@ -393,6 +394,9 @@ class DeveloperOperations(
         contestDuration?.requireExactMillis("contestDuration")
         attemptDuration?.requireExactMillis("attemptDuration")
         ensure(TextLimits.isValidName(contestName)) { ContestNameTooLongError(contestName) }
+        ensure(trikStudioVersion in contestRepository.findTrikStudioVersions()) {
+            TrikStudioVersionNotRegisteredError(trikStudioVersion)
+        }
         val data = contestData {
             owner = user.id
             name = contestName
@@ -610,7 +614,8 @@ class DeveloperOperations(
 
     /**
      * Edits [taskName], [taskDescription] and [supportedTrikStudioVersions] of [taskId] owned by [user], retaining omitted values.
-     * Version set changes affect only the editable revision; unchanged values return the task without saving.
+     * A changed version set must be registered and affects only the editable revision; unchanged values return the task
+     * without saving.
      *
      * @since %CURRENT_VERSION%
      */
@@ -637,6 +642,9 @@ class DeveloperOperations(
         }
 
         val editedTask = if (hasVersionChanges) {
+            val registered = contestRepository.findTrikStudioVersions().toSet()
+            val unregistered = versions.firstOrNull { version -> version !in registered }
+            ensure(unregistered == null) { TrikStudioVersionNotRegisteredError(requireNotNull(unregistered)) }
             task.changeEditableContent { this.supportedTrikStudioVersions = versions.toMutableList() }
         } else {
             task

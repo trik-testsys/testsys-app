@@ -35,7 +35,6 @@ import tech.testsys.web.components.forms.lookupMany
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageRowScope
-import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
@@ -70,8 +69,7 @@ abstract class CommunityDetailsView(
         show(communities.first { community -> community.id == communityId }, communities)
     }
 
-    /** Builds the page of [community]; the access code of the just created [observer] is shown in this build only. */
-    private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: IssuedObserverVo? = null) {
+    private fun show(community: CommunityVo, communities: List<CommunityVo>) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -89,12 +87,14 @@ abstract class CommunityDetailsView(
                 detailsBlock(community) { edited -> show(edited, communities) }
                 invitesBlock(community.id)
             }
-            observer?.let { created -> createdObserverBlock(created) }
             row {
                 block(title = texts.communityUsersTitle()) {
                     guide(texts.communityUsersGuide())
                     adminUsersTable(service, communities, community.id, onOpenUser)
-                    val creation = observerDialog(community.id) { created -> show(community, communities, created) }
+                    val creation = observerDialog(community.id) { created ->
+                        show(community, communities)
+                        createdObserverDialog(created)
+                    }
                     actions { action(texts.communityObserverCreate()) { onClick { creation() } } }
                 }
             }
@@ -149,29 +149,36 @@ abstract class CommunityDetailsView(
         draft.readBean(CommunityDraft(community.name, community.description))
     }
 
-    private fun PageScope.createdObserverBlock(created: IssuedObserverVo) {
-        val texts = currentLocalization().pageAdministrator
+    /** Shows the access code of the just [created] observer once: it cannot be read back later. */
+    private fun createdObserverDialog(created: IssuedObserverVo) {
+        val localization = currentLocalization()
+        val texts = localization.pageAdministrator
         val observer = created.observer
-        row {
-            block(title = texts.communityObserverCreatedTitle(name = observer.name)) {
-                guide(texts.communityObserverCreatedGuide())
-                row {
-                    alert(
-                        kind = FeedbackKind.Warning,
-                        title = texts.communityObserverAlertTitle(),
-                        text = texts.communityObserverAlertText(),
-                    )
+        dialog(title = texts.communityObserverCreatedTitle(name = observer.name), subtitle = texts.communityObserverCreatedGuide()) {
+            row {
+                alert(
+                    kind = FeedbackKind.Warning,
+                    title = texts.communityObserverAlertTitle(),
+                    text = texts.communityObserverAlertText(),
+                )
+            }
+            row {
+                codeInput(texts.accessCode(), labelSize = 6, size = 18) {
+                    value = created.accessToken
+                    isEditable = false
+                    isObscured = true
                 }
-                row {
-                    codeInput(texts.accessCode(), labelSize = 6, size = 18) {
-                        value = created.accessToken
-                        isEditable = false
-                        isObscured = true
+            }
+            footer { dialog ->
+                linkAction(texts.communityObserverOpen()) {
+                    onClick {
+                        dialog.close()
+                        onOpenUser(observer)
                     }
                 }
-                footer { linkAction(texts.communityObserverOpen()) { onClick { onOpenUser(observer) } } }
+                action(localization.uiOverlay.dialogClose()) { onClick { dialog.close() } }
             }
-        }
+        }.open()
     }
 
     @RawInviteCodeDependency(reason = "Shows the stored invite codes as the issued ones.")

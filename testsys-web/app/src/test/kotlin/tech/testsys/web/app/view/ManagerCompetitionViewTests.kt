@@ -146,7 +146,7 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should warn to download the created participants right after the creation and only then`() {
+    fun `should warn to download the created participants in a dialog right after the creation and only then`() {
         val competition = fixtures.competition(owner = signInManager())
         open(competition.id)
 
@@ -154,14 +154,16 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Dialog>()._get<IntegerField>()._value = 2
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
 
-        val shown = pageText()
+        val issued = UI.getCurrent()._get<Dialog>()
+        val shown = issued.element.textRecursively
         assertTrue("Созданные Участники" in shown, shown)
         assertTrue("Скачайте файл сейчас" in shown, shown)
         assertTrue("Скачать CSV" in shown, shown)
+        assertFalse("Скачайте файл сейчас" in pageText())
 
-        open(competition.id)
+        issued._get<Button> { text = "Закрыть" }._click()
 
-        assertFalse("Созданные Участники" in pageText())
+        assertTrue(UI.getCurrent()._find<Dialog>().isEmpty())
     }
 
     @Test

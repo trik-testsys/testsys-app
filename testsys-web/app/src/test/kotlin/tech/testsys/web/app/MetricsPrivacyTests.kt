@@ -5,6 +5,7 @@ import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import tech.testsys.web.app.view.AuthenticationView
+import tech.testsys.web.app.view.SignInMethod
 
 @Import(PostgresTestConfiguration::class)
 @SpringBootTest
@@ -26,8 +28,9 @@ class MetricsPrivacyTests : MockSpringVaadinTests() {
     fun `should count a refused sign-in without the entered access code`() {
         val accessCode = "privacy-check-" + fixtures.unique("code")
         UI.getCurrent().navigate(AuthenticationView::class.java)
+        UI.getCurrent()._get<RadioButtonGroup<SignInMethod?>>().value = SignInMethod.AccessCode
         UI.getCurrent()._find<PasswordField>().single { field -> field.ariaLabel.orElse(null) == "Код-доступа" }.value = accessCode
-        UI.getCurrent()._get<Button> { text = "Войти по коду" }._click()
+        UI.getCurrent()._get<Button> { text = "Войти" }._click()
 
         val exported = registry.scrape()
 

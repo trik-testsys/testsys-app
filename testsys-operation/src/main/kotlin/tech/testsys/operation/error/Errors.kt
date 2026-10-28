@@ -1105,6 +1105,17 @@ data class TaskNameTooLongError(val taskName: String) : CreateTaskError, EditTas
 data class ContestNameTooLongError(val contestName: String) : CreateContestError, EditContestError
 
 /**
+ * The TRIK Studio version is not registered with this tag and version number: it was deleted or its tag was changed.
+ *
+ * @property trikStudioVersion the unregistered version.
+ * @since %CURRENT_VERSION%
+ */
+data class TrikStudioVersionNotRegisteredError(val trikStudioVersion: TrikStudioVersion) :
+    EntityNotExistsError,
+    CreateContestError,
+    EditTaskInfoError
+
+/**
  * The resource name exceeds the Unicode code point limit.
  *
  * @property resourceName the rejected resource name.

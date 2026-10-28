@@ -183,6 +183,8 @@
 .ts-block__body--grid { grid-column:1 / -1; display:grid; grid-template-columns:subgrid; column-gap:normal; row-gap:var(--space-3); align-content:start; }
 .ts-block__body--grid.ts-block__body--flush { row-gap:0; }
 .ts-block__row { grid-column:1 / -1; display:grid; grid-template-columns:subgrid; align-items:start; min-width:0; }
+/* A row whose elements are all hidden is not shown, so it adds no gap between the rows around it. */
+.ts-block__row:not(:has(> :not([hidden]))) { display:none; }
 .ts-block__section-title { grid-column:1 / -1; min-width:0; margin:0; font:var(--fw-bold) var(--fs-h3)/var(--lh-h3) var(--font-sans); color:inherit; overflow-wrap:anywhere; }
 .ts-block__separator { grid-column:1 / -1; min-width:0; width:100%; margin:0; border:0; border-top:1px solid var(--border-default); }
 .ts-block--grid.ts-block--filters { grid-template-rows:auto auto 1fr auto; }

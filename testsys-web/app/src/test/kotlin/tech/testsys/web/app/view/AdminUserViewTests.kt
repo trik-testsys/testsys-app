@@ -564,7 +564,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.StoppedByDiagnostics(diagnostics = emptyList(), completedAt = Instant.EPOCH),
-                    "Неуспех" to Tone.Danger,
+                    "Не пройдена" to Tone.Danger,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.Completed(
@@ -573,7 +573,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         failures = emptyList(),
                         completedAt = Instant.EPOCH,
                     ),
-                    "Успех" to Tone.Success,
+                    "Пройдена" to Tone.Success,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.Completed(
@@ -582,12 +582,12 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         failures = listOf(AuthorSubmissionFailure.GradingFailed(SubmissionId(1))),
                         completedAt = Instant.EPOCH,
                     ),
-                    "Неуспех" to Tone.Danger,
+                    "Не пройдена" to Tone.Danger,
                 ),
-                Arguments.of(TaskValidationExecutionVo.IncompleteDiagnostics(failure), "Техническая остановка" to Tone.Warning),
+                Arguments.of(TaskValidationExecutionVo.IncompleteDiagnostics(failure), "Прервана из-за сбоя" to Tone.Warning),
                 Arguments.of(
                     TaskValidationExecutionVo.CompletedDiagnostics(diagnostics = emptyList(), failure = failure),
-                    "Техническая остановка" to Tone.Warning,
+                    "Прервана из-за сбоя" to Tone.Warning,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.CreatedSubmissions(
@@ -595,7 +595,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         submissions = listOf(SubmissionId(1)),
                         failure = failure,
                     ),
-                    "Техническая остановка" to Tone.Warning,
+                    "Прервана из-за сбоя" to Tone.Warning,
                 ),
             )
         }

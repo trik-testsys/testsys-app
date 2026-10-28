@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Import
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.operation.error.BlankJudgmentReasonError
 import tech.testsys.operation.error.MissedJudgeRoleError
@@ -28,6 +29,7 @@ import tech.testsys.operation.error.OperationError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.SubmissionAccessDeniedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.TrikStudioVersionNotRegisteredError
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.PostgresTestConfiguration
 import tech.testsys.web.app.service.judge.JudgeService
@@ -59,7 +61,7 @@ class OperationErrorHandlerTests : MockSpringVaadinTests() {
 
         handler.error(ErrorEvent(wrapped))
 
-        assertEquals("Объект не найден", _get<Span> { classes = "ts-toast__title" }.text)
+        assertEquals("Не найдено: возможно, это уже удалили", _get<Span> { classes = "ts-toast__title" }.text)
     }
 
     @Test
@@ -113,14 +115,18 @@ class OperationErrorHandlerTests : MockSpringVaadinTests() {
     companion object {
         @JvmStatic
         fun failures(): List<Arguments> = listOf(
-            Arguments.of(TaskNotExistsError(TaskId(1)), "Объект не найден"),
+            Arguments.of(TaskNotExistsError(TaskId(1)), "Не найдено: возможно, это уже удалили"),
+            Arguments.of(
+                TrikStudioVersionNotRegisteredError(TrikStudioVersion(tag = "trik-studio:old", version = "1.0")),
+                "Список версий TRIK Studio устарел: обновите страницу",
+            ),
             Arguments.of(SubmissionAccessDeniedError(SubmissionId(1)), "Нет доступа"),
-            Arguments.of(MissedJudgeRoleError, "Нет нужной роли"),
+            Arguments.of(MissedJudgeRoleError, "У вас нет нужной роли"),
             Arguments.of(
                 StatementNotUploadedToTaskError(TaskId(1), StatementId(1)),
                 "Ресурс недоступен в этой задаче",
             ),
-            Arguments.of(BlankJudgmentReasonError, "Действие не выполнено"),
+            Arguments.of(BlankJudgmentReasonError, "Не удалось выполнить действие"),
         )
     }
 }

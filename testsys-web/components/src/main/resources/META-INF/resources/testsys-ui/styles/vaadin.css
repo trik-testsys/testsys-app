@@ -54,7 +54,7 @@ vaadin-button[data-ts-role] {
   --vaadin-button-font-weight: var(--fw-semibold);
   --vaadin-button-gap: var(--space-2);
 }
-vaadin-button[data-ts-role]:not([disabled]):not([aria-busy="true"]) { cursor:pointer; }
+vaadin-button[data-ts-role]:not([disabled]):not([aria-busy="true"]):not([data-ts-cooldown]) { cursor:pointer; }
 vaadin-button[data-ts-size="sm"] {
   --vaadin-button-height: var(--control-sm);
   --vaadin-button-padding: 0 var(--space-2);
@@ -92,6 +92,13 @@ vaadin-button[data-ts-role="link"][disabled] {
   --vaadin-button-background: transparent;
   --vaadin-button-border: 1px solid transparent;
 }
+/* Cooldown of a dangerous confirmation: looks disabled and shows the seconds left; the client makes it inert. */
+vaadin-button[data-ts-cooldown] {
+  --vaadin-button-background: var(--canvas);
+  --vaadin-button-text-color: var(--text-tertiary);
+  --vaadin-button-border: 1px solid var(--border-default);
+}
+vaadin-button[data-ts-cooldown]::after { content: attr(data-ts-cooldown); margin-inline-start: 6px; font-family: var(--font-mono); }
 vaadin-button[aria-busy="true"] { cursor: progress; }
 vaadin-button > .ts-spinner { display: inline-block; }
 /* A column keeps buttons at their own width, like the line does. */

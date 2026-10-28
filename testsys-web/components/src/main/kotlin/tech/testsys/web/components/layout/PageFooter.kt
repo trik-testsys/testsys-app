@@ -6,12 +6,10 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
-import com.vaadin.flow.component.html.Image
 import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
-import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.HtmlAttribute
@@ -64,9 +62,9 @@ internal fun buildPageFooter(
     links: PageFooterScope = PageFooterScope(),
     clock: Clock = Clock.systemDefaultZone(),
 ): Footer {
-    val logo = Image(TestSysBrand.FOOTER, texts.messages.uiPage.brandName()).apply { addClassName(CssClass.FooterLogo) }
+    val name = Span(texts.messages.uiPage.brandName()).apply { addClassName(CssClass.FooterName) }
     val year = Span(texts.messages.uiPage.footerYear(year = Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
-    val brand = Div(logo, year).apply { addClassName(CssClass.FooterBrand) }
+    val brand = Div(name, year).apply { addClassName(CssClass.FooterBrand) }
     val inner = Div(brand).apply { addClassName(CssClass.FooterInner) }
     links.build(texts.messages.uiPage.footerLinks())?.let { navigation -> inner.add(navigation) }
     return Footer(inner).apply { addClassName(CssClass.Footer) }

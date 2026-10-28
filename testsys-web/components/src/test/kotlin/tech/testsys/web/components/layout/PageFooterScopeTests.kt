@@ -8,7 +8,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.ItemTestView
 import tech.testsys.web.components.MockVaadinTests
-import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.testTexts
@@ -20,13 +19,12 @@ internal class PageFooterScopeTests : MockVaadinTests() {
     private val fixedClock = Clock.fixed(Instant.parse("2037-04-05T00:00:00Z"), ZoneOffset.UTC)
 
     @Test
-    fun `should render the accessible graphic brand without repeating its name as text`() {
+    fun `should render the brand name as text next to the year`() {
         val footer = buildPageFooter(testTexts, clock = fixedClock)
 
         assertEquals("footer", footer.element.tag)
-        assertEquals(TestSysBrand.FOOTER, footer.find("ts-footer__logo").element.getAttribute("src"))
-        assertEquals(testTexts.messages.uiPage.brandName(), footer.find("ts-footer__logo").element.getAttribute("alt"))
-        assertEquals("2037", footer.element.textRecursively)
+        assertEquals(testTexts.messages.uiPage.brandName(), footer.find("ts-footer__name").element.text)
+        assertEquals("2037", footer.find("ts-footer__year").element.text)
     }
 
     @Test

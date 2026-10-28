@@ -10,7 +10,7 @@ import tech.testsys.web.components.error.NotFoundPage
 
 class TestSysBrandTests : MockVaadinTests() {
     @ParameterizedTest
-    @ValueSource(strings = [TestSysBrand.EMBLEM, TestSysBrand.WORDMARK, TestSysBrand.ICON, TestSysBrand.FOOTER, TestSysBrand.FAVICON])
+    @ValueSource(strings = [TestSysBrand.EMBLEM, TestSysBrand.WORDMARK, TestSysBrand.ICON, TestSysBrand.FAVICON])
     fun `should package a brand graphic as a public resource`(asset: String) {
         val resource = javaClass.getResource("/META-INF/resources/$asset")
 

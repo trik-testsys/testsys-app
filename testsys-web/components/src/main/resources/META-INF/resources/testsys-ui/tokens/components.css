@@ -146,7 +146,7 @@
 .ts-footer { flex:none; border-top:1px solid var(--line); background:var(--surface-card); }
 .ts-footer__inner { max-width:var(--container); margin:0 auto; padding:var(--space-3) 0; display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
 .ts-footer__brand { display:flex; align-items:center; gap:var(--space-3); }
-.ts-footer__logo { display:block; height:32px; width:auto; object-fit:contain; }
+.ts-footer__name { color:var(--text-secondary); font:var(--fw-semibold) var(--fs-sm) var(--font-mono); }
 .ts-footer__year { color:var(--text-tertiary); font:var(--fw-regular) var(--fs-sm) var(--font-mono); }
 .ts-footer__links { display:flex; align-items:center; gap:var(--space-4); font-size:var(--fs-sm); }
 .ts-footer__link { color:var(--text-secondary); }

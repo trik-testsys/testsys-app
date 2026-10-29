@@ -5,9 +5,16 @@ on:
     branches: [ "master", "dev" ]
   pull_request:
     branches: [ "master", "dev" ]
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to check instead of the triggering one
+        type: string
+        default: ''
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # A literal prefix: in a called workflow `github.workflow` is the caller's name.
+  group: lint-${{ github.ref }}-${{ inputs.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -25,6 +32,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up JDK
         uses: actions/setup-java@v6
@@ -115,7 +124,8 @@ jobs:
   upload-sarif:
     name: SARIF (${{ matrix.module }})
     needs: detekt
-    if: always() && needs.detekt.outputs.modules != '' && needs.detekt.outputs.modules != '[]'
+    # A release checks a commit that is not on master or dev yet, so its findings are not uploaded to code scanning.
+    if: always() && !inputs.ref && needs.detekt.outputs.modules != '' && needs.detekt.outputs.modules != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -133,6 +143,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Download prepared SARIF reports
         uses: actions/download-artifact@v8

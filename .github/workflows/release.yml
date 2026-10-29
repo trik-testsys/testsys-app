@@ -9,16 +9,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Release
+  prepare:
+    name: Prepare release commit
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
 
     permissions:
       contents: write
 
     env:
       TAG: ${{ github.event.release.tag_name }}
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.commit.outputs.sha }}
 
     steps:
       # GITHUB_TOKEN cannot push to protected branches; RELEASE_TOKEN is a token allowed to push to `master` and `dev`.
@@ -30,26 +34,90 @@ jobs:
 
       # The release tag `v1.2.3` or `1.2.3` becomes the version `1.2.3`.
       - name: Resolve version
+        id: version
         run: |
           VERSION="${TAG#v}"
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::Release tag $TAG is not a semantic version"
             exit 1
           fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # The commit waits for the checks on a temporary branch, so master and dev stay untouched if they fail.
+      - name: Squash dev into master and set the version
+        id: commit
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898+github-actions[bot]@users.noreply.github.com"
-
-      - name: Squash dev into master and set the version
-        run: |
           git checkout -B master origin/master
           git merge --squash origin/dev
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" buildSrc/src/main/kotlin/testsys.conventions.gradle.kts
           git grep -lz '%CURRENT_VERSION%' -- '*.kt' | xargs -0 -r sed -i "s/%CURRENT_VERSION%/$VERSION/g"
           git add -A
           git commit -m "Release $VERSION"
-          git push origin master
-          git tag -f "$TAG"
+          git push --force origin "HEAD:refs/heads/release/$VERSION"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build
+    needs: prepare
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+    permissions:
+      contents: read
+
+  test:
+    name: Test
+    needs: prepare
+    uses: ./.github/workflows/test.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+  lint:
+    name: Lint
+    needs: prepare
+    uses: ./.github/workflows/lint.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+  publish:
+    name: Publish release
+    needs: [ prepare, build, test, lint ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    permissions:
+      contents: write
+
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      SHA: ${{ needs.prepare.outputs.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      # A plain push fails if master moved after the release commit was prepared.
+      - name: Push master and move the release tag
+        run: |
+          git push origin "$SHA:refs/heads/master"
+          git tag -f "$TAG" "$SHA"
           git push --force origin "refs/tags/$TAG"
 
       - name: Log in to Docker Hub
@@ -87,6 +155,24 @@ jobs:
       # Lines added in dev differ from master only by the substituted version, so conflicts take the master side.
       - name: Merge master into dev
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
           git checkout -B dev origin/dev
-          git merge --no-ff -X theirs master -m "Merge release $VERSION into dev"
+          git merge --no-ff -X theirs "$SHA" -m "Merge release $VERSION into dev"
           git push origin dev
+
+  cleanup:
+    name: Delete temporary branch
+    needs: [ prepare, publish ]
+    if: always() && needs.prepare.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Delete release branch
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/release/${{ needs.prepare.outputs.version }}"

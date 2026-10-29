@@ -48,7 +48,7 @@ class FileDataJpaEntity(
 @Entity
 @InternalDatabaseApi
 class TrikStudioVersionJpaEntity(
-    val tag: String,
+    var tag: String,
     val studioVersion: String,
 ) : SnowflakeJpaEntity()
 

@@ -38,22 +38,27 @@ import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.ObserverData
+import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.AdministratorInPublicCommunityError
 import tech.testsys.operation.error.CommunityNotExistsError
 import tech.testsys.operation.error.ContestAccessDeniedError
+import tech.testsys.operation.error.ImpersonationDeniedError
 import tech.testsys.operation.error.MissedSupervisorRoleError
 import tech.testsys.operation.error.UserHasFixedRoleError
 import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.publicCommunityConfig
+import tech.testsys.operation.util.testAccessTokenHasher
 import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testCommunity
 import tech.testsys.operation.util.testCompetition
 import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testDeveloper
+import tech.testsys.operation.util.testMultipleRoleUser
 import tech.testsys.operation.util.testNewTask
 import tech.testsys.operation.util.testObserver
+import tech.testsys.operation.util.testParticipant
 import tech.testsys.operation.util.testStudyClass
 import tech.testsys.operation.util.testSupervisor
 import tech.testsys.operation.util.testTaskValidationRequest
@@ -75,7 +80,7 @@ class SupervisorOperationsTests {
     private val pagination = Pagination(0, 20)
     private val operations = SupervisorOperations(
         users, communities, communityRepository, multipleRoleUsers, userRepository,
-        publicCommunityConfig(publicId), administratorOperations, contests, observers,
+        publicCommunityConfig(publicId), administratorOperations, contests, observers, testAccessTokenHasher,
     )
 
     private fun prepareMember() {
@@ -638,6 +643,87 @@ class SupervisorOperationsTests {
     }
 
     @Nested
+    inner class ImpersonateTests {
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return a user with non-fixed roles to sign in as`() {
+                every { users.findUserById(member.id) } returns member
+
+                val result = operations.impersonate(supervisor, member.id).getOrThrow()
+
+                assertSame(member, result)
+            }
+
+            @Test
+            fun `should return a participant to sign in as`() {
+                val participant = testParticipant()
+                every { users.findUserById(participant.id) } returns participant
+
+                val result = operations.impersonate(supervisor, participant.id).getOrThrow()
+
+                assertSame(participant, result)
+            }
+
+            @Test
+            fun `should return an observer to sign in as`() {
+                val observer = testObserver()
+                every { users.findUserById(observer.id) } returns observer
+
+                val result = operations.impersonate(supervisor, observer.id).getOrThrow()
+
+                assertSame(observer, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should reject a non-supervisor before reading the user`() {
+                assertRaises(MissedSupervisorRoleError) { operations.impersonate(member, member.id) }
+
+                verify { users wasNot Called }
+            }
+
+            @Test
+            fun `should reject a missing user`() {
+                every { users.findUserById(member.id) } returns null
+
+                assertRaises(UserNotExistsError(member.id)) { operations.impersonate(supervisor, member.id) }
+            }
+
+            @Test
+            fun `should reject a supervisor the supervisor port does not return`() {
+                every { users.findUserById(supervisor.id) } returns null
+
+                assertRaises(UserNotExistsError(supervisor.id)) { operations.impersonate(supervisor, supervisor.id) }
+            }
+
+            @Test
+            fun `should reject the technical owner of the public community`() {
+                val owner = testMultipleRoleUser { email = PublicCommunityOwner.EMAIL }
+                every { users.findUserById(owner.id) } returns owner
+
+                assertRaises(ImpersonationDeniedError(owner.id)) { operations.impersonate(supervisor, owner.id) }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @Test
+            fun `should neither change the user nor record their login`() {
+                every { users.findUserById(member.id) } returns member
+
+                val result = operations.impersonate(supervisor, member.id).getOrThrow()
+
+                assertEquals(EntityVersion(0), result.version)
+                verify(exactly = 0) { userRepository.recordLogin(any(), any()) }
+                verify { multipleRoleUsers wasNot Called }
+            }
+        }
+    }
+
+    @Nested
     inner class EditCommunityTests {
         @Nested
         inner class HappyPathTests {
@@ -715,7 +801,8 @@ class SupervisorOperationsTests {
 
                 val result = operations.createObserver(supervisor, targetId, "New observer", setOf(contest.id)).getOrThrow()
 
-                assertSame(saved, result)
+                assertSame(saved, result.observer)
+                assertEquals(testAccessTokenHasher.hash(result.accessToken), data.captured.accessTokenHash)
                 assertEquals("New observer", data.captured.name)
                 assertEquals(targetId, data.captured.community.id)
                 assertEquals(listOf(contest.id), data.captured.contests.ids)

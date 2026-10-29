@@ -51,16 +51,6 @@ class ManagerService(private val operations: ManagerOperations, private val curr
         ).getOrThrow().toVo()
 
     /**
-     * Runs [ManagerOperations.downloadParticipants].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    @Transactional(readOnly = true)
-    fun downloadParticipants(competitionId: CompetitionId): List<ParticipantVo> =
-        operations.downloadParticipants(currentUser.multipleRoleUser(), competitionId).getOrThrow()
-            .map { participant -> participant.toVo() }
-
-    /**
      * Runs [ManagerOperations.createClass].
      *
      * @since %CURRENT_VERSION%
@@ -166,17 +156,18 @@ class ManagerService(private val operations: ManagerOperations, private val curr
      *
      * @since %CURRENT_VERSION%
      */
-    fun createParticipants(competitionId: CompetitionId, participantCount: Int): List<ParticipantVo> =
+    fun createParticipants(competitionId: CompetitionId, participantCount: Int): List<IssuedParticipantVo> =
         operations.createParticipants(currentUser.multipleRoleUser(), competitionId, participantCount).getOrThrow()
-            .map { participant -> participant.toVo() }
+            .map { issued -> issued.toVo() }
 
     /**
-     * Runs [ManagerOperations.deleteParticipant].
+     * Runs [ManagerOperations.deleteParticipants].
      *
      * @since %CURRENT_VERSION%
      */
-    fun deleteParticipant(competitionId: CompetitionId, participantId: SingleRoleUserId): ParticipantVo =
-        operations.deleteParticipant(currentUser.multipleRoleUser(), competitionId, participantId).getOrThrow().toVo()
+    fun deleteParticipants(competitionId: CompetitionId, participantIds: Set<SingleRoleUserId>): List<ParticipantVo> =
+        operations.deleteParticipants(currentUser.multipleRoleUser(), competitionId, participantIds).getOrThrow()
+            .map { participant -> participant.toVo() }
 
     /**
      * Runs [ManagerOperations.viewAvailableContests].

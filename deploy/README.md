@@ -3,9 +3,9 @@
 Документ описывает, как устроены Docker-образ основного приложения `testsys-web:app`, Compose-файлы окружений
 dev, e2e и production, мониторинг на Prometheus и Grafana, сбор логов на Loki и Grafana Alloy, файл Проверяющего узла
 и скрипт `deploy/testsys.sh`. Он предназначен для тех, кто меняет эти файлы. Как запускать окружения, открывать
-Grafana, искать логи и что задать перед запуском — в [deployment.md](../docs/project/deployment.md); смысл свойств
-приложения — в документах модулей; имена и метки метрик TestSys — в
-[monitoring/README.md](../testsys-infra/monitoring/README.md).
+Grafana, искать логи, что задать перед запуском и где задаётся каждый параметр приложения — в
+[deployment.md](../docs/project/deployment.md); смысл свойств приложения — в документах модулей; имена и метки
+метрик TestSys — в [monitoring/README.md](../testsys-infra/monitoring/README.md).
 
 ## Устройство
 
@@ -38,9 +38,9 @@ Compose-файлы:
 |------|------------|
 | `deploy/compose.yml` | Общие сервисы всех окружений: приложение и PostgreSQL; отдельно не запускается |
 | `deploy/compose.monitoring.yml` | Prometheus, Grafana, Loki и Alloy проектов dev и production, см. [Мониторинг](#мониторинг); отдельно не запускается |
-| `deploy/compose.dev.yml` | Override проекта `testsys-dev`: пароли, порты, адрес Grafana, Mailpit, начальные данные |
-| `deploy/compose.e2e.yml` | Override проекта `testsys-e2e` для внешнего тестового процесса |
-| `deploy/compose.prod.yml` | Override проекта `testsys-prod`: конфигурационный файл на сервере, секреты, пароль и адрес Grafana, политика перезапуска |
+| `deploy/compose.dev.yml` | Override проекта `testsys-dev`: переменные приложения, порты, адрес Grafana, Mailpit, начальные данные |
+| `deploy/compose.e2e.yml` | Override проекта `testsys-e2e` для внешнего тестового процесса: файлы параметров dev и e2e, переменные приложения, Mailpit |
+| `deploy/compose.prod.yml` | Override проекта `testsys-prod`: конфигурационный файл на сервере, переменные приложения, пароль и адрес Grafana, политика перезапуска |
 | `deploy/compose.grading-node.yml` | Проверяющий узел, см. [Проверяющий узел](#проверяющий-узел) |
 
 Скрипты:
@@ -55,7 +55,7 @@ Compose-файлы:
 
 | Файл | Назначение |
 |------|------------|
-| `deploy/env/dev.env`, `deploy/env/e2e.env` | Переменные dev и e2e, хранятся в Git |
+| `deploy/env/dev.env`, `deploy/env/e2e.env` | Переменные dev и e2e, в том числе несекретные значения секретов приложения; хранятся в Git |
 | `deploy/env/dev.local.env.example`, `deploy/env/e2e.local.env.example` | Шаблоны значений машины для dev и e2e |
 | `deploy/env/prod.env.example` | Шаблон файла переменных production |
 | `deploy/env/grading-node.env.example` | Шаблон файла переменных отдельного Проверяющего узла |
@@ -65,7 +65,8 @@ Compose-файлы:
 | Файл | Назначение |
 |------|------------|
 | `deploy/config/application.yml` | Настройки приложения, общие для всех окружений |
-| `deploy/config/application-dev.yml`, `deploy/config/application-e2e.yml` | Параметры приложения в dev и e2e |
+| `deploy/config/application-dev.yml` | Параметры приложения в dev и e2e |
+| `deploy/config/application-e2e.yml` | Отличия параметров e2e от dev |
 | `deploy/config/application-prod.example.yml` | Шаблон параметров приложения в production |
 | `deploy/config/logging/loggers.xml` | Уровни логгеров приложения во всех окружениях, см. [Логирование](#логирование) |
 
@@ -154,50 +155,45 @@ Git Bash на Windows при запуске `docker` преобразует зн
 
 ## Конфигурация приложения
 
-`deploy/compose.yml` задаёт приложению переменную `SPRING_CONFIG_IMPORT`. Spring Boot импортирует два файла,
-смонтированных в контейнер только для чтения:
+Где задаётся каждый параметр приложения в dev, e2e и production, его умолчание и переменная окружения —
+в таблице раздела «Параметры приложения» в [deployment.md](../docs/project/deployment.md#параметры-приложения).
+Этот раздел описывает, как Compose-файлы передают параметры контейнеру.
+
+`deploy/compose.yml` задаёт приложению переменную `SPRING_CONFIG_IMPORT`, других переменных в нём нет. Spring Boot
+импортирует файлы, смонтированные в контейнер только для чтения:
 
 | Файл в контейнере | Источник | Содержимое |
 |-------------------|----------|------------|
-| `/etc/testsys/application.yml` | `deploy/config/application.yml`, монтирует `deploy/compose.yml` | Шесть путей `testsys.file-storage.paths.<вид>`; формат вывода в консоль, файл лога и его ротация `logging.*` |
-| `/etc/testsys/application-environment.yml` | Файл окружения, монтирует override | Параметры операций `testsys.operation.*`; в production также настройки почты |
+| `/etc/testsys/application.yml` | `deploy/config/application.yml`, монтирует `deploy/compose.yml` | Значения, общие для всех окружений: подключение к базе без пароля, адрес и порт служебного сервера, порт сервера метрик, шесть путей `testsys.file-storage.paths.<вид>`, формат вывода в консоль, файл лога и его ротация |
+| `/etc/testsys/application-environment.yml` | Файл окружения, монтирует override: `deploy/config/application-dev.yml` в dev и e2e, файл из `TESTSYS_APP_CONFIG` в production | Параметры операций `testsys.operation.*` и почты; в production также `server.forward-headers-strategy` |
+| `/etc/testsys/application-e2e.yml` | `deploy/config/application-e2e.yml`, только в e2e | Отличия e2e от dev |
 
-Пути файлов указывают на подкаталоги `/var/lib/testsys/files/<вид>` тома `files`. Виды и смысл путей описаны
-в разделе «Хранение файлов» в [database/README.md](../testsys-infra/database/README.md#хранение-файлов),
-параметры операций — в разделе «Запуск и проверка» в
-[app/README.md](../testsys-web/app/README.md#запуск-и-проверка), настройки почты — в разделе «Настройки»
-в [mail/README.md](../testsys-infra/mail/README.md#настройки). Ключи двух файлов не пересекаются.
+`deploy/compose.e2e.yml` заменяет `SPRING_CONFIG_IMPORT` и добавляет третий файл последним, поэтому его значения
+важнее значений dev. Ключи файлов не пересекаются. Пути файлов указывают на подкаталоги
+`/var/lib/testsys/files/<вид>` тома `files`.
 
-Импорт не помечен `optional:`, поэтому без любого из файлов приложение не запустится. Переменные окружения
-перекрывают значения из импортированных файлов, а импортированные файлы перекрывают значения по умолчанию модулей.
+Импорт не помечен `optional:`, поэтому без любого из файлов приложение не запустится. Импортированные файлы
+перекрывают `application.yml` внутри jar, а тот — значения по умолчанию модулей.
 
-Переменными окружения Compose передаёт секреты, адреса, которые зависят от состава сервисов, адреса и порты
-HTTP-серверов внутри контейнера, флаг импорта Проверяющих узлов и режим заголовков HTTPS-прокси:
+Секреты, адрес Grafana и адреса Проверяющих узлов Compose передаёт переменными окружения. Override каждого окружения задаёт
+сервису `app` один и тот же блок `environment:`: `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD`,
+`TESTSYS_SUPERVISOR_ACCESS_TOKEN`, `TESTSYS_SERVICE_SECRET`, `TESTSYS_ACCESS_TOKEN_SECRET`, `TESTSYS_GRAFANA_URL`,
+`TESTSYS_GRADING_NODES` и `TESTSYS_GRADING_IMPORT_NODES`. Значения берутся из файла переменных окружения
+под тем же именем, см. [Файлы переменных](#файлы-переменных). Как переменная доходит до ключа и почему её ключ
+не задают в файлах окружения — в разделе «Параметры приложения»
+в [deployment.md](../docs/project/deployment.md#параметры-приложения). Значение `TESTSYS_DB_PASSWORD` получают
+также `POSTGRES_PASSWORD` сервиса `postgres` и `PGPASSWORD` сервиса `db-seed`.
 
-| Переменная приложения | Где задана | Свойство |
-|-----------------------|------------|----------|
-| `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` | `deploy/compose.yml`: база `testsys` сервиса `postgres`, пользователь `testsys` | `spring.datasource.url`, `username` |
-| `SPRING_DATASOURCE_PASSWORD` | Override окружения | `spring.datasource.password` |
-| `TESTSYS_SERVICE_ADDRESS`, `TESTSYS_SERVICE_PORT` | `deploy/compose.yml`: `0.0.0.0`, `8081` | `testsys.service.address`, `port` |
-| `TESTSYS_METRICS_PORT` | `deploy/compose.yml`: `8082`; этот порт — цель Prometheus, см. [Сбор метрик](#сбор-метрик) | `testsys.metrics.port` |
-| `TESTSYS_SERVICE_SECRET` | `deploy/compose.dev.yml`, `deploy/compose.e2e.yml`: фиксированное значение; `deploy/compose.prod.yml` из переменной Compose `TESTSYS_SERVICE_SECRET` | `testsys.service.secret` |
-| `TESTSYS_SERVICE_GRAFANAURL` | Override окружения из переменной Compose `TESTSYS_GRAFANA_URL`, см. [Grafana](#grafana) | `testsys.service.grafana-url` |
-| `TESTSYS_MAIL_HOST`, `TESTSYS_MAIL_PORT` | `deploy/compose.dev.yml`, `deploy/compose.e2e.yml`: `mailpit`, `1025` | `testsys.mail.host`, `port` |
-| `TESTSYS_MAIL_PASSWORD` | `deploy/compose.prod.yml` | `testsys.mail.password` |
-| `TESTSYS_OPERATION_SUPERVISOR_ACCESS_TOKEN` | `deploy/compose.prod.yml` из переменной Compose `TESTSYS_SUPERVISOR_ACCESS_TOKEN` | `testsys.operation.supervisor.access-token` |
-| `TESTSYS_GRADING_NODES` | Override окружения из переменной Compose `TESTSYS_GRADING_NODES`; в production она необязательна | `testsys.grading.nodes`, формат — в разделе «Настройки» в [grpc/README.md](../testsys-infra/grpc/README.md#настройки) |
-| `TESTSYS_GRADING_IMPORT_NODES` | `deploy/compose.dev.yml`, `deploy/compose.e2e.yml`: `true`; `deploy/compose.prod.yml` из переменной Compose `TESTSYS_GRADING_IMPORT_NODES`, по умолчанию `false` | `testsys.grading.import-nodes`, действие — в разделе «Реестр узлов» в [grpc/README.md](../testsys-infra/grpc/README.md#реестр-узлов) |
-| `SERVER_FORWARDHEADERSSTRATEGY` | `deploy/compose.prod.yml` | `server.forward-headers-strategy`; действует только на основной интерфейс, служебный контекст и сервер метрик задают `none` |
+`:?` останавливает Compose без обязательной переменной. `TESTSYS_MAIL_PASSWORD` проверяется через `?`: пустой
+пароль допустим для SMTP-сервера без авторизации, а при `testsys.mail.smtp-auth=true` его отклоняет приложение.
+`TESTSYS_GRADING_NODES` и `TESTSYS_GRADING_IMPORT_NODES` необязательны и по умолчанию равны пустой строке
+и `false`.
 
-Свойства, которых нет ни в файлах, ни в переменных, сохраняют значения по умолчанию из документов модулей.
-
-Адрес и порт служебного сервера и порт сервера метрик уже заданы в `application.yml` внутри jar.
-`deploy/compose.yml` задаёт порты переменными окружения, которые перекрывают значения из файлов конфигурации.
-Поэтому опубликованные порты и healthcheck не зависят от значений по умолчанию jar.
-
-Служебный сервер по умолчанию слушает `127.0.0.1`. В контейнере это собственный loopback контейнера, и соединения
-с опубликованного порта до сервера не доходят, поэтому `deploy/compose.yml` задаёт адрес `0.0.0.0`. Сервер метрик
-по умолчанию слушает `0.0.0.0`, его адрес Compose не задаёт.
+Адрес и порт служебного сервера и порт сервера метрик заданы в `deploy/config/application.yml`. На эти порты
+опираются опубликованные порты, healthcheck и цель Prometheus, поэтому они не зависят от значений по умолчанию
+модуля. Служебный сервер по умолчанию слушает `127.0.0.1`. В контейнере это собственный loopback контейнера,
+и соединения с опубликованного порта до сервера не доходят, поэтому файл задаёт адрес `0.0.0.0`. Сервер метрик
+по умолчанию слушает `0.0.0.0`, его адрес файл не задаёт.
 
 ### Публикация портов
 
@@ -277,8 +273,8 @@ Override окружения монтирует в `/var/log/testsys` катал�
 `deploy/db-seed/entrypoint.sh` при каждом `up`. Он зависит от `app` с условием `service_healthy`, поэтому стартует
 после миграций Liquibase, создания Публичного Сообщества и проверки Супервайзера в общем контексте инфраструктуры,
 см. [Готовность приложения](#готовность-приложения). `psql` подключается к базе
-`testsys` от пользователя `testsys`. Каталог данных образа postgres смонтирован в `tmpfs`, чтобы `db-seed`
-не оставлял анонимный том.
+`testsys` от пользователя `testsys` с паролем из `TESTSYS_DB_PASSWORD`. Каталог данных образа postgres смонтирован
+в `tmpfs`, чтобы `db-seed` не оставлял анонимный том.
 
 Скрипт из `TESTSYS_DB_SEED_SCRIPT` монтируется как `/opt/testsys/db-seed.sql`. `db-seed` действует так:
 
@@ -302,10 +298,10 @@ Override окружения монтирует в `/var/log/testsys` катал�
 ### Сбор метрик
 
 Prometheus раз в 30 секунд запрашивает `GET /actuator/prometheus` у сервиса `app` своего проекта по адресу
-`app:8082` внутри сети проекта. Порт `8082` — значение `TESTSYS_METRICS_PORT` из `deploy/compose.yml`; порт хоста
-`TESTSYS_METRICS_HTTP_PORT` на сбор не влияет. Prometheus не подставляет переменные в `deploy/config/prometheus.yml`,
-поэтому при смене `TESTSYS_METRICS_PORT` цель меняется в этом файле. Сервер метрик отдаёт метрики без сессии
-и служебного входа, поэтому Prometheus не нужны учётные данные TestSys.
+`app:8082` внутри сети проекта. Порт `8082` — значение `testsys.metrics.port` из `deploy/config/application.yml`;
+порт хоста `TESTSYS_METRICS_HTTP_PORT` на сбор не влияет. Prometheus не подставляет переменные
+в `deploy/config/prometheus.yml`, поэтому при смене порта цель меняется и в этом файле. Сервер метрик отдаёт
+метрики без сессии и служебного входа, поэтому Prometheus не нужны учётные данные TestSys.
 
 Prometheus хранит метрики 14 дней в томе `prometheus-data`. У Prometheus нет зависимости от `app`: пока приложение
 не готово, цель `testsys` остаётся в состоянии `DOWN`.
@@ -368,7 +364,7 @@ Prometheus — источник по умолчанию. Пользовател�
 | `GF_SECURITY_ADMIN_PASSWORD` | `deploy/compose.prod.yml` из переменной Compose `TESTSYS_GRAFANA_ADMIN_PASSWORD` | Пароль `admin`; Grafana применяет его, только когда создаёт свою базу в пустом томе |
 
 Без `GF_SECURITY_ADMIN_PASSWORD` в dev администратор получает стандартный пароль Grafana. Тот же
-`TESTSYS_GRAFANA_URL` override передаёт приложению в `TESTSYS_SERVICE_GRAFANAURL`, поэтому кнопка «Grafana»
+`TESTSYS_GRAFANA_URL` override передаёт приложению под тем же именем, поэтому кнопка «Grafana»
 служебного кабинета открывает Grafana своего проекта. Compose не сверяет порт в этом адресе с опубликованным портом
 Grafana; их согласует тот, кто задаёт переменные. Префикс в файлах переменных по умолчанию — `/grafana/`; другой
 путь в адресе Grafana принимает без изменений Compose-файлов. В e2e Grafana нет, а `TESTSYS_GRAFANA_URL` нужен только
@@ -448,7 +444,7 @@ JSON-файл в репозитории, Grafana перечитывает его
 Первое событие четырёх собственных счётчиков, HTTP-ответы 4xx и 5xx и перезапуски проверяет
 `PrometheusIngestionTests` в `testsys-web:app`. Тест берёт образ и команду Prometheus из
 `deploy/compose.monitoring.yml`, конфигурацию из `deploy/config/prometheus.yml`, в которой заменяет цель `app:8082`
-сервером метрик теста, и выражения дашбордов из `deploy/config/grafana/dashboards/`. Он запускает отдельные
+сервером метрик теста, а интервал опроса — двумя секундами, и выражения дашбордов из `deploy/config/grafana/dashboards/`. Он запускает отдельные
 контейнеры и не затрагивает проекты и тома окружений:
 
 ```bash

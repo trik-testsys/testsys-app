@@ -36,12 +36,7 @@ internal enum class LabelAction(val method: String) {
 internal fun BlockRowScope.placeField(label: String, labelSize: Int, size: Int, value: Component, labelAction: LabelAction?): FieldParts {
     require(labelSize >= 1 && size >= 1) { "Field '$label' needs label and value sizes of at least 1, got $labelSize and $size" }
 
-    val requiredMark = Span("*").apply {
-        addClassName(CssClass.FieldRequired)
-        element.setAriaHidden(true)
-        isVisible = false
-    }
-
+    val requiredMark = requiredMark()
     val caption: HtmlContainer = if (labelAction == null) Div() else NativeLabel()
     caption.addClassName(CssClass.FieldLabel)
     caption.style.setGridColumnSpan(labelSize)
@@ -55,6 +50,38 @@ internal fun BlockRowScope.placeField(label: String, labelSize: Int, size: Int, 
     val field = Div(caption, valueCell).apply { addClassNames(CssClass.Field, CssClass.FieldGrid) }
     place(labelSize + size, field)
     return FieldParts(field = field, requiredMark = requiredMark, valueCell = valueCell)
+}
+
+/**
+ * Adds a field of [label] above [value] to [scope]: the label row holds a `<label>` that focuses the control and, on the
+ * right, the content built by [aside], e.g. a link action.
+ */
+internal fun placeStackedField(scope: ContentScope, label: String, value: Component, aside: (ContentScope.() -> Unit)?): FieldParts {
+    val requiredMark = requiredMark()
+    val caption = NativeLabel().apply {
+        addClassName(CssClass.FieldLabel)
+        add(Span(label).apply { addClassName(CssClass.FieldText) }, requiredMark)
+    }
+    runOnLabelClick(caption = caption, control = value, action = LabelAction.Focus)
+
+    val labelRow = Div(caption).apply { addClassName(CssClass.FieldLabelRow) }
+    aside?.let { content ->
+        val area = Div().apply { addClassName(CssClass.FieldAside) }
+        labelRow.add(area)
+        ContentScope(area, scope.texts, Placement.Head).content()
+    }
+
+    val valueCell = fieldValueArea(label, value)
+    val field = Div(labelRow, valueCell).apply { addClassNames(CssClass.Field, CssClass.FieldStacked) }
+    scope.add(field)
+    return FieldParts(field = field, requiredMark = requiredMark, valueCell = valueCell)
+}
+
+/** The hidden required mark of a field label that the field handle shows with the required indicator. */
+private fun requiredMark(): Span = Span("*").apply {
+    addClassName(CssClass.FieldRequired)
+    element.setAriaHidden(true)
+    isVisible = false
 }
 
 /** Wraps [value] in an independently focusable field value area named by [label]. */

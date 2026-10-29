@@ -23,7 +23,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
     fun seedReferencedRows() {
         val prerequisites = rows.filterKeys { it != "ts_multiple_role_to_user" }
         jdbc.batchUpdate(*prerequisites.map { (table, values) -> insertSql(table, values) }.toTypedArray())
-        insertExtra("ts_user", mapOf("id" to "2", "email" to "'other@test'", "access_token" to "'other'"))
+        insertExtra("ts_user", mapOf("id" to "2", "email" to "'other@test'"))
         insertExtra("ts_community_invite", mapOf("id" to "2", "code" to "'developer'", "role" to "'DEVELOPER'"))
         jdbc.execute(
             "INSERT INTO ts_community (id, name, description, owner_id, manager_invite_id, developer_invite_id) " +
@@ -110,7 +110,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                 val identity = when (table) {
                     "ts_file_data", "ts_task_validation_request" -> mapOf("id" to "3")
                     "ts_solution", "ts_exercise", "ts_test" -> mapOf("id" to "2", "file_data_id" to "2")
-                    "ts_user" -> mapOf("id" to "3", "email" to "'new@test'", "access_token" to "'new'")
+                    "ts_user" -> mapOf("id" to "3", "email" to "'new@test'")
                     "ts_single_role_to_user", "ts_multiple_role_to_user" -> mapOf("user_id" to "2")
                     "ts_submission_to_task_validation_request" -> mapOf("request_id" to "2")
                     "ts_registration_request" -> mapOf("id" to "2", "email" to "'new@test'")
@@ -118,6 +118,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                     "ts_access_restoration_request" -> mapOf("id" to "2", "user_id" to "2")
                     "ts_class_invite", "ts_community_invite" -> mapOf("id" to "3", "code" to "'new-code'")
                     "ts_diagnostic_report" -> mapOf("id" to "2", "position" to "1")
+                    "ts_cabinet_sign_in" -> mapOf("id" to "2", "token_hash" to "'other-token'")
                     else -> mapOf("id" to "2")
                 }
                 jdbc.update(insertSql(table, original + identity + values))
@@ -144,8 +145,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             "ts_user" to mapOf(
                 "id" to "1",
                 "name" to "'user'",
-                "access_token" to "'token'",
-                "access_token_hash_algorithm" to "'IDENTITY'",
+                "password_hash" to "'hash'",
                 "type" to "'MULTIPLE_ROLE'",
                 "email" to "'user@test'",
             ),
@@ -299,6 +299,26 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                 "score" to "0",
                 "reason" to "''",
             ),
+            "ts_cabinet_sign_in" to mapOf(
+                "id" to "1",
+                "token_hash" to "'token'",
+                "user_id" to "1",
+                "user_kind" to "'MULTIPLE_ROLE'",
+                "impersonated_by" to "NULL",
+                "last_seen_at" to TIME,
+            ),
+        )
+        private val multipleRoleCredentials = mapOf(
+            "password_hash" to "'hash'",
+            "access_token" to "NULL",
+            "access_token_hash_algorithm" to "NULL",
+        )
+        private val singleRoleCredentials = mapOf(
+            "type" to "'SINGLE_ROLE'",
+            "email" to "NULL",
+            "password_hash" to "NULL",
+            "access_token" to "'new'",
+            "access_token_hash_algorithm" to "'HMAC_SHA256'",
         )
 
         private fun insertSql(table: String, values: Map<String, String>): String {
@@ -490,7 +510,11 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
         }
 
         private fun scalarConstraints(): List<RowCase> = buildList {
-            addAll(enumCases("ts_user", "access_token_hash_algorithm", listOf("IDENTITY")))
+            addAll(
+                (enumCases("ts_user", "access_token_hash_algorithm", listOf("HMAC_SHA256")) + identityAccessTokenCase()).map { case ->
+                    case.copy(values = singleRoleCredentials + case.values)
+                },
+            )
             addAll(enumCases("ts_single_role_to_user", "single_role", listOf("PARTICIPANT", "OBSERVER", "SUPERVISOR")))
             addAll(
                 enumCases("ts_multiple_role_to_user", "multiple_role", listOf("DEVELOPER", "STUDENT", "ADMINISTRATOR", "JUDGE", "MANAGER")),
@@ -501,6 +525,8 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             addAll(enumCases("ts_community_invite", "code_hash_algorithm", listOf("IDENTITY")))
             addAll(enumCases("ts_community_invite", "role", listOf("MANAGER", "DEVELOPER")))
             addAll(enumCases("ts_diagnostic_report", "severity", listOf("INFO", "WARNING", "ERROR")))
+            addAll(enumCases("ts_cabinet_sign_in", "user_kind", listOf("MULTIPLE_ROLE", "PARTICIPANT", "OBSERVER", "SUPERVISOR")))
+            addAll(cabinetSignInUsers())
             addAll(
                 enumCases(
                     table = "ts_diagnostic_report",
@@ -537,14 +563,85 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                     add(
                         RowCase(
                             table = "ts_user",
-                            values = mapOf("type" to "'$type'", "email" to email),
+                            values = credentialsOf(type) + mapOf("type" to "'$type'", "email" to email),
                             isAccepted = (type to email) in listOf("MULTIPLE_ROLE" to "'new@test'", "SINGLE_ROLE" to "NULL"),
                             constraint = "ck_ts_user_type_email",
                         ),
                     )
                 }
             }
+            addAll(userCredentials())
         }
+
+        private fun credentialsOf(type: String): Map<String, String> = when (type) {
+            "SINGLE_ROLE" -> singleRoleCredentials - "type" - "email"
+            else -> multipleRoleCredentials
+        }
+
+        private fun userCredentials(): List<RowCase> = buildList {
+            for ((type, email) in listOf("MULTIPLE_ROLE" to "'new@test'", "SINGLE_ROLE" to "NULL")) {
+                for (password in listOf("NULL", "'hash'")) {
+                    for (token in listOf("NULL", "'new'")) {
+                        for (algorithm in listOf("NULL", "'HMAC_SHA256'")) {
+                            val credentials = listOf(password, token, algorithm)
+                            add(
+                                RowCase(
+                                    table = "ts_user",
+                                    values = mapOf(
+                                        "type" to "'$type'",
+                                        "email" to email,
+                                        "password_hash" to password,
+                                        "access_token" to token,
+                                        "access_token_hash_algorithm" to algorithm,
+                                    ),
+                                    isAccepted = (type to credentials) in listOf(
+                                        "MULTIPLE_ROLE" to listOf("'hash'", "NULL", "NULL"),
+                                        "SINGLE_ROLE" to listOf("NULL", "'new'", "'HMAC_SHA256'"),
+                                    ),
+                                    constraint = "ck_ts_user_type_credentials",
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        /** Only a service sign-in has no user, and only a sign-in of a user can be impersonated. */
+        private fun cabinetSignInUsers(): List<RowCase> = buildList {
+            for (user in listOf("NULL", "1")) {
+                for (kind in listOf("'SERVICE'", "'MULTIPLE_ROLE'")) {
+                    add(
+                        RowCase(
+                            table = "ts_cabinet_sign_in",
+                            values = mapOf("user_id" to user, "user_kind" to kind),
+                            isAccepted = (user to kind) in listOf("NULL" to "'SERVICE'", "1" to "'MULTIPLE_ROLE'"),
+                            constraint = "ck_ts_cabinet_sign_in_service_user",
+                        ),
+                    )
+                }
+            }
+            for (impersonatedBy in listOf("NULL", "2")) {
+                for ((user, kind) in listOf("1" to "'MULTIPLE_ROLE'", "NULL" to "'SERVICE'")) {
+                    add(
+                        RowCase(
+                            table = "ts_cabinet_sign_in",
+                            values = mapOf("impersonated_by" to impersonatedBy, "user_id" to user, "user_kind" to kind),
+                            isAccepted = impersonatedBy == "NULL" || user != "NULL",
+                            constraint = "ck_ts_cabinet_sign_in_impersonated_user",
+                        ),
+                    )
+                }
+            }
+        }
+
+        /** Access codes are stored only as HMAC-SHA-256, although invite codes still use IDENTITY. */
+        private fun identityAccessTokenCase() = RowCase(
+            table = "ts_user",
+            values = mapOf("access_token_hash_algorithm" to "'IDENTITY'"),
+            isAccepted = false,
+            constraint = "ck_ts_user_access_token_hash_algorithm",
+        )
 
         private fun enumCases(table: String, column: String, values: List<String>): List<RowCase> = (values + "UNKNOWN").map { value ->
             RowCase(table = table, values = mapOf(column to "'$value'"), isAccepted = value in values, constraint = "ck_${table}_$column")

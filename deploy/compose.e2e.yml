@@ -7,21 +7,30 @@ name: testsys-e2e
 
 services:
   app:
+    # The same block in every environment override: the variables of the application under their own names, with
+    # the values from the variable files of the environment. Only SPRING_CONFIG_IMPORT of deploy/compose.yml is
+    # replaced: e2e also imports its differences from dev, last, so they take precedence.
     environment:
-      SPRING_DATASOURCE_PASSWORD: testsys
-      # Fixed and not secret, like the database password: the sign-in code of the service interface in dev and e2e.
-      TESTSYS_SERVICE_SECRET: local-service-secret-for-dev-and-e2e-environments-only-not-secret
-      TESTSYS_SERVICE_GRAFANAURL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL to the Grafana address}
-      TESTSYS_MAIL_HOST: mailpit
-      TESTSYS_MAIL_PORT: "1025"
-      # grading-node:8080 with deploy/compose.grading-node.yml, addresses of other nodes, or empty for no nodes.
-      TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES?set TESTSYS_GRADING_NODES to grading node addresses or to an empty value}
-      # The grading node registry is stored in the database; every start adds these addresses to it as enabled.
-      TESTSYS_GRADING_IMPORT_NODES: "true"
+      SPRING_CONFIG_IMPORT: file:/etc/testsys/application.yml,file:/etc/testsys/application-environment.yml,file:/etc/testsys/application-e2e.yml
+      TESTSYS_DB_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+      TESTSYS_MAIL_PASSWORD: ${TESTSYS_MAIL_PASSWORD?set TESTSYS_MAIL_PASSWORD to the SMTP password or to an empty value}
+      TESTSYS_SUPERVISOR_ACCESS_TOKEN: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN:?set TESTSYS_SUPERVISOR_ACCESS_TOKEN}
+      TESTSYS_SERVICE_SECRET: ${TESTSYS_SERVICE_SECRET:?set TESTSYS_SERVICE_SECRET}
+      TESTSYS_ACCESS_TOKEN_SECRET: ${TESTSYS_ACCESS_TOKEN_SECRET:?set TESTSYS_ACCESS_TOKEN_SECRET}
+      TESTSYS_GRAFANA_URL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL}
+      TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES:-}
+      TESTSYS_GRADING_IMPORT_NODES: ${TESTSYS_GRADING_IMPORT_NODES:-false}
     volumes:
+      # The parameters of dev, shared by e2e.
+      - type: bind
+        source: ./config/application-dev.yml
+        target: /etc/testsys/application-environment.yml
+        read_only: true
+        bind:
+          create_host_path: false
       - type: bind
         source: ./config/application-e2e.yml
-        target: /etc/testsys/application-environment.yml
+        target: /etc/testsys/application-e2e.yml
         read_only: true
         bind:
           create_host_path: false
@@ -34,7 +43,7 @@ services:
 
   postgres:
     environment:
-      POSTGRES_PASSWORD: testsys
+      POSTGRES_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
     ports:
       - "127.0.0.1:${TESTSYS_DB_PORT:-5434}:5432"
 

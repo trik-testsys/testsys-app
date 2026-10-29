@@ -100,12 +100,12 @@ abstract class StudyTaskView(
             row {
                 block(size = TASK_DETAILS_COLUMNS, title = texts.detailsTitle()) {
                     guide(texts.taskDetailsGuide())
-                    row { codeInput(texts.id(), labelSize = 6, size = 10) { value = task.task.id.value.toString() } }
-                    row { textInput(texts.name(), labelSize = 6, size = 18) { value = task.task.name } }
-                    row { textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) { value = task.task.description } }
-                    row { field(texts.taskFiles(), labelSize = 6, size = 18) { resourceDownloads(access, contestId, task) } }
+                    row { codeInput(texts.id(), labelSize = 4, size = 6) { value = task.task.id.value.toString() } }
+                    row { textInput(texts.name(), labelSize = 4, size = 20) { value = task.task.name } }
+                    row { textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) { value = task.task.description } }
+                    row { field(texts.taskFiles(), labelSize = 4, size = 20) { resourceDownloads(access, contestId, task) } }
                     row {
-                        field(texts.taskBest(), labelSize = 6, size = 18) {
+                        field(texts.taskBest(), labelSize = 4, size = 20) {
                             task.best?.score?.let { score -> verdict(score.toDouble()) } ?: text(texts.taskBestNone())
                         }
                     }
@@ -124,7 +124,8 @@ abstract class StudyTaskView(
         if (task.statement == null && task.exercises.isEmpty()) text(texts.taskFilesEmpty())
         task.statement?.let { statement -> resourceDownload(texts.taskDownloadStatement(), access, contestId, task.task.id, statement.id) }
         task.exercises.forEach { exercise ->
-            resourceDownload(texts.taskDownloadExercise(name = exercise.name), access, contestId, task.task.id, exercise.id)
+            val label = texts.taskDownloadExercise(language = languageLabel(exercise.language))
+            resourceDownload(label, access, contestId, task.task.id, exercise.id)
         }
     }
 
@@ -167,8 +168,8 @@ abstract class StudyTaskView(
                 row {
                     language = select(
                         texts.taskSendLanguage(),
-                        labelSize = 4,
-                        size = 8,
+                        labelSize = 2,
+                        size = 10,
                         items = task.languages,
                         itemLabel = ::languageLabel,
                     ) {
@@ -177,8 +178,8 @@ abstract class StudyTaskView(
                     }
                     drop = fileDrop(
                         texts.taskSendFile(),
-                        labelSize = 4,
-                        size = 8,
+                        labelSize = 2,
+                        size = 10,
                         limits = UploadLimits(
                             maxFiles = 1,
                             maxFileBytes = MAX_SOLUTION_BYTES,
@@ -229,7 +230,7 @@ abstract class StudyTaskView(
                 guide(texts.taskSubmissionsGuide())
                 table(
                     key = { submission: StudySubmissionVo -> submission.submission.id },
-                    fetch = { request -> pageOf(task.submissions, request) },
+                    fetch = { request -> pageOf(task.submissions.asReversed(), request) },
                 ) {
                     dateTimeColumn(texts.taskSubmissionsSent(), size = 5) { submission -> submission.submission.createdAt.toUserDateTime() }
                     textColumn(texts.taskSubmissionsFile(), size = 9) { submission -> submission.filename }

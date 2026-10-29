@@ -1,10 +1,12 @@
 package tech.testsys.web.app.config
 
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.core.env.Environment
 import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.builder.api.communityData
 import tech.testsys.domain.builder.api.communityInviteData
 import tech.testsys.domain.builder.api.multipleRoleUserData
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
@@ -40,6 +42,7 @@ class PublicCommunityBootstrap(
     private val inviteConfig: CommunityInviteConfig,
     private val clock: Clock,
     private val random: RandomGenerator,
+    private val passwordHasher: PasswordHasher,
     private val ownerEmail: String = PublicCommunityOwner.EMAIL,
 ) {
     /**
@@ -48,11 +51,10 @@ class PublicCommunityBootstrap(
      * @since %CURRENT_VERSION%
      */
     fun ensure(environment: Environment): CommunityId {
-        val rawId = environment.getRequiredProperty("testsys.operation.community.public-community-id", Long::class.java)
-        require(rawId > 0) { "Public community id must be positive" }
-        val id = CommunityId(rawId)
-        val name = environment.getProperty("testsys.operation.community.public-community-name")
-        return transactions.execute { ensureInTransaction(id, name) }
+        val properties = Binder.get(environment).bindOrCreate("testsys.operation.community", PublicCommunityProperties::class.java)
+        require(properties.publicCommunityId > 0) { "Public community id must be positive" }
+        val id = CommunityId(properties.publicCommunityId)
+        return transactions.execute { ensureInTransaction(id, properties.publicCommunityName) }
     }
 
     private fun ensureInTransaction(id: CommunityId, name: String?): CommunityId {
@@ -82,7 +84,8 @@ class PublicCommunityBootstrap(
         }
         val newOwner = users.save(
             multipleRoleUserData {
-                accessToken(random.nextAccessToken(), HashAlgorithm.Identity)
+                // Nobody learns this random password, so the technical owner cannot sign in.
+                passwordHash = passwordHasher.hash(random.nextAccessToken())
                 this.name = name
                 email = ownerEmail
                 roles { administrator {} }
@@ -107,3 +110,6 @@ class PublicCommunityBootstrap(
         return id
     }
 }
+
+/** Public Community parameters bound from `testsys.operation.community`; the name is needed only to create it. */
+private class PublicCommunityProperties(val publicCommunityId: Long, val publicCommunityName: String?)

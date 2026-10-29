@@ -76,10 +76,10 @@ import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
@@ -95,6 +95,7 @@ import tech.testsys.operation.error.SubmissionNotSuccessfullyGradedError
 import tech.testsys.operation.error.TestNotInVerdictError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
+import tech.testsys.operation.util.testAccessTokenHasher
 import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testJudge
@@ -510,7 +511,7 @@ class JudgeOperationsTests {
                     createdAt = Instant.MIN
                     data = participantData {
                         name = "Participant"
-                        accessToken("token", algorithm = HashAlgorithm.Identity)
+                        accessToken("token", testAccessTokenHasher)
                         competition(1)
                     }
                 }
@@ -1235,7 +1236,7 @@ class JudgeOperationsTests {
         data = multipleRoleUserData {
             name = "Judge $judgeId"
             email = "judge-$judgeId"
-            accessToken("judge-$judgeId", algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash("judge-$judgeId")
             roles { judge { data = judgeData {} } }
         }
     }

@@ -174,7 +174,7 @@ class StudyTaskViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should show the file name and the result of each solution and mark the best one`() {
+    fun `should show the file name and the result of each solution from the newest and mark the best one`() {
         val (student, studyClass, contest, task) = entered()
         study.submission(student.id, task, contest, filename = "first.py", score = 30)
         study.submission(student.id, task, contest, filename = "second.py", score = 70)
@@ -184,8 +184,21 @@ class StudyTaskViewTests : MockSpringVaadinTests() {
         open(studyClass, contest, task)
 
         val rows = StudyPages.rowTexts("Результат")
-        assertEquals(listOf("first.py30", "second.py70Лучшее", "third.pyВ очереди"), rows.map { row -> row.substringAfter(":").drop(2) })
+        assertEquals(listOf("third.pyВ очереди", "second.py70Лучшее", "first.py30"), rows.map { row -> row.substringAfter(":").drop(2) })
         assertTrue(Regex("Лучший результат\\W*70").containsMatchIn(StudyPages.pageText()), StudyPages.pageText())
+    }
+
+    @Test
+    fun `should name the language and not the name of each exercise to download`() {
+        val (student, studyClass, contest, task) = entered()
+        signIn(student)
+
+        open(studyClass, contest, task)
+
+        val shown = StudyPages.pageText()
+        assertTrue("Скачать Условие" in shown, shown)
+        assertTrue("Скачать Упражнение · Python" in shown, shown)
+        assertFalse("Разминка" in shown, shown)
     }
 
     @Test

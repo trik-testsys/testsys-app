@@ -22,6 +22,7 @@ import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
+import tech.testsys.operation.user.IssuedObserver
 import java.time.Instant
 
 /**
@@ -29,19 +30,17 @@ import java.time.Instant
  *
  * @property id the identifier of the user.
  * @property createdAt the moment the user was created.
- * @property accessTokenHash the stored access code with its hashing algorithm.
  * @property name the nickname of the user.
  * @since %CURRENT_VERSION%
  */
 sealed interface AdminUserVo {
     val id: UserId
     val createdAt: Instant
-    val accessTokenHash: AccessTokenHash
     val name: String
 }
 
 /**
- * Data of a user with non-fixed roles.
+ * Data of a user with non-fixed roles, without the password hash.
  *
  * @property email the e-mail address of the user.
  * @property roles the roles of the user, including memberships in communities of other administrators.
@@ -50,7 +49,6 @@ sealed interface AdminUserVo {
 data class MultipleRoleUserVo(
     override val id: MultipleRoleUserId,
     override val createdAt: Instant,
-    override val accessTokenHash: AccessTokenHash,
     override val name: String,
     val email: String,
     val roles: List<RoleVo>,
@@ -59,6 +57,7 @@ data class MultipleRoleUserVo(
 /**
  * Data of an observer for an administrator.
  *
+ * @property accessTokenHash the stored access code with its hashing algorithm.
  * @property community the identifier of the community of the observer.
  * @property contests the identifiers of the contests assigned to the observer.
  * @since %CURRENT_VERSION%
@@ -66,21 +65,34 @@ data class MultipleRoleUserVo(
 data class ObserverVo(
     override val id: SingleRoleUserId,
     override val createdAt: Instant,
-    override val accessTokenHash: AccessTokenHash,
+    val accessTokenHash: AccessTokenHash,
     override val name: String,
     val community: CommunityId,
     val contests: List<ContestId>,
 ) : AdminUserVo
 
 /**
+ * Observer just created in a community with its original access code, which cannot be read back later.
+ *
+ * @property observer the created observer.
+ * @property accessToken the original access code issued to [observer].
+ * @since %CURRENT_VERSION%
+ */
+data class IssuedObserverVo(
+    val observer: ObserverVo,
+    val accessToken: String,
+)
+
+/**
  * Data of a participant visible to a supervisor.
  *
+ * @property accessTokenHash the stored access code with its hashing algorithm.
  * @since %CURRENT_VERSION%
  */
 data class ParticipantVo(
     override val id: SingleRoleUserId,
     override val createdAt: Instant,
-    override val accessTokenHash: AccessTokenHash,
+    val accessTokenHash: AccessTokenHash,
     override val name: String,
     val competition: CompetitionId,
 ) : AdminUserVo
@@ -161,10 +173,11 @@ internal fun Observer.toVo(): ObserverVo = ObserverVo(
     contests = data.contests.ids,
 )
 
+internal fun IssuedObserver.toVo(): IssuedObserverVo = IssuedObserverVo(observer = observer.toVo(), accessToken = accessToken)
+
 internal fun MultipleRoleUser.toVo(): MultipleRoleUserVo = MultipleRoleUserVo(
     id = id,
     createdAt = createdAt,
-    accessTokenHash = data.accessTokenHash,
     name = data.name,
     email = data.email,
     roles = data.roles.map { role -> role.toVo() },

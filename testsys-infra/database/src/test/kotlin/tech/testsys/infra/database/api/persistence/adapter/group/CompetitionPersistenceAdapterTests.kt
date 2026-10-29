@@ -146,7 +146,7 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     @Test
     fun `should increment the competition version when participants are saved to it`() {
         val saved = repository.save(newData())
-        val hash = AccessTokenHash(value = fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+        val hash = AccessTokenHash(value = fixtures.unique("token"), algorithm = HashAlgorithm.HmacSha256)
 
         participants.saveToCompetition(saved.id, listOf(hash)) { participantId -> "named-${participantId.value}" }
 

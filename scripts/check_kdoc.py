@@ -10,7 +10,7 @@ The explicit --generated mode disables only MISSING_SINCE for generated declarat
 Files under src/test and src/codegenTest are excluded, including explicitly selected files.
 Reported codes:
     MISSING_DOC     public class/interface/object/fun/typealias without KDoc
-    MISSING_SINCE   public declaration KDoc without "@since %CURRENT_VERSION%"
+    MISSING_SINCE   public declaration KDoc without "@since %CURRENT_VERSION%" or "@since <released version>"
     PROP_DOC        KDoc block placed directly above a property (must be @property in the class KDoc)
     PROP_UNDOC      public property of a class or object not covered by @property in the class KDoc
     OVERRIDE_DOC    KDoc above an override (overrides inherit the base KDoc)
@@ -40,6 +40,8 @@ DECL_RE = re.compile(rf"^(?P<indent>\s*)(?P<mods>{MODIFIERS})(?P<kind>class|inte
 PROP_RE = re.compile(rf"^(?P<indent>\s*)(?P<mods>{MODIFIERS})(?P<kind>val|var)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)")
 CTOR_PROP_RE = re.compile(rf"^\s*(?P<mods>{MODIFIERS})(?P<kind>val|var)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*:")
 NONPUBLIC = ("private", "internal", "protected")
+# Released declarations carry the version that the release workflow substituted for the placeholder.
+SINCE_RE = re.compile(r"@since (?:%CURRENT_VERSION%|\d+\.\d+\.\d+\S*)")
 TAG_RANK = {"param": 0, "property": 1, "return": 2, "throws": 2, "since": 3}
 
 
@@ -276,7 +278,7 @@ def check_file(path: pathlib.Path, max_line: int, info: bool, generated: bool = 
                 report("MISSING_DOC", i, f"public {kind} without KDoc")
                 continue
             block = "\n".join(lines[doc[0]:doc[1] + 1])
-            if not generated and "@since %CURRENT_VERSION%" not in block:
+            if not generated and not SINCE_RE.search(block):
                 report("MISSING_SINCE", i, "public declaration KDoc without '@since %CURRENT_VERSION%'")
             prose, paragraphs = summary_shape(lines, doc)
             if paragraphs > 1 or prose > 3:

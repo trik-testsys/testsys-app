@@ -18,11 +18,13 @@ import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.AccessTokenHasher
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.User
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserSearch
+import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.infra.grpc.api.GradingNodeImportPreview
 import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
@@ -42,13 +44,15 @@ const val SERVICE_TEST_SECRET: String = "test-service-code-that-is-only-used-by-
 
 const val SERVICE_TEST_GRAFANA_URL: String = "https://grafana.example.test/monitoring/"
 
+private val serviceTestAccessTokenHasher = AccessTokenHasher("0123456789abcdef".repeat(4))
+
 /** Users of every kind that the mocked service user search finds by id. */
 val SERVICE_TEST_USERS: List<User<*>> = listOf(
     multipleRoleUser {
         id = 1001
         createdAt = Instant.parse("2026-03-14T09:30:00Z")
         data = multipleRoleUserData {
-            accessToken("multiple-role-token", algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash("multiple-role-password-hash")
             name = "Мария Иванова"
             email = "maria@example.com"
             roles {
@@ -62,7 +66,7 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
         createdAt = Instant.parse("2026-03-14T09:30:00Z")
         data = participantData {
             competition(2001)
-            accessToken("participant-token", algorithm = HashAlgorithm.Identity)
+            accessToken("participant-token", serviceTestAccessTokenHasher)
             name = "Участник Пётр"
         }
     },
@@ -72,7 +76,7 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
         data = observerData {
             community(3001)
             contests = mutableListOf(ContestId(4001), ContestId(4002))
-            accessToken("observer-token", algorithm = HashAlgorithm.Identity)
+            accessToken("observer-token", serviceTestAccessTokenHasher)
             name = "Наблюдатель Анна"
         }
     },
@@ -80,7 +84,7 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
         id = 1004
         createdAt = Instant.parse("2026-03-14T09:30:00Z")
         data = supervisorData {
-            accessToken("supervisor-token", algorithm = HashAlgorithm.Identity)
+            accessToken("supervisor-token", serviceTestAccessTokenHasher)
             name = "Супервайзер Олег"
         }
     },
@@ -98,10 +102,21 @@ class ServiceTestConfiguration {
     @Bean
     fun runtimeSettings(): RuntimeSettings {
         val values = SettingKey.entries.associateWith { key ->
-            key.defaultValue ?: when (key) {
+            when (key) {
                 SettingKey.MaxParticipants -> "100"
                 SettingKey.ConfirmationCodeLifetime, SettingKey.CommunityInviteTtl, SettingKey.ClassInviteTtl -> "PT5M"
-                else -> "5"
+                SettingKey.MaxConfirmationAttempts -> "5"
+                // The defaults of the owning modules.
+                SettingKey.GradingMaxAttempts -> "3"
+                SettingKey.TotalTimeout -> "PT30M"
+                SettingKey.RpcTimeout -> "PT10M"
+                SettingKey.ShouldRecordVideo -> "true"
+                SettingKey.PollInterval, SettingKey.StatusTimeout -> "PT5S"
+                SettingKey.MaxMessageBytes -> "400000000"
+                SettingKey.MaxTimeLimitMillis -> "600000"
+                SettingKey.ScorePrefix -> "Набрано баллов:"
+                SettingKey.CleanupMinimumAge -> "PT24H"
+                SettingKey.CleanupBatchSize -> "500"
             }
         }
         return RuntimeSettings(SettingsSnapshot(0, SettingsValues(values), 400_000_000), CommunityId(42))
@@ -127,7 +142,10 @@ class ServiceTestConfiguration {
     fun serviceUserSearch(): ServiceUserSearch = mockk<ServiceUserSearch>().also(::stubServiceTestUsers)
 
     @Bean
-    fun serviceTrikStudioVersions(): ServiceTrikStudioVersions = mockk { every { findAll() } returns emptyList() }
+    fun serviceTrikStudioVersions(): ServiceTrikStudioVersions = mockk {
+        every { findAll() } returns emptyList()
+        every { findUsedTags() } returns emptySet()
+    }
 
     @Bean
     fun serviceSettings(): ServiceWebSettings = ServiceWebSettings.from(
@@ -138,4 +156,7 @@ class ServiceTestConfiguration {
 
     @Bean
     fun clock(): Clock = Clock.systemUTC()
+
+    @Bean
+    fun cabinetSignInStore(): CabinetSignInStore = mockk(relaxed = true)
 }

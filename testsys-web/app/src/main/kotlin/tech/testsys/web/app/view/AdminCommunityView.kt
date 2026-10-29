@@ -11,18 +11,16 @@ import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.RawInviteCodeDependency
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityManagementService
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
-import tech.testsys.web.app.service.ObserverVo
+import tech.testsys.web.app.service.IssuedObserverVo
 import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.administrator.CommunityInviteVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
-import tech.testsys.web.components.actions.linkAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.TableHandle
@@ -36,7 +34,6 @@ import tech.testsys.web.components.forms.lookupMany
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageRowScope
-import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
@@ -68,10 +65,10 @@ abstract class CommunityDetailsView(
         // Checks role and community access before the tables load, so a refusal opens its error screen.
         service.viewCommunityInvites(communityId)
         val communities = service.viewCommunities().map { (community, _) -> community }
-        show(communities.first { community -> community.id == communityId }, communities, observer = null)
+        show(communities.first { community -> community.id == communityId }, communities)
     }
 
-    private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: ObserverVo?) {
+    private fun show(community: CommunityVo, communities: List<CommunityVo>) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -86,15 +83,17 @@ abstract class CommunityDetailsView(
             }
             guide(texts.communityGuide())
             row {
-                detailsBlock(community) { edited -> show(edited, communities, observer) }
+                detailsBlock(community) { edited -> show(edited, communities) }
                 invitesBlock(community.id)
             }
-            observer?.let { created -> createdObserverBlock(created) }
             row {
                 block(title = texts.communityUsersTitle()) {
                     guide(texts.communityUsersGuide())
                     adminUsersTable(service, communities, community.id, onOpenUser)
-                    val creation = observerDialog(community.id) { created -> show(community, communities, created) }
+                    val creation = observerDialog(community.id) { created ->
+                        show(community, communities)
+                        createdObserverDialog(created)
+                    }
                     actions { action(texts.communityObserverCreate()) { onClick { creation() } } }
                 }
             }
@@ -126,20 +125,20 @@ abstract class CommunityDetailsView(
                 onCancel = { draft.readBean(CommunityDraft(community.name, community.description)) },
             )
             row {
-                codeInput(texts.id(), labelSize = 6, size = 18) {
+                codeInput(texts.id(), labelSize = 4, size = 7) {
                     value = community.id.value.toString()
                     isEditable = false
                 }
             }
             row {
-                textInput(texts.name(), labelSize = 6, size = 18) {
+                textInput(texts.name(), labelSize = 4, size = 20) {
                     draft.forField(this)
                         .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
+                textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -149,29 +148,29 @@ abstract class CommunityDetailsView(
         draft.readBean(CommunityDraft(community.name, community.description))
     }
 
-    @RawAccessTokenDependency(reason = "Shows the stored access code of the created observer as the issued one.")
-    private fun PageScope.createdObserverBlock(observer: ObserverVo) {
+    /** Shows the access code of the just [created] observer once: it cannot be read back later. */
+    private fun createdObserverDialog(created: IssuedObserverVo) {
         val texts = currentLocalization().pageAdministrator
-        row {
-            block(title = texts.communityObserverCreatedTitle(name = observer.name)) {
-                guide(texts.communityObserverCreatedGuide())
-                row {
-                    alert(
-                        kind = FeedbackKind.Warning,
-                        title = texts.communityObserverAlertTitle(),
-                        text = texts.communityObserverAlertText(),
-                    )
-                }
-                row {
-                    codeInput(texts.accessCode(), labelSize = 6, size = 18) {
-                        value = observer.accessTokenHash.value
-                        isEditable = false
-                        isObscured = true
-                    }
-                }
-                footer { linkAction(texts.communityObserverOpen()) { onClick { onOpenUser(observer) } } }
+        val observer = created.observer
+        dialog(title = texts.communityObserverCreatedTitle(name = observer.name), subtitle = texts.communityObserverCreatedGuide()) {
+            row {
+                alert(
+                    kind = FeedbackKind.Warning,
+                    title = texts.communityObserverAlertTitle(),
+                    text = texts.communityObserverAlertText(),
+                )
             }
-        }
+            row {
+                codeInput(texts.accessCode(), labelSize = 6, size = 18) {
+                    value = created.accessToken
+                    isEditable = false
+                    isObscured = true
+                }
+            }
+            footer { dialog ->
+                secretDialogClose(dialog)
+            }
+        }.open()
     }
 
     @RawInviteCodeDependency(reason = "Shows the stored invite codes as the issued ones.")
@@ -212,7 +211,7 @@ abstract class CommunityDetailsView(
     }
 
     /** Builds the observer creation dialog of [communityId] and returns its opening, which starts with an empty form. */
-    private fun observerDialog(communityId: CommunityId, onCreated: (ObserverVo) -> Unit): () -> Unit {
+    private fun observerDialog(communityId: CommunityId, onCreated: (IssuedObserverVo) -> Unit): () -> Unit {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         val draft = Binder<ObserverDraft>()

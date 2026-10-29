@@ -14,6 +14,7 @@ import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
+import tech.testsys.domain.model.user.testAccessTokenHasher
 
 class ParticipantBuilderTests : DomainEntityBuilderTests<Participant, ParticipantData, ParticipantDataBuilder>(
     ParticipantBuilder(),
@@ -22,7 +23,7 @@ class ParticipantBuilderTests : DomainEntityBuilderTests<Participant, Participan
     override fun buildDataWithAllFields() = listOf(
         participantData {
             competition(1)
-            accessToken("token", algorithm = HashAlgorithm.Identity)
+            accessToken("token", testAccessTokenHasher)
             name = "Participant"
         },
     )
@@ -35,12 +36,12 @@ class ObserverBuilderTests : DomainEntityBuilderTests<Observer, ObserverData, Ob
     override fun buildDataWithAllFields() = listOf(
         observerData {
             community(7)
-            accessToken("token", algorithm = HashAlgorithm.Identity)
+            accessToken("token", testAccessTokenHasher)
             name = "Observer"
         },
         observerData {
             community(7)
-            accessToken("token", algorithm = HashAlgorithm.Identity)
+            accessToken("token", testAccessTokenHasher)
             name = "Observer"
             contests(listOf(1L, 2L))
         },
@@ -53,7 +54,7 @@ class SupervisorBuilderTests : DomainEntityBuilderTests<Supervisor, SupervisorDa
 ) {
     override fun buildDataWithAllFields() = listOf(
         supervisorData {
-            accessToken("token", algorithm = HashAlgorithm.Identity)
+            accessToken("token", testAccessTokenHasher)
             name = "Supervisor"
         },
     )
@@ -62,15 +63,15 @@ class SupervisorBuilderTests : DomainEntityBuilderTests<Supervisor, SupervisorDa
 class ParticipantDataBuilderTests {
 
     @Test
-    fun `should build data with the provided hash algorithm`() {
+    fun `should build data with the access token hashed by the provided hasher`() {
         val data = participantData {
             competition(1)
-            accessToken("token", algorithm = HashAlgorithm.Identity)
+            accessToken("token", testAccessTokenHasher)
             name = "User"
         }
 
-        assertEquals("token", data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHash.algorithm)
+        assertEquals(testAccessTokenHasher.hash("token").value, data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.HmacSha256, data.accessTokenHash.algorithm)
     }
 
     @Test
@@ -87,15 +88,15 @@ class ParticipantDataBuilderTests {
 class ObserverDataBuilderTests {
 
     @Test
-    fun `should build data with the provided hash algorithm`() {
+    fun `should build data with the access token hashed by the provided hasher`() {
         val data = observerData {
             community(1)
-            accessToken("token", algorithm = HashAlgorithm.Identity)
+            accessToken("token", testAccessTokenHasher)
             name = "User"
         }
 
-        assertEquals("token", data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHash.algorithm)
+        assertEquals(testAccessTokenHasher.hash("token").value, data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.HmacSha256, data.accessTokenHash.algorithm)
     }
 
     @Test
@@ -112,14 +113,14 @@ class ObserverDataBuilderTests {
 class SupervisorDataBuilderTests {
 
     @Test
-    fun `should build data with the provided hash algorithm`() {
+    fun `should build data with the access token hashed by the provided hasher`() {
         val data = supervisorData {
-            accessToken("token", algorithm = HashAlgorithm.Identity)
+            accessToken("token", testAccessTokenHasher)
             name = "User"
         }
 
-        assertEquals("token", data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHash.algorithm)
+        assertEquals(testAccessTokenHasher.hash("token").value, data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.HmacSha256, data.accessTokenHash.algorithm)
     }
 
     @Test

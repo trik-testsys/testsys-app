@@ -54,7 +54,7 @@ vaadin-button[data-ts-role] {
   --vaadin-button-font-weight: var(--fw-semibold);
   --vaadin-button-gap: var(--space-2);
 }
-vaadin-button[data-ts-role]:not([disabled]):not([aria-busy="true"]) { cursor:pointer; }
+vaadin-button[data-ts-role]:not([disabled]):not([aria-busy="true"]):not([data-ts-cooldown]) { cursor:pointer; }
 vaadin-button[data-ts-size="sm"] {
   --vaadin-button-height: var(--control-sm);
   --vaadin-button-padding: 0 var(--space-2);
@@ -92,10 +92,76 @@ vaadin-button[data-ts-role="link"][disabled] {
   --vaadin-button-background: transparent;
   --vaadin-button-border: 1px solid transparent;
 }
+/* Cooldown of an action button: looks disabled, shows the seconds left and a draining bar; the client makes it inert. */
+vaadin-button[data-ts-cooldown] {
+  --vaadin-button-background: var(--canvas);
+  --vaadin-button-text-color: var(--text-tertiary);
+  --vaadin-button-border: 1px solid var(--border-default);
+  position: relative;
+  overflow: hidden;
+  padding-inline-end: calc(var(--space-2) * 2 + 1.5em);
+}
+/* The bar takes over the Lumo hover overlay of the host, so it sets every overlay property it relies on. */
+vaadin-button[data-ts-cooldown]::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 1;
+  border-radius: 0;
+  pointer-events: none;
+  transform-origin: left;
+  animation: ts-cooldown-drain var(--ts-cooldown-duration) linear forwards;
+}
+@keyframes ts-cooldown-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { vaadin-button[data-ts-cooldown]::before { animation:none; content:none; } }
+/*
+ * The countdown sits at the end of the button, inside the room the padding leaves, so a full-width button shows it too.
+ * It takes over the Lumo press overlay of the host: transparent, blurred and fading in.
+ */
+vaadin-button[data-ts-cooldown]::after {
+  content: attr(data-ts-cooldown);
+  position: absolute;
+  inset: 0 var(--space-2) 0 auto;
+  display: flex;
+  align-items: center;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  opacity: 1;
+  background: none;
+  filter: none;
+  transform: none;
+  transition: none;
+}
 vaadin-button[aria-busy="true"] { cursor: progress; }
 vaadin-button > .ts-spinner { display: inline-block; }
 /* A column keeps buttons at their own width, like the line does. */
 .ts-vstack > vaadin-button { align-self: flex-start; }
+/* Guest card: the wide main action of size L; link actions in a label row or the links line read as inline links. */
+.ts-guest-card__body > vaadin-button[data-ts-role="main"] {
+  --vaadin-button-height: var(--control-lg);
+  --vaadin-button-padding: 0 var(--space-4);
+  --vaadin-button-font-size: var(--fs-body);
+  --vaadin-button-border-radius: var(--radius-lg);
+  width: 100%;
+}
+:is(.ts-field__aside, .ts-guest__links) > vaadin-button[data-ts-role="link"] {
+  --vaadin-button-height: auto;
+  --vaadin-button-padding: 0;
+  --vaadin-button-font-size: var(--fs-sm);
+  --vaadin-button-font-weight: var(--fw-medium);
+  --vaadin-button-background: transparent;
+}
+.ts-field__aside > vaadin-button[data-ts-role="link"] { --vaadin-button-font-size: var(--fs-xs); }
+:is(.ts-field__aside, .ts-guest__links) > vaadin-button[data-ts-role="link"]:hover { text-decoration: underline; }
+/* Guest card: fields of size L and a segmented choice across the card. */
+.ts-guest-card :is(vaadin-text-field, vaadin-password-field) {
+  --lumo-text-field-size: calc(var(--control-lg) - 2px);
+  --vaadin-input-field-value-font-size: var(--fs-body);
+}
+.ts-guest-card__body > .ts-field__value--inline { display: flex; }
+.ts-guest-card__body vaadin-radio-group.ts-seg { flex: 1; }
 
 /* Fields: label, helper and error typography and the shared white bordered input appearance. */
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
@@ -291,7 +357,7 @@ vaadin-radio-button[disabled]::part(radio), vaadin-radio-button[disabled] > labe
 vaadin-radio-group.ts-seg { padding:0; background:none; border-radius:0; }
 vaadin-radio-group.ts-seg::part(group-field) { display:flex; gap:2px; padding:3px; border-radius:var(--radius-lg); background:var(--muted); }
 vaadin-radio-group.ts-seg > vaadin-radio-button {
-  display:flex; flex:1; align-items:center; justify-content:center; height:26px; padding:0 var(--space-3);
+  position:relative; display:flex; flex:1; align-items:center; justify-content:center; height:26px; padding:0 var(--space-3);
   border-radius:7px; color:var(--text-secondary); font:var(--fw-semibold) var(--fs-xs) var(--font-sans);
   white-space:nowrap; cursor:pointer;
   --vaadin-radio-button-label-padding:0;
@@ -299,6 +365,9 @@ vaadin-radio-group.ts-seg > vaadin-radio-button {
   --vaadin-radio-button-label-font-size:inherit;
   transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
+/* The label only toggles the choice, so its click area and the segment cursor cover the whole segment. */
+vaadin-radio-group.ts-seg > vaadin-radio-button > label { cursor:inherit; }
+vaadin-radio-group.ts-seg > vaadin-radio-button > label::after { content:""; position:absolute; inset:0; }
 /* Keep the native radio input focusable while hiding its marker in segmented controls. */
 vaadin-radio-group.ts-seg > vaadin-radio-button::part(radio) { position:absolute; width:1px; height:1px; padding:0; border:0; overflow:hidden; clip-path:inset(50%); }
 vaadin-radio-group.ts-seg > vaadin-radio-button[checked] { background:var(--surface-card); color:var(--text-primary); box-shadow:var(--shadow-segment); }

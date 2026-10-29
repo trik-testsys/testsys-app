@@ -10,7 +10,7 @@ import tech.testsys.web.components.error.NotFoundPage
 
 class TestSysBrandTests : MockVaadinTests() {
     @ParameterizedTest
-    @ValueSource(strings = [TestSysBrand.EMBLEM, TestSysBrand.WORDMARK, TestSysBrand.HEADER, TestSysBrand.FOOTER, TestSysBrand.FAVICON])
+    @ValueSource(strings = [TestSysBrand.EMBLEM, TestSysBrand.WORDMARK, TestSysBrand.ICON, TestSysBrand.FAVICON])
     fun `should package a brand graphic as a public resource`(asset: String) {
         val resource = javaClass.getResource("/META-INF/resources/$asset")
 
@@ -26,8 +26,10 @@ class TestSysBrandTests : MockVaadinTests() {
 
         assertEquals(testTexts.messages.uiPage.brandName(), brand.element.getAttribute("aria-label"))
         assertEquals("img", brand.element.getAttribute("role"))
-        assertEquals(1L, brand.children.count())
-        assertEquals(TestSysBrand.HEADER, brand.find("ts-brand__logo").element.getAttribute("src"))
-        assertEquals("", brand.find("ts-brand__logo").element.getAttribute("alt"))
+        assertEquals(2L, brand.children.count())
+        assertEquals(TestSysBrand.ICON, brand.find("ts-brand__emblem").element.getAttribute("src"))
+        assertEquals(TestSysBrand.WORDMARK, brand.find("ts-brand__wordmark").element.getAttribute("src"))
+        assertEquals("", brand.find("ts-brand__emblem").element.getAttribute("alt"))
+        assertEquals("", brand.find("ts-brand__wordmark").element.getAttribute("alt"))
     }
 }

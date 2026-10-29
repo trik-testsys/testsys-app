@@ -78,4 +78,32 @@ class CredentialsTests {
             assertFalse(isAccessToken(value))
         }
     }
+
+    @Nested
+    inner class IsValidPasswordTests {
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Abcdef1!", "Aa1!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "aA1!@#$%^&*()-_=+.,?"])
+        fun `should accept a password of 8 to 64 allowed characters with every kind of character`(password: String) {
+            assertTrue(isValidPassword(password))
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Abcde1!", "Aa1!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", ""])
+        fun `should reject a password shorter than 8 or longer than 64 characters`(password: String) {
+            assertFalse(isValidPassword(password))
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["abcdef1!", "ABCDEF1!", "Abcdefg!", "Abcdefg1"])
+        fun `should reject a password without a lowercase letter an uppercase letter a digit or a symbol`(password: String) {
+            assertFalse(isValidPassword(password))
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Abcd ef1!", " Abcdef1!", "Пароль1!a", "Abcdef1!😀", "Abcdef1!~", "Abcdef1!\"", "Abcdef1!/"])
+        fun `should reject a password with a space or a character outside the allowed set`(password: String) {
+            assertFalse(isValidPassword(password))
+        }
+    }
 }

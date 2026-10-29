@@ -1,9 +1,6 @@
 package tech.testsys.web.service
 
-import com.github.mvysny.kaributesting.v10._click
-import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.router.RouteConfiguration
 import com.vaadin.flow.router.RouteParameters
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
@@ -23,10 +20,9 @@ class MetricsPrivacyTests : ServiceMockVaadinTests() {
     private lateinit var registry: PrometheusMeterRegistry
 
     @Test
-    fun `should keep the service code and a shown access code out of the exported metrics`() {
+    fun `should keep the service code and an opened user out of the exported metrics`() {
         signIn.signIn(SERVICE_TEST_SECRET)
         UI.getCurrent().navigate(ServiceUserView::class.java, RouteParameters(SERVICE_USER_ID_PARAMETER, "1003"))
-        UI.getCurrent()._get<Button> { text = "Копировать" }._click()
         RouteConfiguration.forApplicationScope().setAnnotatedRoute(FailingPage::class.java)
         UI.getCurrent().navigate(FailingPage::class.java)
 

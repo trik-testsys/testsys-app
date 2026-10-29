@@ -11,7 +11,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean
 import org.springframework.core.env.Environment
+import org.springframework.core.io.ClassPathResource
 import org.springframework.mock.env.MockEnvironment
 import tools.jackson.databind.json.JsonMapper
 import java.nio.charset.StandardCharsets.UTF_8
@@ -25,6 +27,7 @@ class LogbackEnvironmentListenerTests {
     fun tearDown() {
         context.stop()
         System.clearProperty(FORMAT_PROPERTY)
+        System.clearProperty(CORRELATION_PROPERTY)
     }
 
     @Test
@@ -63,6 +66,17 @@ class LogbackEnvironmentListenerTests {
         assertTrue(line.endsWith(": Opened /developer/tasks${System.lineSeparator()}"), line)
     }
 
+    @Test
+    fun `should write the user, route and supervisor from MDC in a text line with the application correlation pattern`() {
+        val yaml = YamlPropertiesFactoryBean().apply { setResources(ClassPathResource("application.yml")) }
+        System.setProperty(CORRELATION_PROPERTY, checkNotNull(yaml.getObject()?.getProperty("logging.pattern.correlation")))
+        configure()
+
+        val line = encode(mapOf("user" to "42", "route" to "/developer/tasks", "impersonatedBy" to "7"))
+
+        assertTrue(line.contains("[42 /developer/tasks 7] "), line)
+    }
+
     private fun configure() {
         val configurator = JoranConfigurator()
         configurator.context = context
@@ -70,7 +84,7 @@ class LogbackEnvironmentListenerTests {
     }
 
     // Encodes with the encoder of the console appender, without writing to the console of the test.
-    private fun encode(): String {
+    private fun encode(mdc: Map<String, String> = mapOf("user" to "42", "route" to "/developer/tasks")): String {
         val appender = context.getLogger(Logger.ROOT_LOGGER_NAME).getAppender("CONSOLE")
         val encoder = checkNotNull((appender as? OutputStreamAppender<ILoggingEvent>)?.encoder)
         val event = LoggingEvent(
@@ -81,11 +95,12 @@ class LogbackEnvironmentListenerTests {
             null,
             null,
         )
-        event.setMDCPropertyMap(mapOf("user" to "42", "route" to "/developer/tasks"))
+        event.setMDCPropertyMap(mdc)
         return String(encoder.encode(event), UTF_8)
     }
 
     private companion object {
         const val FORMAT_PROPERTY = "CONSOLE_LOG_STRUCTURED_FORMAT"
+        const val CORRELATION_PROPERTY = "LOG_CORRELATION_PATTERN"
     }
 }

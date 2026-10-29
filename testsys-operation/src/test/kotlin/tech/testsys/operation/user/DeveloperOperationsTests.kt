@@ -9,6 +9,7 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkStatic
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -33,6 +34,7 @@ import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
+import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -60,6 +62,9 @@ import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.FileStorageKind
+import tech.testsys.domain.model.task.Regrade
+import tech.testsys.domain.model.task.RegradeData
+import tech.testsys.domain.model.task.RegradeId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
@@ -130,6 +135,7 @@ import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
+import tech.testsys.operation.error.TrikStudioVersionNotRegisteredError
 import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
@@ -168,6 +174,7 @@ class DeveloperOperationsTests {
     private val taskValidationRequestRepository = mockk<TaskValidationRequestRepository>()
     private val taskValidationDispatcher = mockk<TaskValidationDispatcher>(relaxUnitFun = true)
     private val submissionRepository = mockk<SubmissionRepository>()
+    private val regradeRepository = mockk<RegradeRepository>()
     private val grader = mockk<Grader>()
     private val developerOperations = DeveloperOperations(
         taskRepository,
@@ -181,6 +188,7 @@ class DeveloperOperationsTests {
         taskValidationRequestRepository,
         taskValidationDispatcher,
         submissionRepository,
+        regradeRepository,
         grader,
     )
 
@@ -595,6 +603,13 @@ class DeveloperOperationsTests {
             every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest())
             every { submissionRepository.findGradingByTaskId(taskId) } returns listOf(contestSubmission(31), contestSubmission(32))
             every { grader.sendToGrade(any()) } returns GradingAdmission.Accepted
+            every { regradeRepository.save(any<RegradeData>()) } answers {
+                regrade {
+                    id = 50
+                    createdAt = Instant.EPOCH
+                    data = firstArg()
+                }
+            }
         }
 
         @Nested
@@ -689,6 +704,47 @@ class DeveloperOperationsTests {
             }
 
             @Test
+            fun `should save a regrade with the committed polygons and the sent submissions`() {
+                val saved = slot<RegradeData>()
+                every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+                every { regradeRepository.save(capture(saved)) } answers {
+                    regrade {
+                        id = 50
+                        createdAt = Instant.EPOCH
+                        data = firstArg()
+                    }
+                }
+
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+                Assertions.assertEquals(taskId, saved.captured.task.id)
+                Assertions.assertEquals(listOf(TestId(3), TestId(6)), saved.captured.tests.ids)
+                Assertions.assertEquals(listOf(SubmissionId(31), SubmissionId(32)), saved.captured.submissions.ids)
+            }
+
+            @Test
+            fun `should save the regrade before sending submissions to grading`() {
+                every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+                verifyOrder {
+                    regradeRepository.save(any<RegradeData>())
+                    grader.sendToGrade(any())
+                }
+            }
+
+            @Test
+            fun `should not save a regrade if the task has no contest submissions`() {
+                every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+                every { submissionRepository.findGradingByTaskId(taskId) } returns emptyList()
+
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+                verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
+            }
+
+            @Test
             fun `should not search or send submissions if regrading is not requested even when the polygon set changed`() {
                 every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
 
@@ -696,6 +752,7 @@ class DeveloperOperationsTests {
 
                 verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
                 verify(exactly = 0) { grader.sendToGrade(any()) }
+                verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
             }
 
             @Test
@@ -706,6 +763,7 @@ class DeveloperOperationsTests {
 
                 verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
                 verify(exactly = 0) { grader.sendToGrade(any()) }
+                verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
             }
 
             @Test
@@ -716,6 +774,7 @@ class DeveloperOperationsTests {
 
                 verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
                 verify(exactly = 0) { grader.sendToGrade(any()) }
+                verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
             }
         }
 
@@ -1063,6 +1122,240 @@ class DeveloperOperationsTests {
                 taskRepository.update(any<Task>())
                 submissionRepository.findGradingByTaskId(any())
                 grader.sendToGrade(any())
+                regradeRepository.save(any<RegradeData>())
+            }
+        }
+    }
+
+    @Nested
+    inner class CountRegradeSubmissionsTests {
+
+        private val taskId = TaskId(0)
+
+        @Nested
+        inner class HappyPathTests {
+            @ParameterizedTest
+            @CsvSource("'3', '3,6'", "'3,5', '3,6'")
+            fun `should count contest submissions if the polygon set changed or a polygon has a new version`(
+                committedPolygonIds: String,
+                wipPolygonIds: String,
+            ) {
+                every { taskRepository.findById(taskId) } returns uncommittedTask(ids(committedPolygonIds), ids(wipPolygonIds))
+                every { submissionRepository.findGradingByTaskId(taskId) } returns
+                    listOf(gradingSubmission(31), gradingSubmission(32))
+
+                val count = developerOperations.countRegradeSubmissions(developer, taskId).getOrThrow()
+
+                Assertions.assertEquals(2, count)
+            }
+
+            @Test
+            fun `should return zero if the polygon set changed but the task has no contest submissions`() {
+                every { taskRepository.findById(taskId) } returns
+                    uncommittedTask(committedPolygonIds = listOf(3), wipPolygonIds = listOf(3, 6))
+                every { submissionRepository.findGradingByTaskId(taskId) } returns emptyList()
+
+                val count = developerOperations.countRegradeSubmissions(developer, taskId).getOrThrow()
+
+                Assertions.assertEquals(0, count)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["New", "Committed", "unchanged", "reordered"])
+            fun `should report regrade as not applicable without searching submissions`(state: String) {
+                every { taskRepository.findById(taskId) } returns notRegradableTask(state)
+
+                val count = developerOperations.countRegradeSubmissions(developer, taskId).getOrThrow()
+
+                Assertions.assertNull(count)
+                verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should reject a user without the Developer role`() {
+                assertRaises(MissedDeveloperRoleError) { developerOperations.countRegradeSubmissions(testAdministrator {}, taskId) }
+
+                verify(exactly = 0) { taskRepository.findById(any()) }
+            }
+
+            @Test
+            fun `should reject a missing task`() {
+                every { taskRepository.findById(taskId) } returns null
+
+                assertRaises(TaskNotExistsError(taskId)) { developerOperations.countRegradeSubmissions(developer, taskId) }
+            }
+
+            @Test
+            fun `should reject a task owned by another developer`() {
+                every { taskRepository.findById(taskId) } returns
+                    uncommittedTask(committedPolygonIds = listOf(3), wipPolygonIds = listOf(3, 6)).withData { owner(99) }
+
+                assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.countRegradeSubmissions(developer, taskId) }
+
+                verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @ParameterizedTest
+            @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+            fun `should not save a task in any state when counting submissions to regrade`(state: String) {
+                every { taskRepository.findById(any()) } returns taskInState(state)
+                every { submissionRepository.findGradingByTaskId(any()) } returns listOf(gradingSubmission(31))
+
+                developerOperations.countRegradeSubmissions(developer, taskId).getOrThrow()
+
+                verify(exactly = 0) { taskRepository.update(any<Task>()) }
+                verify(exactly = 0) { grader.sendToGrade(any()) }
+            }
+        }
+
+        private fun ids(values: String): List<Long> = values.split(",").map { value -> value.toLong() }
+
+        private fun uncommittedTask(committedPolygonIds: List<Long>, wipPolygonIds: List<Long>): Task = testUncommittedTask().withData {
+            content.uncommitted(
+                wipBuilder = { tests(wipPolygonIds) },
+                lastCommittedBuilder = {
+                    statement(1)
+                    exercises(listOf(1))
+                    tests(committedPolygonIds)
+                },
+            )
+        }
+
+        private fun notRegradableTask(state: String): Task = when (state) {
+            "New" -> testNewTask().withData { content.new { tests(listOf(3, 6)) } }
+            "Committed" -> testCommitedTask()
+            "unchanged" -> uncommittedTask(committedPolygonIds = listOf(3, 6), wipPolygonIds = listOf(3, 6))
+            "reordered" -> uncommittedTask(committedPolygonIds = listOf(6, 3), wipPolygonIds = listOf(3, 6))
+            else -> error("Unsupported test state: $state")
+        }
+
+        private fun gradingSubmission(submissionId: Long): Submission = submission {
+            id = submissionId
+            createdAt = Instant.ofEpochSecond(submissionId)
+            data = submissionData {
+                author(20)
+                solution(5)
+                task(0)
+                status.queued()
+                kind.grading { contest(19) }
+            }
+        }
+    }
+
+    @Nested
+    inner class ViewRegradesTests {
+
+        private val taskId = TaskId(0)
+        private val first = regradeOf(51)
+        private val second = regradeOf(52)
+
+        @Nested
+        inner class HappyPathTests {
+            @ParameterizedTest
+            @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+            fun `should return the regrades of an owned task in any state with their graded submissions`(state: String) {
+                every { taskRepository.findById(taskId) } returns taskInState(state)
+                every { regradeRepository.findByTaskId(taskId) } returns listOf(first, second)
+                every { regradeRepository.countGraded(setOf(first.id, second.id)) } returns mapOf(first.id to 2, second.id to 1)
+
+                val regrades = developerOperations.viewRegrades(developer, taskId).getOrThrow()
+
+                Assertions.assertEquals(listOf(first to 2, second to 1), regrades)
+            }
+
+            @Test
+            fun `should report no graded submissions for a regrade missing from the count`() {
+                every { taskRepository.findById(taskId) } returns testUncommittedTask()
+                every { regradeRepository.findByTaskId(taskId) } returns listOf(first)
+                every { regradeRepository.countGraded(any()) } returns emptyMap()
+
+                val regrades = developerOperations.viewRegrades(developer, taskId).getOrThrow()
+
+                Assertions.assertEquals(listOf(first to 0), regrades)
+            }
+
+            @Test
+            fun `should return no regrades for a task without regrades`() {
+                every { taskRepository.findById(taskId) } returns testUncommittedTask()
+                every { regradeRepository.findByTaskId(taskId) } returns emptyList()
+                every { regradeRepository.countGraded(emptySet()) } returns emptyMap()
+
+                val regrades = developerOperations.viewRegrades(developer, taskId).getOrThrow()
+
+                Assertions.assertEquals(emptyList<Pair<Regrade, Int>>(), regrades)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should reject a user without the Developer role`() {
+                assertRaises(MissedDeveloperRoleError) { developerOperations.viewRegrades(testAdministrator {}, taskId) }
+
+                verify(exactly = 0) { regradeRepository.findByTaskId(any()) }
+            }
+
+            @Test
+            fun `should reject a missing task`() {
+                every { taskRepository.findById(taskId) } returns null
+
+                assertRaises(TaskNotExistsError(taskId)) { developerOperations.viewRegrades(developer, taskId) }
+
+                verify(exactly = 0) { regradeRepository.findByTaskId(any()) }
+            }
+
+            @Test
+            fun `should reject a task owned by another developer`() {
+                every { taskRepository.findById(taskId) } returns testUncommittedTask().withData { owner(99) }
+
+                assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.viewRegrades(developer, taskId) }
+
+                verify(exactly = 0) { regradeRepository.findByTaskId(any()) }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @ParameterizedTest
+            @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+            fun `should not save a task in any state when viewing its regrades`(state: String) {
+                every { taskRepository.findById(taskId) } returns taskInState(state)
+                every { regradeRepository.findByTaskId(taskId) } returns listOf(first)
+                every { regradeRepository.countGraded(any()) } returns mapOf(first.id to 1)
+
+                developerOperations.viewRegrades(developer, taskId).getOrThrow()
+
+                verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            }
+        }
+
+        @Nested
+        inner class ModuleRuleTests {
+            @Test
+            fun `should count graded submissions of all regrades with one call`() {
+                every { taskRepository.findById(taskId) } returns testUncommittedTask()
+                every { regradeRepository.findByTaskId(taskId) } returns listOf(second, first)
+                every { regradeRepository.countGraded(any()) } returns mapOf(first.id to 1, second.id to 0)
+
+                developerOperations.viewRegrades(developer, taskId).getOrThrow()
+
+                verify(exactly = 1) { regradeRepository.countGraded(setOf(RegradeId(51), RegradeId(52))) }
+            }
+        }
+
+        private fun regradeOf(regradeId: Long): Regrade = regrade {
+            id = regradeId
+            createdAt = Instant.ofEpochSecond(regradeId)
+            data = regradeData {
+                task(0)
+                tests(listOf(3))
+                submissions(listOf(31, 32))
             }
         }
     }
@@ -1864,6 +2157,7 @@ class DeveloperOperationsTests {
 
         @BeforeEach
         fun prepareContestSave() {
+            every { contestRepository.findTrikStudioVersions() } returns listOf(version)
             every { contestRepository.save(any<ContestData>()) } answers {
                 contest {
                     id = 19
@@ -2071,6 +2365,21 @@ class DeveloperOperationsTests {
                 val name = character.repeat(256)
 
                 assertRaises(ContestNameTooLongError(name)) { developerOperations.createContest(developer, name, version) }
+
+                verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+            }
+
+            @ParameterizedTest
+            @CsvSource("trik-studio:3.0.0, 3.0.1", "trik-studio:old, 3.0.0")
+            fun `should raise TrikStudioVersionNotRegisteredError without saving if the version is not registered`(
+                tag: String,
+                number: String,
+            ) {
+                val stale = TrikStudioVersion(tag = tag, version = number)
+
+                assertRaises(TrikStudioVersionNotRegisteredError(stale)) {
+                    developerOperations.createContest(developer, "Contest", stale)
+                }
 
                 verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
             }
@@ -4163,6 +4472,11 @@ class DeveloperOperationsTests {
 
         private val taskId = TaskId(42)
 
+        @BeforeEach
+        fun prepareRegisteredVersions() {
+            every { contestRepository.findTrikStudioVersions() } returns versions("3.0.0 4.0.0")
+        }
+
         @Nested
         inner class HappyPathTests {
             @ParameterizedTest
@@ -4386,6 +4700,22 @@ class DeveloperOperationsTests {
                 every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
 
                 assertRaises(TaskNameTooLongError(name)) { developerOperations.editTaskInfo(developer, taskId, taskName = name) }
+
+                verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            }
+
+            @Test
+            fun `should raise TrikStudioVersionNotRegisteredError without saving if a changed set has an unregistered version`() {
+                val stale = TrikStudioVersion(tag = "trik-studio:old", version = "4.0.0")
+                every { taskRepository.findById(taskId) } returns taskInState("New")
+
+                assertRaises(TrikStudioVersionNotRegisteredError(stale)) {
+                    developerOperations.editTaskInfo(
+                        user = developer,
+                        taskId = taskId,
+                        supportedTrikStudioVersions = versions("3.0.0") + stale,
+                    )
+                }
 
                 verify(exactly = 0) { taskRepository.update(any<Task>()) }
             }

@@ -83,34 +83,6 @@ class SmtpUserMailSenderTests {
     }
 
     @Nested
-    inner class SendAccessTokenTests {
-
-        @Test
-        fun `should send the letter from the configured address to the email`() {
-            sender.sendAccessToken(email = "user@example.com", name = "Маша", accessToken = "aB3d-x9Yz-0kLm-P7qR")
-
-            assertEquals("noreply@testsys.tech", message.captured.from)
-            assertEquals(listOf("user@example.com"), message.captured.to?.toList())
-        }
-
-        @Test
-        fun `should render the access code subject`() {
-            sender.sendAccessToken(email = "user@example.com", name = "Маша", accessToken = "aB3d-x9Yz-0kLm-P7qR")
-
-            assertEquals("Ваш Код-доступа к TestSys", message.captured.subject)
-        }
-
-        @Test
-        fun `should put the nickname and the access code verbatim into the text`() {
-            sender.sendAccessToken(email = "user@example.com", name = "Маша", accessToken = "aB3d-x9Yz-0kLm-P7qR")
-
-            val text = message.captured.text.orEmpty()
-            assertContains(text, "Здравствуйте, Маша!")
-            assertContains(text, "\n\naB3d-x9Yz-0kLm-P7qR\n\n")
-        }
-    }
-
-    @Nested
     inner class SendEmailChangeConfirmationCodeTests {
 
         @Test
@@ -248,12 +220,12 @@ class SmtpUserMailSenderTests {
         @Test
         fun `should send the letter after the transaction commits`() {
             val transaction = transactionManager.getTransaction(DefaultTransactionDefinition())
-            sender.sendAccessToken(email = "user@example.com", name = "Маша", accessToken = "aB3d-x9Yz-0kLm-P7qR")
+            sender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "012345")
 
             transactionManager.commit(transaction)
 
             assertEquals(listOf("user@example.com"), message.captured.to?.toList())
-            assertContains(message.captured.text.orEmpty(), "\n\naB3d-x9Yz-0kLm-P7qR\n\n")
+            assertContains(message.captured.text.orEmpty(), "012345")
         }
 
         @Test

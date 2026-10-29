@@ -30,12 +30,11 @@ import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.Task
-import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.annotation.Feature
@@ -64,8 +63,7 @@ import tech.testsys.operation.error.CreateClassError
 import tech.testsys.operation.error.CreateClassInviteError
 import tech.testsys.operation.error.CreateCompetitionError
 import tech.testsys.operation.error.CreateParticipantsError
-import tech.testsys.operation.error.DeleteParticipantError
-import tech.testsys.operation.error.DownloadParticipantsError
+import tech.testsys.operation.error.DeleteParticipantsError
 import tech.testsys.operation.error.EditClassError
 import tech.testsys.operation.error.EditCompetitionError
 import tech.testsys.operation.error.ExtendClassInviteError
@@ -84,6 +82,8 @@ import tech.testsys.operation.error.ViewCompetitionsError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
+import tech.testsys.operation.error.raise
+import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.generateInviteCode
 import tech.testsys.operation.util.hasRole
 import tech.testsys.operation.util.inviteExpiresAt
@@ -114,6 +114,7 @@ class ManagerOperations(
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val userRepository: UserRepository,
     private val taskRepository: TaskRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
 
     private val random = SecureRandom()
@@ -324,7 +325,6 @@ class ManagerOperations(
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.manager.competition.viewCompetition")
-    @RawAccessTokenDependency(reason = "Returns participants whose stored access codes are shown as the issued ones.")
     fun viewCompetition(user: MultipleRoleUser, competitionId: CompetitionId): OperationResult<CompetitionDetails, ViewCompetitionError> =
         operation<CompetitionDetails, ViewCompetitionError> {
             ensure(user.hasRole<Manager>(), MissedManagerRoleError)
@@ -372,54 +372,39 @@ class ManagerOperations(
     }
 
     /**
-     * Returns the participants of [competitionId] owned by [user] in stored order, for the file that hands out their access
-     * codes. Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
+     * Deletes [participantIds] of [competitionId] owned by [user] together with their contest entries and returns them as they
+     * were, in the order of [participantIds]. Every participant is checked before any deletion, so a failure deletes none.
      *
      * @since %CURRENT_VERSION%
      */
-    @Feature("testsys.user.multi.manager.competition.downloadParticipants")
-    @RawAccessTokenDependency(reason = "Returns participants whose stored access codes are written as the issued ones.")
-    fun downloadParticipants(
+    @Feature("testsys.user.multi.manager.competition.deleteParticipants")
+    fun deleteParticipants(
         user: MultipleRoleUser,
         competitionId: CompetitionId,
-    ): OperationResult<List<Participant>, DownloadParticipantsError> = operation<List<Participant>, DownloadParticipantsError> {
+        participantIds: Set<SingleRoleUserId>,
+    ): OperationResult<List<Participant>, DeleteParticipantsError> = operation<List<Participant>, DeleteParticipantsError> {
         ensure(user.hasRole<Manager>(), MissedManagerRoleError)
         val competition = competitionRepository.findById(competitionId)
         ensure(competition != null) { CompetitionNotExistsError(competitionId) }
         ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
-
-        val participantIds = competition.data.participants.ids
-        return participantRepository.findByIds(participantIds).inOrderOf(participantIds).asSuccess()
-    }
-
-    /**
-     * Deletes [participantId] of [competitionId] owned by [user] together with its contest entries and returns it as it was.
-     * Missing role, competition, access, participant and existing submissions are expected failures; storage exceptions propagate.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    @Feature("testsys.user.multi.manager.competition.deleteParticipant")
-    fun deleteParticipant(
-        user: MultipleRoleUser,
-        competitionId: CompetitionId,
-        participantId: SingleRoleUserId,
-    ): OperationResult<Participant, DeleteParticipantError> = operation<Participant, DeleteParticipantError> {
-        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
-        val competition = competitionRepository.findById(competitionId)
-        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
-        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
-        val participant = participantRepository.findById(participantId)?.takeIf { found -> found.data.competition.id == competitionId }
-        ensure(participant != null) {
-            CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)
+        val participantsById = participantRepository.findByIdsAsMap(participantIds)
+        val participants = participantIds.map { participantId ->
+            val participant = participantsById[participantId]?.takeIf { found -> found.data.competition.id == competitionId }
+            ensure(participant != null) {
+                CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)
+            }
+            participant
         }
-        val submissions = submissionRepository.countGrading(
-            authorIds = setOf(participantId),
+
+        val withSubmissions = submissionRepository.findGradingAuthorIds(
+            authorIds = participantIds,
             contestIds = competition.data.contests.ids.toSet(),
         )
-        ensure(submissions.submissions == 0L) { ParticipantHasSubmissionsError(participantId) }
+        participantIds.firstOrNull { participantId -> participantId in withSubmissions }
+            ?.let { participantId -> ParticipantHasSubmissionsError(participantId).raise() }
 
-        participantRepository.removeById(participantId)
-        return participant.asSuccess()
+        participantIds.forEach(participantRepository::removeById)
+        return participants.asSuccess()
     }
 
     /**
@@ -546,8 +531,9 @@ class ManagerOperations(
     }
 
     /**
-     * Creates [participantCount] participants with random UUID access codes and `st<id>` names in [competitionId] owned by [user].
-     * Missing role, competition, access, a nonpositive count and exceeding the participant limit are expected failures.
+     * Creates [participantCount] participants with random UUID access codes and `st<id>` names in [competitionId] owned by [user]
+     * and returns them with their original access codes. Missing role, competition, access, a nonpositive count and exceeding
+     * the participant limit are expected failures.
      *
      * @since %CURRENT_VERSION%
      */
@@ -556,7 +542,7 @@ class ManagerOperations(
         user: MultipleRoleUser,
         competitionId: CompetitionId,
         participantCount: Int,
-    ): OperationResult<List<Participant>, CreateParticipantsError> = operation<List<Participant>, CreateParticipantsError> {
+    ): OperationResult<List<IssuedParticipant>, CreateParticipantsError> = operation<List<IssuedParticipant>, CreateParticipantsError> {
         ensure(user.hasRole<Manager>(), MissedManagerRoleError)
         val competition = competitionRepository.findById(competitionId)
         ensure(competition != null) { CompetitionNotExistsError(competitionId) }
@@ -574,18 +560,19 @@ class ManagerOperations(
             )
         }
 
-        val accessTokenHashes = generateSequence { UUID.randomUUID().toString() }
+        val accessTokens = generateSequence { UUID.randomUUID().toString() }
             .distinct()
             .take(participantCount)
-            .map { accessToken -> AccessTokenHash.hashAccessToken(rawAccessToken = accessToken, algorithm = HashAlgorithm.Identity) }
             .toList()
         val participants = participantRepository.saveToCompetition(
             competitionId = competitionId,
-            accessTokenHashes = accessTokenHashes,
+            accessTokenHashes = accessTokens.map { accessToken ->
+                accessTokenHasher.hash(accessToken)
+            },
         ) { participantId ->
             "st${participantId.value}"
         }
-        return participants.asSuccess()
+        return participants.zip(accessTokens) { participant, accessToken -> IssuedParticipant(participant, accessToken) }.asSuccess()
     }
 
     private fun replaceCode(invite: ClassInvite, expiresAt: Instant): ClassInvite {

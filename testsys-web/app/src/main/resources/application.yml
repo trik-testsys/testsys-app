@@ -10,10 +10,13 @@ spring:
     enableautoconfiguration: false
   application:
     name: testsys-web-app
+  datasource:
+    password: ${TESTSYS_DB_PASSWORD}
 logging:
   pattern:
-    # Every line shows the signed-in user id and the open page of the main interface request, or `-` outside it.
-    correlation: "[%X{user:--} %X{route:--}] "
+    # Every line shows the signed-in user id, the open page of the main interface request and the id of the supervisor
+    # signed in as the user, or `-` for each value that is absent.
+    correlation: "[%X{user:--} %X{route:--} %X{impersonatedBy:--}] "
 management:
   prometheus:
     metrics:
@@ -28,25 +31,21 @@ vaadin:
   # Maven's target/.
   build:
     folder: build
+# Every environment variable the application reads is declared once here, under the name Compose passes. The defaults
+# of the modules are in their *-defaults.properties files; web-defaults.properties holds those of this module.
 testsys:
+  access-token:
+    # Required HMAC-SHA-256 key of access codes, at least 64 characters; changing it invalidates every stored code.
+    secret: ${TESTSYS_ACCESS_TOKEN_SECRET}
   service:
-    address: 127.0.0.1
-    port: 8081
     secret: ${TESTSYS_SERVICE_SECRET}
-    # The required Grafana address testsys.service.grafana-url has no default and is passed at launch.
-  metrics:
-    # The metrics server listens on all interfaces; the deployment keeps the port in an internal network.
-    port: 8082
-  web:
-    localization:
-      # Region of the users whose region cookie and browser languages are not supported, a SupportedRegion name.
-      default-region: RU
-      # Zone of the dates until the browser reports its own.
-      default-time-zone: Europe/Moscow
-    # Requests of one client address to the main interface within one window; the next ones get 429.
-    rate-limit:
-      requests: 1200
-      # Window length, an ISO-8601 duration of whole seconds.
-      duration: PT1M
-      # false only logs the clients over the limit.
-      enforce: true
+    grafana-url: ${TESTSYS_GRAFANA_URL}
+  operation:
+    supervisor:
+      access-token: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN}
+  mail:
+    # Empty for an SMTP server without authorization.
+    password: ${TESTSYS_MAIL_PASSWORD:}
+  grading:
+    nodes: ${TESTSYS_GRADING_NODES:}
+    import-nodes: ${TESTSYS_GRADING_IMPORT_NODES:false}

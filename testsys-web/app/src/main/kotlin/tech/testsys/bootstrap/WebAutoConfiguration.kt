@@ -20,14 +20,20 @@ import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration
 import org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration
 import org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.PropertySource
+
+/** Defaults of the `testsys.service.*`, `testsys.metrics.*` and `testsys.web.*` parameters of this module. */
+internal const val WEB_DEFAULTS = "classpath:web-defaults.properties"
 
 /**
  * Imports only servlet, UI, security and request observation auto-configurations; persistence and the metrics
- * registry belong to the shared parent. Each importing child owns its web server and application executor.
+ * registry belong to the shared parent. Each importing child owns its web server and application executor
+ * and gets the defaults of the module parameters from `web-defaults.properties`.
  *
  * @since %CURRENT_VERSION%
  */
 @Configuration(proxyBeanMethods = false)
+@PropertySource(WEB_DEFAULTS)
 @ImportAutoConfiguration(
     ConfigurationPropertiesAutoConfiguration::class,
     PropertyPlaceholderAutoConfiguration::class,

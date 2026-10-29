@@ -149,17 +149,17 @@ class DeveloperView(
                     onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
                     row {
-                        name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.nameHint())
+                        name = textInput(texts.name(), labelSize = 2, size = 10, hint = texts.nameHint())
                         state = select(
                             texts.state(),
-                            labelSize = 4,
-                            size = 8,
+                            labelSize = 2,
+                            size = 10,
                             items = TaskFilter.State.entries,
                             itemLabel = { filtered -> texts.taskState(state = FILTER_STATES.getValue(filtered).variant) },
                         )
                     }
                     row {
-                        community = select(texts.community(), labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name)
+                        community = select(texts.community(), labelSize = 2, size = 10, items = communities, itemLabel = CommunityVo::name)
                     }
                 }
 
@@ -185,14 +185,14 @@ class DeveloperView(
                         Page(contests.content, contests.totalElements.toInt())
                     },
                 ) {
-                    codeColumn(texts.id(), sortKey = "id", size = 3) { (contest, _) -> contest.id.value.toString() }
-                    textColumn(texts.name(), sortKey = "name", size = 5) { (contest, _) -> contest.name }
+                    codeColumn(texts.id(), sortKey = "id", size = 4) { (contest, _) -> contest.id.value.toString() }
+                    textColumn(texts.name(), sortKey = "name", size = 6) { (contest, _) -> contest.name }
                     numberColumn(texts.contestsTasks(), size = 2) { (contest, _) -> contest.tasks.size }
                     textColumn(texts.contestsShared(), size = 3) { (contest, _) ->
                         if (contest.sharedTo.isEmpty()) texts.contestsSharedNo() else texts.contestsSharedYes()
                     }
-                    dateTimeColumn(texts.startsAt(), size = 4) { (contest, _) -> contest.startsAt?.toUserDateTime() }
-                    dateTimeColumn(texts.endsAt(), size = 4) { (contest, _) -> contest.endsAt?.toUserDateTime() }
+                    dateTimeColumn(texts.startsAt(), size = 3) { (contest, _) -> contest.startsAt?.toUserDateTime() }
+                    dateTimeColumn(texts.endsAt(), size = 3) { (contest, _) -> contest.endsAt?.toUserDateTime() }
                     textColumn(texts.attemptDuration()) { (contest, _) -> studyDurationText(contest.attemptDuration) }
                     empty(texts.contestsEmpty(), texts.contestsEmptyHint())
                     onRowClick(isNavigation = true) { (contest, _) -> openDeveloperContest(contest.id) }
@@ -217,8 +217,8 @@ class DeveloperView(
                     onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
                     row {
-                        name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.nameHint())
-                        community = select(texts.community(), labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name)
+                        name = textInput(texts.name(), labelSize = 2, size = 10, hint = texts.nameHint())
+                        community = select(texts.community(), labelSize = 2, size = 10, items = communities, itemLabel = CommunityVo::name)
                     }
                 }
 
@@ -277,32 +277,32 @@ class DeveloperView(
         lateinit var endsAt: ValueInput<LocalDateTime?>
         val creation = dialog(title = texts.contestsDialogTitle(), size = DialogSize.L) {
             row {
-                textInput(texts.name(), labelSize = 7, size = 17) {
+                textInput(texts.name(), labelSize = 6, size = 18) {
                     draft.forField(this)
                         .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                select(texts.trikStudioVersion(), labelSize = 7, size = 17, items = versions, itemLabel = TrikStudioVersion::version) {
+                select(texts.trikStudioVersion(), labelSize = 6, size = 9, items = versions, itemLabel = TrikStudioVersion::version) {
                     draft.forField(this)
                         .asRequired(texts.contestsVersionRequired())
                         .bind({ values -> values.version }, { values, version -> values.version = version })
                 }
             }
             row {
-                textArea(texts.description(), labelSize = 7, size = 17, maxLines = 4) {
+                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
             }
             row {
-                startsAt = dateTimeInput(texts.startsAt(), labelSize = 7, size = 17) {
+                startsAt = dateTimeInput(texts.startsAt(), labelSize = 6, size = 9) {
                     draft.forField(this).bind({ values -> values.startsAt }, { values, start -> values.startsAt = start })
                 }
             }
             row {
-                endsAt = dateTimeInput(texts.endsAt(), labelSize = 7, size = 17) {
+                endsAt = dateTimeInput(texts.endsAt(), labelSize = 6, size = 9) {
                     draft.forField(this)
                         .scheduleRules { startsAt.value }
                         .bind({ values -> values.endsAt }, { values, end -> values.endsAt = end })
@@ -311,8 +311,8 @@ class DeveloperView(
             row {
                 integerInput(
                     texts.attemptLimit(),
-                    labelSize = 7,
-                    size = 17,
+                    labelSize = 6,
+                    size = 6,
                     min = 1,
                     unit = texts.minutesUnit(),
                     hint = texts.attemptDuration(),

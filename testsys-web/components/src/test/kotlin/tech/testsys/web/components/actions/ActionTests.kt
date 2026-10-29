@@ -18,9 +18,13 @@ import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestContent
 import tech.testsys.web.components.buildTestPage
+import tech.testsys.web.components.button
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.openDialogs
+import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.pendingJavaScript
 
 class ActionTests : MockVaadinTests() {
     @Nested
@@ -268,6 +272,93 @@ class ActionTests : MockVaadinTests() {
             handle.bindLoading(ValueSignal(true))
 
             assertThrows<BindingActiveException> { handle.bindLoading(ValueSignal(false)) }
+        }
+    }
+
+    @Nested
+    inner class CooldownTests {
+        /** Seconds of the cooldowns started for the action labelled [text] since the previous round trip. */
+        private fun cooldownSeconds(text: String): List<Any?> {
+            val calls = pendingJavaScript()
+            val action = button(text)
+            return calls
+                .filter { call -> call.owner == action.element.node && "data-ts-cooldown" in call.invocation.expression }
+                .map { call -> call.invocation.parameters.first() }
+        }
+
+        @Test
+        fun `should start the cooldown with the given seconds on each opening of the dialog`() {
+            buildTestPage {}
+            val handle = dialog(title = "Тур") { footer { _ -> mainAction("Создать") { cooldownSeconds = 2 } } }
+            handle.open()
+            val first = cooldownSeconds("Создать")
+            handle.close()
+            openDialogs()
+
+            handle.open()
+
+            assertEquals(listOf<Any?>(2), first)
+            assertEquals(listOf<Any?>(2), cooldownSeconds("Создать"))
+        }
+
+        @Test
+        fun `should drain the cooldown bar over the given seconds`() {
+            buildTestContent { mainAction("Отправить") { cooldownSeconds = 2 } }
+            val action = button("Отправить")
+
+            val call = pendingJavaScript().single { call ->
+                call.owner == action.element.node && "data-ts-cooldown" in call.invocation.expression
+            }
+
+            assertTrue("setProperty('--ts-cooldown-duration', left + 's')" in call.invocation.expression)
+            assertTrue("removeProperty('--ts-cooldown-duration')" in call.invocation.expression)
+            assertEquals(2, call.invocation.parameters.first())
+        }
+
+        @Test
+        fun `should not start a cooldown by default`() {
+            buildTestContent { mainAction("Отправить") }
+
+            assertTrue(cooldownSeconds("Отправить").isEmpty())
+        }
+
+        @Test
+        fun `should keep the action enabled on the server during the cooldown`() {
+            var clicks = 0
+            buildTestContent {
+                mainAction("Отправить") {
+                    cooldownSeconds = 3
+                    onClick { clicks++ }
+                }
+            }
+
+            button("Отправить")._click()
+
+            assertEquals(1, clicks)
+        }
+
+        @Test
+        fun `should reject a negative cooldown`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") }
+
+            assertThrows<IllegalArgumentException> { handle.cooldownSeconds = -1 }
+        }
+
+        @Test
+        fun `should reject clicking on Enter for an action with a cooldown`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") { cooldownSeconds = 2 } }
+
+            assertThrows<IllegalStateException> { handle.clickOnEnter() }
+        }
+
+        @Test
+        fun `should reject a cooldown for an action clicked on Enter`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") { clickOnEnter() } }
+
+            assertThrows<IllegalStateException> { handle.cooldownSeconds = 2 }
         }
     }
 }

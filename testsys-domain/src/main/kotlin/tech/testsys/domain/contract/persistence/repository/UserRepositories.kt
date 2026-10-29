@@ -131,9 +131,7 @@ interface UserAccessTokenFinder<Id : UserId, Entity : User<Id>> {
  *
  * @since %CURRENT_VERSION%
  */
-interface MultipleRoleUserRepository :
-    EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>,
-    UserAccessTokenFinder<MultipleRoleUserId, MultipleRoleUser> {
+interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser> {
 
     /**
      * Synchronously and atomically grants [role] to [userId] if it is not held yet and makes the user a member of

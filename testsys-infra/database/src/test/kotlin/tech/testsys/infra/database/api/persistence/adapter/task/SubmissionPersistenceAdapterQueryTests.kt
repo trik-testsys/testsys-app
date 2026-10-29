@@ -274,6 +274,47 @@ class SubmissionPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         assertEquals(0, statementCount)
     }
 
+    @Test
+    fun `should find only the given authors with grading submissions in any state in the given contests`() {
+        val contest = fixtures.contest()
+        val otherContest = fixtures.contest()
+        val task = fixtures.task()
+        val studentId = fixtures.student().id
+        val participantId = fixtures.participant().id
+        val idleStudentId = fixtures.student().id
+        val elsewhereStudentId = fixtures.student().id
+        val testingStudent = fixtures.student()
+        withStatus(gradingSubmission(studentId, task, otherContest), "IN_PROGRESS")
+        graded(gradingSubmission(participantId, task, contest), 10)
+        gradingSubmission(elsewhereStudentId, task, fixtures.contest())
+        gradingSubmission(fixtures.student().id, task, contest)
+        fixtures.submission(author = testingStudent, task = task)
+
+        val actual = repository.findGradingAuthorIds(
+            authorIds = setOf(studentId, participantId, idleStudentId, elsewhereStudentId, testingStudent.id),
+            contestIds = setOf(contest.id, otherContest.id),
+        )
+
+        assertEquals(setOf(studentId, participantId), actual)
+    }
+
+    @Test
+    fun `should find no authors without querying storage if authors or contests are empty`() {
+        val contest = fixtures.contest()
+        val authorId = fixtures.student().id
+        gradingSubmission(authorId, fixtures.task(), contest)
+
+        val (actual, statementCount) = withStatementCount {
+            listOf(
+                repository.findGradingAuthorIds(authorIds = emptySet(), contestIds = setOf(contest.id)),
+                repository.findGradingAuthorIds(authorIds = setOf(authorId), contestIds = emptySet()),
+            )
+        }
+
+        assertEquals(listOf(emptySet<UserId>(), emptySet<UserId>()), actual)
+        assertEquals(0, statementCount)
+    }
+
     private fun gradingSubmission(authorId: UserId, task: Task, contest: Contest): Submission {
         val taskId = task.id.value
         val solutionId = fixtures.solution().id.value

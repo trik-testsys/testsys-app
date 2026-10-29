@@ -22,6 +22,7 @@ import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.developer.DeveloperSolutionVo
 import tech.testsys.web.app.service.developer.ExerciseVo
+import tech.testsys.web.app.service.developer.RegradeVo
 import tech.testsys.web.app.service.developer.ResourceVo
 import tech.testsys.web.app.service.developer.StatementVo
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
@@ -29,14 +30,17 @@ import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.TextHandle
 import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.downloadAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.display.ProgressValue
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.badge
+import tech.testsys.web.components.display.progressBar
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
@@ -65,6 +69,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** Columns of the task details block; the access block takes the rest of the row beside it. */
 private const val DETAILS_COLUMNS = 14
+
+/** Full progress of a regrade, in percent. */
+private const val PERCENT = 100.0
 
 /** Bytes in a mebibyte, the unit of the upload limit a page shows. */
 private const val BYTES_PER_MEBIBYTE = 1024 * 1024
@@ -109,8 +116,8 @@ internal enum class ResourceUsage(val usage: TaskResourcesUsageValueUsage) {
 
 /**
  * Task of a Developer (testsys.web.page.developer.task): its details with their editing, its resources with uploading,
- * attaching and detaching, its testing with committing and reverting, and its access of communities. Before an action
- * that changes the state of the task, the page asks to confirm the new state.
+ * attaching and detaching, its testing with committing and reverting, its regrades with their progress, and its access
+ * of communities. Before an action that changes the state of the task, the page asks to confirm the new state.
  *
  * @since %CURRENT_VERSION%
  */
@@ -177,6 +184,7 @@ class DeveloperTaskView(
         val versions = developerService.viewTrikStudioVersions()
         val chains = chainsOf(task)
         val requests = developerService.viewTaskValidationRequests(taskId).reversed()
+        val regrades = developerService.viewRegrades(taskId).reversed()
         val state = stateOf(task)
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
@@ -200,6 +208,7 @@ class DeveloperTaskView(
             }
             resourcesBlock(task, chains)
             testingBlock(task, requests)
+            regradesBlock(regrades)
         }
     }
 
@@ -223,7 +232,7 @@ class DeveloperTaskView(
                         }
                     }
                     row {
-                        codeInput(texts.versionId(), labelSize = 6, size = 18) {
+                        codeInput(texts.versionId(), labelSize = 6, size = 7) {
                             value = resource.id.value.toString()
                             isEditable = false
                         }
@@ -276,20 +285,20 @@ class DeveloperTaskView(
                 onCancel = { draft.readBean(initial) },
             )
             row {
-                codeInput(texts.id(), labelSize = 6, size = 18) {
+                codeInput(texts.id(), labelSize = 5, size = 6) {
                     value = task.id.value.toString()
                     isEditable = false
                 }
             }
             row {
-                textInput(texts.name(), labelSize = 6, size = 18) {
+                textInput(texts.name(), labelSize = 5, size = 19) {
                     draft.forField(this)
                         .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
+                textArea(texts.description(), labelSize = 5, size = 19, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -297,8 +306,8 @@ class DeveloperTaskView(
             row {
                 multiSelect(
                     texts.trikStudioVersions(),
-                    labelSize = 6,
-                    size = 18,
+                    labelSize = 5,
+                    size = 19,
                     items = versions,
                     itemLabel = TrikStudioVersion::version,
                 ) {
@@ -414,14 +423,14 @@ class DeveloperTaskView(
             onRefresh = refresh,
         ) {
             row {
-                name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.nameHint())
-                kind = select(texts.type(), labelSize = 4, size = 8, items = ResourceKind.entries, itemLabel = ::kindLabelOf)
+                name = textInput(texts.name(), labelSize = 3, size = 9, hint = texts.nameHint())
+                kind = select(texts.type(), labelSize = 3, size = 9, items = ResourceKind.entries, itemLabel = ::kindLabelOf)
             }
             row {
                 usage = select(
                     texts.taskResourcesUsage(),
-                    labelSize = 4,
-                    size = 8,
+                    labelSize = 3,
+                    size = 9,
                     items = ResourceUsage.entries,
                     itemLabel = { used -> texts.taskResourcesUsageValue(usage = used.usage) },
                 ) {
@@ -429,8 +438,8 @@ class DeveloperTaskView(
                 }
                 differences = checkbox(
                     texts.taskResourcesDifferences(),
-                    labelSize = 4,
-                    size = 8,
+                    labelSize = 3,
+                    size = 9,
                 ) {
                     isEnabled = isComparisonAvailable
                 }
@@ -496,19 +505,23 @@ class DeveloperTaskView(
         }
     }
 
-    /** Builds the commit dialog of [task] and returns its opening. */
+    /**
+     * Builds the commit dialog of [task] and returns its opening, which counts the submissions to grade again: the
+     * regrade choice is offered only if there are any, otherwise the dialog names the reason.
+     */
     private fun commitDialog(task: TaskVo): () -> Unit {
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         lateinit var regrade: ValueInput<Boolean>
+        lateinit var regradeHint: TextHandle
         val committing = dialog(title = texts.taskCommitTitle()) {
             row { text(texts.taskCommitText()) }
             row {
-                regrade = checkbox(texts.taskCommitRegrade(), labelSize = 18, size = 6) {
+                regrade = checkbox(texts.taskCommitRegrade(), labelSize = 8, size = 16) {
                     value = false
                 }
             }
-            row { text(texts.taskCommitRegradeHint()) }
+            row { regradeHint = text("") }
             footer { dialog ->
                 action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.taskCommit()) {
@@ -525,8 +538,39 @@ class DeveloperTaskView(
             }
         }
         return {
+            val count = developerService.countRegradeSubmissions(task.id)
+            val current = currentLocalization().pageDeveloper
             regrade.value = false
+            regrade.isVisible = count != null && count > 0
+            regradeHint.text = when {
+                stateOf(task) == TaskState.New -> current.taskCommitRegradeFirst()
+                count == null -> current.taskCommitRegradeUnchanged()
+                count == 0 -> current.taskCommitRegradeNoSubmissions()
+                else -> current.taskCommitRegradeCount(count = count)
+            }
             committing.open()
+        }
+    }
+
+    private fun PageScope.regradesBlock(regrades: List<Pair<RegradeVo, Int>>) {
+        val texts = currentLocalization().pageDeveloper
+        row {
+            block(title = texts.taskRegradesTitle()) {
+                guide(texts.taskRegradesGuide())
+                table(key = { (regrade, _): Pair<RegradeVo, Int> -> regrade.id }, fetch = { request -> pageOf(regrades, request) }) {
+                    dateTimeColumn(texts.startedAt(), size = 6) { (regrade, _) -> regrade.createdAt.toUserDateTime() }
+                    numberColumn(texts.taskRegradesSubmissions(), size = 5) { (regrade, _) -> regrade.submissions.size }
+                    column(texts.taskRegradesProgress()) { (regrade, graded) ->
+                        val total = regrade.submissions.size
+                        val progress = texts.taskRegradesProgressValue(graded = graded, total = total)
+                        // A regrade is saved only with submissions; the guard keeps an inconsistent row from failing.
+                        val percent = graded * PERCENT / total.coerceAtLeast(1)
+                        progressBar(label = progress, value = ProgressValue.Determinate(percent.coerceIn(0.0, PERCENT)))
+                        text(progress)
+                    }
+                    empty(texts.taskRegradesEmpty(), texts.taskRegradesEmptyHint())
+                }
+            }
         }
     }
 
@@ -640,7 +684,7 @@ class DeveloperTaskView(
             }
         }
         row {
-            score = integerInput(texts.expectedScore(), labelSize = 6, size = 18, min = 0) {
+            score = integerInput(texts.expectedScore(), labelSize = 6, size = 6, min = 0) {
                 isVisible = false
                 draft.forField(this)
                     .asRequired(texts.scoreRequired())

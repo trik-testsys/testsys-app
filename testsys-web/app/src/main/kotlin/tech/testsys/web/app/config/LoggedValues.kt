@@ -6,6 +6,7 @@ import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.PasswordHash
 import java.io.InputStream
 import java.lang.reflect.Method
 
@@ -38,14 +39,14 @@ internal object LoggedValues {
         }
     }
 
-    /** Renders a call [result]; a string result is masked, because some calls return a raw access code. */
+    /** Renders a call [result]; a string result is masked, because some calls return a secret, such as a password hash. */
     fun result(result: Any?): String = if (result is CharSequence) MASK else value(result)
 
     /** Renders [item] by the masking and shortening rules. */
     fun value(item: Any?): String = when (item) {
         null -> "null"
         is CharSequence -> shortened(item.toString())
-        is AccessTokenHash, is InviteCodeHash -> MASK
+        is AccessTokenHash, is InviteCodeHash, is PasswordHash -> MASK
         is FileData -> file(item)
         is ByteArray -> "byte[${item.size}]"
         is InputStream -> "InputStream"

@@ -22,6 +22,7 @@ import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.CompetitionVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
+import tech.testsys.web.app.service.IssuedObserverVo
 import tech.testsys.web.app.service.MultipleRoleUserVo
 import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.TaskVo
@@ -48,7 +49,7 @@ import java.time.Instant
 class AdministratorService(private val operations: AdministratorOperations, private val currentUser: CurrentUser) :
     CommunityManagementService,
     UserRoleReadService {
-    override fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): ObserverVo =
+    override fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): IssuedObserverVo =
         operations.createObserver(currentUser.multipleRoleUser(), communityId, observerName, contestIds).getOrThrow().toVo()
 
     @Transactional(readOnly = true)

@@ -12,6 +12,7 @@ import tech.testsys.operation.error.MissedRequiredRoleError
 import tech.testsys.operation.error.OperationError
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.ResourceAccessError
+import tech.testsys.operation.error.TrikStudioVersionNotRegisteredError
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.texts.currentLocalization
@@ -44,6 +45,7 @@ class OperationErrorHandler(private val failures: WebFailures) : VaadinServiceIn
 
     private fun title(error: OperationError): String = with(currentLocalization().uiFeedback) {
         when (error) {
+            is TrikStudioVersionNotRegisteredError -> errorFailureTrikStudioVersionOutdated()
             is EntityNotExistsError -> errorFailureNotFound()
             is AccessDeniedError -> errorFailureAccessDenied()
             is MissedRequiredRoleError -> errorFailureMissingRole()

@@ -15,16 +15,17 @@ services:
   app:
     image: ${TESTSYS_APP_IMAGE:-testsys-app:latest}
     restart: unless-stopped
+    # The same block in every environment override: the variables of the application under their own names, with
+    # the values from the production variable file.
     environment:
-      SPRING_DATASOURCE_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
-      TESTSYS_MAIL_PASSWORD: ${TESTSYS_MAIL_PASSWORD:?set TESTSYS_MAIL_PASSWORD}
-      TESTSYS_OPERATION_SUPERVISOR_ACCESS_TOKEN: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN:?set TESTSYS_SUPERVISOR_ACCESS_TOKEN}
+      TESTSYS_DB_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+      TESTSYS_MAIL_PASSWORD: ${TESTSYS_MAIL_PASSWORD?set TESTSYS_MAIL_PASSWORD to the SMTP password or to an empty value}
+      TESTSYS_SUPERVISOR_ACCESS_TOKEN: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN:?set TESTSYS_SUPERVISOR_ACCESS_TOKEN}
       TESTSYS_SERVICE_SECRET: ${TESTSYS_SERVICE_SECRET:?set TESTSYS_SERVICE_SECRET}
-      TESTSYS_SERVICE_GRAFANAURL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL}
+      TESTSYS_ACCESS_TOKEN_SECRET: ${TESTSYS_ACCESS_TOKEN_SECRET:?set TESTSYS_ACCESS_TOKEN_SECRET}
+      TESTSYS_GRAFANA_URL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL}
       TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES:-}
       TESTSYS_GRADING_IMPORT_NODES: ${TESTSYS_GRADING_IMPORT_NODES:-false}
-      # Applies only to the main interface: the service and metrics contexts reset it to none.
-      SERVER_FORWARDHEADERSSTRATEGY: native
     volumes:
       # Server copy of deploy/config/application-prod.example.yml, kept outside the Git checkout.
       - type: bind

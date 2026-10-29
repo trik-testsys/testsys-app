@@ -49,6 +49,8 @@
 - У Вердикта (`Verdict`) при создании фиксируются все поля — `task`, `submission` и `testVerdicts`, поэтому
   `update` Вердикта не поддерживается: новая проверка Посылки создаёт новый Вердикт. Результат по каждому
   Полигону — это значение `TestVerdict` внутри `VerdictData`.
+- У Перепроверки (`Regrade`) при создании фиксируются все поля — `task`, `tests` и `submissions`, поэтому её
+  `update` не поддерживается.
 - `FileData` после сохранения не меняется: изменённый файл сохраняется как новый.
 - Сущности не хранят ссылок на другие сущности. Связь — это `LazyEntity<Id, E>` или `LazyEntityList<Id, E>`:
   внутри только идентификаторы, разрешаются они через `EntityLoader.load(...)`. Создаются через `id.lazify()`
@@ -121,31 +123,34 @@
 
 Смысл Фиксированных и Нефиксированных Ролей — в [definitions.md](../docs/domain/definitions.md).
 
-`UserData.accessTokenHash` хранит представление Кода-доступа и алгоритм в одном объекте `AccessTokenHash`
-([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)). Сейчас доступен только `HashAlgorithm.Identity`:
-он оставляет Код-доступа без изменений, поэтому сохранённое значение совпадает с исходным КД.
-`Identity` — временное решение и не обеспечивает криптографическую защиту.
+`UserData` содержит только Псевдоним. Код-доступа есть только у Пользователей с Фиксированной Ролью: данные
+`Participant`, `Observer` и `Supervisor` реализуют `SingleRoleUserData`
+([SingleRoleUser.kt](src/main/kotlin/tech/testsys/domain/model/user/SingleRoleUser.kt)). Пользователь
+с Нефиксированными Ролями входит по почте и Паролю: `MultipleRoleUserData.passwordHash` хранит `PasswordHash`
+([MultipleRoleUser.kt](src/main/kotlin/tech/testsys/domain/model/user/MultipleRoleUser.kt)) — значение, которое
+получает и проверяет только порт `PasswordHasher` (раздел [«Порты»](#порты)).
 
-Объявления, поведение которых зависит от совпадения сохранённого значения с исходным КД, помечаются
-`@RawAccessTokenDependency` с объяснением зависимости в обязательном параметре `reason`
-([RawAccessTokenDependency.kt](src/main/kotlin/tech/testsys/domain/model/user/RawAccessTokenDependency.kt)).
-При замене `Identity` все отмеченные объявления должны быть проверены и исправлены до включения нового алгоритма.
-Простое копирование значения между объектами такой зависимости не создаёт. Методы,
-показывающие исходный КД, должны получить эту аннотацию.
+`SingleRoleUserData.accessTokenHash` хранит представление Кода-доступа и алгоритм в одном объекте `AccessTokenHash`
+([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)). КД хешируются алгоритмом
+`HashAlgorithm.HmacSha256`. `AccessTokenHasher` из того же файла считает HMAC-SHA-256 от UTF-8-байтов КД с ключом
+из UTF-8-байтов серверного секрета и записывает результат 64 символами hex в нижнем регистре. Секрет короче
+64 символов конструктор отклоняет. Хеш детерминирован: по хешу введённого КД адаптер хранения находит Пользователя.
+Исходный КД по хешу восстановить нельзя. Откуда приложение берёт секрет — в разделе
+[«Коды-доступа и Пароли Пользователей»](../testsys-infra/database/README.md#коды-доступа-и-пароли-пользователей)
+database/README.md.
 
-Все четыре билдера данных Пользователей наследуют `UserDataBuilder`
-([UserBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/user/UserBuilder.kt)).
-Метод `accessToken(rawAccessToken, algorithm)` вызывает функцию `AccessTokenHash.hashAccessToken`
-([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)).
-Она применяет переданный алгоритм и возвращает значение вместе с ним в `AccessTokenHash`.
-Алгоритм исходного КД передаётся явно; сейчас доступен только `HashAlgorithm.Identity`.
+Билдеры данных Пользователей с Фиксированной Ролью наследуют `UserDataBuilder`
+([UserBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/user/UserBuilder.kt)). `MultipleRoleUserDataBuilder`
+его не наследует: он требует готовый `passwordHash`, а `withData` переносит сохранённый хеш Пароля.
+Метод `accessToken(rawAccessToken, hasher)` хеширует исходный КД переданным `AccessTokenHasher` и сохраняет
+результат вместе с алгоритмом в `AccessTokenHash`.
 Метод `storedAccessToken(hash)` принимает готовый `AccessTokenHash` без хэширования.
 `build()` проверяет наличие объекта, но не хэширует его.
 
-`withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
+`withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, hasher)` внутри блока `withData`.
 Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
 
-Порты хранения Пользователей `MultipleRoleUserRepository`, `ParticipantRepository`, `ObserverRepository`
+Порты хранения Пользователей с Фиксированной Ролью `ParticipantRepository`, `ObserverRepository`
 и `SupervisorRepository` расширяют `UserAccessTokenFinder`
 ([UserRepositories.kt](src/main/kotlin/tech/testsys/domain/contract/persistence/repository/UserRepositories.kt)).
 Его метод `findByAccessToken` принимает исходный КД и возвращает Пользователя своего вида, которому этот КД
@@ -177,9 +182,7 @@
 
 [`RegistrationRequest`](src/main/kotlin/tech/testsys/domain/model/user/RegistrationRequest.kt) хранит
 незавершённую регистрацию: почту, код подтверждения, момент окончания его срока и число оставшихся попыток.
-Для одной почты хранится не более одного запроса. Роль, которую Пользователь выбирает при подтверждении
-регистрации, задаётся перечислением
-[`RegistrationRole`](src/main/kotlin/tech/testsys/domain/model/user/RegistrationRole.kt).
+Для одной почты хранится не более одного запроса.
 
 ### Запросы смены почты
 
@@ -223,7 +226,8 @@
 Поле `codeHash` хранит представление Кода-приглашения и алгоритм в одном объекте `InviteCodeHash`
 ([InviteCodeHash.kt](src/main/kotlin/tech/testsys/domain/model/group/InviteCodeHash.kt)).
 Функция `InviteCodeHash.hashInviteCode` применяет переданный алгоритм без нормализации ввода.
-Как и для КД, сейчас доступен только `HashAlgorithm.Identity`: сохранённое значение совпадает с исходным кодом.
+Коды-приглашения хешируются только `HashAlgorithm.Identity`: сохранённое значение совпадает с исходным кодом,
+а `HashAlgorithm.HmacSha256` функция отклоняет с `IllegalArgumentException`.
 
 `ClassInviteDataBuilder` и `CommunityInviteDataBuilder` наследуют `InviteCodeDataBuilder`
 ([InviteCodeDataBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/group/InviteCodeDataBuilder.kt)).
@@ -247,6 +251,9 @@
   Фильтры и общее число относятся к парам; условия доступа задаются идентификаторами назначенных Туров.
 - `FileBlobStorage` получает путь (`java.nio.file.Path`) в каждом вызове `store`, `load` и `delete`.
   `StoredBlobRef` действителен только вместе с путём, по которому создан блоб.
+- `PasswordHasher` ([Password.kt](src/main/kotlin/tech/testsys/domain/contract/Password.kt)) хеширует Пароль
+  с новой солью и сравнивает введённый Пароль с `PasswordHash` точно. Проверка без хеша (`null`) тратит примерно
+  столько же времени и возвращает `false`, поэтому время ответа не показывает, привязана ли почта.
 - Остальные порты и их состояние — в разделе «Убедиться, что порт нужен»
   в [implement-port.md](../docs/guides/implement-port.md).
 

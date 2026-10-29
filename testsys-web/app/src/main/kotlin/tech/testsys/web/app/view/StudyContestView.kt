@@ -112,14 +112,14 @@ abstract class StudyContestView(private val headers: CabinetHeaders, private val
     private fun PageRowScope.contestDetails(contest: ContestVo) {
         block(size = CONTEST_DETAILS_COLUMNS, title = texts.detailsTitle()) {
             guide(texts.contestDetailsGuide())
-            row { codeInput(texts.id(), labelSize = 6, size = 10) { value = contest.id.value.toString() } }
-            row { textInput(texts.name(), labelSize = 6, size = 18) { value = contest.name } }
-            row { textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) { value = contest.description } }
+            row { codeInput(texts.id(), labelSize = 5, size = 6) { value = contest.id.value.toString() } }
+            row { textInput(texts.name(), labelSize = 5, size = 19) { value = contest.name } }
+            row { textArea(texts.description(), labelSize = 5, size = 19, maxLines = 4) { value = contest.description } }
             row {
-                dateTimeInput(texts.startsAt(), labelSize = 6, size = 6) { value = contest.startsAt?.toUserDateTime() }
-                dateTimeInput(texts.endsAt(), labelSize = 6, size = 6) { value = contest.endsAt?.toUserDateTime() }
+                dateTimeInput(texts.startsAt(), labelSize = 5, size = 7) { value = contest.startsAt?.toUserDateTime() }
+                dateTimeInput(texts.endsAt(), labelSize = 5, size = 7) { value = contest.endsAt?.toUserDateTime() }
             }
-            row { textInput(texts.attemptDuration(), labelSize = 6, size = 6) { value = studyDurationText(contest.attemptDuration) } }
+            row { textInput(texts.attemptDuration(), labelSize = 5, size = 7) { value = studyDurationText(contest.attemptDuration) } }
         }.isEditable = false
     }
 }

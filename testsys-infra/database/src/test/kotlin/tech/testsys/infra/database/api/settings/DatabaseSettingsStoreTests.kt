@@ -41,6 +41,17 @@ class DatabaseSettingsStoreTests : DatabaseIntegrationTests() {
                         SettingKey.MaxConfirmationAttempts.property to "5",
                         SettingKey.CommunityInviteTtl.property to "PT24H",
                         SettingKey.ClassInviteTtl.property to "PT24H",
+                        SettingKey.GradingMaxAttempts.property to "3",
+                        SettingKey.TotalTimeout.property to "PT30M",
+                        SettingKey.RpcTimeout.property to "PT10M",
+                        SettingKey.ShouldRecordVideo.property to "true",
+                        SettingKey.PollInterval.property to "PT5S",
+                        SettingKey.StatusTimeout.property to "PT5S",
+                        SettingKey.MaxMessageBytes.property to "400000000",
+                        SettingKey.MaxTimeLimitMillis.property to "600000",
+                        SettingKey.ScorePrefix.property to "Набрано баллов:",
+                        SettingKey.CleanupMinimumAge.property to "PT24H",
+                        SettingKey.CleanupBatchSize.property to "500",
                         "testsys.operation.community.public-community-id" to "42",
                     ),
                 ),
@@ -114,7 +125,7 @@ class DatabaseSettingsStoreTests : DatabaseIntegrationTests() {
 
     @Test
     fun `should round trip all overrides in one durable row`() {
-        val overrides = SettingKey.entries.associate { key -> key.property to (key.defaultValue ?: "1") }
+        val overrides = SettingKey.entries.associate { key -> key.property to "${key.kind}-value" }
         val id = UUID(0, 1)
 
         val saved = store.compareAndSet(0, overrides, id)

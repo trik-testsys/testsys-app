@@ -3,6 +3,7 @@ package tech.testsys.operation.user
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.developerSolutionData
 import tech.testsys.domain.builder.api.exerciseData
+import tech.testsys.domain.builder.api.regradeData
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.taskData
@@ -17,6 +18,7 @@ import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
+import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -35,6 +37,7 @@ import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.Regrade
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.Statement
@@ -74,6 +77,7 @@ import tech.testsys.operation.error.ContestEndNotAfterStartError
 import tech.testsys.operation.error.ContestEndWithoutStartError
 import tech.testsys.operation.error.ContestNameTooLongError
 import tech.testsys.operation.error.ContestNotExistsError
+import tech.testsys.operation.error.CountRegradeSubmissionsError
 import tech.testsys.operation.error.CreateContestError
 import tech.testsys.operation.error.CreateTaskError
 import tech.testsys.operation.error.DeleteContestError
@@ -126,6 +130,7 @@ import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
+import tech.testsys.operation.error.TrikStudioVersionNotRegisteredError
 import tech.testsys.operation.error.UpdateDeveloperSolutionError
 import tech.testsys.operation.error.UpdateExerciseError
 import tech.testsys.operation.error.UpdateStatementError
@@ -133,6 +138,7 @@ import tech.testsys.operation.error.UpdateTestError
 import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.error.ViewContestError
 import tech.testsys.operation.error.ViewContestsError
+import tech.testsys.operation.error.ViewRegradesError
 import tech.testsys.operation.error.ViewResourceError
 import tech.testsys.operation.error.ViewResourcesError
 import tech.testsys.operation.error.ViewTaskError
@@ -169,6 +175,7 @@ class DeveloperOperations(
     private val taskValidationRequestRepository: TaskValidationRequestRepository,
     private val taskValidationDispatcher: TaskValidationDispatcher,
     private val submissionRepository: SubmissionRepository,
+    private val regradeRepository: RegradeRepository,
     private val grader: Grader,
 ) {
 
@@ -234,7 +241,7 @@ class DeveloperOperations(
     /**
      * Commits the working revision of [taskId] owned by [user] if a successful validation request has a matching
      * snapshot and its statement, exercises and attached contests still fit; returns the saved Committed task.
-     * With [regradeSubmissions], a changed polygon set resends contest submissions to grading; exceptions propagate.
+     * With [regradeSubmissions], a changed polygon set resends contest submissions to grading as a saved regrade.
      *
      * @since %CURRENT_VERSION%
      */
@@ -279,12 +286,55 @@ class DeveloperOperations(
                 }
             }
             val savedTask = taskRepository.update(committedTask)
-            val isPolygonSetChanged = previous is TaskContent.Uncommitted &&
-                previous.lastCommitted.tests.ids.toSet() != wip.tests.ids.toSet()
-            if (regradeSubmissions && isPolygonSetChanged) {
-                submissionRepository.findGradingByTaskId(taskId).forEach { submission -> grader.sendToGrade(submission) }
+            if (regradeSubmissions && previous.changesPolygonSet()) {
+                val submissions = submissionRepository.findGradingByTaskId(taskId)
+                if (submissions.isNotEmpty()) {
+                    regradeRepository.save(
+                        regradeData {
+                            this.task = taskId
+                            tests = wip.tests.ids.toMutableList()
+                            this.submissions = submissions.map { submission -> submission.id }.toMutableList()
+                        },
+                    )
+                }
+                submissions.forEach { submission -> grader.sendToGrade(submission) }
             }
             return savedTask.asSuccess()
+        }
+
+    /**
+     * Returns how many contest submissions of [taskId] owned by [user] a commit with regrade would send to grading
+     * again, or `null` if the task is not Uncommitted or its polygon set is unchanged. Counting preserves stored state.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.commitTask")
+    fun countRegradeSubmissions(user: MultipleRoleUser, taskId: TaskId): OperationResult<Int?, CountRegradeSubmissionsError> =
+        operation<Int?, CountRegradeSubmissionsError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            if (!task.data.content.changesPolygonSet()) return null.asSuccess()
+            return submissionRepository.findGradingByTaskId(taskId).size.asSuccess()
+        }
+
+    /**
+     * Returns every regrade of [taskId] owned by [user] in creation order, each with the number of its submissions
+     * graded on its tests since it started. Viewing preserves stored state.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.commitTask")
+    fun viewRegrades(user: MultipleRoleUser, taskId: TaskId): OperationResult<List<Pair<Regrade, Int>>, ViewRegradesError> =
+        operation<List<Pair<Regrade, Int>>, ViewRegradesError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            val regrades = regradeRepository.findByTaskId(taskId)
+            val graded = regradeRepository.countGraded(regrades.map { regrade -> regrade.id }.toSet())
+            return regrades.map { regrade -> regrade to (graded[regrade.id] ?: 0) }.asSuccess()
         }
 
     /**
@@ -359,7 +409,7 @@ class DeveloperOperations(
         }
 
     /**
-     * Creates a contest owned by [user] with [contestName], [contestDescription] and [trikStudioVersion].
+     * Creates a contest owned by [user] with [contestName], [contestDescription] and a registered [trikStudioVersion].
      * Omitted [attemptDuration], [startsAt] and [endsAt] leave their limits unset; storage exceptions propagate.
      *
      * @throws IllegalArgumentException if a duration cannot be represented exactly in Long milliseconds.
@@ -393,6 +443,9 @@ class DeveloperOperations(
         contestDuration?.requireExactMillis("contestDuration")
         attemptDuration?.requireExactMillis("attemptDuration")
         ensure(TextLimits.isValidName(contestName)) { ContestNameTooLongError(contestName) }
+        ensure(trikStudioVersion in contestRepository.findTrikStudioVersions()) {
+            TrikStudioVersionNotRegisteredError(trikStudioVersion)
+        }
         val data = contestData {
             owner = user.id
             name = contestName
@@ -610,7 +663,8 @@ class DeveloperOperations(
 
     /**
      * Edits [taskName], [taskDescription] and [supportedTrikStudioVersions] of [taskId] owned by [user], retaining omitted values.
-     * Version set changes affect only the editable revision; unchanged values return the task without saving.
+     * A changed version set must be registered and affects only the editable revision; unchanged values return the task
+     * without saving.
      *
      * @since %CURRENT_VERSION%
      */
@@ -637,6 +691,9 @@ class DeveloperOperations(
         }
 
         val editedTask = if (hasVersionChanges) {
+            val registered = contestRepository.findTrikStudioVersions().toSet()
+            val unregistered = versions.firstOrNull { version -> version !in registered }
+            ensure(unregistered == null) { TrikStudioVersionNotRegisteredError(requireNotNull(unregistered)) }
             task.changeEditableContent { this.supportedTrikStudioVersions = versions.toMutableList() }
         } else {
             task
@@ -1521,6 +1578,12 @@ class DeveloperOperations(
             description = latest.data.description
         }
         return developerSolutionRepository.save(restored.data).id
+    }
+
+    /** Whether committing this content changes the polygon set of the last committed revision; a new version counts. */
+    private fun TaskContent.changesPolygonSet(): Boolean = when (this) {
+        is TaskContent.Uncommitted -> lastCommitted.tests.ids.toSet() != wip.tests.ids.toSet()
+        is TaskContent.New, is TaskContent.Committed -> false
     }
 
     private fun isSuccessfulTestOf(request: TaskValidationRequest, content: WipTaskContent): Boolean {

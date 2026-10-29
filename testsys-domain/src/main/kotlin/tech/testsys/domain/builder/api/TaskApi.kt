@@ -17,6 +17,8 @@ import tech.testsys.domain.builder.task.LogsBuilder
 import tech.testsys.domain.builder.task.LogsDataBuilder
 import tech.testsys.domain.builder.task.RecordingBuilder
 import tech.testsys.domain.builder.task.RecordingDataBuilder
+import tech.testsys.domain.builder.task.RegradeBuilder
+import tech.testsys.domain.builder.task.RegradeDataBuilder
 import tech.testsys.domain.builder.task.SolutionBuilder
 import tech.testsys.domain.builder.task.SolutionDataBuilder
 import tech.testsys.domain.builder.task.StatementBuilder
@@ -56,6 +58,8 @@ import tech.testsys.domain.model.task.Logs
 import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.Recording
 import tech.testsys.domain.model.task.RecordingData
+import tech.testsys.domain.model.task.Regrade
+import tech.testsys.domain.model.task.RegradeData
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.Statement
@@ -199,6 +203,20 @@ inline fun verdictData(builder: VerdictDataBuilder.() -> Unit) = VerdictDataBuil
  * @since %CURRENT_VERSION%
  */
 inline fun verdict(builder: VerdictBuilder.() -> Unit) = VerdictBuilder().apply(builder).build()
+
+/**
+ * Builds [RegradeData] with a [RegradeDataBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun regradeData(builder: RegradeDataBuilder.() -> Unit) = RegradeDataBuilder().apply(builder).build()
+
+/**
+ * Builds a [Regrade] with a [RegradeBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun regrade(builder: RegradeBuilder.() -> Unit) = RegradeBuilder().apply(builder).build()
 
 /**
  * Wraps this result into a [SubmissionStatus.Graded].
@@ -621,6 +639,28 @@ private fun VerdictData.toBuilder(): VerdictDataBuilder {
  */
 fun Verdict.withData(builder: VerdictDataBuilder.() -> Unit): Verdict {
     return Verdict(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
+}
+
+private fun RegradeData.toBuilder(): RegradeDataBuilder {
+    val thisData = this
+    return RegradeDataBuilder().apply {
+        task = thisData.task.id
+        tests = thisData.tests.ids.toMutableList()
+        submissions = thisData.submissions.ids.toMutableList()
+    }
+}
+
+/**
+ * Returns a copy of this regrade with its data modified by [builder].
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun Regrade.withData(builder: RegradeDataBuilder.() -> Unit): Regrade {
+    return Regrade(
         id = this.id,
         createdAt = this.createdAt,
         data = this.data.toBuilder().apply(builder).build(),

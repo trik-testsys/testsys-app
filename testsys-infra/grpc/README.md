@@ -188,24 +188,24 @@
 
 Значения по умолчанию загружаются из [grading-defaults.properties](src/main/resources/grading-defaults.properties).
 Приложение может переопределить их через Spring Environment. Интервалы задаются в формате ISO-8601 `Duration`.
+Сами значения, переменные окружения и место задания в окружениях — в таблице раздела «Параметры приложения»
+в [deployment.md](../../docs/project/deployment.md#параметры-приложения).
 
-| Свойство | По умолчанию | Назначение |
-|----------|--------------|------------|
-| `testsys.grading.nodes` | Пустая строка | gRPC-адреса Проверяющих узлов через запятую для импорта в реестр по запросу или при запуске с `testsys.grading.import-nodes`; без хранилища — начальный список узлов |
-| `testsys.grading.import-nodes` | `false` | При `true` каждый запуск заносит адреса `testsys.grading.nodes` в реестр включёнными, см. [Реестр узлов](#реестр-узлов); без хранилища не действует |
-| `testsys.grading.max-attempts` | `3` | Общее число транспортных попыток запуска |
-| `testsys.grading.total-timeout` | `PT30M` | Срок подготовки, ожидания и проверки |
-| `testsys.grading.rpc-timeout` | `PT10M` | Предельный срок отдельной проверки, ограниченный оставшимся общим сроком |
-| `testsys.grading.status-timeout` | `PT5S` | Предельный срок опроса статуса |
-| `testsys.grading.poll-interval` | `PT5S` | Интервал фонового опроса |
-| `testsys.grading.max-message-bytes` | `400000000` | Максимальный размер входящего gRPC-сообщения |
-| `testsys.grading.should-record-video` | `true` | Запрашивать видеозапись проверки |
+| Свойство | Назначение |
+|----------|------------|
+| `testsys.grading.nodes` | gRPC-адреса Проверяющих узлов через запятую для импорта в реестр по запросу или при запуске с `testsys.grading.import-nodes`; без хранилища — начальный список узлов |
+| `testsys.grading.import-nodes` | При `true` каждый запуск заносит адреса `testsys.grading.nodes` в реестр включёнными, см. [Реестр узлов](#реестр-узлов); без хранилища не действует |
+| `testsys.grading.max-attempts` | Общее число транспортных попыток запуска |
+| `testsys.grading.total-timeout` | Срок подготовки, ожидания и проверки |
+| `testsys.grading.rpc-timeout` | Предельный срок отдельной проверки, ограниченный оставшимся общим сроком |
+| `testsys.grading.status-timeout` | Предельный срок опроса статуса |
+| `testsys.grading.poll-interval` | Интервал фонового опроса |
+| `testsys.grading.max-message-bytes` | Максимальный размер входящего gRPC-сообщения |
+| `testsys.grading.should-record-video` | Запрашивать видеозапись проверки |
 
 Список узлов задаётся одной строкой в properties, YAML или аргументе командной строки приложения.
-Например: `testsys.grading.nodes=grader-1:50051,grader-2:50051`.
-Переменная окружения для того же списка — `TESTSYS_GRADING_NODES=grader-1:50051,grader-2:50051`.
-Флаг задаётся так же: `--testsys.grading.import-nodes=true` или `TESTSYS_GRADING_IMPORT_NODES=true`. Он читается
-только при запуске и не входит в каталог служебных настроек.
+Например: `testsys.grading.nodes=grader-1:50051,grader-2:50051`. Флаг задаётся так же:
+`--testsys.grading.import-nodes=true`. Он читается только при запуске и не входит в каталог служебных настроек.
 
 `GrpcConfiguration` объявляет `Settings<GradingProperties>`. Этот бин привязывает все свойства `testsys.grading`,
 включая список узлов и флаг импорта, при создании. Неверная настройка прерывает запуск контекста.

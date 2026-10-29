@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.interceptor.TransactionInterceptor
 import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
-import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.infra.database.api.transaction.RetryingTransactionInterceptor
 import tech.testsys.web.app.PostgresTestContainer
 import java.util.UUID
@@ -54,8 +54,8 @@ class SharedInfrastructureTests {
             probe.store(code = committedCode, shouldFail = false)
             assertThrows(IllegalStateException::class.java) { probe.store(code = rolledBackCode, shouldFail = true) }
 
-            assertNotNull(repository.findByAccessToken(committedCode))
-            assertNull(repository.findByAccessToken(rolledBackCode))
+            assertNotNull(repository.findByEmail("$committedCode@example.test"))
+            assertNull(repository.findByEmail("$rolledBackCode@example.test"))
         }
     }
 }
@@ -67,7 +67,7 @@ open class TransactionalProbe(private val repository: MultipleRoleUserRepository
             multipleRoleUserData {
                 name = "Transaction probe"
                 email = "$code@example.test"
-                accessToken(code, HashAlgorithm.Identity)
+                passwordHash = PasswordHash(code)
             },
         )
         check(!shouldFail) { "Requested test rollback" }

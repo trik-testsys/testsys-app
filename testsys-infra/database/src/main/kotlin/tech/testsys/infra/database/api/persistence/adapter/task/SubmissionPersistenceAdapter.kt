@@ -63,7 +63,7 @@ class SubmissionPersistenceAdapter(
             is SubmissionKind.Grading -> null
         }
         val trikStudioVersionId = trikStudioVersion?.let {
-            trikStudioVersionJpaEntityRepository.findIdByTagOrError(it.tag)
+            trikStudioVersionJpaEntityRepository.findIdByTagOrError(it)
         }
         val jpaEntity = SubmissionMapping.toJpaEntity(data, trikStudioVersionId)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
@@ -157,6 +157,16 @@ class SubmissionPersistenceAdapter(
             contestIds = contestIds.map { contestId -> contestId.value },
         )
         return SubmissionCount(submissions = count.submissions, authors = count.authors)
+    }
+
+    @Transactional(readOnly = true)
+    override fun findGradingAuthorIds(authorIds: Set<UserId>, contestIds: Set<ContestId>): Set<UserId> {
+        if (authorIds.isEmpty() || contestIds.isEmpty()) return emptySet()
+
+        val authorsByRawId = authorIds.associateBy { authorId -> authorId.value }
+        return submissionJpaEntityRepository
+            .findGradingAuthorIds(authorIds = authorsByRawId.keys, contestIds = contestIds.map { contestId -> contestId.value })
+            .mapTo(mutableSetOf()) { authorId -> authorsByRawId.getValue(authorId) }
     }
 
     override fun assembleAll(rows: List<SubmissionJpaEntity>): List<Submission> {

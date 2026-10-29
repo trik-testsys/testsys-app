@@ -6,11 +6,10 @@ import com.vaadin.flow.router.RouteParameters
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.infra.localization.PageManager
 import tech.testsys.web.app.service.ContestVo
+import tech.testsys.web.app.service.manager.IssuedParticipantVo
 import tech.testsys.web.app.service.manager.ManagerService
-import tech.testsys.web.app.service.manager.ParticipantVo
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
@@ -110,7 +109,7 @@ internal fun PageScope.managerContestsBlock(
                 display = ContestVo::name,
                 columns = {
                     codeColumn(texts.id(), size = 6) { contest -> contest.id.value.toString() }
-                    textColumn(texts.name(), size = 16) { contest -> contest.name }
+                    textColumn(texts.name()) { contest -> contest.name }
                 },
                 hint = texts.contestsLookupHint(),
                 dialogSize = DialogSize.L,
@@ -189,11 +188,10 @@ internal fun csvOf(rows: List<List<String>>): String = rows.joinToString(separat
     cells.joinToString(separator = ";", postfix = "\r\n", transform = ::csvCell)
 }
 
-/** Exports the identifiers, nicknames and issued access codes of [participants] with the header from [texts]. */
-@RawAccessTokenDependency(reason = "Exports stored participant access codes as the issued ones.")
-internal fun participantsCsv(participants: List<ParticipantVo>, texts: PageManager): String = csvOf(
-    listOf(listOf(texts.id(), texts.nickname(), texts.accessCode())) + participants.map { participant ->
-        listOf(participant.id.value.toString(), participant.name, participant.accessTokenHash.value)
+/** Exports the identifiers, nicknames and original access codes of just created [participants] with the header from [texts]. */
+internal fun participantsCsv(participants: List<IssuedParticipantVo>, texts: PageManager): String = csvOf(
+    listOf(listOf(texts.id(), texts.nickname(), texts.accessCode())) + participants.map { (participant, accessToken) ->
+        listOf(participant.id.value.toString(), participant.name, accessToken)
     },
 )
 

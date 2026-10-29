@@ -203,7 +203,7 @@ class AbstractPersistenceAdapterTests : DatabaseIntegrationTests() {
     }
 
     private fun saveParticipant(competitionId: CompetitionId) {
-        val hash = AccessTokenHash(value = fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+        val hash = AccessTokenHash(value = fixtures.unique("token"), algorithm = HashAlgorithm.HmacSha256)
         participants.saveToCompetition(competitionId, listOf(hash)) { participantId -> "named-${participantId.value}" }
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Role
 import org.springframework.core.Ordered
 import org.springframework.util.ClassUtils
+import tech.testsys.infra.crypto.api.CryptoConfiguration
 import tech.testsys.infra.database.api.DatabaseConfiguration
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserSearch
@@ -38,6 +39,7 @@ import java.lang.reflect.Method
     GrpcConfiguration::class,
     DiagnosticsConfiguration::class,
     MailConfiguration::class,
+    CryptoConfiguration::class,
     MonitoringConfiguration::class,
 )
 class InfraConfiguration {

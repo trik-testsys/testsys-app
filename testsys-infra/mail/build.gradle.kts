@@ -14,7 +14,9 @@ dependencies {
     implementation(libs.spring.context)
     implementation(libs.spring.context.support)
     implementation(libs.spring.tx)
+    implementation(libs.spring.boot.core)
     implementation(libs.angus.mail)
+    runtimeOnly(libs.kotlin.reflect)
     testImplementation(libs.bundles.test.implementation)
     testRuntimeOnly(libs.bundles.test.runtime)
 }

@@ -23,6 +23,7 @@ import tech.testsys.domain.model.user.ManagerData
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.StudentData
 import java.time.Instant
@@ -302,16 +303,19 @@ class ManagerBuilder : CompatibleUserRoleBuilderWithData<Manager, ManagerData, M
 private typealias Roles = MutableList<CompatibleUserRole>
 
 /**
- * Builder of [MultipleRoleUserData]. Required: [accessToken] or [storedAccessToken], [name], [email].
+ * Builder of [MultipleRoleUserData]. Required: [passwordHash], [name], [email].
  * Roles are added inside a [roles] block.
  *
+ * @property passwordHash the stored password representation of the user, or `null` if not set yet.
  * @property name the name of the user, or `null` if not set yet.
  * @property email the e-mail address of the user, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
-class MultipleRoleUserDataBuilder : UserDataBuilder<MultipleRoleUserData>() {
+class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
 
     private var roles: Roles = mutableListOf()
+
+    var passwordHash: PasswordHash? = null
 
     var name: String? = null
 
@@ -388,7 +392,7 @@ class MultipleRoleUserDataBuilder : UserDataBuilder<MultipleRoleUserData>() {
 
     override fun build() = MultipleRoleUserData(
         roles = roles,
-        accessTokenHash = requireAccessTokenHash(),
+        passwordHash = requireField(passwordHash) { ::passwordHash },
         name = requireField(name) { ::name },
         email = requireField(email) { ::email },
     )

@@ -17,7 +17,11 @@ import tech.testsys.bootstrap.SharedInfrastructureConfiguration
 object PostgresTestContainer {
 
     val instance: PostgreSQLContainer by lazy {
-        PostgreSQLContainer(DockerImageName.parse("postgres:17-alpine")).apply { start() }
+        PostgreSQLContainer(DockerImageName.parse("postgres:17-alpine"))
+            // Durability is useless for a throwaway database and slows every commit down.
+            .withCommand("postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off")
+            .withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))
+            .apply { start() }
     }
 }
 

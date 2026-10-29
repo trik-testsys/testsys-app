@@ -272,6 +272,8 @@ class PrometheusIngestionTests {
             val config = deploy.resolve("config/prometheus.yml").toFile().readText()
                 .replace("app:8082", "host.testcontainers.internal:$port")
                 .replace("[OpenMetricsText1.0.0]", "[$protocol]")
+                // The production interval would make every awaited scrape take half a minute.
+                .replace(Regex("scrape_interval: \\S+"), "scrape_interval: 2s")
             return PrometheusContainer(DockerImageName.parse(properties.getProperty("services.prometheus.image")))
                 .withExposedPorts(9090)
                 .withCopyToContainer(Transferable.of(config), "/etc/prometheus/prometheus.yml")

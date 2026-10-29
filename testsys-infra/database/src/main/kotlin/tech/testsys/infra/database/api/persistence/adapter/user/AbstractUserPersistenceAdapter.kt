@@ -3,9 +3,7 @@ package tech.testsys.infra.database.api.persistence.adapter.user
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.UserAccessTokenFinder
-import tech.testsys.domain.model.user.AccessTokenHash
-import tech.testsys.domain.model.user.HashAlgorithm
-import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
@@ -18,6 +16,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 /**
  * Base of adapters storing several user kinds in the shared [UserJpaEntity] table: [findById], [findByIds] and
  * [findByAccessToken] keep only rows assembled by [assembleSupported], so a row of another kind is reported as absent.
+ * Only single-role rows hold an access code, found by its HMAC-SHA-256 hash; multiple-role rows store a password hash.
  *
  * @param Data the data type a new entity is created from.
  * @param Id the id type of the entity.
@@ -27,6 +26,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 @InternalDatabaseApi
 abstract class AbstractUserPersistenceAdapter<Data, Id : UserId, Entity : User<Id>>(
     jpaEntityRepository: UserJpaEntityRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) : AbstractPersistenceAdapter<Data, Id, Entity, UserJpaEntity>(jpaEntityRepository),
     UserAccessTokenFinder<Id, Entity> {
 
@@ -40,11 +40,8 @@ abstract class AbstractUserPersistenceAdapter<Data, Id : UserId, Entity : User<I
     override fun findByIds(ids: List<Id>) = assembleSupported(jpaEntityRepository.findAllById(ids.map { it.value }))
 
     @Transactional(readOnly = true)
-    @RawAccessTokenDependency(
-        reason = "Lookup by the stored value finds the user only while it equals the original access code (Identity).",
-    )
     override fun findByAccessToken(rawAccessToken: String): Entity? {
-        val accessTokenHash = AccessTokenHash.hashAccessToken(rawAccessToken, HashAlgorithm.Identity)
+        val accessTokenHash = accessTokenHasher.hash(rawAccessToken)
         return userJpaEntityRepository
             .findByAccessTokenAndAccessTokenHashAlgorithm(
                 accessToken = accessTokenHash.value,

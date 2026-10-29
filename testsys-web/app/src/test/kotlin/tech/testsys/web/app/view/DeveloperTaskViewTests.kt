@@ -24,6 +24,7 @@ import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -38,7 +39,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.RegradeId
 import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -48,6 +51,7 @@ import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
+import tech.testsys.web.app.service.developer.RegradeVo
 import tech.testsys.web.app.service.developer.ResourceVo
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TaskValidationRequestVo
@@ -55,8 +59,10 @@ import tech.testsys.web.app.service.developer.TaskValidationSnapshotVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.app.service.toVo
+import tech.testsys.web.components.texts.currentTimeZone
 import tools.jackson.databind.ObjectMapper
 import java.time.Instant
+import java.time.LocalDateTime
 import javax.sql.DataSource
 
 @SpringBootTest
@@ -216,6 +222,120 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         clickButton("Зафиксировать")
 
         assertEquals("Задача зафиксирована", lastToastTitle())
+    }
+
+    @Test
+    fun `should explain the first commit instead of offering to regrade submissions`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        testingPage(task, listOf(completedRequest(task)))
+
+        clickButton("Зафиксировать")
+
+        assertCommitDialog(regradeOffered = false, hint = "Это первая фиксация Задачи — повторно проверять пока нечего.")
+    }
+
+    @Test
+    fun `should explain an unchanged polygon set instead of offering to regrade submissions`() {
+        developers.signInDeveloper()
+        val task = developers.task().let { task -> task.copy(lastCommitted = task.wip) }
+        testingPage(task, listOf(completedRequest(task)), regradeCount = null)
+
+        clickButton("Зафиксировать")
+
+        assertCommitDialog(regradeOffered = false, hint = "Набор Полигонов не изменился — повторной проверки не будет.")
+    }
+
+    @Test
+    fun `should explain that the task has no contest submissions to regrade`() {
+        developers.signInDeveloper()
+        val task = developers.task().let { task -> task.copy(lastCommitted = task.wip) }
+        testingPage(task, listOf(completedRequest(task)), regradeCount = 0)
+
+        clickButton("Зафиксировать")
+
+        assertCommitDialog(
+            regradeOffered = false,
+            hint = "Набор Полигонов изменился, но Посылок по этой Задаче в Турах нет — повторно проверять нечего.",
+        )
+    }
+
+    @Test
+    fun `should offer to regrade with the number of submissions to send`() {
+        developers.signInDeveloper()
+        val task = developers.task().let { task -> task.copy(lastCommitted = task.wip) }
+        testingPage(task, listOf(completedRequest(task)), regradeCount = 5)
+
+        clickButton("Зафиксировать")
+
+        assertCommitDialog(
+            regradeOffered = true,
+            hint = "Набор Полигонов изменился. Если выбрать повторную проверку, на неё отправят 5 Посылок по этой Задаче в Турах.",
+        )
+    }
+
+    @Test
+    fun `should commit with the chosen regrade of submissions`() {
+        developers.signInDeveloper()
+        val task = developers.task().let { task -> task.copy(lastCommitted = task.wip) }
+        val service = testingPage(task, listOf(completedRequest(task)), regradeCount = 5)
+        every { service.commitTask(task.id, true) } returns task
+        clickButton("Зафиксировать")
+        openDialog()._get<Checkbox>().value = true
+
+        clickButton("Зафиксировать")
+
+        verify(exactly = 1) { service.commitTask(task.id, true) }
+    }
+
+    @Test
+    fun `should show each regrade with its start, submissions and progress`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val regrade = regrade(task, id = 1, day = 14, submissions = 10, graded = 3)
+        testingPage(task, emptyList(), regrades = listOf(regrade))
+
+        val cells = regradeCells()
+
+        assertEquals(listOf(listOf("14.03.2026 09:30", "10", "3 из 10")), cells)
+        assertEquals(listOf("30.0"), regradeProgress())
+    }
+
+    @Test
+    fun `should show the full progress of a regrade with every submission graded`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val regrade = regrade(task, id = 1, day = 14, submissions = 4, graded = 4)
+        testingPage(task, emptyList(), regrades = listOf(regrade))
+
+        val progress = regradeProgress()
+
+        assertEquals(listOf("100.0"), progress)
+        assertEquals("4 из 4", regradeCells().single().last())
+    }
+
+    @Test
+    fun `should show the newest regrade first`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val older = regrade(task, id = 1, day = 14, submissions = 10, graded = 3)
+        val newer = regrade(task, id = 2, day = 15, submissions = 4, graded = 0)
+        testingPage(task, emptyList(), regrades = listOf(older, newer))
+
+        val starts = regradeCells().map { cells -> cells.first() }
+
+        assertEquals(listOf("15.03.2026 09:30", "14.03.2026 09:30"), starts)
+    }
+
+    @Test
+    fun `should show the empty state of the regrades of a task without regrades`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        testingPage(task, emptyList())
+
+        val block = UI.getCurrent().element.textRecursively
+
+        assertTrue("Перепроверок пока нет" in block)
     }
 
     @Test
@@ -413,7 +533,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         val task = developers.task()
         val request = developers.testing(task)
         open(task.id)
-        val row = UI.getCurrent()._find<Table>().single { table -> "Запущено" in table.element.textRecursively }
+        val row = UI.getCurrent()._find<Table>().single { table -> "Итог" in table.element.textRecursively }
             ._get<TableBody>()._get<TableRow>()
 
         row._fireDomEvent("click", acceptedClick(row))
@@ -698,6 +818,30 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
 
     private fun resourceNames(): Set<String> = resourceRows().map { row -> row.element.getChild(0).textRecursively }.toSet()
 
+    /** Start of a regrade on [day] of March 2026 at 09:30 in the user's time zone. */
+    private fun regradeStart(day: Int): Instant = LocalDateTime.of(2026, 3, day, 9, 30).atZone(currentTimeZone()).toInstant()
+
+    /** Regrade [id] of [task] started on [day] of March 2026 with [submissions] submissions, [graded] of them graded. */
+    private fun regrade(task: TaskVo, id: Long, day: Int, submissions: Int, graded: Int): Pair<RegradeVo, Int> = RegradeVo(
+        id = RegradeId(id),
+        createdAt = regradeStart(day),
+        task = task.id,
+        tests = emptyList(),
+        submissions = List(submissions) { index -> SubmissionId(index + 1L) },
+    ) to graded
+
+    private fun regradesTable(): Table = UI.getCurrent()._find<Table>()
+        .single { table -> "Прогресс" in table.element.textRecursively }
+
+    /** Texts of the cells of each row of the regrades table. */
+    private fun regradeCells(): List<List<String>> = regradesTable()
+        ._get<TableBody>()._find<TableRow>()
+        .map { row -> row.element.children.map { cell -> cell.textRecursively }.toList() }
+
+    /** Values of the progress bars of each row of the regrades table. */
+    private fun regradeProgress(): List<String?> = regradesTable()._find<Div> { classes = "ts-progress" }
+        .map { bar -> bar.element.getAttribute("aria-valuenow") }
+
     private fun filterPanel(): Div = UI.getCurrent()._get<Div> { classes = "ts-table-filters" }
 
     private fun differencesField(): Checkbox = filterPanel()._get<Checkbox>()
@@ -722,13 +866,28 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         isActive = true,
     )
 
+    private fun completedRequest(task: TaskVo): TaskValidationRequestVo = testingRequest(task).copy(
+        execution = TaskValidationExecutionVo.Completed(emptyList(), emptyList(), emptyList(), Instant.EPOCH),
+    )
+
+    /** Asserts that the open commit dialog shows the [hint] and offers the regrade checkbox only if [regradeOffered]. */
+    private fun assertCommitDialog(regradeOffered: Boolean, hint: String) {
+        val dialog = openDialog()
+        assertEquals(regradeOffered, dialog._find<Checkbox>().isNotEmpty())
+        assertTrue(hint in dialog.element.textRecursively)
+    }
+
     private fun testingPage(
         task: TaskVo,
         requests: List<TaskValidationRequestVo>,
         resources: List<ResourceVo> = emptyList(),
+        regradeCount: Int? = null,
+        regrades: List<Pair<RegradeVo, Int>> = emptyList(),
     ): DeveloperService {
         val service = mockk<DeveloperService>()
         every { service.viewTask(task.id) } returns (task to emptyList())
+        every { service.countRegradeSubmissions(task.id) } returns regradeCount
+        every { service.viewRegrades(task.id) } returns regrades
         every { service.viewResources() } returns resources
         resources.forEach { resource ->
             val versions = developerService.viewResource(task.id, resource.versionBucket)

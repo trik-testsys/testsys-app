@@ -14,6 +14,8 @@ import tech.testsys.web.app.service.MultipleRoleUserVo
 import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.ParticipantVo
 import tech.testsys.web.app.service.UserListingService
+import tech.testsys.web.components.actions.ActionHandle
+import tech.testsys.web.components.actions.destructiveAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.filters
@@ -24,6 +26,8 @@ import tech.testsys.web.components.forms.multiSelect
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
+import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.overlay.DialogHandle
 import tech.testsys.web.components.texts.currentLocalization
 import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Instant
@@ -108,6 +112,16 @@ internal fun <T> pageOf(rows: List<T>, request: PageRequest): Page<T> = Page(row
 /** Returns this moment in the time zone of the user of the current UI. */
 internal fun Instant.toUserDateTime(): LocalDateTime = LocalDateTime.ofInstant(this, currentTimeZone())
 
+/** Seconds the close action of a dialog showing a secret once ignores clicks, so a hasty click does not lose it. */
+private const val SECRET_CLOSE_COOLDOWN_SECONDS = 3
+
+/** Adds the destructive close action of a [dialog] showing a secret once, ignoring clicks right after opening. */
+internal fun ContentScope.secretDialogClose(dialog: DialogHandle): ActionHandle =
+    destructiveAction(currentLocalization().uiOverlay.dialogClose()) {
+        cooldownSeconds = SECRET_CLOSE_COOLDOWN_SECONDS
+        onClick { dialog.close() }
+    }
+
 /** Requires a nonblank name of at most 255 Unicode code points, reporting [missing] for an empty or blank one. */
 internal fun <T> Binder.BindingBuilder<T, String>.nameRules(missing: String): Binder.BindingBuilder<T, String> = asRequired(missing)
     .withValidator({ name -> name.isNotBlank() }, missing)
@@ -171,17 +185,17 @@ internal fun BlockScope.adminUsersTable(
         onRefresh = { rows.refresh(toFirstPage = true) },
     ) {
         row {
-            name = textInput(texts.nickname(), labelSize = 4, size = 8, hint = texts.usersNicknameHint())
+            name = textInput(texts.nickname(), labelSize = 2, size = 10, hint = texts.usersNicknameHint())
             roles = multiSelect(
                 texts.roles(),
-                labelSize = 4,
-                size = 8,
+                labelSize = 2,
+                size = 10,
                 items = UserFilter.Role.entries,
                 itemLabel = { role -> localization.pageCabinet.roleName(role = ROLE_NAMES.getValue(role)) },
             )
         }
         row {
-            communityChoice = select(texts.usersCommunity(), labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name) {
+            communityChoice = select(texts.usersCommunity(), labelSize = 2, size = 10, items = communities, itemLabel = CommunityVo::name) {
                 isVisible = community == null
             }
         }

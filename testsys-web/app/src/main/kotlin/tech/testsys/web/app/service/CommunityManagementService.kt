@@ -56,9 +56,9 @@ interface CommunityManagementService : UserListingService {
     fun viewCommunityContests(communityId: CommunityId, pagination: Pagination, name: String? = null): Page<ContestVo>
 
     /**
-     * Creates an observer.
+     * Creates an observer and returns it with its original access code.
      *
      * @since %CURRENT_VERSION%
      */
-    fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): ObserverVo
+    fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): IssuedObserverVo
 }

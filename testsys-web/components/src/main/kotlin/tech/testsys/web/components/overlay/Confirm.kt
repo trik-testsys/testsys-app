@@ -16,9 +16,12 @@ import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.texts.currentUiLocalization
 
+private const val DANGER_COOLDOWN_SECONDS = 3
+
 /**
  * Asks to confirm an action: opens a dialog with [title], [text] and the [action] that runs [onConfirm] and closes it.
- * [isDanger] marks an irreversible action; [typeToConfirm] requires the name with surrounding whitespace ignored on both sides.
+ * [isDanger] marks an irreversible action; [typeToConfirm] requires the name with surrounding whitespace ignored on
+ * both sides. The action ignores clicks for [cooldownSeconds] after opening, three for a dangerous one by default.
  *
  * @since %CURRENT_VERSION%
  */
@@ -28,6 +31,7 @@ fun confirm(
     action: String,
     isDanger: Boolean = false,
     typeToConfirm: String? = null,
+    cooldownSeconds: Int = if (isDanger) DANGER_COOLDOWN_SECONDS else 0,
     onConfirm: () -> Unit,
 ) {
     val texts = currentUiLocalization()
@@ -59,6 +63,7 @@ fun confirm(
         field.addValueChangeListener { event -> confirmAction.isEnabled = event.value.trim() == typeToConfirm.trim() }
     }
 
+    confirmAction.cooldownSeconds = cooldownSeconds
     shell.open()
     confirmName?.focus()
 }

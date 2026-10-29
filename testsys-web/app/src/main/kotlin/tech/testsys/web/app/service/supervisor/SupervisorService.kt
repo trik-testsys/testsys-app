@@ -17,14 +17,15 @@ import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.SupervisorOperations
+import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityManagementService
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.CompetitionVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
+import tech.testsys.web.app.service.IssuedObserverVo
 import tech.testsys.web.app.service.MultipleRoleUserVo
-import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.UserRoleReadService
 import tech.testsys.web.app.service.administrator.CommunityInviteVo
@@ -145,6 +146,19 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     fun grantAdministrator(userId: UserId): MultipleRoleUserVo =
         operations.grantAdministrator(currentUser.user(), userId).getOrThrow().toVo()
 
+    /**
+     * Runs [SupervisorOperations.impersonate] and returns the principal of the found user marked with the current
+     * supervisor instead of the user data.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun impersonate(userId: UserId): CabinetPrincipal {
+        val supervisor = currentUser.user()
+        val user = operations.impersonate(supervisor, userId).getOrThrow()
+        return CabinetPrincipal.of(user).copy(impersonatedBy = supervisor.id.value)
+    }
+
     override fun editCommunity(communityId: CommunityId, communityName: String, description: String): CommunityVo =
         operations.editCommunity(currentUser.user(), communityId, communityName, description).getOrThrow().toVo()
 
@@ -156,7 +170,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     fun removeFromCommunity(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUserVo =
         operations.removeFromCommunity(currentUser.user(), userId, communityId, role).getOrThrow().toVo()
 
-    override fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): ObserverVo =
+    override fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): IssuedObserverVo =
         operations.createObserver(currentUser.user(), communityId, observerName, contestIds).getOrThrow().toVo()
 
     @Transactional(readOnly = true)

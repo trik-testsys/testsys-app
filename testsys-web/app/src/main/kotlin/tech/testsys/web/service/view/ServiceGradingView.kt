@@ -44,6 +44,7 @@ import tech.testsys.web.components.overlay.confirm
 @PageTitle("Состояние проверки")
 @RolesAllowed("SERVICE")
 class ServiceGradingView(
+    private val headers: ServiceHeaders,
     private val registry: GradingNodeRegistry,
     private val queue: GradingQueueMonitor,
 ) : TestSysView(), BeforeEnterObserver, BeforeLeaveObserver {
@@ -94,11 +95,11 @@ class ServiceGradingView(
             .mapNotNull { entry -> unreachableReason(entry.status)?.let { reason -> entry.node.address to ValueSignal(reason) } }
             .toMap()
         shown = shapeOf(overview, preview)
-        page(ServiceHeaders.header()) {
+        page(headers.header(active = ServiceHeaders.GRADING_SECTION)) {
             head("Состояние проверки")
             row {
                 block(title = "Очередь", subtitle = "Незавершённые проверки этого экземпляра по этапам") {
-                    QUEUE_LABELS.forEach { (label, value) -> row { field(label, labelSize = 8, size = 16) { text(value(counters)) } } }
+                    QUEUE_LABELS.forEach { (label, value) -> row { field(label, labelSize = 3, size = 21) { text(value(counters)) } } }
                 }
             }
             row {

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.PasswordHash
+import tech.testsys.domain.model.user.testAccessTokenHasher
 import java.time.Instant
 
 class UserApiTests {
@@ -19,7 +21,7 @@ class UserApiTests {
             version = EntityVersion(7)
             data = participantData {
                 competition(10)
-                accessToken("participant-token", algorithm = HashAlgorithm.Identity)
+                accessToken("participant-token", testAccessTokenHasher)
                 name = "Participant"
             }
         }
@@ -33,7 +35,7 @@ class UserApiTests {
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.competition.id, copy.data.competition.id)
             Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
         }
 
@@ -55,7 +57,7 @@ class UserApiTests {
             data = observerData {
                 community(7)
                 contests(listOf(10L, 20L))
-                accessToken("observer-token", algorithm = HashAlgorithm.Identity)
+                accessToken("observer-token", testAccessTokenHasher)
                 name = "Observer"
             }
         }
@@ -69,7 +71,7 @@ class UserApiTests {
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.community.id, copy.data.community.id)
             Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.contests.ids, copy.data.contests.ids)
         }
@@ -88,10 +90,10 @@ class UserApiTests {
 
         @Test
         fun `should change accessToken if withData sets accessToken`() {
-            val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
+            val copy = origin.withData { accessToken("new-token", testAccessTokenHasher) }
 
-            Assertions.assertEquals("new-token", copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(testAccessTokenHasher.hash("new-token").value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
         }
     }
 
@@ -103,7 +105,7 @@ class UserApiTests {
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
             data = multipleRoleUserData {
-                accessToken("user-token", algorithm = HashAlgorithm.Identity)
+                passwordHash = PasswordHash("user-hash")
                 name = "Alice"
                 email = "alice@example.com"
                 roles {
@@ -125,19 +127,17 @@ class UserApiTests {
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
-            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(origin.data.passwordHash, copy.data.passwordHash)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.email, copy.data.email)
             Assertions.assertEquals(origin.data.roles, copy.data.roles)
         }
 
         @Test
-        fun `should change accessToken if withData sets accessToken`() {
-            val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
+        fun `should change passwordHash if withData sets passwordHash`() {
+            val copy = origin.withData { passwordHash = PasswordHash("new-hash") }
 
-            Assertions.assertEquals("new-token", copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(PasswordHash("new-hash"), copy.data.passwordHash)
         }
     }
 
@@ -149,7 +149,7 @@ class UserApiTests {
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
             data = supervisorData {
-                accessToken("supervisor-token", algorithm = HashAlgorithm.Identity)
+                accessToken("supervisor-token", testAccessTokenHasher)
                 name = "Supervisor"
             }
         }
@@ -162,16 +162,16 @@ class UserApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
         }
 
         @Test
         fun `should change accessToken if withData sets accessToken`() {
-            val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
+            val copy = origin.withData { accessToken("new-token", testAccessTokenHasher) }
 
-            Assertions.assertEquals("new-token", copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(testAccessTokenHasher.hash("new-token").value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
         }
     }
 

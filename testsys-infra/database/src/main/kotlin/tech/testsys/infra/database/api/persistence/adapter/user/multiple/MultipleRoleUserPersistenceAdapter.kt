@@ -11,6 +11,7 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.CompatibleUserRole
@@ -66,6 +67,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 @OptIn(InternalDatabaseApi::class)
 class MultipleRoleUserPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
+    accessTokenHasher: AccessTokenHasher,
     private val multipleRoleToUserJpaEntityRepository: MultipleRoleToUserJpaEntityRepository,
     private val administratorDataJpaEntityRepository: AdministratorDataJpaEntityRepository,
     private val developerDataJpaEntityRepository: DeveloperDataJpaEntityRepository,
@@ -79,7 +81,7 @@ class MultipleRoleUserPersistenceAdapter(
     private val judgmentOrderJpaEntityRepository: JudgmentOrderJpaEntityRepository,
     private val classJpaEntityRepository: ClassJpaEntityRepository,
     private val competitionJpaEntityRepository: CompetitionJpaEntityRepository,
-) : AbstractUserPersistenceAdapter<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>(jpaEntityRepository, accessTokenHasher),
     MultipleRoleUserRepository {
 
     private val users: UserJpaEntityRepository = jpaEntityRepository

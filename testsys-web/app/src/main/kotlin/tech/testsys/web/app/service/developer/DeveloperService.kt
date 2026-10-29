@@ -65,6 +65,24 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
         operations.commitTask(currentUser.multipleRoleUser(), taskId, regradeSubmissions).getOrThrow().toVo()
 
     /**
+     * Runs [DeveloperOperations.countRegradeSubmissions].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun countRegradeSubmissions(taskId: TaskId): Int? =
+        operations.countRegradeSubmissions(currentUser.multipleRoleUser(), taskId).getOrThrow()
+
+    /**
+     * Runs [DeveloperOperations.viewRegrades]; each regrade comes with the number of its graded submissions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun viewRegrades(taskId: TaskId): List<Pair<RegradeVo, Int>> =
+        operations.viewRegrades(currentUser.multipleRoleUser(), taskId).getOrThrow().map { (regrade, graded) -> regrade.toVo() to graded }
+
+    /**
      * Runs [DeveloperOperations.viewContests].
      *
      * @since %CURRENT_VERSION%

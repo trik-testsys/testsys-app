@@ -89,6 +89,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
@@ -115,6 +116,7 @@ import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.publicCommunityConfig
+import tech.testsys.operation.util.testAccessTokenHasher
 import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testCompetition
 import tech.testsys.operation.util.testContest
@@ -169,6 +171,7 @@ class AdministratorOperationsTests {
         submissionRepository = submissions,
         judgmentOrderRepository = judgmentOrders,
         verdictRepository = verdicts,
+        accessTokenHasher = testAccessTokenHasher,
     )
     private val administrator = testAdministrator {}
     private val nonAdministrator = testMultipleRoleUser {
@@ -194,16 +197,17 @@ class AdministratorOperationsTests {
 
             @ParameterizedTest
             @ValueSource(strings = ["x", "  Mixed Case  "])
-            fun `should save an observer with the exact name the community and a new Identity UUID access code`(name: String) {
+            fun `should save an observer with the exact name the community and a new UUID access code hashed by the hasher`(name: String) {
                 prepareCreation()
                 val saved = captureSave()
 
-                val result = create(name = name).getOrThrow()
+                val issued = create(name = name).getOrThrow()
 
+                val result = issued.observer
                 assertEquals(name, result.data.name)
                 assertEquals(communityId, result.data.community.id)
-                assertEquals(HashAlgorithm.Identity, result.data.accessTokenHash.algorithm)
-                assertEquals(result.data.accessTokenHash.value, UUID.fromString(result.data.accessTokenHash.value).toString())
+                assertEquals(testAccessTokenHasher.hash(issued.accessToken), result.data.accessTokenHash)
+                assertEquals(issued.accessToken, UUID.fromString(issued.accessToken).toString())
                 assertSame(saved.captured, result.data)
             }
 
@@ -214,7 +218,7 @@ class AdministratorOperationsTests {
                 val saved = captureSave()
                 val name = character.repeat(255)
 
-                val result = create(name = name).getOrThrow()
+                val result = create(name = name).getOrThrow().observer
 
                 assertEquals(name, result.data.name)
                 assertEquals(name, saved.captured.name)
@@ -256,14 +260,14 @@ class AdministratorOperationsTests {
                         community(communityId.value)
                         name = "Persisted"
                         contests(listOf(contestId.value))
-                        accessToken("stored", HashAlgorithm.Identity)
+                        accessToken("stored", testAccessTokenHasher)
                     }
                 }
                 every { observers.save(any<ObserverData>()) } returns persisted
 
                 val result = create().getOrThrow()
 
-                assertSame(persisted, result)
+                assertSame(persisted, result.observer)
             }
         }
 
@@ -405,8 +409,8 @@ class AdministratorOperationsTests {
                     }
                 }
 
-                val first = create().getOrThrow()
-                val second = create().getOrThrow()
+                val first = create().getOrThrow().observer
+                val second = create().getOrThrow().observer
 
                 assertNotEquals(first.id, second.id)
                 assertNotEquals(first.data.accessTokenHash, second.data.accessTokenHash)
@@ -671,7 +675,7 @@ class AdministratorOperationsTests {
             id = 31
             createdAt = Instant.EPOCH
             data = observerData {
-                accessToken("observer", algorithm = HashAlgorithm.Identity)
+                accessToken("observer", testAccessTokenHasher)
                 name = "Observer"
                 community(5)
             }
@@ -692,7 +696,7 @@ class AdministratorOperationsTests {
                     id = userId.value
                     createdAt = Instant.EPOCH
                     data = multipleRoleUserData {
-                        accessToken("member", algorithm = HashAlgorithm.Identity)
+                        passwordHash = PasswordHash("member")
                         name = "Member"
                         email = "member@example.com"
                         roles {
@@ -724,7 +728,7 @@ class AdministratorOperationsTests {
                     id = 31
                     createdAt = Instant.EPOCH
                     data = observerData {
-                        accessToken("observer", algorithm = HashAlgorithm.Identity)
+                        accessToken("observer", testAccessTokenHasher)
                         name = "Observer"
                         community(5)
                     }
@@ -1841,7 +1845,7 @@ class AdministratorOperationsTests {
                     id = observerId.value
                     createdAt = Instant.EPOCH
                     data = observerData {
-                        accessToken("observer", algorithm = HashAlgorithm.Identity)
+                        accessToken("observer", testAccessTokenHasher)
                         name = "Observer"
                         community(communityId.value)
                     }
@@ -1886,7 +1890,7 @@ class AdministratorOperationsTests {
             id = memberId.value
             createdAt = Instant.EPOCH
             data = multipleRoleUserData {
-                accessToken("member", algorithm = HashAlgorithm.Identity)
+                passwordHash = PasswordHash("member")
                 name = "Member"
                 email = "member@example.com"
                 roles {
@@ -2010,7 +2014,7 @@ class AdministratorOperationsTests {
             id = memberId.value
             createdAt = Instant.EPOCH
             data = multipleRoleUserData {
-                accessToken("member", algorithm = HashAlgorithm.Identity)
+                passwordHash = PasswordHash("member")
                 name = "Member"
                 email = "member@example.com"
                 roles {

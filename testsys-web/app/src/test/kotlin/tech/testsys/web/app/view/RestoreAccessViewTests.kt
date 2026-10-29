@@ -6,20 +6,27 @@ import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Paragraph
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.security.core.session.SessionRegistry
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.RecordedMail
+import tech.testsys.web.app.security.CabinetPrincipal
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.user.UserService
 import java.time.Instant
 
@@ -33,6 +40,9 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var userService: UserService
+
+    @Autowired
+    private lateinit var sessionRegistry: SessionRegistry
 
     private lateinit var user: MultipleRoleUser
 
@@ -67,15 +77,24 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should show the new access code that signs the user in`() {
+    fun `should set the new password and open signing in with a notice`() {
         requestCode(email)
 
         confirm(code = mail.confirmationCodes.getValue(email))
 
-        val accessToken = accessTokenFields().single().value
-        assertEquals(user.id.value, userService.authenticate(accessToken).userId)
-        assertEquals("Доступ восстановлен", lastToastTitle())
-        assertEquals(RestoreAccessView::class.java, currentView)
+        assertEquals(user.id.value, userService.authenticateByPassword(email, NEW_PASSWORD).userId)
+        assertEquals("Пароль изменён", lastToastTitle())
+        assertEquals(AuthenticationView::class.java, currentView)
+    }
+
+    @Test
+    fun `should show the password rules and keep the code step if the new password is too short`() {
+        requestCode(email)
+
+        confirm(code = mail.confirmationCodes.getValue(email), password = "short")
+
+        assertEquals("Пароль не подходит", lastToastTitle())
+        assertEquals(1, UI.getCurrent()._find<Button> { text = "Восстановить доступ" }.size)
     }
 
     @Test
@@ -84,7 +103,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
         confirm(code = fixtures.otherCode(mail.confirmationCodes.getValue(email)))
 
-        assertEquals("Код не совпадает с отправленным", lastToastTitle())
+        assertEquals("Неверный код", lastToastTitle())
         assertEquals(1, UI.getCurrent()._find<Button> { text = "Восстановить доступ" }.size)
     }
 
@@ -95,7 +114,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
         confirm(code = mail.confirmationCodes.getValue(email))
 
-        assertEquals("Попытки ввода кода исчерпаны", lastToastTitle())
+        assertEquals("Слишком много неверных попыток", lastToastTitle())
         assertEquals("Отправьте код повторно.", lastToastDescription())
     }
 
@@ -117,7 +136,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
         confirm(code = "12345678")
 
-        assertEquals("Запрос восстановления не найден", lastToastTitle())
+        assertEquals("Сначала получите код для этой почты", lastToastTitle())
         assertEquals("Измените почту и получите код заново.", lastToastDescription())
     }
 
@@ -126,7 +145,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
         requestCode(email)
         val code = mail.confirmationCodes.remove(email)
 
-        UI.getCurrent()._get<Button> { text = "Отправить код повторно" }._click()
+        UI.getCurrent()._get<Button> { text = "Отправить ещё раз" }._click()
 
         assertEquals(code, mail.confirmationCodes[email])
         assertEquals("Запрос принят", lastToastTitle())
@@ -141,18 +160,74 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
         assertEquals(email, UI.getCurrent()._find<TextField>().single().value)
     }
 
+    @Test
+    fun `should return to signing in from the code step`() {
+        requestCode(email)
+
+        UI.getCurrent()._get<Button> { text = "Вернуться к входу" }._click()
+
+        assertEquals(AuthenticationView::class.java, currentView)
+    }
+
+    @Test
+    fun `should show the step and the email in the explanation of the code step`() {
+        requestCode(email)
+
+        assertEquals("Шаг 2 из 2", UI.getCurrent()._get<Span> { classes = "ts-guest-card__step" }.text)
+        assertTrue(email in UI.getCurrent()._get<Paragraph> { classes = "ts-guest-card__desc" }.element.textRecursively)
+    }
+
+    @Test
+    fun `should open the start page of the user while a supervisor is signed in as the user`() {
+        signInImpersonated()
+
+        UI.getCurrent().navigate(RestoreAccessView::class.java)
+
+        assertEquals(MultiMainView::class.java, currentView)
+    }
+
+    @Test
+    fun `should refuse an access restoration request while a supervisor is signed in as some user`() {
+        signInImpersonated()
+
+        assertThrows<IllegalStateException> { userService.requestAccessRestoration(email) }
+
+        assertFalse(mail.confirmationCodes.containsKey(email))
+        assertNull(requests.findByUser(user.id))
+    }
+
+    @Test
+    fun `should refuse an access restoration confirmation while a supervisor is signed in as some user`() {
+        requestCode(email)
+        val attemptsLeft = checkNotNull(requests.findByUser(user.id)).data.attemptsLeft
+        val userSession = fixtures.unique("session")
+        sessionRegistry.registerNewSession(userSession, CabinetPrincipal.of(user))
+        signInImpersonated()
+
+        assertThrows<IllegalStateException> {
+            userService.confirmAccessRestoration(email, confirmationCode = mail.confirmationCodes.getValue(email), password = NEW_PASSWORD)
+        }
+
+        assertEquals(user.id.value, userService.authenticateByPassword(email, fixtures.password).userId)
+        assertEquals(attemptsLeft, checkNotNull(requests.findByUser(user.id)).data.attemptsLeft)
+        assertFalse(checkNotNull(sessionRegistry.getSessionInformation(userSession)).isExpired)
+    }
+
+    /** Signs the supervisor in as [user]. */
+    private fun signInImpersonated() {
+        CabinetSignIn.signIn(CabinetPrincipal.of(user).copy(impersonatedBy = fixtures.supervisor().id.value))
+    }
+
     private fun requestCode(email: String) {
         UI.getCurrent()._find<TextField>().single().value = email
         UI.getCurrent()._get<Button> { text = "Получить код" }._click()
     }
 
-    private fun confirm(code: String) {
+    private fun confirm(code: String, password: String = NEW_PASSWORD) {
         UI.getCurrent()._find<TextField>().single().value = code
+        UI.getCurrent()._find<PasswordField>().single().value = password
         UI.getCurrent()._get<Button> { text = "Восстановить доступ" }._click()
     }
-
-    private fun accessTokenFields(): List<TextField> =
-        UI.getCurrent()._find<TextField>().filter { field -> field.ariaLabel.orElse(null) == "Код-доступа" }
 
     private fun lastToastTitle(): String = UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.last().text
 
@@ -160,5 +235,6 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
     private companion object {
         const val MAX_ATTEMPTS = 3
+        const val NEW_PASSWORD = "Restored-password-1"
     }
 }

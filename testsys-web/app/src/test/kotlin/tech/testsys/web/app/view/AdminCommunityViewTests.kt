@@ -190,6 +190,64 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show the created observer and its access code in a dialog only until it is closed`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(community)
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+        val created = UI.getCurrent()._get<Dialog>()
+        assertTrue("Наблюдатель «Наблюдатель Анна» создан" in created.element.textRecursively)
+
+        created._get<Button> { text = "Закрыть" }._click()
+
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Код-доступа" })
+        assertFalse("Наблюдатель «Наблюдатель Анна» создан" in UI.getCurrent().element.textRecursively)
+    }
+
+    @Test
+    fun `should offer only closing in the dialog of the created observer`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(community)
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        val actions = UI.getCurrent()._get<Dialog>()._find<Button>().map { button -> button.text }.filter { text -> text.isNotEmpty() }
+        assertEquals(listOf("Закрыть"), actions)
+    }
+
+    @Test
+    fun `should close the dialog of the created observer with a destructive action after a cooldown`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(community)
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        // Read before the next lookup: every Karibu lookup runs a round trip that drops the pending calls.
+        val calls = UI.getCurrent().internals.let { internals ->
+            internals.stateTree.runExecutionsBeforeClientResponse()
+            internals.dumpPendingJavaScriptInvocations()
+        }
+        val close = UI.getCurrent()._get<Dialog>()._get<Button> { text = "Закрыть" }
+        val cooldowns = calls.filter { call -> call.owner == close.element.node && "data-ts-cooldown" in call.invocation.expression }
+        assertEquals("destructive", close.element.getAttribute("data-ts-role"))
+        assertEquals(listOf<Any?>(3), cooldowns.map { call -> call.invocation.parameters.first() })
+    }
+
+    @Test
     fun `should show the name and description of the community in read-only fields`() {
         val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
 

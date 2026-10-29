@@ -265,7 +265,7 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val contestId = fixtures.contest().id.value
         val saved = repository.save(gradingSubmissionData(contestId))
         val version = fixtures.trikStudioVersion()
-        val versionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(version.tag)
+        val versionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(version)
         val failure = assertFailsWith<DataIntegrityViolationException> {
             jdbcTemplate.update("update ts_submission set trik_studio_version_id = ? where id = ?", versionId, saved.id.value)
         }

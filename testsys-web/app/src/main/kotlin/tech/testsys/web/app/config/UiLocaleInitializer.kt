@@ -4,6 +4,7 @@ import com.vaadin.flow.server.ServiceInitEvent
 import com.vaadin.flow.server.VaadinRequest
 import com.vaadin.flow.server.VaadinServiceInitListener
 import com.vaadin.flow.spring.annotation.SpringComponent
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.core.env.Environment
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.components.texts.initializeUiLocale
@@ -24,12 +25,12 @@ private const val ACCEPT_LANGUAGE = "Accept-Language"
  */
 @SpringComponent
 class UiLocaleInitializer(environment: Environment) : VaadinServiceInitListener {
-    private val defaultRegion = environment.defaultRegion()
-    private val defaultTimeZone = environment.defaultTimeZone()
+    private val localization = environment.localization()
 
     override fun serviceInit(event: ServiceInitEvent) {
         event.source.addUIInitListener { uiEvent ->
-            initializeUiLocale(uiEvent.ui, resolveRegion(VaadinRequest.getCurrent(), defaultRegion), defaultTimeZone)
+            val region = resolveRegion(VaadinRequest.getCurrent(), localization.defaultRegion)
+            initializeUiLocale(uiEvent.ui, region, localization.defaultTimeZone)
         }
     }
 }
@@ -50,9 +51,13 @@ internal fun resolveRegion(request: VaadinRequest?, default: SupportedRegion): S
     return Locale.filterTags(ranges, regions.keys).firstNotNullOfOrNull { tag -> regions[tag.lowercase(Locale.ROOT)] } ?: default
 }
 
-/** Region of the users whose browser languages are not supported, from `testsys.web.localization.default-region`. */
-internal fun Environment.defaultRegion(): SupportedRegion =
-    SupportedRegion.valueOf(getRequiredProperty("testsys.web.localization.default-region"))
+/**
+ * Localization parameters of the main interface bound from `testsys.web.localization`: [defaultRegion] is the region
+ * of the users whose browser languages are not supported, [defaultTimeZone] the zone of the dates until the browser
+ * reports its own.
+ */
+internal class LocalizationProperties(val defaultRegion: SupportedRegion, val defaultTimeZone: ZoneId)
 
-/** Zone of the dates until the browser reports its own, from `testsys.web.localization.default-time-zone`. */
-internal fun Environment.defaultTimeZone(): ZoneId = ZoneId.of(getRequiredProperty("testsys.web.localization.default-time-zone"))
+/** Binds the [LocalizationProperties] of this Environment; a missing or unknown value fails with a `BindException`. */
+internal fun Environment.localization(): LocalizationProperties =
+    Binder.get(this).bindOrCreate("testsys.web.localization", LocalizationProperties::class.java)

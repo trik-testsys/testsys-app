@@ -346,7 +346,7 @@ class TaskPersistenceAdapter(
         developerSolutionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toDeveloperSolutionAssociations(contentId, developerSolutionIds),
         )
-        val idsByTag = trikStudioVersionJpaEntityRepository.findIdsByTagOrError(versions.map { version -> version.tag })
+        val idsByTag = trikStudioVersionJpaEntityRepository.findIdsByTagOrError(versions)
         val versionIds = versions.map { version -> idsByTag.getValue(version.tag) }
         trikStudioVersionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toTrikStudioVersionAssociations(contentId, versionIds),

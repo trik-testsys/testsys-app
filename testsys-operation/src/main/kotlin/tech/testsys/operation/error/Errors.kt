@@ -163,11 +163,11 @@ sealed interface ExtendClassInviteError : OperationError
 sealed interface RefreshClassInviteError : OperationError
 
 /**
- * Failure of deleting a participant of a competition owned by the manager.
+ * Failure of deleting selected participants of a competition owned by the manager.
  *
  * @since %CURRENT_VERSION%
  */
-sealed interface DeleteParticipantError : OperationError
+sealed interface DeleteParticipantsError : OperationError
 
 /**
  * Failure of listing the contests the manager can add to classes and competitions.
@@ -191,19 +191,12 @@ sealed interface EditClassError : OperationError
 sealed interface EditCompetitionError : OperationError
 
 /**
- * Failure of downloading the participants of a competition owned by the manager with their access codes.
- *
- * @since %CURRENT_VERSION%
- */
-sealed interface DownloadParticipantsError : OperationError
-
-/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
  */
 data object MissedManagerRoleError :
-    DeleteParticipantError,
+    DeleteParticipantsError,
     ViewAvailableContestsError,
     CreateClassError,
     CreateCompetitionError,
@@ -221,7 +214,6 @@ data object MissedManagerRoleError :
     RefreshClassInviteError,
     EditClassError,
     EditCompetitionError,
-    DownloadParticipantsError,
     MissedRequiredRoleError
 
 /**
@@ -308,9 +300,8 @@ data class ClassAccessDeniedError(val classId: ClassId) :
  * @since %CURRENT_VERSION%
  */
 data class CompetitionNotExistsError(val competitionId: CompetitionId) :
-    DeleteParticipantError,
+    DeleteParticipantsError,
     EditCompetitionError,
-    DownloadParticipantsError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -331,9 +322,8 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
  * @since %CURRENT_VERSION%
  */
 data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
-    DeleteParticipantError,
+    DeleteParticipantsError,
     EditCompetitionError,
-    DownloadParticipantsError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -410,7 +400,7 @@ data class CompetitionParticipantLimitExceededError(
  * @since %CURRENT_VERSION%
  */
 data class CompetitionParticipantNotExistsError(val competitionId: CompetitionId, val participantId: SingleRoleUserId) :
-    DeleteParticipantError,
+    DeleteParticipantsError,
     EntityNotExistsError
 
 /**
@@ -419,7 +409,7 @@ data class CompetitionParticipantNotExistsError(val competitionId: CompetitionId
  * @property participantId the id of the participant.
  * @since %CURRENT_VERSION%
  */
-data class ParticipantHasSubmissionsError(val participantId: SingleRoleUserId) : DeleteParticipantError
+data class ParticipantHasSubmissionsError(val participantId: SingleRoleUserId) : DeleteParticipantsError
 
 // endregion
 
@@ -659,6 +649,7 @@ data class UserNotExistsError(val userId: UserId) :
     GrantAdministratorError,
     ViewSupervisorUserError,
     RemoveSupervisorMemberError,
+    ImpersonateError,
     EntityNotExistsError
 
 /**
@@ -866,6 +857,13 @@ sealed interface ExtendSupervisorCommunityInviteError : OperationError
 sealed interface RefreshSupervisorCommunityInviteError : OperationError
 
 /**
+ * Failure of signing a supervisor in as another user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ImpersonateError : OperationError
+
+/**
  * The actor is not a supervisor.
  *
  * @since %CURRENT_VERSION%
@@ -885,6 +883,7 @@ data object MissedSupervisorRoleError :
     CreateSupervisorCommunityInviteError,
     ExtendSupervisorCommunityInviteError,
     RefreshSupervisorCommunityInviteError,
+    ImpersonateError,
     MissedRequiredRoleError
 
 /**
@@ -894,6 +893,16 @@ data object MissedSupervisorRoleError :
  * @since %CURRENT_VERSION%
  */
 data class AdministratorInPublicCommunityError(val communityId: CommunityId) : AddToCommunityError
+
+/**
+ * The user is the technical owner of the public community, whom nobody signs in as.
+ *
+ * @property userId the id of the technical owner.
+ * @since %CURRENT_VERSION%
+ */
+data class ImpersonationDeniedError(val userId: UserId) :
+    ImpersonateError,
+    AccessDeniedError
 
 // endregion
 
@@ -1096,6 +1105,17 @@ data class TaskNameTooLongError(val taskName: String) : CreateTaskError, EditTas
 data class ContestNameTooLongError(val contestName: String) : CreateContestError, EditContestError
 
 /**
+ * The TRIK Studio version is not registered with this tag and version number: it was deleted or its tag was changed.
+ *
+ * @property trikStudioVersion the unregistered version.
+ * @since %CURRENT_VERSION%
+ */
+data class TrikStudioVersionNotRegisteredError(val trikStudioVersion: TrikStudioVersion) :
+    EntityNotExistsError,
+    CreateContestError,
+    EditTaskInfoError
+
+/**
  * The resource name exceeds the Unicode code point limit.
  *
  * @property resourceName the rejected resource name.
@@ -1149,6 +1169,20 @@ sealed interface ViewTaskValidationRequestsError : OperationError
  * @since %CURRENT_VERSION%
  */
 sealed interface CommitTaskError : OperationError
+
+/**
+ * Expected failure of counting the submissions a commit of an owned task would send to grading again.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CountRegradeSubmissionsError : OperationError
+
+/**
+ * Expected failure of viewing the regrades of an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewRegradesError : OperationError
 
 /**
  * The working revision has no successfully completed validation request with a matching snapshot.
@@ -1448,6 +1482,8 @@ sealed interface DetachDeveloperSolutionError : OperationError
 data object MissedDeveloperRoleError :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CountRegradeSubmissionsError,
+    ViewRegradesError,
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
@@ -1605,6 +1641,8 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
 data class TaskNotExistsError(val taskId: TaskId) :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CountRegradeSubmissionsError,
+    ViewRegradesError,
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
@@ -1711,6 +1749,8 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
 data class TaskAccessDeniedError(val taskId: TaskId) :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CountRegradeSubmissionsError,
+    ViewRegradesError,
     CommitTaskError,
     AttachTaskError,
     RevertTaskError,
@@ -2256,18 +2296,40 @@ data class ResourceNotInCommittedTaskError(val taskId: TaskId, val resourceId: D
 // region UserOperations
 
 /**
- * Failure of signing in to the system by an access code.
+ * Failure of signing in to the system by the access code of a fixed-role user.
  *
  * @since %CURRENT_VERSION%
  */
 sealed interface AuthenticateError : OperationError
 
 /**
- * The entered access code is not assigned to any user.
+ * The entered access code is not assigned to any fixed-role user.
  *
  * @since %CURRENT_VERSION%
  */
 data object InvalidAccessTokenError : AuthenticateError
+
+/**
+ * Failure of signing in to the system by the e-mail address and the password of a user without a fixed role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AuthenticateByPasswordError : OperationError
+
+/**
+ * The e-mail address is bound to no user who can sign in, or the password differs from the password of that user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidCredentialsError : AuthenticateByPasswordError
+
+/**
+ * The new password is shorter than 8 or longer than 64 characters, has a character other than a Latin letter, a digit
+ * and `!@#$%^&*()-_=+.,?`, or lacks a lowercase letter, an uppercase letter, a digit or one of those symbols.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidPasswordError : ConfirmRegistrationError, ConfirmAccessRestorationError, ChangePasswordError
 
 /**
  * Failure of requesting self-registration with an e-mail address.
@@ -2392,5 +2454,19 @@ sealed interface ConfirmAccessRestorationError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object AccessRestorationRequestNotExistsError : ConfirmAccessRestorationError, EntityNotExistsError
+
+/**
+ * Failure of changing the password of the user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ChangePasswordError : OperationError
+
+/**
+ * The entered current password differs from the password of the user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidCurrentPasswordError : ChangePasswordError
 
 // endregion

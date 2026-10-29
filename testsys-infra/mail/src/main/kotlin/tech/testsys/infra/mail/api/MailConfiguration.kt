@@ -1,5 +1,6 @@
 package tech.testsys.infra.mail.api
 
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -7,15 +8,13 @@ import org.springframework.context.annotation.PropertySource
 import org.springframework.core.env.Environment
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
-import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.infra.mail.internal.InternalMailApi
+import tech.testsys.infra.mail.internal.MailProperties
 import tech.testsys.infra.mail.internal.MailSettings
-import java.time.Duration
-import java.time.ZoneId
 
 /**
  * Registers the SMTP adapter of the user mail port with its defaults; the application overrides the
- * `testsys.mail.*` properties through the Spring Environment.
+ * `testsys.mail.*` properties through the Spring Environment, which is bound once at startup.
  *
  * @since %CURRENT_VERSION%
  */
@@ -26,27 +25,42 @@ import java.time.ZoneId
 class MailConfiguration {
 
     @Bean
-    internal fun mailSettings(environment: Environment): MailSettings = MailSettings(
-        from = environment.getRequiredProperty("testsys.mail.from"),
-        region = SupportedRegion.valueOf(environment.getRequiredProperty("testsys.mail.region")),
-        timeZone = ZoneId.of(environment.getRequiredProperty("testsys.mail.time-zone")),
+    internal fun mailProperties(environment: Environment): MailProperties =
+        Binder.get(environment).bindOrCreate(PREFIX, MailProperties::class.java)
+
+    @Bean
+    internal fun mailSettings(properties: MailProperties): MailSettings = MailSettings(
+        from = properties.from,
+        region = properties.region,
+        timeZone = properties.timeZone,
     )
 
     @Bean
-    internal fun javaMailSender(environment: Environment): JavaMailSender {
-        val timeoutMillis = Duration.parse(environment.getRequiredProperty("testsys.mail.timeout")).toMillis().toString()
+    internal fun javaMailSender(properties: MailProperties, environment: Environment): JavaMailSender {
+        val username = properties.username?.takeIf { it.isNotBlank() }
+        val password = Binder.get(environment).bind("$PREFIX.password", String::class.java).orElse(null)?.takeIf { it.isNotBlank() }
+
+        require(!properties.isSmtpAuth || (username != null && password != null)) {
+            "$PREFIX.username and $PREFIX.password must not be empty when $PREFIX.smtp-auth is true"
+        }
+
+        val timeoutMillis = properties.timeout.toMillis().toString()
         return JavaMailSenderImpl().apply {
-            host = environment.getRequiredProperty("testsys.mail.host")
-            port = environment.getRequiredProperty("testsys.mail.port", Int::class.java)
-            username = environment.getProperty("testsys.mail.username")?.takeIf { it.isNotBlank() }
-            password = environment.getProperty("testsys.mail.password")?.takeIf { it.isNotBlank() }
+            host = properties.host
+            port = properties.port
+            this.username = username
+            this.password = password
             defaultEncoding = Charsets.UTF_8.name()
-            javaMailProperties["mail.smtp.auth"] = environment.getRequiredProperty("testsys.mail.smtp-auth")
-            javaMailProperties["mail.smtp.ssl.enable"] = environment.getRequiredProperty("testsys.mail.ssl")
-            javaMailProperties["mail.smtp.starttls.enable"] = environment.getRequiredProperty("testsys.mail.starttls")
+            javaMailProperties["mail.smtp.auth"] = properties.isSmtpAuth.toString()
+            javaMailProperties["mail.smtp.ssl.enable"] = properties.isSsl.toString()
+            javaMailProperties["mail.smtp.starttls.enable"] = properties.isStarttls.toString()
             javaMailProperties["mail.smtp.connectiontimeout"] = timeoutMillis
             javaMailProperties["mail.smtp.timeout"] = timeoutMillis
             javaMailProperties["mail.smtp.writetimeout"] = timeoutMillis
         }
+    }
+
+    private companion object {
+        const val PREFIX = "testsys.mail"
     }
 }

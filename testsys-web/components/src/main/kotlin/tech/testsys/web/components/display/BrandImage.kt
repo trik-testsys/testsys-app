@@ -17,8 +17,7 @@ import tech.testsys.web.components.layout.ContentScope
  * @since %CURRENT_VERSION%
  */
 enum class BrandAsset(internal val path: String) {
-    Header(TestSysBrand.HEADER),
-    Footer(TestSysBrand.FOOTER),
+    Icon(TestSysBrand.ICON),
     Emblem(TestSysBrand.EMBLEM),
     Wordmark(TestSysBrand.WORDMARK),
     Favicon(TestSysBrand.FAVICON),

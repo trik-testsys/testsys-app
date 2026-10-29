@@ -23,6 +23,7 @@ import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.LogsId
 import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.RecordingId
+import tech.testsys.domain.model.task.RegradeData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
@@ -604,6 +605,42 @@ class TaskApiTests {
             val copy = origin.withData { file("updated.xml", byteArrayOf(3, 4)) }
 
             Assertions.assertEquals("updated.xml", copy.data.file.uploadedFilename)
+        }
+    }
+
+    @Nested
+    inner class RegradeTests {
+
+        private val origin = regrade {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = RegradeData(
+                task = LazyEntity(TaskId(10)),
+                tests = LazyEntityList(listOf(TestId(20), TestId(21))),
+                submissions = LazyEntityList(listOf(SubmissionId(30))),
+            )
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
+            Assertions.assertEquals(origin.data.tests.ids, copy.data.tests.ids)
+            Assertions.assertEquals(origin.data.submissions.ids, copy.data.submissions.ids)
+        }
+
+        @Test
+        fun `should change submissions if withData sets them`() {
+            val copy = origin.withData { submissions(listOf(31L, 32L)) }
+
+            Assertions.assertEquals(listOf(SubmissionId(31), SubmissionId(32)), copy.data.submissions.ids)
+            Assertions.assertEquals(origin.data.tests.ids, copy.data.tests.ids)
+            Assertions.assertEquals(origin.version, copy.version)
         }
     }
 

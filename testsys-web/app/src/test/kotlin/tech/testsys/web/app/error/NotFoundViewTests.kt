@@ -7,7 +7,6 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.component.html.H1
-import com.vaadin.flow.component.html.Image
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.ErrorParameter
 import com.vaadin.flow.router.Location
@@ -23,7 +22,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.PostgresTestConfiguration
-import tech.testsys.web.components.TestSysBrand
 import tools.jackson.databind.node.BooleanNode
 
 @Import(PostgresTestConfiguration::class)
@@ -40,9 +38,7 @@ class NotFoundViewTests : MockSpringVaadinTests() {
         assertEquals("TestSys", _get<Span> { classes = "ts-brand" }.element.getAttribute("aria-label"))
         assertEquals("Страница не найдена — TestSys", _get<NotFoundView>().pageTitle)
         assertEquals(_get<Footer> { classes = "ts-footer" }, _get<NotFoundView>().children.toList().last())
-        val footerLogo = _get<Image> { classes = "ts-footer__logo" }
-        assertEquals(TestSysBrand.FOOTER, footerLogo.element.getAttribute("src"))
-        assertEquals("TestSys", footerLogo.element.getAttribute("alt"))
+        assertEquals("TestSys", _get<Span> { classes = "ts-footer__name" }.text)
         val content = UI.getCurrent().element.textRecursively
         assertFalse(content.contains("missing-sensitive-route"))
         assertFalse(content.contains("dev/showcase"))

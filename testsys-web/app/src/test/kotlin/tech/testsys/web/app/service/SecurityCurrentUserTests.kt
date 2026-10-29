@@ -17,8 +17,10 @@ import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepos
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.UserKind
@@ -34,7 +36,7 @@ class SecurityCurrentUserTests {
         id = USER_ID
         createdAt = Instant.EPOCH
         data = multipleRoleUserData {
-            accessToken("token", algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash("password-hash")
             name = "Пользователь"
             email = "user@example.com"
         }
@@ -43,7 +45,7 @@ class SecurityCurrentUserTests {
         id = USER_ID
         createdAt = Instant.EPOCH
         data = supervisorData {
-            accessToken("supervisor", algorithm = HashAlgorithm.Identity)
+            storedAccessToken(AccessTokenHash("supervisor-hash", HashAlgorithm.HmacSha256))
             name = "Супервайзер"
         }
     }

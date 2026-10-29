@@ -61,11 +61,11 @@ private val ROLE_LABELS: Map<ServiceUserRole, String> = mapOf(
 @Route("users")
 @PageTitle("Пользователи")
 @RolesAllowed("SERVICE")
-class ServiceUsersView(private val search: ServiceUserSearch) : TestSysView() {
+class ServiceUsersView(private val headers: ServiceHeaders, private val search: ServiceUserSearch) : TestSysView() {
     private var applied = ServiceUserFilter()
 
     init {
-        page(ServiceHeaders.header()) {
+        page(headers.header(active = ServiceHeaders.USERS_SECTION)) {
             head("Пользователи")
             row {
                 block(title = "Пользователи") {
@@ -126,18 +126,18 @@ class ServiceUsersView(private val search: ServiceUserSearch) : TestSysView() {
             onRefresh = onRefresh,
         ) {
             row {
-                id = textInput("ID", labelSize = 5, size = 7, hint = "Точное совпадение")
-                name = textInput("Псевдоним", labelSize = 5, size = 7, hint = "Часть псевдонима, без учёта регистра")
+                id = textInput("ID", labelSize = 3, size = 9, hint = "Точное совпадение")
+                name = textInput("Псевдоним", labelSize = 3, size = 9, hint = "Часть псевдонима, без учёта регистра")
             }
             row {
-                email = textInput("Почта", labelSize = 5, size = 7, hint = "Часть почты, без учёта регистра")
-                roles = multiSelect("Роли", labelSize = 5, size = 7, items = ServiceUserRole.entries, itemLabel = ROLE_LABELS::getValue)
+                email = textInput("Почта", labelSize = 3, size = 9, hint = "Часть почты, без учёта регистра")
+                roles = multiSelect("Роли", labelSize = 3, size = 9, items = ServiceUserRole.entries, itemLabel = ROLE_LABELS::getValue)
             }
             row {
-                community = textInput("Сообщество (ID)", labelSize = 5, size = 7)
-                studyClass = textInput("Класс (ID)", labelSize = 5, size = 7)
+                community = textInput("Сообщество (ID)", labelSize = 3, size = 9)
+                studyClass = textInput("Класс (ID)", labelSize = 3, size = 9)
             }
-            row { competition = textInput("Соревнование (ID)", labelSize = 5, size = 7) }
+            row { competition = textInput("Соревнование (ID)", labelSize = 3, size = 9) }
         }
     }
 }

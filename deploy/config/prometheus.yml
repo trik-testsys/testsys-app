@@ -11,7 +11,7 @@ scrape_configs:
     # client_java 1.7.0 omits histogram created timestamps from Protobuf; OpenMetrics includes them.
     scrape_protocols: [OpenMetricsText1.0.0]
     static_configs:
-      # The service app and its TESTSYS_METRICS_PORT from deploy/compose.yml, inside the project network. Prometheus
-      # does not substitute variables in this file.
+      # The service app and its testsys.metrics.port from deploy/config/application.yml, inside the project network.
+      # Prometheus does not substitute variables in this file.
       - targets:
           - app:8082

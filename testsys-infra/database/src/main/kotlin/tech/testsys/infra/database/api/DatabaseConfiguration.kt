@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import org.hibernate.boot.model.naming.PhysicalNamingStrategy
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.config.BeanDefinition
-import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
@@ -18,6 +18,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor
 import org.springframework.transaction.interceptor.TransactionAttributeSource
 import org.springframework.transaction.support.TransactionOperations
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.infra.database.api.persistence.FileStorageCleanupProperties
 import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.transaction.RetryingTransactionInterceptor
@@ -32,10 +33,11 @@ import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.Settings
 import tech.testsys.infra.settings.api.settingsOf
+import tech.testsys.infra.settings.api.strictBinder
 import java.time.Clock
 
 /**
- * Configures JPA, persistence adapters, file storage and transaction retries for the application.
+ * Configures JPA, persistence adapters, the access-code hasher, file storage and transaction retries for the application.
  * The companion object registers [TransactionRetry] and an advisor outside the transaction interceptor.
  *
  * @since %CURRENT_VERSION%
@@ -45,7 +47,6 @@ import java.time.Clock
 @EnableJpaRepositories(basePackages = ["tech.testsys.infra.database.internal.jpa.repository"])
 @ComponentScan(basePackages = ["tech.testsys.infra.database.api"])
 @PropertySource("classpath:hibernate-defaults.properties", "classpath:file-storage-defaults.properties")
-@EnableConfigurationProperties(FileStoragePaths::class)
 class DatabaseConfiguration {
 
     /**
@@ -106,6 +107,27 @@ class DatabaseConfiguration {
         RetryingTransactionOperations(transactionManager, transactionRetry)
 
     /**
+     * Hasher of access codes keyed with the required `testsys.access-token.secret` property; changing the secret
+     * invalidates every stored access code.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun accessTokenHasher(environment: Environment): AccessTokenHasher {
+        val secret = strictBinder(environment).bind(ACCESS_TOKEN_SECRET, String::class.java).orElse(null)
+        return AccessTokenHasher(checkNotNull(secret) { "$ACCESS_TOKEN_SECRET is required" })
+    }
+
+    /**
+     * Absolute paths of the stored files, bound once from `testsys.file-storage.paths`; a missing path fails startup.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun fileStoragePaths(environment: Environment): FileStoragePaths =
+        Binder.get(environment).bindOrCreate("testsys.file-storage.paths", FileStoragePaths::class.java)
+
+    /**
      * Static infrastructure beans: they are created before the auto-proxy creator wraps the application beans.
      *
      * @since %CURRENT_VERSION%
@@ -144,3 +166,5 @@ class DatabaseConfiguration {
         }
     }
 }
+
+private const val ACCESS_TOKEN_SECRET = "testsys.access-token.secret"

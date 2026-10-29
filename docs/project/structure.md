@@ -47,6 +47,7 @@ testsys-app/
 | `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-infra:mail` | Отправка писем Пользователям по SMTP (реализация порта `UserMailSender`). | Реализован |
+| `testsys-infra:crypto` | Хеширование и проверка Паролей (реализация порта `PasswordHasher`), см. [crypto/README.md](../../testsys-infra/crypto/README.md). | Реализован |
 | `testsys-web:app` | Основное и служебное приложения Vaadin Flow и сервер метрик в одном процессе: точка входа, конфигурация, безопасность, страницы, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | В разработке; состав страниц — в [app/README.md](../../testsys-web/app/README.md#страницы) |
 | `testsys-web:components` | Kotlin-DSL, привязка локализации `UI` (встроенные тексты из бандлов `ui_*`) и визуальная часть страниц ошибок, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 
@@ -64,8 +65,9 @@ testsys-app/
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
   `database → codegen` (через `ksp`), `codegen → codegen-api`, `mail → domain`, `mail → localization`,
-  `grpc → domain`, `diagnostics → domain`, `components → localization` (через `api`), `app → components`,
-  `app → domain`, `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `app → mail`.
+  `grpc → domain`, `diagnostics → domain`, `crypto → domain`, `components → localization` (через `api`),
+  `app → components`, `app → domain`, `app → operation`, `app → grpc`, `app → database`, `app → diagnostics`,
+  `app → mail` и `app → crypto`.
   Связи настроек: `settings → domain`, `database → settings`, `grpc → settings`, `diagnostics → settings`,
   `app → settings`. Общий протокол принадлежит [settings/README.md](../../testsys-infra/settings/README.md).
   Связи метрик: `settings → monitoring`, `database → monitoring`, `grpc → monitoring`, `mail → monitoring`,
@@ -93,7 +95,9 @@ testsys-app/
   в каталоге их нет. Модуль без Spring подключает BOM так же, если использует библиотеку каталога без версии,
   например `libs.slf4j.api`.
 - `gradle.properties` — память Gradle-демона (`org.gradle.jvmargs`): значений Gradle по умолчанию полной сборке
-  с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры.
+  с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры. Там же включена параллельная сборка
+  (`org.gradle.parallel`): задачи независимых модулей, в том числе тесты, идут одновременно, и тестовая JVM
+  каждого модуля запускает свои контейнеры.
 - В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у веб-приложения
   `app` — ещё Spring Boot и Vaadin) и зависимостей, может быть и модуль-специфичная логика сборки — она остаётся
   в скрипте своего модуля. Так, в `testsys-infra/localization` это кодогенерация (см.
@@ -168,7 +172,9 @@ dev-режим кладёт в `build/` — так задаёт `vaadin.build.fo
 Приложение обновляет открытые страницы без действия пользователя через push Vaadin по WebSocket (`/VAADIN/push`),
 см. раздел «Живые обновления» в [components/README.md](../../testsys-web/components/README.md). Реверс-прокси перед приложением
 должен пропускать заголовки `Upgrade`/`Connection` для этого пути. При нескольких экземплярах приложения нужны
-sticky sessions: сессия Vaadin и состояние её UI живут в памяти одного экземпляра. Живые обновления между
+sticky sessions: сессия Vaadin и состояние её UI живут в памяти одного экземпляра. Вход другой экземпляр
+восстанавливает из БД, а состояние UI — нет, см. раздел «Сохранённый вход» в
+[app/README.md](../../testsys-web/app/README.md#сохранённый-вход). Живые обновления между
 экземплярами не распространяются: фоновые `refresh`/`reload` и локальные сигналы действуют только на страницы
 своего экземпляра.
 
@@ -201,11 +207,11 @@ Workflow лежат в `.github/workflows`.
 
 | Workflow                  | Когда                          | Что делает                                                      |
 |---------------------------|--------------------------------|-----------------------------------------------------------------|
-| `build.yml`               | push/PR в `master`, `dev`      | `./gradlew assemble` — компиляция и сборка без тестов, jar-артефакты, аннотации ошибок компиляции в PR |
-| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon` — все тесты без Detekt, затем клиентские тесты `components` на Node 24 (`node --test`); отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
-| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon` — все source set всех модулей без правки файлов; таблица замечаний в Summary запуска, исходные и подготовленные SARIF-артефакты; отдельная загрузка в GitHub Security для каждого модуля с сохранением категории на модуль и задачу |
+| `build.yml`               | push/PR в `master`, `dev`, вызов из `release.yml` | `./gradlew assemble` — компиляция и сборка без тестов, jar-артефакты, аннотации ошибок компиляции в PR |
+| `test.yml`                | push/PR в `master`, `dev`, вызов из `release.yml` | `./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon` — все тесты без Detekt, затем клиентские тесты `components` на Node 24 (`node --test`); отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
+| `lint.yml`                | push/PR в `master`, `dev`, вызов из `release.yml` | `./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon` — все source set всех модулей без правки файлов; таблица замечаний в Summary запуска, исходные и подготовленные SARIF-артефакты; отдельная загрузка в GitHub Security для каждого модуля с сохранением категории на модуль и задачу |
 | `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
-| `release.yml`             | публикация релиза GitHub       | Собирает образ из `Dockerfile` и публикует его в Docker Hub как `<DOCKER_USERNAME>/testsys-app` с тегом версии релиза (`v1.2.3` → `1.2.3`) и `latest`; пре-релиз не перемещает `latest`. Нужны секреты `DOCKER_USERNAME` и `DOCKER_PASSWORD` |
+| `release.yml`             | публикация релиза GitHub       | Сквошит изменения `dev`, которых ещё нет в `master`, в один коммит поверх `master`, ставит в нём версию релиза (`v1.2.3` → `1.2.3`) в `version` из `testsys.conventions.gradle.kts` и вместо `%CURRENT_VERSION%` в `.kt`-файлах и пушит его во временную ветку `release/<версия>`. На этом коммите вызывает `build.yml`, `test.yml` и `lint.yml`; SARIF в GitHub Security при этом не загружается. Если все проверки прошли, переводит `master` на этот коммит и переносит на него тег релиза, публикует образ из `Dockerfile` в Docker Hub как `<DOCKER_USERNAME>/testsys-app` с тегом версии и `latest` (пре-релиз не перемещает `latest`) и вливает `master` в `dev`; в конфликтах слияния берётся сторона `master`. Если проверки не прошли, `master`, `dev`, тег и образ не меняются. Временная ветка удаляется в конце в любом случае. Нужны секреты `DOCKER_USERNAME` и `DOCKER_PASSWORD`; если `master` или `dev` защищены, ещё `RELEASE_TOKEN` с правом пуша в них |
 
 ## Куда класть новый код
 
@@ -219,9 +225,11 @@ Workflow лежат в `.github/workflows`.
 | Прокси-сервис операций                          | `testsys-web/app/.../service/<actor>/<Actor>Service.kt`, см. [app/README.md](../../testsys-web/app/README.md#прокси-сервисы) |
 | Служебную замену Кодов-приглашений с истёкшим сроком | `refreshClassInvite` в `ManagerOperations` и `refreshCommunityInvite` в `AdministratorOperations`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Служебные чтение и запись данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
+| Хранение входов в основной и служебный интерфейсы | `testsys-infra:database`, пакет `api/session`, см. [database/README.md](../../testsys-infra/database/README.md#входы-в-интерфейсы) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
 | Дашборд, настройку мониторинга или сбора логов | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/config/loki.yml`, `deploy/config/alloy.alloy`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |
+| Параметр конфигурации приложения | Умолчание — в `<тема>-defaults.properties` модуля-владельца, чтение — классом параметров, который привязывает `Binder` при запуске (обязательный параметр без умолчания — `strictBinder` из `testsys-infra:settings`), или `@SettingsProperties` для ключа кабинета; строка — в таблице раздела «Параметры приложения» в [deployment.md](deployment.md#параметры-приложения) |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |
 | Необходимая клиентская реализация компонента | `components/src/main/resources/META-INF/frontend/testsys-ui/`, API — components/README.md |

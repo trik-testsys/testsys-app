@@ -552,6 +552,26 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
     }
 
     @Test
+    fun `should fail to save a task with a registered tag of another version number`() {
+        val ownerId = fixtures.developer().id.value
+        val exerciseId = fixtures.exercise().id.value
+        val statementId = fixtures.statement().id.value
+        val stale = fixtures.trikStudioVersion().copy(version = fixtures.unique("stale-version"))
+        val data = taskData {
+            owner(ownerId)
+            name = fixtures.unique("Task")
+            description = "Task description"
+            content.committed {
+                exercises(listOf(exerciseId))
+                statement(statementId)
+                supportedTrikStudioVersions = mutableListOf(stale)
+            }
+        }
+
+        assertFailsWith<IllegalArgumentException> { repository.save(data) }
+    }
+
+    @Test
     fun `should keep the owner if another owner is passed on update`() {
         val saved = repository.save(newData())
         val otherOwner = fixtures.developer().id

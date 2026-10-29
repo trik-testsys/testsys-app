@@ -8,17 +8,21 @@ import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.CompetitionId
-import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.web.app.service.manager.CompetitionDetailsVo
+import tech.testsys.web.app.service.manager.IssuedParticipantVo
 import tech.testsys.web.app.service.manager.ManagerService
 import tech.testsys.web.app.service.manager.ParticipantVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.action
+import tech.testsys.web.components.actions.destructiveAction
 import tech.testsys.web.components.actions.downloadAction
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.data.TableHandle
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.alert
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.integerInput
@@ -94,29 +98,29 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                     onCancel = { draft.readBean(DetailsDraft(entity.name, entity.description)) },
                 )
                 row {
-                    codeInput(texts.id(), labelSize = 6, size = 18) {
+                    codeInput(texts.id(), labelSize = 2, size = 4) {
                         value = entity.id.value.toString()
                         isEditable = false
                     }
                 }
                 row {
-                    textInput(texts.name(), labelSize = 6, size = 18) {
+                    textInput(texts.name(), labelSize = 2, size = 22) {
                         draft.forField(this).nameRules(texts.nameRequired())
                             .bind({ values -> values.name }, { values, name -> values.name = name })
                     }
                 }
                 row {
-                    textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
+                    textArea(texts.description(), labelSize = 2, size = 22, maxLines = 4) {
                         draft.forField(this)
                             .bind({ values -> values.description }, { values, description -> values.description = description })
                     }
                 }
                 row {
-                    codeInput(texts.participantCount(), labelSize = 6, size = 6) {
+                    codeInput(texts.participantCount(), labelSize = 2, size = 2) {
                         value = details.participants.size.toString()
                         isEditable = false
                     }
-                    codeInput(texts.contestCount(), labelSize = 6, size = 6) {
+                    codeInput(texts.contestCount(), labelSize = 2, size = 2) {
                         value = details.contests.size.toString()
                         isEditable = false
                     }
@@ -127,21 +131,47 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
         draft.readBean(DetailsDraft(entity.name, entity.description))
     }
 
-    @RawAccessTokenDependency(reason = "Shows the stored access codes of the participants as the issued ones.")
-    private fun PageScope.participantsBlock(competitionId: CompetitionId, participants: List<Pair<ParticipantVo, Instant?>>) {
+    /** Shows the just [created] participants once with their CSV: their access codes cannot be read back later. */
+    private fun issuedParticipantsDialog(competitionId: CompetitionId, created: List<IssuedParticipantVo>) {
         val texts = currentLocalization().pageManager
         val ui = UI.getCurrent()
+        dialog(title = texts.competitionParticipantsIssuedTitle(), subtitle = texts.competitionParticipantsIssuedGuide()) {
+            row {
+                alert(
+                    kind = FeedbackKind.Warning,
+                    title = texts.competitionParticipantsIssuedAlertTitle(),
+                    text = texts.competitionParticipantsIssuedAlertText(),
+                )
+            }
+            footer { dialog ->
+                secretDialogClose(dialog)
+                downloadAction(texts.downloadCsv(), produce = { context ->
+                    val csv = inUiOf(ui) { participantsCsv(created, currentLocalization().pageManager) }
+                    val bytes = csv.toByteArray(Charsets.UTF_8)
+                    context.ensureActive()
+                    DownloadContent(
+                        filename = "competition-${competitionId.value}-new-participants.csv",
+                        contentType = "text/csv; charset=UTF-8",
+                        length = bytes.size.toLong(),
+                    ) { bytes.inputStream() }
+                })
+            }
+        }.open()
+    }
+
+    private fun PageScope.participantsBlock(competitionId: CompetitionId, participants: List<Pair<ParticipantVo, Instant?>>) {
+        val texts = currentLocalization().pageManager
         row {
             block(title = texts.competitionParticipantsTitle()) {
                 guide(texts.competitionParticipantsGuide())
-                table(
+                val rows = table(
                     key = { (participant, _): Pair<ParticipantVo, Instant?> -> participant.id },
+                    selectable = true,
                     fetch = { request -> pageOf(participants, request) },
                 ) {
-                    codeColumn(texts.id(), size = 4) { (participant, _) -> participant.id.value.toString() }
-                    textColumn(texts.nickname(), size = 6) { (participant, _) -> participant.name }
-                    dateTimeColumn(texts.lastLogin(), size = 5) { (_, lastLogin) -> lastLogin?.toUserDateTime() }
-                    codeColumn(texts.accessCode(), isObscured = true) { (participant, _) -> participant.accessTokenHash.value }
+                    codeColumn(texts.id(), size = 5) { (participant, _) -> participant.id.value.toString() }
+                    textColumn(texts.nickname(), size = 11) { (participant, _) -> participant.name }
+                    dateTimeColumn(texts.lastLogin()) { (_, lastLogin) -> lastLogin?.toUserDateTime() }
                     val actionsLabel = { (participant, _): Pair<ParticipantVo, Instant?> ->
                         texts.competitionParticipantsActions(name = participant.name)
                     }
@@ -153,17 +183,10 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                 val creation = participantsDialog(competitionId)
                 actions {
                     action(texts.competitionParticipantsCreate()) { onClick { creation() } }
-                    downloadAction(texts.downloadCsv(), produce = { context ->
-                        val exported = managerService.downloadParticipants(competitionId)
-                        val csv = inUiOf(ui) { participantsCsv(exported, currentLocalization().pageManager) }
-                        val bytes = csv.toByteArray(Charsets.UTF_8)
-                        context.ensureActive()
-                        DownloadContent(
-                            filename = "competition-${competitionId.value}-participants.csv",
-                            contentType = "text/csv; charset=UTF-8",
-                            length = bytes.size.toLong(),
-                        ) { bytes.inputStream() }
-                    })
+                    destructiveAction(texts.competitionParticipantsDeleteSelected()) {
+                        bindEnabled(rows.selection.map { selected -> selected.isNotEmpty() })
+                        onClick { deleteSelected(competitionId, rows) }
+                    }
                 }
             }
         }
@@ -177,8 +200,24 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
             action = texts.competitionParticipantsDelete(),
             isDanger = true,
         ) {
-            managerService.deleteParticipant(competitionId, participant.id)
+            managerService.deleteParticipants(competitionId, setOf(participant.id))
             toast(FeedbackKind.Success, currentLocalization().pageManager.competitionParticipantsDeleted())
+            show(competitionId)
+        }
+    }
+
+    private fun deleteSelected(competitionId: CompetitionId, rows: TableHandle<Pair<ParticipantVo, Instant?>>) {
+        val texts = currentLocalization().pageManager
+        val participantIds = rows.selected.filterIsInstance<SingleRoleUserId>().toSet()
+        confirm(
+            title = texts.competitionParticipantsDeleteSelectedTitle(count = participantIds.size),
+            text = texts.competitionParticipantsDeleteSelectedText(),
+            action = texts.competitionParticipantsDelete(),
+            isDanger = true,
+        ) {
+            val deleted = managerService.deleteParticipants(competitionId, participantIds)
+            rows.clearSelection()
+            toast(FeedbackKind.Success, currentLocalization().pageManager.competitionParticipantsDeletedSelected(count = deleted.size))
             show(competitionId)
         }
     }
@@ -191,7 +230,7 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
         val title = texts.competitionParticipantsDialogTitle()
         val creation = dialog(title = title, subtitle = texts.competitionParticipantsDialogSubtitle()) {
             row {
-                integerInput(texts.competitionParticipantsCount(), labelSize = 6, size = 18, min = 1) {
+                integerInput(texts.competitionParticipantsCount(), labelSize = 6, size = 6, min = 1) {
                     draft.forField(this)
                         .asRequired(texts.competitionParticipantsCountRequired())
                         .bind({ values -> values.count }, { values, count -> values.count = count })
@@ -204,15 +243,16 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                         val values = CountDraft()
                         if (draft.writeBeanIfValid(values)) {
                             val count = checkNotNull(values.count)
-                            managerService.createParticipants(competitionId, count)
-                            val created = currentLocalization().pageManager
+                            val created = managerService.createParticipants(competitionId, count)
+                            val messages = currentLocalization().pageManager
                             toast(
                                 FeedbackKind.Success,
-                                created.competitionParticipantsCreated(),
-                                created.competitionParticipantsCreatedTotal(count = count),
+                                messages.competitionParticipantsCreated(),
+                                messages.competitionParticipantsCreatedTotal(count = count),
                             )
                             dialog.close()
                             show(competitionId)
+                            issuedParticipantsDialog(competitionId, created)
                         }
                     }
                 }

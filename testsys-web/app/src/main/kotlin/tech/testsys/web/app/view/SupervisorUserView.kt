@@ -1,5 +1,6 @@
 package tech.testsys.web.app.view
 
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
@@ -7,11 +8,14 @@ import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import tech.testsys.domain.model.user.CommunityRole
-import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.infra.localization.PageSupervisor.UserHeadKind
 import tech.testsys.operation.config.CommunityConfig
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.AdministratorRoleVo
 import tech.testsys.web.app.service.CommunityVo
@@ -145,7 +149,7 @@ class SupervisorUserView(
                         guide(texts.userCommunityGuide())
                         val community = communities.firstOrNull { it.id == user.community }
                         row {
-                            textInput(texts.name(), labelSize = 6, size = 18) {
+                            textInput(texts.name(), labelSize = 2, size = 22) {
                                 value = community?.name.orEmpty()
                                 isEditable = false
                             }
@@ -157,7 +161,7 @@ class SupervisorUserView(
                     block(title = texts.userParticipantTitle()) {
                         guide(texts.userParticipantGuide())
                         row {
-                            codeInput(texts.id(), labelSize = 6, size = 18) {
+                            codeInput(texts.id(), labelSize = 2, size = 4) {
                                 value = user.competition.value.toString()
                                 isEditable = false
                             }
@@ -169,14 +173,13 @@ class SupervisorUserView(
         return true
     }
 
-    @RawAccessTokenDependency(reason = "Shows the original access code of any user while Identity hashing is in use.")
     private fun PageScope.detailsBlock(user: AdminUserVo, login: Instant?) {
         val texts = currentLocalization().pageSupervisor
         row {
             block(title = texts.details()) {
                 guide(texts.userDetailsGuide())
                 row {
-                    codeInput(texts.id(), labelSize = 3, size = 6) {
+                    codeInput(texts.id(), labelSize = 3, size = 4) {
                         value = user.id.value.toString()
                         isEditable = false
                     }
@@ -186,20 +189,24 @@ class SupervisorUserView(
                     }
                 }
                 row {
-                    dateTimeInput(texts.lastLogin(), labelSize = 3, size = 6) {
+                    dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) {
                         value = login?.toUserDateTime()
                         isEditable = false
                     }
                 }
-                row {
-                    codeInput(texts.accessCode(), labelSize = 3, size = 6) {
-                        value = user.accessTokenHash.value
-                        isObscured = true
-                        isEditable = false
-                    }
+                actions {
+                    action(texts.userImpersonate()) { onClick { impersonate(user.id) } }
                 }
             }
         }
+    }
+
+    /** Signs the supervisor in as [userId] and opens the start page of that user. */
+    private fun impersonate(userId: UserId) {
+        val principal = service.impersonate(userId)
+        CabinetSignIn.signIn(principal)
+        logger.info("Supervisor {} signed in as user {} ({})", principal.impersonatedBy, principal.userId, principal.kind)
+        UI.getCurrent().navigate(startPageOf(principal.kind))
     }
 
     /** Shows the community roles of [user] with their removal, the inclusion into a community and the administrator grant. */
@@ -321,5 +328,9 @@ class SupervisorUserView(
     private class MembershipDraft {
         var community: CommunityVo? = null
         var role: CommunityRole? = null
+    }
+
+    private companion object {
+        val logger: Logger = LoggerFactory.getLogger(SupervisorUserView::class.java)
     }
 }

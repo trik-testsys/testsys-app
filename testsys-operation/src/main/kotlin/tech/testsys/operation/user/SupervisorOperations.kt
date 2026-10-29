@@ -25,18 +25,17 @@ import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.CommunityRole
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
-import tech.testsys.domain.model.user.Observer
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.CommunityConfig
+import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.AddToCommunityError
 import tech.testsys.operation.error.AdministratorInPublicCommunityError
 import tech.testsys.operation.error.CommunityIsPublicError
@@ -50,6 +49,8 @@ import tech.testsys.operation.error.CreateSupervisorObserverError
 import tech.testsys.operation.error.EditSupervisorCommunityError
 import tech.testsys.operation.error.ExtendSupervisorCommunityInviteError
 import tech.testsys.operation.error.GrantAdministratorError
+import tech.testsys.operation.error.ImpersonateError
+import tech.testsys.operation.error.ImpersonationDeniedError
 import tech.testsys.operation.error.MissedSupervisorRoleError
 import tech.testsys.operation.error.ObserverContestsEmptyError
 import tech.testsys.operation.error.ObserverNameBlankError
@@ -100,6 +101,7 @@ class SupervisorOperations(
     private val administratorOperations: AdministratorOperations,
     private val contests: ContestRepository,
     private val observers: ObserverRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
     /**
      * Returns a page of all non-supervisor users with last logins.
@@ -296,6 +298,22 @@ class SupervisorOperations(
         }
 
     /**
+     * Returns the non-supervisor user [userId] for a supervisor to sign in as, unchanged and without recording a login.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.single.supervisor.impersonate")
+    fun impersonate(user: User<*>, userId: UserId): OperationResult<User<*>, ImpersonateError> = operation<User<*>, ImpersonateError> {
+        ensure(user is Supervisor, MissedSupervisorRoleError)
+        val target = users.findUserById(userId)
+        ensure(target != null) { UserNotExistsError(userId) }
+        ensure(target !is MultipleRoleUser || target.data.email != PublicCommunityOwner.EMAIL) {
+            ImpersonationDeniedError(userId)
+        }
+        target
+    }
+
+    /**
      * Edits the name and description of any community.
      *
      * @since %CURRENT_VERSION%
@@ -341,18 +359,18 @@ class SupervisorOperations(
     }
 
     /**
-     * Creates an observer in any community for contests shared to it or to the public community.
+     * Creates an observer in any community for contests shared to it or to the public community and returns it with its
+     * original access code.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.admin.createObserver")
-    @RawAccessTokenDependency(reason = "Returns the issued access code while Identity hashing is in use.")
     fun createObserver(
         user: User<*>,
         communityId: CommunityId,
         name: String,
         contestIds: Set<ContestId>,
-    ): OperationResult<Observer, CreateSupervisorObserverError> = operation<Observer, CreateSupervisorObserverError> {
+    ): OperationResult<IssuedObserver, CreateSupervisorObserverError> = operation<IssuedObserver, CreateSupervisorObserverError> {
         ensure(user is Supervisor, MissedSupervisorRoleError)
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
@@ -369,13 +387,14 @@ class SupervisorOperations(
         ensure(name.isNotBlank(), ObserverNameBlankError)
         ensure(name.codePointCount(0, name.length) <= MAX_NAME_CODE_POINTS) { ObserverNameTooLongError(name) }
         ensure(contestIds.isNotEmpty(), ObserverContestsEmptyError)
+        val accessToken = UUID.randomUUID().toString()
         val data = observerData {
             this.community = communityId
             this.name = name
             this.contests = contestIds.toMutableList()
-            accessToken(UUID.randomUUID().toString(), HashAlgorithm.Identity)
+            accessToken(accessToken, accessTokenHasher)
         }
-        observers.save(data)
+        IssuedObserver(observer = observers.save(data), accessToken = accessToken)
     }
 
     /**

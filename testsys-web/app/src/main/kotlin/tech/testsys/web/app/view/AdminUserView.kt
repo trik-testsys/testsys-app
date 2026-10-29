@@ -12,7 +12,6 @@ import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.MultipleRoleUserId
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.localization.PageAdministrator.UserHeadKind
@@ -152,24 +151,17 @@ class AdminUserView(
         return null
     }
 
-    @RawAccessTokenDependency(reason = "Shows the stored access code of an observer as the issued one.")
     private fun PageScope.detailsBlock(user: AdminUserVo, lastLogin: Instant?) {
         val texts = currentLocalization().pageAdministrator
         row {
             block(title = texts.details()) {
                 guide(texts.userDetailsGuide())
                 row {
-                    codeInput(texts.id(), labelSize = 3, size = 6) { value = user.id.value.toString() }
+                    codeInput(texts.id(), labelSize = 3, size = 4) { value = user.id.value.toString() }
                     textInput(texts.nickname(), labelSize = 3, size = 8) { value = user.name }
                 }
-                row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 6) { value = lastLogin?.toUserDateTime() } }
+                row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) { value = lastLogin?.toUserDateTime() } }
                 if (user is ObserverVo) {
-                    row {
-                        codeInput(texts.accessCode(), labelSize = 3, size = 6) {
-                            value = user.accessTokenHash.value
-                            isObscured = true
-                        }
-                    }
                     actions { destructiveAction(texts.userObserverDelete()) { onClick { deleteObserver(user) } } }
                 }
             }.isEditable = false

@@ -2,11 +2,13 @@ package tech.testsys.web.app.config
 
 import org.springframework.beans.factory.SmartInitializingSingleton
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
 import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.contract.FileContentReader
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.SupervisorCommunityReadPort
@@ -30,6 +32,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantContestEnt
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
+import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
@@ -40,6 +43,8 @@ import tech.testsys.domain.contract.persistence.repository.TaskValidationRequest
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
+import tech.testsys.domain.model.user.AccessTokenHasher
+import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
@@ -94,9 +99,10 @@ class OperationsConfiguration {
         administratorOperations: AdministratorOperations,
         contests: ContestRepository,
         observers: ObserverRepository,
+        accessTokenHasher: AccessTokenHasher,
     ): SupervisorOperations = SupervisorOperations(
         users, communities, communityRepository, multipleRoleUsers, userRepository, communityConfig, administratorOperations,
-        contests, observers,
+        contests, observers, accessTokenHasher,
     )
 
     /**
@@ -131,6 +137,7 @@ class OperationsConfiguration {
         inviteConfig: CommunityInviteConfig,
         clock: Clock,
         randomGenerator: RandomGenerator,
+        passwordHasher: PasswordHasher,
     ): CommunityConfig {
         val id = PublicCommunityBootstrap(
             communities,
@@ -141,6 +148,7 @@ class OperationsConfiguration {
             inviteConfig,
             clock,
             randomGenerator,
+            passwordHasher,
         ).ensure(environment)
         return object : CommunityConfig {
             override val publicCommunityId = id
@@ -158,12 +166,13 @@ class OperationsConfiguration {
     fun supervisorBootstrap(
         environment: Environment,
         supervisors: SupervisorRepository,
-        multipleRoleUsers: MultipleRoleUserRepository,
         participants: ParticipantRepository,
         observers: ObserverRepository,
         transactions: TransactionOperations,
+        accessTokenHasher: AccessTokenHasher,
+        signIns: CabinetSignInStore,
     ): SmartInitializingSingleton = SmartInitializingSingleton {
-        SupervisorBootstrap(supervisors, multipleRoleUsers, participants, observers, transactions).ensure(environment)
+        SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher, signIns).ensure(environment)
     }
 
     /**
@@ -207,7 +216,7 @@ class OperationsConfiguration {
      */
     @Bean
     fun communityInviteConfig(environment: Environment, settings: Settings<CommunityInviteProperties>): CommunityInviteConfig {
-        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.refresh-period"))
+        val refreshPeriod = environment.requiredDuration("$CONFIG_PREFIX.community-invite.refresh-period")
         return object : CommunityInviteConfig {
             override val ttl get() = settings.current().ttl
             override val refreshPeriod = refreshPeriod
@@ -238,6 +247,7 @@ class OperationsConfiguration {
         submissions: SubmissionRepository,
         judgmentOrders: JudgmentOrderRepository,
         verdicts: VerdictRepository,
+        accessTokenHasher: AccessTokenHasher,
     ): AdministratorOperations = AdministratorOperations(
         communityRepository = communities,
         managerInviteRepository = managerInvites,
@@ -256,6 +266,7 @@ class OperationsConfiguration {
         submissionRepository = submissions,
         judgmentOrderRepository = judgmentOrders,
         verdictRepository = verdicts,
+        accessTokenHasher = accessTokenHasher,
     )
 
     /**
@@ -272,6 +283,7 @@ class OperationsConfiguration {
         emailChangeRequests: EmailChangeRequestRepository,
         accessRestorationRequests: AccessRestorationRequestRepository,
         mailSender: UserMailSender,
+        passwordHasher: PasswordHasher,
         emailConfirmationConfig: EmailConfirmationConfig,
         clock: Clock,
         randomGenerator: RandomGenerator,
@@ -284,6 +296,7 @@ class OperationsConfiguration {
         emailChangeRequestRepository = emailChangeRequests,
         accessRestorationRequestRepository = accessRestorationRequests,
         mailSender = mailSender,
+        passwordHasher = passwordHasher,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
         randomGenerator = randomGenerator,
@@ -304,6 +317,7 @@ class OperationsConfiguration {
         users: UserRepository,
         registrationRequests: RegistrationRequestRepository,
         mailSender: UserMailSender,
+        passwordHasher: PasswordHasher,
         communityConfig: CommunityConfig,
         emailConfirmationConfig: EmailConfirmationConfig,
         clock: Clock,
@@ -316,6 +330,7 @@ class OperationsConfiguration {
         userRepository = users,
         registrationRequestRepository = registrationRequests,
         mailSender = mailSender,
+        passwordHasher = passwordHasher,
         communityConfig = communityConfig,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
@@ -409,6 +424,7 @@ class OperationsConfiguration {
         requests: TaskValidationRequestRepository,
         dispatcher: TaskValidationDispatcher,
         submissions: SubmissionRepository,
+        regrades: RegradeRepository,
         grader: AfterCommitGrader,
     ): DeveloperOperations = DeveloperOperations(
         tasks,
@@ -422,6 +438,7 @@ class OperationsConfiguration {
         requests,
         dispatcher,
         submissions,
+        regrades,
         grader,
     )
 
@@ -575,7 +592,7 @@ class OperationsConfiguration {
      */
     @Bean
     fun classInviteConfig(environment: Environment, settings: Settings<ClassInviteProperties>): ClassInviteConfig {
-        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.refresh-period"))
+        val refreshPeriod = environment.requiredDuration("$CONFIG_PREFIX.class-invite.refresh-period")
         return object : ClassInviteConfig {
             override val ttl get() = settings.current().ttl
             override val refreshPeriod = refreshPeriod
@@ -601,6 +618,7 @@ class OperationsConfiguration {
         multipleRoleUsers: MultipleRoleUserRepository,
         users: UserRepository,
         tasks: TaskRepository,
+        accessTokenHasher: AccessTokenHasher,
     ): ManagerOperations = ManagerOperations(
         classRepository = classes,
         competitionRepository = competitions,
@@ -614,9 +632,14 @@ class OperationsConfiguration {
         multipleRoleUserRepository = multipleRoleUsers,
         userRepository = users,
         taskRepository = tasks,
+        accessTokenHasher = accessTokenHasher,
     )
 }
 
 private val DISPATCHER_STOP_TIMEOUT: Duration = Duration.ofSeconds(30)
 
 private const val CONFIG_PREFIX = "testsys.operation"
+
+/** Binds the required duration [key]; a value that is not a duration fails with a `BindException`. */
+private fun Environment.requiredDuration(key: String): Duration =
+    checkNotNull(Binder.get(this).bind(key, Duration::class.java).orElse(null)) { "$key is required" }

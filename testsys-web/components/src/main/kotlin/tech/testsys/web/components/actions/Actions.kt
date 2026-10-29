@@ -13,6 +13,7 @@ import tech.testsys.web.components.core.setIconOnly
 import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GuestCardScope
 
 /** Role of an action; the look of the button follows it. */
 internal enum class ActionRole(val attribute: String) {
@@ -30,6 +31,14 @@ internal enum class ActionRole(val attribute: String) {
  */
 fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Main, label, icon, configure)
+
+/**
+ * Adds the main action of a guest card, as wide as the card, under its fields.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun GuestCardScope.mainAction(label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
+    body.mainAction(label, configure = configure)
 
 /**
  * Adds a neutral action.

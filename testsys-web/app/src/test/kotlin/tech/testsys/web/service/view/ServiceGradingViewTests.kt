@@ -14,6 +14,7 @@ import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.RouterLink
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.verify
@@ -99,10 +100,10 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the grading page from the service home`() {
+    fun `should open the grading page from the service header`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<Button> { text = "Проверка" }._click()
+        UI.getCurrent()._get<RouterLink> { text = "Проверка" }._click()
 
         assertEquals(ServiceGradingView::class.java, currentView)
     }

@@ -319,6 +319,23 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
     }
 
     @Test
+    fun `should fail to save a contest with a registered tag of another version number`() {
+        val ownerId = fixtures.developer().id.value
+        val registered = fixtures.trikStudioVersion()
+
+        assertFailsWith<IllegalArgumentException> {
+            repository.save(
+                contestData {
+                    owner(ownerId)
+                    name = fixtures.unique("Contest")
+                    description = "Contest description"
+                    trikStudioVersion = registered.copy(version = fixtures.unique("stale-version"))
+                },
+            )
+        }
+    }
+
+    @Test
     fun `should fail to update a contest with an unregistered TRIK Studio version`() {
         val saved = repository.save(newData())
 

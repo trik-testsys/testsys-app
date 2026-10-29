@@ -12,6 +12,7 @@ import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.UserId
+import tech.testsys.operation.user.IssuedParticipant
 import tech.testsys.operation.user.ManagerOperations
 import tech.testsys.web.app.service.CompetitionVo
 import tech.testsys.web.app.service.ContestVo
@@ -54,6 +55,18 @@ data class ParticipantVo(
     val accessTokenHash: AccessTokenHash,
     val name: String,
     val competition: CompetitionId,
+)
+
+/**
+ * Participant just created by the manager with its original access code, which cannot be read back later.
+ *
+ * @property participant the created participant.
+ * @property accessToken the original access code issued to [participant].
+ * @since %CURRENT_VERSION%
+ */
+data class IssuedParticipantVo(
+    val participant: ParticipantVo,
+    val accessToken: String,
 )
 
 /**
@@ -112,6 +125,9 @@ internal fun Participant.toVo(): ParticipantVo = ParticipantVo(
     name = data.name,
     competition = data.competition.id,
 )
+
+internal fun IssuedParticipant.toVo(): IssuedParticipantVo =
+    IssuedParticipantVo(participant = participant.toVo(), accessToken = accessToken)
 
 internal fun ManagerOperations.ClassDetails.toVo(): ClassDetailsVo = ClassDetailsVo(
     studyClass = studyClass.toVo(),

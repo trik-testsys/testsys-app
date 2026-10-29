@@ -13,6 +13,7 @@ import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GuestCardScope
 
 private const val MAX_SEGMENTED_CHOICES = 4
 
@@ -126,6 +127,19 @@ fun <T : Any> ContentScope.segmentedControl(
     if (placement.isCompact) field.addClassName(CssClass.SegSm)
     return addLabelLessInput(label, field, configure)
 }
+
+/**
+ * Adds a segmented choice of [items] across the width of a guest card; [label] is only its accessible name.
+ *
+ * @param T the type of the choices.
+ * @since %CURRENT_VERSION%
+ */
+fun <T : Any> GuestCardScope.segmentedControl(
+    label: String,
+    items: List<T>,
+    itemLabel: (T) -> String,
+    configure: ValueInput<T?>.() -> Unit = {},
+): ValueInput<T?> = body.segmentedControl(label, items, itemLabel, configure)
 
 private fun Element.attachSegmentedChoice(): PendingJavaScriptResult = executeJs("window.testsysSegmentedChoice.attach(this)")
 

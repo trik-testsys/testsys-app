@@ -5,9 +5,16 @@ on:
     branches: [ "master", "dev" ]
   pull_request:
     branches: [ "master", "dev" ]
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to check instead of the triggering one
+        type: string
+        default: ''
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # A literal prefix: in a called workflow `github.workflow` is the caller's name.
+  group: build-${{ github.ref }}-${{ inputs.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -22,6 +29,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up JDK
         uses: actions/setup-java@v6

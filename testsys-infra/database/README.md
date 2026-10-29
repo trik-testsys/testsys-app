@@ -22,6 +22,7 @@
 | `api/transaction`             | Повтор транзакций при конфликте, см. раздел [«Транзакции и согласованность»](#транзакции-и-согласованность) | — |
 | `api/settings`                | `DatabaseSettingsStore` — хранение служебных настроек                                      | —         |
 | `api/registry`                | `DatabaseGradingNodeStore` — хранение реестра Проверяющих узлов                            | —         |
+| `api/session`                 | `DatabaseCabinetSignInStore` — хранение входов в интерфейсы, см. раздел [«Входы в интерфейсы»](#входы-в-интерфейсы) | — |
 | `internal/jpa/id`             | Генератор идентификаторов                                                                  | —         |
 | `internal/utils`              | Общие помощники: `syncJoinTable`, `findLinkedIds`, `findAllInChunks`, `findAllByIdOrError`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
 
@@ -85,6 +86,7 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 | Пользователь с несколькими Ролями, `ts_user` | `ts_multiple_role_to_user`, `ts_developer_data`, `ts_student_data`, `ts_judge_data`, `ts_manager_data`, `ts_administrator_data` |
 | Пользователь с одной Ролью, `ts_user` | `ts_single_role_to_user`, `ts_participant_data`, `ts_observer_data`, `ts_supervisor_data`, `ts_contest_to_observer` |
 | Запрос проверки, `ts_task_validation_request` | Четыре таблицы `ts_*_to_task_validation_request`, `ts_test_diagnostic_result`, `ts_diagnostic_report` |
+| Перепроверка, `ts_regrade` | `ts_test_to_regrade`, `ts_submission_to_regrade` |
 | Посылка, Приказ судьи, Вердикт, Коды-приглашения, запросы регистрации, смены почты и восстановления доступа, записи первого входа | Частей нет; у Вердикта часть `ts_test_verdict` |
 
 Некоторые записи меняют чужой агрегат и поэтому повышают его версию:
@@ -113,10 +115,11 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 
 Обратные списки только читаются: Задачи и Туры Разработчика, Классы и Соревнования Организатора, Классы
 и Посылки Ученика, Приказы судьи у Судьи и у Посылки, Участники Соревнования. Запись в их исходные таблицы
-защищает владеющий агрегат. Строки `ts_solution`, `ts_logs`, `ts_recording`, `ts_file_data`
-и `ts_trik_studio_version` после сохранения не меняются, поэтому версия их не защищает. Файл и другие поля
-версии Ресурса, фиксируемые при создании, тоже не меняются; `update` версии Ресурса сверяет токен её собственной
-строки.
+защищает владеющий агрегат. Строки `ts_solution`, `ts_logs`, `ts_recording` и `ts_file_data` после сохранения
+не меняются, поэтому версия их не защищает. Строку `ts_trik_studio_version` меняет только служебная смена тега,
+см. [«Служебная регистрация версий TRIK Studio»](#служебная-регистрация-версий-trik-studio). Файл и другие
+поля версии Ресурса, фиксируемые при создании, тоже не меняются; `update` версии Ресурса сверяет токен её
+собственной строки.
 
 ### Повтор транзакций
 
@@ -255,7 +258,19 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 считают Посылки вида `GRADING` в любом статусе одним агрегирующим запросом `SubmissionJpaEntityRepository`
 и не загружают сами Посылки. `countGradingByTask` группирует Посылки Тура по Задаче. `countGrading` считает Посылки
 переданных авторов в переданных Турах и число разных авторов через `count(distinct ...)`; если один из наборов пуст,
-адаптер возвращает нули и не обращается к БД. Чтение выполняется в транзакции с `readOnly = true`.
+адаптер возвращает нули и не обращается к БД. Метод `findGradingAuthorIds` находит переданных авторов с такими
+Посылками в переданных Турах одним запросом `select distinct` по автору; если один из наборов пуст, адаптер возвращает
+пустой набор и не обращается к БД. Чтение выполняется в транзакции с `readOnly = true`.
+
+## Прогресс Перепроверок
+
+`RegradePersistenceAdapter.countGraded` считает прогресс каждой Перепроверки из набора. Что входит в прогресс,
+определено в
+[testsys.user.multi.developer.task.commitTask](../../docs/domain/features.md#testsysusermultidevelopertaskcommittask-partially-implemented).
+Полигоны результатов берутся из `ts_test_verdict.test_id`, Полигоны Перепроверки — из `ts_test_to_regrade`.
+Подсчёт выполняет один агрегирующий запрос `RegradeJpaEntityRepository.countGraded` с `count(distinct ...)` и
+подзапросами `not exists`; адаптер не загружает сами Посылки и Вердикты.
+Для пустого набора адаптер возвращает пустой результат и не обращается к БД.
 
 ## Соревнования Туров
 
@@ -265,8 +280,10 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 ## Версии TRIK Studio
 
 Строка `ts_trik_studio_version` хранит тег Docker-образа в колонке `tag` и номер версии в колонке `studio_version`.
-Обе колонки обязательны и уникальны. Адаптеры Туров, Задач, Посылок и запросов валидации ищут строку версии по тегу
-и хранят ссылку на её идентификатор. Они сохраняют только зарегистрированные в этой таблице версии.
+Обе колонки обязательны и уникальны. Адаптеры Туров, Задач, Посылок и запросов валидации ищут строку версии по тегу,
+сверяют её номер с номером переданной версии и хранят ссылку на идентификатор строки, поэтому смена тега
+не затрагивает ссылки. Если строки с тегом нет или её номер другой, адаптер бросает `IllegalArgumentException`
+без сохранения.
 `ContestPersistenceAdapter.findTrikStudioVersions` читает все строки и возвращает версии с тегом и номером,
 упорядоченные по тегу.
 
@@ -327,10 +344,10 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 существующие файлы. Путь должен быть абсолютным; `store` создаёт каталог, если его нет.
 
 Адаптер вида Ресурса передаёт `FileStorageKind`, а `FileDataStorage` выбирает путь из
-[FileStoragePaths.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/FileStoragePaths.kt) — класса
-`@ConfigurationProperties` с обязательными свойствами `testsys.file-storage.paths.<вид>`, который регистрирует
-`DatabaseConfiguration`. Виды: `statement`, `exercise`, `test`, `solution`, `recording` и `logs`. Файл Авторского
-Решения хранится по пути `solution`. Если свойства нет, приложение не запустится.
+[FileStoragePaths.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/FileStoragePaths.kt).
+`DatabaseConfiguration` создаёт бин этого класса и один раз привязывает через `Binder` обязательные свойства
+`testsys.file-storage.paths.<вид>`. Виды: `statement`, `exercise`, `test`, `solution`, `recording` и `logs`.
+Файл Авторского Решения хранится по пути `solution`. Если свойства нет, приложение не запустится.
 
 `StoredBlobRef` из `findFileRef` действителен только вместе с путём своего вида, а путь знает только адаптер.
 Поэтому код вне модуля пока не может загрузить файл по такой ссылке.
@@ -346,12 +363,14 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 дождитесь завершения их транзакций и используйте каталоги, выделенные этой БД. Автоматического расписания нет.
 Возраст файла не исключает незавершённую транзакцию, поэтому проход при работающих писателях небезопасен.
 
-Настройки заданы в [file-storage-defaults.properties](src/main/resources/file-storage-defaults.properties):
+Значения по умолчанию заданы в [file-storage-defaults.properties](src/main/resources/file-storage-defaults.properties)
+и перечислены в таблице раздела «Параметры приложения»
+в [deployment.md](../../docs/project/deployment.md#параметры-приложения):
 
-| Свойство | По умолчанию | Значение |
-|----------|--------------|----------|
-| `testsys.file-storage.cleanup.minimum-age` | `24h` | Минимальное время после изменения физического файла, положительная длительность |
-| `testsys.file-storage.cleanup.batch-size` | `500` | Максимальный размер пакета, положительное целое число |
+| Свойство | Значение |
+|----------|----------|
+| `testsys.file-storage.cleanup.minimum-age` | Минимальное время после изменения физического файла, положительная длительность |
+| `testsys.file-storage.cleanup.batch-size` | Максимальный размер пакета, положительное целое число |
 
 `DatabaseConfiguration` объявляет `Settings<FileStorageCleanupProperties>`, а `FileStorageCleanup` один раз в начале
 `run()` получает из него оба значения. Возраст принимает ISO-8601 и единицы Spring, например `24h`.
@@ -397,30 +416,47 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 Удаление Задачи очищает эти строки, сохраняя версии Ресурсов и их файлы. Таблица хранит только текущую
 принадлежность; история владельцев цепочки не сохраняется. Операций переноса или удаления Ресурсов пока нет.
 
-## Коды-доступа Пользователей
+## Коды-доступа и Пароли Пользователей
 
-`ts_user.access_token_hash_algorithm` хранит алгоритм строкой из `HashAlgorithmJpaEnum` рядом с `access_token`
-([User.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/user/User.kt)).
-Колонка создаётся с `NOT NULL` в
-[changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml).
-Значения по умолчанию у колонки нет: при записи алгоритм передаётся явно.
+Код-доступа есть только у Пользователей с Фиксированной Ролью, Пароль — только у Пользователей с Нефиксированными
+Ролями. `ts_user.access_token_hash_algorithm` хранит алгоритм строкой из `HashAlgorithmJpaEnum` рядом
+с `access_token`, `ts_user.password_hash` — хеш Пароля
+([User.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/user/User.kt)). Все три колонки допускают
+`NULL`; какие из них заполнены, задаёт `CHECK` `ck_ts_user_type_credentials` в
+[changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml): у строки
+`MULTIPLE_ROLE` заполнен только `password_hash`, у строки `SINGLE_ROLE` — только `access_token`
+и `access_token_hash_algorithm`. `CHECK` `ck_ts_user_access_token_hash_algorithm` допускает в
+`access_token_hash_algorithm` только `HMAC_SHA256`: `access_token` хранит HMAC-SHA-256 КД в hex. Значение
+`IDENTITY` из `HashAlgorithmJpaEnum` используют только Коды-приглашения. Значений по умолчанию у колонок нет:
+при записи они передаются явно.
 
-Маппинги Пользователей объединяют значение и алгоритм в `AccessTokenHash` и передают его в `storedAccessToken(hash)`.
-При записи оба поля переносятся из доменных данных без хэширования. Ввод исходного КД описан в разделе
+Колонки и ограничения изменены в changeset'ах `1.0.0-03-1` и `1.0.0-03-init-user-checks`, поэтому их контрольные
+суммы изменились. Базы окружений dev и e2e, созданные до этого изменения, пересоздаются командой `clean`,
+см. раздел [«Остановка и очистка»](../../docs/project/deployment.md#остановка-и-очистка) deployment.md.
+
+Маппинги Пользователей с Фиксированной Ролью объединяют значение и алгоритм в `AccessTokenHash` и передают его
+в `storedAccessToken(hash)`; строку без КД они не собирают и бросают `IllegalArgumentException`. Маппинг Пользователя
+с Нефиксированными Ролями так же требует `password_hash`. При записи поля переносятся из доменных данных
+без хэширования. Ввод исходного КД и хеш Пароля описаны в разделе
 [«Пользователи»](../../testsys-domain/README.md#пользователи).
 
-Ограничение `uk_ts_user_access_token` обеспечивает уникальность исходных КД благодаря `Identity`.
-Поэтому `UserJpaEntity` помечен `@RawAccessTokenDependency`. При переходе к хэшированию с индивидуальной солью
-это ограничение нужно пересмотреть. Семантика сохранённого КД и правило аннотации — в разделе
-[«Пользователи»](../../testsys-domain/README.md#пользователи).
+Хеш КД детерминирован, поэтому ограничение `uk_ts_user_access_token` обеспечивает и уникальность исходных КД.
+Хеширование описано в разделе [«Пользователи»](../../testsys-domain/README.md#пользователи).
 
-`AbstractUserPersistenceAdapter.findByAccessToken` хэширует исходный КД алгоритмом `Identity` и ищет строку
-`ts_user` по сохранённому значению и алгоритму
+`DatabaseConfiguration` создаёт бин `AccessTokenHasher` с ключом из обязательного свойства
+`testsys.access-token.secret` длиной не меньше 64 символов
+([DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/api/DatabaseConfiguration.kt)); где его
+задают — в таблице раздела «Параметры приложения»
+в [deployment.md](../../docs/project/deployment.md#параметры-приложения). Без свойства или с более коротким
+значением контекст не запускается. После смены секрета сохранённые КД Участников и
+Наблюдателей перестают находиться. Тесты модуля задают фиксированный секрет в
+`src/test/resources/application.properties`.
+
+`AbstractUserPersistenceAdapter.findByAccessToken` хеширует исходный КД этим бином и ищет строку `ts_user`
+по полученному значению и алгоритму
 ([AbstractUserPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt)).
 Строку Пользователя другого вида метод не возвращает: `assembleSupported` адаптера собирает только строки своего вида.
-Поиск находит Пользователя, только пока сохранённое значение совпадает с исходным КД, поэтому метод помечен
-`@RawAccessTokenDependency`.
-При переходе к хэшированию с солью этот поиск нужно пересмотреть.
+Порт `MultipleRoleUserRepository` этот метод не объявляет: у Пользователей с Нефиксированными Ролями нет КД.
 
 ## Коды-приглашения
 
@@ -576,7 +612,9 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 
 Интеграционные тесты модуля работают с PostgreSQL 17 в контейнере Testcontainers, поэтому для них нужен
 запущенный Docker. `PostgresTestContainer` в тестовых исходниках запускает один контейнер на тестовую JVM,
-а Testcontainers останавливает его при выходе из JVM. `PostgresTestConfiguration` подключает к контейнеру
+а Testcontainers останавливает его при выходе из JVM. Данные контейнера лежат в tmpfs, а `fsync`,
+`synchronous_commit` и `full_page_writes` выключены: тестовой базе надёжность записи не нужна, а коммиты без неё
+быстрее. `PostgresTestConfiguration` подключает к контейнеру
 Spring-контекст через `@ServiceConnection`.
 
 Тесты на основе `DatabaseIntegrationTests` используют общий кэшированный Spring-контекст. После каждого теста
@@ -594,6 +632,31 @@ commit. Чтение и CAS-запись выполняются в заверш�
 в завершённой `REQUIRES_NEW` транзакции, повтор охватывает только работу с БД. Операции идемпотентны: при гонке
 первой вставки повтор находит строку и сравнивает её с добавляемой. Протокол применения реестра — в
 [grpc](../grpc/README.md#реестр-узлов).
+
+## Входы в интерфейсы
+
+`DatabaseCabinetSignInStore` в пакете `api/session` реализует `CabinetSignInStore`. Он хранит входы в основной
+и служебный интерфейсы в `ts_cabinet_sign_in`, чтобы вход пережил перезапуск Системы. Как веб-приложение
+использует эти записи, описано в разделе [«Безопасность»](../../testsys-web/app/README.md#безопасность)
+app/README.md.
+
+Строка хранит SHA-256 токена из cookie браузера (`token_hash`, ограничение `uk_ts_cabinet_sign_in_token_hash`),
+сам токен в БД не попадает. Ещё в строке хранятся ID Пользователя, имя его вида, ID Супервайзера, вошедшего
+под Пользователем, и время последнего запроса `last_seen_at`. У служебного входа вид `SERVICE` и нет Пользователя;
+по ограничениям `CHECK` `user_id` пуст тогда и только тогда, когда вид `SERVICE`, а `impersonated_by` бывает
+заполнен только вместе с `user_id`. Внешние ключи `user_id` и `impersonated_by` ссылаются на `ts_user` с `ON DELETE CASCADE`:
+удаление Пользователя удаляет и его входы.
+
+API хранения задаёт вход sealed-типом `StoredCabinetSignIn`: служебный вход `Service` или вход Пользователя
+`User` с ID `CabinetSignInUserId`, видом `CabinetSignInUserKind` и необязательным ID Супервайзера.
+
+Каждая операция выполняется в завершённой `REQUIRES_NEW` транзакции, повтор охватывает только работу с БД.
+Обновление `last_seen_at`, `delete` и `deleteOwn` выполняются одним запросом без чтения строки. `find`
+возвращает вход, только если его последний запрос не раньше переданного момента; устаревший вход он не удаляет.
+`delete` сообщает, была ли запись. `deleteOwn` удаляет входы, в которых Пользователь вошёл сам, кроме указанного.
+`deleteAllOf` удаляет и входы Супервайзера под другими Пользователями, `deleteIdle` удаляет все устаревшие входы.
+Оба метода возвращают удалённые входы: они читают строки и удаляют их по ID в одной транзакции. Если строку
+изменили или удалили одновременно, удаление завершается конфликтом, и повтор читает строки заново.
 
 ## Служебный поиск Пользователей
 
@@ -630,6 +693,13 @@ commit. Чтение и CAS-запись выполняются в заверш�
 в `ts_trik_studio_version`. Первая непройденная проверка возвращается как `Rejected` с причиной
 `TrikStudioVersionRejection`, и строка не сохраняется. Иначе метод сохраняет строку и возвращает `Registered`.
 
-Параллельная регистрация того же значения нарушает уникальное ограничение (SQLSTATE `23505`). Транзакция
-повторяется по разделу [«Повтор транзакций»](#повтор-транзакций), и повтор отклоняет значение как уже
-зарегистрированное.
+`findUsedTags` одним запросом находит теги версий, на которые ссылаются `ts_contest`, `ts_submission`,
+`ts_trik_studio_version_to_task_content` или `ts_trik_studio_version_to_task_validation_request`.
+`changeTag` находит строку по прежнему тегу, проверяет новый тег так же, как `register`, и меняет только колонку
+`tag`; совпадение с прежним тегом принимается без проверок. `delete` удаляет строку, если её тега нет среди
+используемых, иначе возвращает `InUse`. Для отсутствующего тега оба метода возвращают `NotFound`.
+
+Параллельная регистрация или смена тега на то же значение нарушает уникальное ограничение (SQLSTATE `23505`).
+Транзакция повторяется по разделу [«Повтор транзакций»](#повтор-транзакций), и повтор отклоняет значение как уже
+зарегистрированное. Если версию начали использовать параллельно с удалением, удаление нарушает внешний ключ,
+и транзакция откатывается без изменений.

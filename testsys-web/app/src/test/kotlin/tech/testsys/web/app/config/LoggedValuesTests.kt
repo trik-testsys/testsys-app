@@ -7,10 +7,12 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.group.CommunityInviteDataBuilder
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
@@ -18,6 +20,10 @@ import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.PasswordHash
+import tech.testsys.domain.model.user.SingleRoleUserId
+import tech.testsys.web.app.service.manager.IssuedParticipantVo
+import tech.testsys.web.app.service.manager.ParticipantVo
 import java.io.ByteArrayInputStream
 import java.lang.reflect.Method
 import java.time.Instant
@@ -73,6 +79,22 @@ class LoggedValuesTests {
         fun `should write other results by the value rules`() {
             assertEquals("[1, 2]", LoggedValues.result(listOf(1, 2)))
         }
+
+        @Test
+        fun `should mask the issued access code of created participants`() {
+            val participant = ParticipantVo(
+                id = SingleRoleUserId(31),
+                createdAt = Instant.EPOCH,
+                accessTokenHash = AccessTokenHash(SECRET_VALUE, HashAlgorithm.HmacSha256),
+                name = "st31",
+                competition = CompetitionId(21),
+            )
+
+            val rendered = LoggedValues.result(listOf(IssuedParticipantVo(participant = participant, accessToken = SECRET_VALUE)))
+
+            assertFalse(SECRET_VALUE in rendered, rendered)
+            assertTrue("accessToken=***" in rendered, rendered)
+        }
     }
 
     @Nested
@@ -81,7 +103,7 @@ class LoggedValuesTests {
         fun `should mask the access code hash inside a data class`() {
             val data = participantData {
                 competition(2001)
-                accessToken(SECRET_VALUE, algorithm = HashAlgorithm.Identity)
+                storedAccessToken(AccessTokenHash(SECRET_VALUE, HashAlgorithm.HmacSha256))
                 name = "Участник Пётр"
             }
 
@@ -90,6 +112,27 @@ class LoggedValuesTests {
             assertFalse(SECRET_VALUE in rendered, rendered)
             assertTrue("accessTokenHash=***" in rendered, rendered)
             assertTrue("name=Участник Пётр" in rendered, rendered)
+        }
+
+        @Test
+        fun `should mask the password hash inside a data class`() {
+            val data = multipleRoleUserData {
+                passwordHash = PasswordHash(SECRET_VALUE)
+                name = "Мария"
+                email = "maria@testsys.tech"
+            }
+
+            val rendered = LoggedValues.value(data)
+
+            assertFalse(SECRET_VALUE in rendered, rendered)
+            assertTrue("passwordHash=***" in rendered, rendered)
+        }
+
+        @Test
+        fun `should mask a password hash in a collection`() {
+            val rendered = LoggedValues.value(listOf(PasswordHash(SECRET_VALUE)))
+
+            assertEquals("[***]", rendered)
         }
 
         @Test
@@ -113,7 +156,7 @@ class LoggedValuesTests {
 
         @Test
         fun `should mask the access code and invite code hashes`() {
-            assertEquals("***", LoggedValues.value(AccessTokenHash(SECRET_VALUE, HashAlgorithm.Identity)))
+            assertEquals("***", LoggedValues.value(AccessTokenHash(SECRET_VALUE, HashAlgorithm.HmacSha256)))
             assertEquals("***", LoggedValues.value(InviteCodeHash(SECRET_VALUE, HashAlgorithm.Identity)))
         }
 
@@ -144,7 +187,7 @@ class LoggedValuesTests {
                 createdAt = Instant.parse("2026-03-14T09:30:00Z")
                 data = participantData {
                     competition(2001)
-                    accessToken(SECRET_VALUE, algorithm = HashAlgorithm.Identity)
+                    storedAccessToken(AccessTokenHash(SECRET_VALUE, HashAlgorithm.HmacSha256))
                     name = "Участник Пётр"
                 }
             }

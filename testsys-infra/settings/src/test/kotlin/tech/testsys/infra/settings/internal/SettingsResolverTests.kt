@@ -26,6 +26,17 @@ class SettingsResolverTests {
     }
 
     @Test
+    fun `should reject a setting without an override and an environment value`() {
+        val environment = settingsEnvironment().apply { propertySources.remove(SettingKey.GradingMaxAttempts.property) }
+
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            SettingsResolver(environment).resolve(emptyMap())
+        }
+
+        assertEquals("Missing setting testsys.grading.max-attempts", error.message)
+    }
+
+    @Test
     fun `should reject excluded and unknown properties`() {
         assertThrows(IllegalArgumentException::class.java) {
             SettingsResolver(settingsEnvironment()).resolve(mapOf("testsys.mail.host" to "mail"))

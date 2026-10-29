@@ -52,9 +52,9 @@ class StudentClassView(
             row {
                 block(title = texts.detailsTitle()) {
                     guide(texts.classDetailsGuide())
-                    row { codeInput(texts.id(), labelSize = 4, size = 8) { value = studyClass.id.value.toString() } }
-                    row { textInput(texts.name(), labelSize = 4, size = 20) { value = studyClass.name } }
-                    row { textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) { value = studyClass.description } }
+                    row { codeInput(texts.id(), labelSize = 2, size = 4) { value = studyClass.id.value.toString() } }
+                    row { textInput(texts.name(), labelSize = 2, size = 22) { value = studyClass.name } }
+                    row { textArea(texts.description(), labelSize = 2, size = 22, maxLines = 4) { value = studyClass.description } }
                 }.isEditable = false
             }
             row {

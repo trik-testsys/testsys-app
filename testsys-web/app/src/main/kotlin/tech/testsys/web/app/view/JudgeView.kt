@@ -122,18 +122,18 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
             onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
-                codeInput(texts.authorId(), labelSize = 4, size = 8) {
+                codeInput(texts.authorId(), labelSize = 3, size = 9) {
                     bindId(draft, { values -> values.author }, { values, id -> values.author = id })
                 }
-                codeInput(texts.filterSubmissionId(), labelSize = 4, size = 8) {
+                codeInput(texts.filterSubmissionId(), labelSize = 3, size = 9) {
                     bindId(draft, { values -> values.submission }, { values, id -> values.submission = id })
                 }
             }
             row {
-                codeInput(texts.filterClassId(), labelSize = 4, size = 8) {
+                codeInput(texts.filterClassId(), labelSize = 3, size = 9) {
                     bindId(draft, { values -> values.group }, { values, id -> values.group = id })
                 }
-                codeInput(texts.filterCompetitionId(), labelSize = 4, size = 8) {
+                codeInput(texts.filterCompetitionId(), labelSize = 3, size = 9) {
                     bindId(draft, { values -> values.competition }, { values, id -> values.competition = id })
                 }
             }

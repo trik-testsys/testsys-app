@@ -11,16 +11,9 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      # Shared settings and the settings of the environment mounted by its override.
+      # Shared settings and the settings of the environment mounted by its override. The secrets and the other
+      # variables of the application are passed by the override of every environment.
       SPRING_CONFIG_IMPORT: file:/etc/testsys/application.yml,file:/etc/testsys/application-environment.yml
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/testsys
-      SPRING_DATASOURCE_USERNAME: testsys
-      # The service interface listens on the loopback interface by default; inside the container it must accept
-      # connections forwarded from the published port. The ports are fixed here, so the published ports and the
-      # healthcheck do not depend on the defaults of the jar.
-      TESTSYS_SERVICE_ADDRESS: 0.0.0.0
-      TESTSYS_SERVICE_PORT: "8081"
-      TESTSYS_METRICS_PORT: "8082"
     # Every service of all Compose files keeps its output with the local driver of Docker, which rotates it: by
     # default five compressed files of 20 MB per container.
     logging:

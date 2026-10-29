@@ -161,15 +161,15 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should show the access code of an observer at its own address without role granting`() {
+    fun `should show an observer at its own address without its access code and role granting`() {
         val community = fixtures.community(owner = signInAdministrator())
         val observer = fixtures.observer(community, rawAccessToken = "observer-code")
 
         UI.getCurrent().navigate(AdminUserView::class.java, RouteParameters(OBSERVER_ID_PARAMETER, observer.id.value.toString()))
 
-        val accessToken = textField("Код-доступа")
-        assertEquals("observer-code", accessToken.value)
-        assertTrue(accessToken.isReadOnly)
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Код-доступа" })
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.value == "observer-code" })
+        assertEquals(observer.data.name, textField("Псевдоним").value)
         assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Включить в Сообщество" })
     }
 
@@ -564,7 +564,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.StoppedByDiagnostics(diagnostics = emptyList(), completedAt = Instant.EPOCH),
-                    "Неуспех" to Tone.Danger,
+                    "Не пройдена" to Tone.Danger,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.Completed(
@@ -573,7 +573,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         failures = emptyList(),
                         completedAt = Instant.EPOCH,
                     ),
-                    "Успех" to Tone.Success,
+                    "Пройдена" to Tone.Success,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.Completed(
@@ -582,12 +582,12 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         failures = listOf(AuthorSubmissionFailure.GradingFailed(SubmissionId(1))),
                         completedAt = Instant.EPOCH,
                     ),
-                    "Неуспех" to Tone.Danger,
+                    "Не пройдена" to Tone.Danger,
                 ),
-                Arguments.of(TaskValidationExecutionVo.IncompleteDiagnostics(failure), "Техническая остановка" to Tone.Warning),
+                Arguments.of(TaskValidationExecutionVo.IncompleteDiagnostics(failure), "Прервана из-за сбоя" to Tone.Warning),
                 Arguments.of(
                     TaskValidationExecutionVo.CompletedDiagnostics(diagnostics = emptyList(), failure = failure),
-                    "Техническая остановка" to Tone.Warning,
+                    "Прервана из-за сбоя" to Tone.Warning,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.CreatedSubmissions(
@@ -595,7 +595,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         submissions = listOf(SubmissionId(1)),
                         failure = failure,
                     ),
-                    "Техническая остановка" to Tone.Warning,
+                    "Прервана из-за сбоя" to Tone.Warning,
                 ),
             )
         }

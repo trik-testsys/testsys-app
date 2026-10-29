@@ -8,7 +8,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [StudentContestEntryJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -17,14 +17,14 @@ interface StudentContestEntryJpaEntityRepository : SnowflakeJpaEntityRepository<
     /**
      * Finds an entry by its complete context.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByUserIdAndClassIdAndContestId(userId: Long, classId: Long, contestId: Long): StudentContestEntryJpaEntity?
 
     /**
      * Finds entries for the selected contests and context.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByUserIdAndClassIdAndContestIdIn(userId: Long, classId: Long, contestIds: List<Long>): List<StudentContestEntryJpaEntity>
 }

@@ -28,7 +28,7 @@ import tech.testsys.operation.error.operation
 /**
  * Operations performed by observers for their assigned contests and competitions containing them.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class ObserverOperations(
@@ -43,7 +43,7 @@ class ObserverOperations(
      * Returns current competition and assigned contest pairs for [user], applying [filter] and [pagination] without recording entry.
      * Future and completed contests retain their time limits; technical storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.observer.viewContests")
     fun viewContests(
@@ -64,7 +64,7 @@ class ObserverOperations(
      * Rows contain each current participant once and one best-score column per task of each observed contest.
      * Technical storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.observer.downloadResult")
     fun downloadResult(user: SingleRoleUser): OperationResult<ObserverResult, DownloadObserverResultError> =
@@ -131,7 +131,7 @@ class ObserverOperations(
  *
  * @property columns the task columns in contest and task identifier order.
  * @property rows the unique participants and their scores in participant identifier order.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ObserverResult(
     val columns: List<Column>,
@@ -143,7 +143,7 @@ data class ObserverResult(
      * @property contestId the contest identifier.
      * @property taskName the task name.
      * @property taskId the task identifier.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Column(val contestName: String, val contestId: ContestId, val taskName: String, val taskId: TaskId)
 
@@ -151,7 +151,7 @@ data class ObserverResult(
      *
      * @property participantId the participant identifier.
      * @property scores the best scores, or `null` without a successful verdict or eligible contest membership.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Row(
         val participantId: UserId,

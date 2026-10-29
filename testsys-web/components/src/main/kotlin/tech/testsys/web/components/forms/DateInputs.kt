@@ -17,7 +17,7 @@ private val DAYS_IN_WEEK = DayOfWeek.entries.size
  * Adds a date field with a localized calendar.
  * The label takes [labelSize] columns and the control [size] columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.dateInput(
     label: String,
@@ -31,7 +31,7 @@ fun BlockRowScope.dateInput(
  * Adds a time field; [step] sets the interval of the offered times, the picker default if `null`.
  * The label takes [labelSize] columns and the control [size] columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.timeInput(
     label: String,
@@ -56,7 +56,7 @@ fun BlockRowScope.timeInput(
  * Adds a field of a date and a time, e.g. the start of a Contest.
  * The label takes [labelSize] columns and the control [size] columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.dateTimeInput(
     label: String,
@@ -83,7 +83,7 @@ fun BlockRowScope.dateTimeInput(
  * Adds a field of a date range; a range that ends before it starts is rejected by the default validator.
  * The label takes [labelSize] columns and the control [size] columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.dateRangeInput(
     label: String,

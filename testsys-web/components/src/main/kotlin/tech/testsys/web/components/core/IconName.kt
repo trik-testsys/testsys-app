@@ -3,7 +3,7 @@ package tech.testsys.web.components.core
 /**
  * Lucide icon of the design system subset (ISC license, https://lucide.dev): 24×24 grid, 2px round stroke.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class IconName(internal val key: String) {
     Search("search"),

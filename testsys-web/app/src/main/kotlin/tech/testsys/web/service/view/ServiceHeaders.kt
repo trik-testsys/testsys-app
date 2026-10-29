@@ -13,7 +13,7 @@ import tech.testsys.web.components.navigation.header.NavItem
  * Builds the service header without domain-user navigation or links into the main application.
  * Its companion holds the keys of the service sections.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringComponent
 class ServiceHeaders(private val authentication: AuthenticationContext) {
@@ -21,7 +21,7 @@ class ServiceHeaders(private val authentication: AuthenticationContext) {
      * Returns the header of the signed-in service with the [active] section: the sections of the service cabinet and
      * the menu with signing out.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun header(active: String? = null): CabinetHeader = CabinetHeader(
         items = listOf(

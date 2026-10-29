@@ -43,7 +43,7 @@ class KotlinEmitterTests {
                     "@Suppress(\"VERBOSE_DOC\")\npublic enum class SupportedRegion {" in source,
                     "  /**\n   * Russia: Russian language, Russian Federation conventions.\n   */\n  RU," in source,
                     "RU -> ULocale.forLanguageTag(\"ru-RU\")\n    EN -> ULocale.forLanguageTag(\"en-US\")" in source,
-                    "@since %CURRENT_VERSION%" in source,
+                    "@since 1.0.0-beta.1" in source,
                 ),
             )
         }

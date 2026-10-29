@@ -31,7 +31,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * step of the code with the new password; after restoration signing in opens. A supervisor signed in as a user goes to
  * the start page of the user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("restore-access")
 @AnonymousAllowed

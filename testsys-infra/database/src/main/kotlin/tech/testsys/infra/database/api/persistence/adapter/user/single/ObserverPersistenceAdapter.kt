@@ -30,7 +30,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
  * Persistence adapter of [Observer] entities backed by [UserJpaEntity] rows having an observer data row.
  * Watched contests are synced through the join table; update and remove increment the user version first.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

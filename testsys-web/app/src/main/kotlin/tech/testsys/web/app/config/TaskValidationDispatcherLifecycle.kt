@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
  * of [executor], which [TaskValidationDispatcher.start] resumes after a restart, and waits up to [stopTimeout]
  * for the running task without interrupting it, since an interrupt would end its request as a technical failure.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskValidationDispatcherLifecycle(
     private val dispatcher: TaskValidationDispatcher,

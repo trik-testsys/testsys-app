@@ -8,7 +8,7 @@ import tech.testsys.domain.builder.util.requireField
  * and [build] fails if no choice was made.
  *
  * @param T the type of the chosen value.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class Chooser<T> : Builder<T> {
 

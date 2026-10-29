@@ -50,7 +50,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * Service search of [User] entities of every kind over [UserJpaEntity] rows: one specification selects and counts
  * the rows, and the persistence adapters of the user kinds assemble the found users.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  * @property submissionId id of the [SubmissionJpaEntity] the order applies to.
  * @property score the score awarded by the judge.
  * @property reason the reason of the order.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

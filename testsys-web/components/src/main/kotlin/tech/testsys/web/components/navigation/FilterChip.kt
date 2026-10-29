@@ -25,7 +25,7 @@ import tech.testsys.web.components.layout.ContentScope
  *
  * @property isSelected whether the filter is on; setting it does not run the listener. A manual change while
  * [bindSelected] is bound, and a second binding, throw [BindingActiveException].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class FilterChipHandle internal constructor(private val button: NativeButton, isSelected: Boolean) : ElementHandle(button) {
     private val check = svgIcon(IconName.Check, size = ICON_SIZE_TINY)
@@ -48,7 +48,7 @@ class FilterChipHandle internal constructor(private val button: NativeButton, is
     /**
      * Runs [listener] with the new state when a user toggles the chip. Replaces a listener set by an earlier call.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onChange(listener: (Boolean) -> Unit) {
         this.listener = listener
@@ -59,7 +59,7 @@ class FilterChipHandle internal constructor(private val button: NativeButton, is
      * listener of [onChange], and the chip shows the new state once [signal] takes it. A manual [isSelected] while
      * bound, and a second binding, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindSelected(signal: Signal<Boolean>): SignalBinding<Boolean> = selected.bind(signal)
 
@@ -80,7 +80,7 @@ class FilterChipHandle internal constructor(private val button: NativeButton, is
  * Adds a chip that switches a filter of what the block shows on and off, e.g. in the `actions { }` of a block;
  * [isSelected] is its initial state. The page reacts to a toggle through [FilterChipHandle.onChange].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.filterChip(label: String, isSelected: Boolean = false, configure: FilterChipHandle.() -> Unit = {}): FilterChipHandle {
     val handle = FilterChipHandle(NativeButton(label), isSelected)

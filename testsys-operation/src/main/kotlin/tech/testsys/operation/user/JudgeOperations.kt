@@ -61,7 +61,7 @@ import tech.testsys.operation.util.loadByIdsAsMap
 /**
  * Operations performed by users holding the judge role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class JudgeOperations(
@@ -82,7 +82,7 @@ class JudgeOperations(
      * Returns a page of current successful verdicts available to [user], optionally filtered by [filter], each with the
      * author of its submission; test outcomes keep lazy file references.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.judge.viewResults")
     fun viewResults(
@@ -126,7 +126,7 @@ class JudgeOperations(
      * Requires a current student or participant author, a grading submission rather than a developer solution test,
      * successful automatic grading, a nonnegative score and a nonblank reason.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.judge.changeVerdict")
     fun changeVerdict(
@@ -166,7 +166,7 @@ class JudgeOperations(
      * Returns the submission [submissionId] available to [user] with its author, task, contest, solution, current
      * successful verdict with its tests, final score and judgment orders with their judges.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.judge.viewSolution")
     fun viewSolution(user: MultipleRoleUser, submissionId: SubmissionId): OperationResult<SubmissionDetails, ViewSolutionError> =
@@ -214,7 +214,7 @@ class JudgeOperations(
     /**
      * Returns the solution file of the submission [submissionId] available to [user].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.judge.viewSolution")
     fun downloadSolution(user: MultipleRoleUser, submissionId: SubmissionId): OperationResult<FileData, DownloadSolutionError> =
@@ -231,7 +231,7 @@ class JudgeOperations(
      * Returns the grading logs of the run on [testId] from the successful verdict of the submission [submissionId]
      * available to [user].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.judge.viewSolution")
     fun downloadLogs(user: MultipleRoleUser, submissionId: SubmissionId, testId: TestId): OperationResult<FileData, DownloadLogsError> =
@@ -252,7 +252,7 @@ class JudgeOperations(
      * Returns the recording of the run on [testId] from the successful verdict of the submission [submissionId]
      * available to [user].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.judge.viewSolution")
     fun downloadRecording(
@@ -302,7 +302,7 @@ class JudgeOperations(
      * @property submission the graded submission.
      * @property lastJudgment the latest judgment by creation time and identifier, or `null` if absent.
      * @property finalScore the latest judgment score or the automatic total.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class JudgeResult(
         val verdict: Verdict,

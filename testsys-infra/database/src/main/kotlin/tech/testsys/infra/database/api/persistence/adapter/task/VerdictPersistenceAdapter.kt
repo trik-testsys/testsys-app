@@ -41,7 +41,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * The outcome of every test run is stored in its own row and dropped on remove after the verdict version is
  * incremented; a verdict is fixed on creation, so [update] always fails.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

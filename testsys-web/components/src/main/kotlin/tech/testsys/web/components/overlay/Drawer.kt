@@ -27,7 +27,7 @@ import tech.testsys.web.components.texts.currentUiLocalization
  *
  * @property isOpen whether the drawer is open.
  * @property isEditable whether the drawer fields can be changed.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class DrawerHandle internal constructor(private val delegate: DialogHandle) {
@@ -48,7 +48,7 @@ class DrawerHandle internal constructor(private val delegate: DialogHandle) {
     /**
      * Opens the drawer and focuses its content.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun open() {
         delegate.open()
@@ -57,7 +57,7 @@ class DrawerHandle internal constructor(private val delegate: DialogHandle) {
     /**
      * Closes the drawer and restores the previous focus.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun close() {
         delegate.close()
@@ -66,14 +66,14 @@ class DrawerHandle internal constructor(private val delegate: DialogHandle) {
     /**
      * Binds the drawer edit mode to [signal].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEditable(signal: Signal<Boolean>): SignalBinding<Boolean> = delegate.bindEditable(signal)
 
     /**
      * Runs [listener] for every closing action; a later listener replaces the earlier one.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onClose(listener: () -> Unit) {
         closeListener = listener
@@ -83,7 +83,7 @@ class DrawerHandle internal constructor(private val delegate: DialogHandle) {
 /**
  * Scope of a drawer with rows on 24 columns, static tables and a footer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class DrawerScope internal constructor(
@@ -95,7 +95,7 @@ class DrawerScope internal constructor(
     /**
      * Adds one row of [content] to the drawer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun row(content: BlockRowScope.() -> Unit) {
         delegate.row(content)
@@ -104,7 +104,7 @@ class DrawerScope internal constructor(
     /**
      * Adds footer [content], receiving the drawer handle for its actions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun footer(content: ContentScope.(DrawerHandle) -> Unit) {
         delegate.footer {
@@ -118,7 +118,7 @@ class DrawerScope internal constructor(
  *
  * @param configure the returned drawer configuration.
  * @param content the rows, tables and footer composition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun drawer(
     title: String,
@@ -144,7 +144,7 @@ fun drawer(
  * @param T the type of the rows.
  * @param key the stable identity of each row.
  * @param content the columns and row interactions of the table.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T> DrawerScope.table(title: String, key: (T) -> Any, rows: List<T>, content: TableScope<T>.() -> Unit): TableHandle<T> {
     val spec = TableScope<T>(texts).apply(content).spec()

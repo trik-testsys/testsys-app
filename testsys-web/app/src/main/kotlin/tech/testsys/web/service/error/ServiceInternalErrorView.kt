@@ -10,7 +10,7 @@ import tech.testsys.web.monitoring.WebFailures
  * Handles an unexpected exception while opening a service page: counts it in [failures] and shows the default
  * Vaadin screen.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @AnonymousAllowed
 class ServiceInternalErrorView(private val failures: WebFailures) : InternalServerError() {

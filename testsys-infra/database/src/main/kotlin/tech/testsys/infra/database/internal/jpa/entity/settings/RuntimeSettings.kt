@@ -16,7 +16,7 @@ import java.util.UUID
  * @property payload serialized explicit overrides.
  * @property revision monotonically increasing service revision.
  * @property changeId identity of the last completed write.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @Table(uniqueConstraints = [UniqueConstraint(name = "uk_ts_runtime_settings_set_key", columnNames = ["set_key"])])

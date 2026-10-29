@@ -10,7 +10,7 @@ import tech.testsys.web.components.layout.ContentScope
  * The label takes [labelSize] columns and the control [size] columns of the row.
  *
  * @param T the type of the items.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> BlockRowScope.select(
     label: String,
@@ -28,7 +28,7 @@ fun <T : Any> BlockRowScope.select(
  * head or a table cell, shows an error as a red border only.
  *
  * @param T the type of the items.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> ContentScope.select(
     label: String,
@@ -51,7 +51,7 @@ fun <T : Any> ContentScope.select(
  * Adds a checkbox field: the [label] on the left, the box alone in the value cell.
  * The label takes [labelSize] columns and the box [size] columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.checkbox(label: String, labelSize: Int, size: Int, configure: ValueInput<Boolean>.() -> Unit = {}): ValueInput<Boolean> =
     addInput(label, labelSize, size, Checkbox(), hint = null, configure)

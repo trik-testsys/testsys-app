@@ -10,7 +10,7 @@ import java.time.Instant
 /**
  * Spring Data repository for [ClassInviteJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -19,14 +19,14 @@ interface ClassInviteJpaEntityRepository : SnowflakeJpaEntityRepository<ClassInv
     /**
      * Finds the invite with the stored [code] produced by [codeHashAlgorithm].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByCodeAndCodeHashAlgorithm(code: String, codeHashAlgorithm: HashAlgorithmJpaEnum): ClassInviteJpaEntity?
 
     /**
      * Finds the invites expiring at or before [now], ordered by id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByExpiresAtLessThanEqualOrderByIdAsc(now: Instant): List<ClassInviteJpaEntity>
 }

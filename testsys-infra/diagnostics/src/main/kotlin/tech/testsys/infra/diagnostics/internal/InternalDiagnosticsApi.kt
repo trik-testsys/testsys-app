@@ -3,7 +3,7 @@ package tech.testsys.infra.diagnostics.internal
 /**
  * Opt-in marker for declarations internal to the diagnostics module.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @RequiresOptIn
 @Target(

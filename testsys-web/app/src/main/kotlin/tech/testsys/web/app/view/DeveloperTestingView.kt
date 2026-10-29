@@ -34,7 +34,7 @@ import tech.testsys.web.components.texts.currentLocalization
 /**
  * Results of one testing request owned by the Developer (testsys.web.page.developer.testing).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("developer/tasks/:taskId([0-9]+)/testing/:testingId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

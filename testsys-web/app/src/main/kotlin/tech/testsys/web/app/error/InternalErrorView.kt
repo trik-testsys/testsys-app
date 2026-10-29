@@ -9,7 +9,7 @@ import tech.testsys.web.monitoring.WebFailures
 /**
  * Handler of an unexpected exception while opening a page: counts it in [failures] and shows the default Vaadin screen.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @AnonymousAllowed
 class InternalErrorView(private val failures: WebFailures) : InternalServerError() {

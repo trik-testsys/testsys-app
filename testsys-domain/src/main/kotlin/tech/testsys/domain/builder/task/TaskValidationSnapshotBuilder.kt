@@ -11,7 +11,7 @@ import tech.testsys.domain.model.task.*
  * @property tests the concrete polygon identifiers.
  * @property developerSolutions the author programs and expected scores.
  * @property supportedTrikStudioVersions the execution environment versions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskValidationSnapshotBuilder : Builder<TaskValidationSnapshot> {
     var tests: MutableList<TestId> = mutableListOf()
@@ -21,7 +21,7 @@ class TaskValidationSnapshotBuilder : Builder<TaskValidationSnapshot> {
     /**
      * Sets [tests] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tests(tests: Iterable<Long>) {
         this.tests = tests.map { TestId(it) }.toMutableList()
@@ -40,7 +40,7 @@ class TaskValidationSnapshotBuilder : Builder<TaskValidationSnapshot> {
  * @property developerSolution the author solution version identifier, or `null` if not set.
  * @property solution the program identifier, or `null` if not set.
  * @property expectedScore the expected score, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DeveloperSolutionValidationInputBuilder : Builder<DeveloperSolutionValidationInput> {
     var developerSolution: DeveloperSolutionId? = null
@@ -50,7 +50,7 @@ class DeveloperSolutionValidationInputBuilder : Builder<DeveloperSolutionValidat
     /**
      * Sets [developerSolution] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun developerSolution(developerSolution: Long) {
         this.developerSolution = DeveloperSolutionId(developerSolution)
@@ -59,7 +59,7 @@ class DeveloperSolutionValidationInputBuilder : Builder<DeveloperSolutionValidat
     /**
      * Sets [solution] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun solution(solution: Long) {
         this.solution = SolutionId(solution)

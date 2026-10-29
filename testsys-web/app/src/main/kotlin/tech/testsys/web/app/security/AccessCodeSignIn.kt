@@ -10,14 +10,14 @@ import tech.testsys.web.app.service.user.UserService
  * Signs a fixed-role user in by the access code through [UserService] outside its transaction, limiting failed
  * attempts per client address of the request with a [LoginAttemptLimiter].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 class AccessCodeSignIn(private val userService: UserService, private val limiter: LoginAttemptLimiter) {
     /**
      * Outcome of [signIn], without the entered access code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     sealed interface Result {
         /**
@@ -25,14 +25,14 @@ class AccessCodeSignIn(private val userService: UserService, private val limiter
          *
          * @property principal the signed-in user.
          * @property returnAddress the page saved before signing in and open to the user, or `null`.
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data class Success(val principal: CabinetPrincipal, val returnAddress: String?) : Result
 
         /**
          * The access code is assigned to no fixed-role user.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data object InvalidAccessCode : Result
 
@@ -40,7 +40,7 @@ class AccessCodeSignIn(private val userService: UserService, private val limiter
          * Signing in by access code from this client address is temporarily closed, including the failure that
          * closes it.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data object Blocked : Result
     }
@@ -49,7 +49,7 @@ class AccessCodeSignIn(private val userService: UserService, private val limiter
      * Checks [accessToken] unless signing in by access code from the client address of the current Vaadin request
      * is closed and on success signs the user in with [CabinetSignIn.signIn].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun signIn(accessToken: String): Result {
         val address = checkNotNull(VaadinServletRequest.getCurrent()) {

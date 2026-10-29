@@ -21,7 +21,7 @@ import tech.testsys.web.components.texts.UiLocalization
 /**
  * Scope of a page: the head, rows and the links of its footer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class PageScope internal constructor(
@@ -41,7 +41,7 @@ class PageScope internal constructor(
      *
      * @throws IllegalArgumentException if [description] is blank.
      * @throws IllegalStateException if the guide is already configured.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun guide(description: String) {
         check(guideDescription == null) { "Page guide is already configured; call guide() once" }
@@ -63,7 +63,7 @@ class PageScope internal constructor(
      * actions, and the tabs of the sections of one object.
      *
      * @throws IllegalStateException if called after a row or footer configuration, or repeated.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun head(title: String, content: PageHeadScope.() -> Unit = {}) {
         check(isHeadAllowed) { "head() must be the first call of the page body and made once" }
@@ -76,7 +76,7 @@ class PageScope internal constructor(
      * Configures the links of the automatic page footer, which stays after the page body.
      *
      * @throws IllegalStateException if the footer links have already been configured.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun footer(content: PageFooterScope.() -> Unit) {
         check(footerLinks == null) { "Page footer already has links; call footer() once" }
@@ -87,7 +87,7 @@ class PageScope internal constructor(
     /**
      * Adds a row of the 24-column page grid below the previous rows; its blocks lie side by side.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun row(content: PageRowScope.() -> Unit) {
         isHeadAllowed = false

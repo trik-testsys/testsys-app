@@ -9,7 +9,7 @@ import tech.testsys.domain.model.user.PasswordHash
  * Password hashing adapter backed by the Spring Security delegating encoder, which stores bcrypt hashes with
  * their algorithm prefix; passwords longer than bcrypt accepts are never hashed and never match.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 class SpringPasswordHasher : PasswordHasher {

@@ -5,7 +5,7 @@ import tech.testsys.web.components.texts.currentLocalization
 /**
  * Branded missing-route screen available in every profile, with browser-history navigation only.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 open class NotFoundPage : ErrorPage() {
     init {

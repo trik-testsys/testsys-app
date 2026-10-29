@@ -27,7 +27,7 @@ import tech.testsys.web.components.overlay.dialog
  * Service list of the registered TRIK Studio versions with their version numbers and Docker image tags; «Добавить»
  * registers a new version, the row menu changes the tag of any version and deletes a version nothing uses.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("trik-studio-versions")
 @PageTitle("Версии TRIK Studio")

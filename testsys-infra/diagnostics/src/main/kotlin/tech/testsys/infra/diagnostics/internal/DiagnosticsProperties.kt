@@ -7,7 +7,7 @@ import tech.testsys.infra.settings.api.SettingsProperties
  *
  * @property maxTimeLimitMillis the inclusive upper time limit in milliseconds.
  * @property scorePrefix the nonblank text identifying a score output message.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDiagnosticsApi
 @SettingsProperties("testsys.diagnostics")

@@ -22,7 +22,7 @@ private const val MAX_SUPERVISOR_NAME_CODE_POINTS = 512
  * Creates the single Supervisor or sets its configured name and access code before the application accepts requests;
  * a changed access code ends the remembered sign-ins of the Supervisor, those as other users included.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class SupervisorBootstrap(
@@ -36,7 +36,7 @@ class SupervisorBootstrap(
     /**
      * Returns the single Supervisor after creating it or setting its configured name and access code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun ensure(environment: Environment): Supervisor {
         // Bound one by one: a failure report of the binder would show the value of the access code.

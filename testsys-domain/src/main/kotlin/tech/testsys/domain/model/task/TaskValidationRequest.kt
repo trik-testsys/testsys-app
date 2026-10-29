@@ -11,7 +11,7 @@ import java.time.Instant
 /**
  * Identifier of a [TaskValidationRequest].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class TaskValidationRequestId(override val value: Long) : DomainId
@@ -19,13 +19,13 @@ value class TaskValidationRequestId(override val value: Long) : DomainId
 /**
  * Execution state and stage data of a [TaskValidationRequest].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface TaskValidationExecution {
     /**
      * A [TaskValidationRequest] whose diagnostics are unfinished, with separately stored polygon progress.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object PendingDiagnostics : TaskValidationExecution
 
@@ -33,7 +33,7 @@ sealed interface TaskValidationExecution {
      * Completed diagnostics of a [TaskValidationRequest].
      *
      * @property diagnostics the result of every polygon in the snapshot.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     sealed interface WithDiagnostics : TaskValidationExecution {
         val diagnostics: List<TestDiagnosticResult>
@@ -43,7 +43,7 @@ sealed interface TaskValidationExecution {
      * Created submission references of a [TaskValidationRequest].
      *
      * @property submissions the submitted author solution tests.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     sealed interface WithSubmissions : WithDiagnostics {
         val submissions: LazyEntityList<SubmissionId, Submission>
@@ -52,7 +52,7 @@ sealed interface TaskValidationExecution {
     /**
      * A [TaskValidationRequest] whose diagnostics permit submission of author solutions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class AwaitingSubmissions(override val diagnostics: List<TestDiagnosticResult>) : WithDiagnostics
 
@@ -60,7 +60,7 @@ sealed interface TaskValidationExecution {
      * A [TaskValidationRequest] stopped by diagnostic errors.
      *
      * @property completedAt the terminal stop moment.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class StoppedByDiagnostics(
         override val diagnostics: List<TestDiagnosticResult>,
@@ -70,7 +70,7 @@ sealed interface TaskValidationExecution {
     /**
      * A [TaskValidationRequest] with submitted author solution tests awaiting further processing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class SubmissionsCreated(
         override val diagnostics: List<TestDiagnosticResult>,
@@ -82,7 +82,7 @@ sealed interface TaskValidationExecution {
      *
      * @property failures every failed author submission in submission order, fixed when all submissions finished.
      * @property completedAt the terminal completion moment.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Completed(
         override val diagnostics: List<TestDiagnosticResult>,
@@ -96,7 +96,7 @@ sealed interface TaskValidationExecution {
      *
      * @property failure the recorded failure.
      * @property completedAt the failure time and terminal stop moment.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     sealed interface TechnicalFailure : TaskValidationExecution {
         val failure: TaskValidationTechnicalFailure
@@ -105,14 +105,14 @@ sealed interface TaskValidationExecution {
         /**
          * A [TaskValidationRequest] stopped before diagnostics completed, with separately stored progress retained.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data class IncompleteDiagnostics(override val failure: TaskValidationTechnicalFailure) : TechnicalFailure
 
         /**
          * A [TaskValidationRequest] stopped after diagnostics completed.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data class CompletedDiagnostics(
             override val diagnostics: List<TestDiagnosticResult>,
@@ -122,7 +122,7 @@ sealed interface TaskValidationExecution {
         /**
          * A [TaskValidationRequest] stopped after author solution submissions were created.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data class CreatedSubmissions(
             override val diagnostics: List<TestDiagnosticResult>,
@@ -136,7 +136,7 @@ sealed interface TaskValidationExecution {
  * Reason why an author submission of a [TaskValidationRequest] failed testing.
  *
  * @property submission the failed submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AuthorSubmissionFailure {
     val submission: SubmissionId
@@ -145,14 +145,14 @@ sealed interface AuthorSubmissionFailure {
      * The submission scored a total other than the expected score of its author solution.
      *
      * @property actualScore the total of all polygon scores, calculated without integer overflow.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class ScoreMismatch(override val submission: SubmissionId, val actualScore: Long) : AuthorSubmissionFailure
 
     /**
      * The submission finished with a grading error or timeout kept in the submission.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class GradingFailed(override val submission: SubmissionId) : AuthorSubmissionFailure
 }
@@ -162,7 +162,7 @@ sealed interface AuthorSubmissionFailure {
  *
  * @property description the technical failure details.
  * @property occurredAt the moment the failure was recorded.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskValidationTechnicalFailure(
     val description: String,
@@ -177,7 +177,7 @@ data class TaskValidationTechnicalFailure(
  * @property snapshot the validation inputs; fixed on creation and ignored on update.
  * @property execution the execution state and its stage data.
  * @property isActive whether execution may continue.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskValidationRequestData(
     val task: LazyEntity<TaskId, Task>,
@@ -201,7 +201,7 @@ data class TaskValidationRequestData(
  * A saved validation of immutable task inputs, independent of later edits to the task.
  *
  * @property data the data of the request.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskValidationRequest(
     id: TaskValidationRequestId,

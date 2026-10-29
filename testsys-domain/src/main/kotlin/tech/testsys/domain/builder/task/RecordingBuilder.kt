@@ -12,7 +12,7 @@ import tech.testsys.domain.model.task.RecordingId
 /**
  * Builder of [RecordingData]. Required: [file].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RecordingDataBuilder : Builder<RecordingData> {
 
@@ -23,7 +23,7 @@ class RecordingDataBuilder : Builder<RecordingData> {
      *
      * @param uploadedFilename the original name of the uploaded file.
      * @param content the raw binary content of the file.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
@@ -32,7 +32,7 @@ class RecordingDataBuilder : Builder<RecordingData> {
     /**
      * Sets [file] without reading its contents.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(file: FileData) {
         _file = file
@@ -50,7 +50,7 @@ class RecordingDataBuilder : Builder<RecordingData> {
 /**
  * Builder of [Recording] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RecordingBuilder : DomainEntityWithDataBuilder<Recording, RecordingData, RecordingDataBuilder>() {
 

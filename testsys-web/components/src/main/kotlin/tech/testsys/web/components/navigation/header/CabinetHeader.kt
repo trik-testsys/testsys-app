@@ -8,7 +8,7 @@ import com.vaadin.flow.router.RouteParameters
  *
  * @property key the identifier compared with the active section.
  * @property label the shown name of the section.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface HeaderItem {
     val key: String
@@ -19,7 +19,7 @@ sealed interface HeaderItem {
  * Section link of the Cabinet header.
  *
  * @property target the route the link opens.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class NavItem(override val key: String, override val label: String, val target: Class<out Component>) : HeaderItem
 
@@ -27,7 +27,7 @@ data class NavItem(override val key: String, override val label: String, val tar
  * Section that opens a menu without requiring a route.
  *
  * @property menu the columns of the section.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class MegaMenuItem(override val key: String, override val label: String, val menu: HeaderMegaMenu) : HeaderItem
 
@@ -36,7 +36,7 @@ data class MegaMenuItem(override val key: String, override val label: String, va
  *
  * @property name the full name of the user.
  * @property menu the optional links and actions of the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class HeaderUser(val name: String, val menu: HeaderUserMenu? = null)
 
@@ -50,7 +50,7 @@ data class HeaderUser(val name: String, val menu: HeaderUserMenu? = null)
  * @property notifications the optional application-owned notifications, shown only to signed-in users.
  * @property menuSearchKey the optional mega-menu key filtered by the search field after the sections, also available to guests.
  * @property signInParameters route parameters of the guest sign-in link, empty by default.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CabinetHeader(
     val items: List<HeaderItem> = emptyList(),

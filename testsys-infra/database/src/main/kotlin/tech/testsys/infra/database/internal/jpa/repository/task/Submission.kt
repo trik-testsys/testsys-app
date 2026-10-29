@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [VerdictJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -25,7 +25,7 @@ interface VerdictJpaEntityRepository : SnowflakeJpaEntityRepository<VerdictJpaEn
 /**
  * Spring Data repository for [TestVerdictJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -34,14 +34,14 @@ interface TestVerdictJpaEntityRepository : SnowflakeJpaEntityRepository<TestVerd
     /**
      * Finds the test outcomes of the verdict [verdictId], ordered by the id of the test.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByVerdictIdOrderByTestIdAsc(verdictId: Long): List<TestVerdictJpaEntity>
 
     /**
      * Finds test outcomes of [verdictIds] in one query, ordered by verdict id and then test id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByVerdictIdInOrderByVerdictIdAscTestIdAsc(verdictIds: List<Long>): List<TestVerdictJpaEntity>
 }
@@ -49,7 +49,7 @@ interface TestVerdictJpaEntityRepository : SnowflakeJpaEntityRepository<TestVerd
 /**
  * Spring Data repository for [RecordingJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -58,7 +58,7 @@ interface RecordingJpaEntityRepository : SnowflakeJpaEntityRepository<RecordingJ
 /**
  * Spring Data repository for [LogsJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -67,7 +67,7 @@ interface LogsJpaEntityRepository : SnowflakeJpaEntityRepository<LogsJpaEntity>
 /**
  * Spring Data repository for [SubmissionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -76,7 +76,7 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
     /**
      * Finds the ids of the users [authorIds] paired with the ids of the submissions they authored in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.authorId, e.id) " +
@@ -87,14 +87,14 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
     /**
      * Finds the submissions of [kind] made to the task [taskId], ordered by id ascending.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByTaskIdAndKindOrderByIdAsc(taskId: Long, kind: SubmissionKindJpaEnum): List<SubmissionJpaEntity>
 
     /**
      * Finds submissions of [kind] by [authorId] for [taskId] in [gradingContestId], ordered by creation time and then id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByAuthorIdAndTaskIdAndKindAndGradingContestIdOrderByCreatedAtAscIdAsc(
         authorId: Long,
@@ -106,7 +106,7 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
     /**
      * Finds the submissions of [kind] made in the contest [gradingContestId] by any of [authorIds] for any of [taskIds].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByKindAndGradingContestIdAndAuthorIdInAndTaskIdIn(
         kind: SubmissionKindJpaEnum,
@@ -118,7 +118,7 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
     /**
      * Counts the grading submissions of the contest [contestId] per task, omitting tasks without submissions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         """
@@ -133,7 +133,7 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
     /**
      * Counts the grading submissions of any of [authorIds] in any of [contestIds] and their distinct authors.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         """
@@ -151,7 +151,7 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
     /**
      * Finds the distinct ids among [authorIds] of the authors of grading submissions in any of [contestIds].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         """
@@ -172,7 +172,7 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
  *
  * @property taskId id of the task.
  * @property submissions the number of submissions of the task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 interface TaskSubmissionCountJpaProjection {
@@ -185,7 +185,7 @@ interface TaskSubmissionCountJpaProjection {
  *
  * @property submissions the number of submissions.
  * @property authors the number of distinct authors.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 interface SubmissionCountJpaProjection {

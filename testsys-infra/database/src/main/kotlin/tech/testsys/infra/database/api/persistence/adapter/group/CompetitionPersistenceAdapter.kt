@@ -39,7 +39,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * projection of the participant data rows, so `CompetitionData.participants` is ignored on write. Update and remove
  * increment the competition version first.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

@@ -10,34 +10,34 @@ import tech.testsys.web.components.core.Bindable
 /**
  * Position of a plain text tooltip.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class TooltipPlacement {
     /**
      * Above the target.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Top,
 
     /**
      * Below the target.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Bottom,
 
     /**
      * Before the target in the reading direction: on the left in left-to-right text.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Left,
 
     /**
      * After the target in the reading direction: on the right in left-to-right text.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Right,
 }
@@ -46,7 +46,7 @@ enum class TooltipPlacement {
  * Handle of a noninteractive tooltip attached to an existing element.
  *
  * @property text the plain tooltip content.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TooltipHandle internal constructor(private val tooltip: Tooltip, element: Element) {
     private val state = Bindable(element, tooltip.text) { value -> tooltip.text = value }
@@ -59,7 +59,7 @@ class TooltipHandle internal constructor(private val tooltip: Tooltip, element: 
     /**
      * Binds tooltip content to [signal].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindText(signal: Signal<String>): SignalBinding<String> = state.bind(signal)
 }
@@ -67,7 +67,7 @@ class TooltipHandle internal constructor(private val tooltip: Tooltip, element: 
 /**
  * Attaches plain [text] beside this element, on the side given by [placement].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ElementHandle.tooltip(
     text: String,

@@ -11,7 +11,7 @@ import java.time.Instant
 /**
  * Whether a [UserJpaEntity] holds many roles across communities ([MULTIPLE_ROLE]) or one fixed role ([SINGLE_ROLE]).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class UserTypeJpaEnum {
@@ -23,7 +23,7 @@ enum class UserTypeJpaEnum {
 /**
  * Algorithm used to produce a stored access-code or invite-code representation.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class HashAlgorithmJpaEnum {
@@ -44,7 +44,7 @@ enum class HashAlgorithmJpaEnum {
  * @property type whether the user holds multiple roles or a single one.
  * @property lastLoginAt the moment of the last login, or `null` before the first one; only a bulk update writes it, so
  * saving or updating the entity never overwrites it.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

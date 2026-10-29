@@ -23,7 +23,7 @@ private const val DANGER_COOLDOWN_SECONDS = 3
  * [isDanger] marks an irreversible action; [typeToConfirm] requires the name with surrounding whitespace ignored on
  * both sides. The action ignores clicks for [cooldownSeconds] after opening, three for a dangerous one by default.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun confirm(
     title: String,

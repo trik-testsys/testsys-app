@@ -34,7 +34,7 @@ private const val DETAILS_COLUMNS = 12
  * Class of a Manager (testsys.web.page.manager.class): its details, invite code with replacement and extension, students
  * and contests with adding a contest; a contest opens its results in the class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("manager/classes/:classId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

@@ -21,7 +21,7 @@ import tech.testsys.domain.model.user.SingleRoleUserId
  * @property participants the ids of the registered participants; persistence projects them from the participants and ignores
  *   the value on write.
  * @property contests the ids of the contests held within the competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CompetitionDataBuilder : Builder<CompetitionData> {
 
@@ -38,7 +38,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
     /**
      * Sets [owner] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun owner(owner: Long) {
         this.owner = MultipleRoleUserId(owner)
@@ -47,7 +47,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
     /**
      * Sets [participants] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun participants(participants: Iterable<Long>) {
         this.participants = participants.map { SingleRoleUserId(it) }.toMutableList()
@@ -56,7 +56,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
     /**
      * Sets [contests] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun contests(contests: Iterable<Long>) {
         this.contests = contests.map { ContestId(it) }.toMutableList()
@@ -80,7 +80,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
 /**
  * Builder of [Competition] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CompetitionBuilder : DomainEntityWithDataBuilder<Competition, CompetitionData, CompetitionDataBuilder>() {
 

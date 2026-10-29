@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @property mainWeb the main user interface.
  * @property serviceWeb the isolated service interface.
  * @property metricsWeb the metrics server read by Prometheus.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TestSysRuntime private constructor(
     val infrastructure: ConfigurableApplicationContext,
@@ -32,7 +32,7 @@ class TestSysRuntime private constructor(
     /**
      * Installs the single process hook after all contexts have started successfully.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun installShutdownHook() {
         Runtime.getRuntime().addShutdownHook(Thread({ close() }, "testsys-shutdown"))
@@ -48,7 +48,7 @@ class TestSysRuntime private constructor(
         /**
          * Starts the validated runtime; any failure closes already started contexts before propagating the exception.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         fun start(args: Array<String>): TestSysRuntime = start(args, emptyArray())
 

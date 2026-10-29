@@ -11,7 +11,7 @@ import java.time.Instant
  *
  * @param nodeId id of the running instance, 0 to [MAX_NODE_ID].
  * @param clock the time source, UTC system clock by default.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 class SnowflakeIdGenerator(
@@ -30,7 +30,7 @@ class SnowflakeIdGenerator(
     /**
      * Issues the next id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Synchronized
     fun next(): Long {
@@ -82,21 +82,21 @@ class SnowflakeIdGenerator(
         /**
          * Moment encoded in [id], at second resolution.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         fun instantOf(id: Long): Instant = Instant.ofEpochSecond(id ushr TIMESTAMP_SHIFT)
 
         /**
          * Node id encoded in [id].
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         fun nodeIdOf(id: Long): Int = ((id ushr NODE_ID_SHIFT) and MAX_NODE_ID.toLong()).toInt()
 
         /**
          * Per-second counter encoded in [id].
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         fun counterOf(id: Long): Int = (id and MAX_COUNTER.toLong()).toInt()
     }

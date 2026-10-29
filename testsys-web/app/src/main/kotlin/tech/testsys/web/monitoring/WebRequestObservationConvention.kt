@@ -17,7 +17,7 @@ import org.springframework.web.util.UrlPathHelper
  * never become label values.
  *
  * @property webInterface the name of the observed interface, `main` or `service`.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class WebRequestObservationConvention(val webInterface: String) : DefaultServerRequestObservationConvention() {
     // Templates are rebuilt only when the registered routes change, for example after a development reload.

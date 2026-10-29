@@ -27,7 +27,7 @@ private const val CLASSES_COLUMNS = 16
  * Cabinet of a Student (testsys.web.page.student): the classes of the student with links to their pages and joining a class
  * by an invite code.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("student/:section?(classes)")
 @RolesAllowed("MULTIPLE_ROLE")

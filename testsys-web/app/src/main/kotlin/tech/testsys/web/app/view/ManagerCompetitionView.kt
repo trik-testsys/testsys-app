@@ -38,7 +38,7 @@ import java.time.Instant
  * Competition of a Manager (testsys.web.page.manager.competition): its details, participants with their creation and
  * deletion and contests with adding a contest; a contest opens its results in the competition.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("manager/competitions/:competitionId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

@@ -21,7 +21,7 @@ import tech.testsys.web.monitoring.MetricsConfiguration
 /**
  * Owns the database, operations, grader, metrics registry and background infrastructure shared by the web children.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 @Import(InfraConfiguration::class, OperationsConfiguration::class, MetricsConfiguration::class)

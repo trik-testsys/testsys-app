@@ -51,7 +51,7 @@ private const val FILE_CONTENT_TYPE = "application/octet-stream"
  * Submission viewed by a Judge (testsys.web.page.judge.solution): its details with the solution file, the scores of the
  * verdict per test with the logs and recordings, the judgment orders and issuing a new one.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("judge/submissions/:submissionId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

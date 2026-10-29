@@ -8,13 +8,13 @@ import java.time.Instant
 /**
  * Reads users for a cabinet list with the actor's access rules.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface UserListingService {
     /**
      * Returns a filtered page with last login times.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewUsers(pagination: Pagination, filter: UserFilter = UserFilter()): Page<Pair<AdminUserVo, Instant?>>
 }

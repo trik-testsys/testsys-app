@@ -10,7 +10,7 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Marker for identifiers of [User]s.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface UserId : DomainId
 
@@ -19,7 +19,7 @@ interface UserId : DomainId
  * user kind exposes its own typed `data` property.
  *
  * @param Id the identifier type of the concrete user kind.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed class User<Id : UserId>(
     id: Id,
@@ -31,7 +31,7 @@ sealed class User<Id : UserId>(
  * Algorithm used to produce the stored access-code representation of a [SingleRoleUser] and the stored invite-code
  * representation.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface HashAlgorithm {
 
@@ -39,14 +39,14 @@ sealed interface HashAlgorithm {
      * Temporary algorithm of invite codes that leaves the original code unchanged and provides no cryptographic
      * protection. Declarations marked with RawInviteCodeDependency must be checked before invite codes use another one.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     object Identity : HashAlgorithm
 
     /**
      * HMAC-SHA-256 keyed with the server secret and written as lower-case hex; access codes use it.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     object HmacSha256 : HashAlgorithm
 }
@@ -56,7 +56,7 @@ sealed interface HashAlgorithm {
  *
  * @property value the stored representation.
  * @property algorithm the algorithm used to produce [value].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class AccessTokenHash(
     val value: String,
@@ -67,7 +67,7 @@ data class AccessTokenHash(
  * Hashes access codes of [SingleRoleUser]s with [HashAlgorithm.HmacSha256] keyed with the UTF-8 bytes of [secret] of
  * at least 64 characters. The hash is deterministic, so it finds the user by the entered code but cannot restore it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class AccessTokenHasher(secret: String) {
 
@@ -83,7 +83,7 @@ class AccessTokenHasher(secret: String) {
     /**
      * Hashes [rawAccessToken] without normalizing or validating the input.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun hash(rawAccessToken: String): AccessTokenHash {
         val mac = Mac.getInstance(MAC_ALGORITHM).apply { init(key) }
@@ -101,7 +101,7 @@ class AccessTokenHasher(secret: String) {
  * Data common to every kind of [User].
  *
  * @property name the name of the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface UserData {
     val name: String

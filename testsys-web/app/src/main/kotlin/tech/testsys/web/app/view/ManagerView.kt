@@ -36,7 +36,7 @@ import java.time.Instant
  * Cabinet of a Manager (testsys.web.page.manager): the tabs with the classes and the competitions are the sections of the
  * route; without a section the page opens the classes.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("manager/:section?(classes|competitions)")
 @RolesAllowed("MULTIPLE_ROLE")

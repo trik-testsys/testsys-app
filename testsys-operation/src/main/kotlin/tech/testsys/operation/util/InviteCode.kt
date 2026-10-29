@@ -15,7 +15,7 @@ private const val INVITE_CODE_LENGTH = 12
  * Generates a raw invite code of 12 characters drawn by [random] from the lowercase invite-code alphabet.
  * The code is regenerated while it hashes, with the algorithm of [previous], to the replaced [previous] code.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun generateInviteCode(random: RandomGenerator, previous: InviteCodeHash?): String = generateSequence { randomInviteCode(random) }
@@ -24,7 +24,7 @@ fun generateInviteCode(random: RandomGenerator, previous: InviteCodeHash?): Stri
 /**
  * Normalizes a user-entered invite code by lowercasing [input] with the root locale; other characters are kept.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun normalizeInviteCode(input: String): String = input.lowercase(Locale.ROOT)
@@ -34,7 +34,7 @@ fun normalizeInviteCode(input: String): String = input.lowercase(Locale.ROOT)
  * truncated to microseconds.
  *
  * @throws IllegalStateException if [ttl] is zero or negative.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun inviteExpiresAt(now: Instant, ttl: Duration): Instant {

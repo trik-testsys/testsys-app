@@ -8,7 +8,7 @@ package tech.testsys.infra.grpc.api
  * @property grading runs with an active grading request on a checking node.
  * @property saving runs with an accepted result waiting to be saved.
  * @property total all unfinished runs, the sum of the four states.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class GradingQueueSnapshot(val preparing: Int, val waiting: Int, val grading: Int, val saving: Int) {
     val total: Int
@@ -18,13 +18,13 @@ data class GradingQueueSnapshot(val preparing: Int, val waiting: Int, val gradin
 /**
  * Reads the in-memory grading queue of this process without blocking grading.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun interface GradingQueueMonitor {
     /**
      * Returns the current numbers of unfinished runs.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun snapshot(): GradingQueueSnapshot
 }

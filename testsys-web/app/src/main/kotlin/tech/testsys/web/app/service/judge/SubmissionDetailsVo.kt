@@ -24,7 +24,7 @@ import java.time.Instant
  *
  * @property id the identifier of the user.
  * @property name the nickname of the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class NamedUserVo(val id: UserId, val name: String)
 
@@ -35,7 +35,7 @@ data class NamedUserVo(val id: UserId, val name: String)
  * @property createdAt the moment the solution was uploaded.
  * @property fileName the uploaded name of the solution file.
  * @property language the programming language of the solution.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SolutionVo(val id: SolutionId, val createdAt: Instant, val fileName: String, val language: TrikSupportedLanguage)
 
@@ -51,7 +51,7 @@ data class SolutionVo(val id: SolutionId, val createdAt: Instant, val fileName: 
  * @property tests the tests of [verdict] in the order of its test outcomes.
  * @property finalScore the final score, or `null` without a successful verdict.
  * @property judgmentOrders the judgment orders in the order they were issued, each with its judge.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionDetailsVo(
     val submission: SubmissionVo,

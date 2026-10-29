@@ -10,7 +10,7 @@ import tech.testsys.domain.model.user.User
 /**
  * Service search of users of every kind for the service cabinet; it bypasses the access rules of the cabinets of users.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ServiceUserSearch {
 
@@ -21,7 +21,7 @@ interface ServiceUserSearch {
      * @param pagination the requested page; only the `id` and `name` fields can be sorted.
      * @return the users of the page as entities of their concrete kinds, with [pagination] and the total number of matches.
      * @throws IllegalArgumentException if [pagination] sorts by another field.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun find(filter: ServiceUserFilter, pagination: Pagination): Page<User<*>>
 
@@ -30,7 +30,7 @@ interface ServiceUserSearch {
      *
      * @param id the id of the user.
      * @return the user as an entity of its concrete kind, or `null` if there is no user with [id].
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findById(id: ServiceUserId): User<*>?
 }
@@ -47,7 +47,7 @@ interface ServiceUserSearch {
  * community the user holds one of them in.
  * @property classId the class the user studies in or owns.
  * @property competitionId the competition the user takes part in, owns or observes through an assigned contest of it.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ServiceUserFilter(
     val id: ServiceUserId? = null,
@@ -67,7 +67,7 @@ data class ServiceUserFilter(
 /**
  * Role of a user selected by [ServiceUserFilter.roles]: a non-fixed role or the fixed role of a single-role user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class ServiceUserRole {
     ADMINISTRATOR,
@@ -84,7 +84,7 @@ enum class ServiceUserRole {
  * Identifier of a user of any kind in [ServiceUserSearch].
  *
  * @property value the raw id of the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class ServiceUserId(val value: Long)

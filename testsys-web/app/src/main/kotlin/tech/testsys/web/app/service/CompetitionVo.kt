@@ -17,7 +17,7 @@ import java.time.Instant
  * @property description the description of the competition.
  * @property participants the identifiers of the participants.
  * @property contests the identifiers of the contests of the competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionVo(
     val id: CompetitionId,

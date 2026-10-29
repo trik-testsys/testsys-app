@@ -80,7 +80,7 @@ private val GRANTED_ROLE_NAMES: Map<CommunityRole, RoleNameRole> = mapOf(
  * administrator with granting and removal, and the sections of its roles on tabs with their own addresses. An observer
  * has its own address, shows its section below the common data and can be deleted.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("admin/users/:userId([0-9]+)/:section?(developer|manager|judge)")
 @RouteAlias("admin/observers/:observerId([0-9]+)")

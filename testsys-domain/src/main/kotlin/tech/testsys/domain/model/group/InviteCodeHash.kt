@@ -7,7 +7,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
  *
  * @property value the stored representation.
  * @property algorithm the algorithm used to produce [value].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class InviteCodeHash(
     val value: String,
@@ -17,7 +17,7 @@ data class InviteCodeHash(
         /**
          * Hashes [rawInviteCode] with [algorithm] without normalizing or validating the input.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         fun hashInviteCode(rawInviteCode: String, algorithm: HashAlgorithm): InviteCodeHash {
             val value = when (algorithm) {

@@ -9,7 +9,7 @@ import tech.testsys.web.components.core.InternalComponentsApi
 /**
  * Meaning of an alert or a toast; the colour and the icon follow it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class FeedbackKind(
     internal val alertClass: CssClass,

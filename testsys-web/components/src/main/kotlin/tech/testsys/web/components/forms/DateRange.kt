@@ -44,7 +44,7 @@ import java.util.UUID
  *
  * @property from the first day, or `null` if the range has no start.
  * @property to the last day, or `null` if the range has no end.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DateRange(val from: LocalDate? = null, val to: LocalDate? = null)
 

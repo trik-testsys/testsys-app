@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference
  * Resource registration and updates share a lock so shutdown cannot race a prepared change.
  *
  * @property publicCommunityId the deployment-only community identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RuntimeSettings(initial: SettingsSnapshot, val publicCommunityId: CommunityId) : AutoCloseable {
     private val reference = AtomicReference(initial)
@@ -21,7 +21,7 @@ class RuntimeSettings(initial: SettingsSnapshot, val publicCommunityId: Communit
     /**
      * Captures one immutable publication.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun snapshot(): SettingsSnapshot = reference.get()
 
@@ -29,7 +29,7 @@ class RuntimeSettings(initial: SettingsSnapshot, val publicCommunityId: Communit
      * Registers a consumer and prepares its initial resources before background work starts.
      * Closing this registration prevents future preparations and releases its current resource.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun register(preparation: SettingsChangePreparation): AutoCloseable = synchronized(monitor) {
         check(!isClosed) { "Settings are closed" }

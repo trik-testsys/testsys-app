@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [ContestToCompetitionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -26,7 +26,7 @@ interface ContestToCompetitionJpaEntityRepository :
     /**
      * Finds the association rows of the contest [contestId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.contestId = :contestId")
     fun findAllByContestId(@Param("contestId") contestId: Long): List<ContestToCompetitionJpaEntity>
@@ -34,7 +34,7 @@ interface ContestToCompetitionJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the contest [contestId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.contestId = :contestId")
     fun findAllByContestId(@Param("contestId") contestId: Long, pageable: Pageable): Page<ContestToCompetitionJpaEntity>
@@ -42,7 +42,7 @@ interface ContestToCompetitionJpaEntityRepository :
     /**
      * Finds the association rows of the competition [competitionId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.competitionId = :competitionId")
     fun findAllByCompetitionId(@Param("competitionId") competitionId: Long): List<ContestToCompetitionJpaEntity>
@@ -50,7 +50,7 @@ interface ContestToCompetitionJpaEntityRepository :
     /**
      * Finds the ids of the competitions [competitionIds] paired with the ids of their contests in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.competitionId, e.id.contestId) " +
@@ -61,7 +61,7 @@ interface ContestToCompetitionJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the competition [competitionId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.competitionId = :competitionId")
     fun findAllByCompetitionId(@Param("competitionId") competitionId: Long, pageable: Pageable): Page<ContestToCompetitionJpaEntity>
@@ -69,7 +69,7 @@ interface ContestToCompetitionJpaEntityRepository :
     /**
      * Finds the ids of the competitions containing any of the contests [contestIds], without repetitions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select distinct e.id.competitionId from ContestToCompetitionJpaEntity e where e.id.contestId in :contestIds")
     fun findCompetitionIdsByContestIds(@Param("contestIds") contestIds: Collection<Long>): List<Long>
@@ -78,7 +78,7 @@ interface ContestToCompetitionJpaEntityRepository :
 /**
  * Spring Data repository for [CompetitionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -87,7 +87,7 @@ interface CompetitionJpaEntityRepository : SnowflakeJpaEntityRepository<Competit
     /**
      * Finds the ids of the users [ownerIds] paired with the ids of the competitions they own in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.ownerId, e.id) " +

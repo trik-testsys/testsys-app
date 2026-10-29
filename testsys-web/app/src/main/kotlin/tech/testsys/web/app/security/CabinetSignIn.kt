@@ -22,7 +22,7 @@ import kotlin.jvm.optionals.getOrNull
 /**
  * Signs a user in from a Vaadin request handler, without a login form of Spring Security.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 object CabinetSignIn {
     private const val ROLE_PREFIX = "ROLE_"
@@ -34,7 +34,7 @@ object CabinetSignIn {
     /**
      * Returns the signed-in principal of the current request, or `null` for a guest.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun principal(): CabinetPrincipal? = SecurityContextHolder.getContext().authentication?.principal as? CabinetPrincipal
 
@@ -43,7 +43,7 @@ object CabinetSignIn {
      * its role in the session and in [RememberedSignIns], and returns the removed page the user opened before being
      * sent to sign in, or `null` if there is none or it is closed to the kind of [principal].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun signIn(principal: CabinetPrincipal): String? {
         val request = checkNotNull(VaadinServletRequest.getCurrent()) { "Sign-in needs a Vaadin servlet request" }.httpServletRequest
@@ -73,7 +73,7 @@ object CabinetSignIn {
      * Signs the supervisor who signed in as the current user back in with [signIn] and returns the raw id of the user
      * they leave, or `null` without changes if the current user signed in themselves.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun returnToSupervisor(): Long? {
         val principal = principal() ?: return null

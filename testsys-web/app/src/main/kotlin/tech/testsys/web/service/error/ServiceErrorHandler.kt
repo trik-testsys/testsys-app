@@ -12,7 +12,7 @@ import tech.testsys.web.monitoring.WebFailures
  * Error handler of every service session: counts an exception of an event handler or `UI.access` task in [failures]
  * and passes it to the default Vaadin handler.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringComponent
 class ServiceErrorHandler(private val failures: WebFailures) : VaadinServiceInitListener, ErrorHandler {

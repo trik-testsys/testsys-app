@@ -3,7 +3,7 @@ package tech.testsys.infra.mail.internal
 /**
  * Opt-in marker for declarations internal to the mail module.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @RequiresOptIn
 @Target(

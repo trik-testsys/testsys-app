@@ -55,7 +55,7 @@ private val COMMUNITY_ROLE_NAMES: Map<CommunityRole, RoleNameRole> = mapOf(
 /**
  * Details of any non-supervisor user, with membership actions only for users with non-fixed roles.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("supervisor/users/:userId([0-9]+)/:section?(developer|manager|judge)")
 @RolesAllowed("SUPERVISOR")

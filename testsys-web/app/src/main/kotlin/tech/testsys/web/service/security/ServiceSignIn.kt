@@ -12,7 +12,7 @@ import tech.testsys.web.app.security.RememberedSignIns
  * Stores only the technical identity in the service session after rotating its id against session fixation and
  * remembers the sign-in in [signIns], so that it survives a restart.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 class ServiceSignIn(private val authenticator: ServiceAuthenticator, private val signIns: RememberedSignIns) {
@@ -21,7 +21,7 @@ class ServiceSignIn(private val authenticator: ServiceAuthenticator, private val
     /**
      * Checks [code] using the container's verified remote address and signs in only on success.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun signIn(code: String): ServiceSignInResult {
         val request = checkNotNull(VaadinServletRequest.getCurrent()) {

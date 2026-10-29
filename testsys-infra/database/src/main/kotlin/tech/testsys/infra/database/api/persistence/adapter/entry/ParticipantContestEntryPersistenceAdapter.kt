@@ -21,7 +21,7 @@ import tech.testsys.infra.database.internal.mapping.entry.ParticipantContestEntr
  * A concurrent second creation of one entry fails on the unique key of its context and is repeated by the caller's
  * transaction retry, which then finds the entry.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

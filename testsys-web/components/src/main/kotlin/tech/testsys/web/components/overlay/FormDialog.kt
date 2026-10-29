@@ -28,7 +28,7 @@ import tech.testsys.web.components.texts.currentUiLocalization
  *
  * @property isOpen whether the dialog is shown.
  * @property isEditable whether the fields of the dialog can be edited; manual changes while bound throw [BindingActiveException].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class DialogHandle internal constructor(private val shell: DialogShell, private val editState: BlockEditState) {
@@ -45,14 +45,14 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
      * Binds [isEditable] to [signal], including before opening; fields keep their own read-only state.
      *
      * @throws BindingActiveException if the mode is already bound.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEditable(signal: Signal<Boolean>): SignalBinding<Boolean> = editState.bind(signal)
 
     /**
      * Shows the dialog.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun open() {
         shell.open()
@@ -61,7 +61,7 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
     /**
      * Hides the dialog.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun close() {
         shell.close()
@@ -70,7 +70,7 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
     /**
      * Runs [listener] whenever the dialog closes, by an action, the close button, Esc, a click outside or navigation.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onClose(listener: () -> Unit) {
         shell.dialog.addOpenedChangeListener { event -> if (!event.isOpened) listener() }
@@ -80,7 +80,7 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
 /**
  * Scope of a form dialog: rows on its own 24-column grid and the footer, which gets the dialog handle to close it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class DialogScope internal constructor(
@@ -92,7 +92,7 @@ class DialogScope internal constructor(
     /**
      * Adds a row of the dialog; its elements take at most 24 columns in total.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun row(content: BlockRowScope.() -> Unit) {
         val row = Div().apply { addClassName(CssClass.BlockRow) }
@@ -103,7 +103,7 @@ class DialogScope internal constructor(
     /**
      * Adds a full-width group of rows under [title], sharing the dialog edit mode.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun section(title: String, content: DialogSectionScope.() -> Unit) {
         val heading = H3(title).apply { addClassName(CssClass.DialogSectionTitle) }
@@ -121,7 +121,7 @@ class DialogScope internal constructor(
     /**
      * Fills the footer of the dialog; [content] gets the dialog handle, for example to close it.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun footer(content: ContentScope.(DialogHandle) -> Unit) {
         ContentScope(shell.foot, texts, Placement.Body).content(handle)
@@ -131,7 +131,7 @@ class DialogScope internal constructor(
 /**
  * Rows of a named form group on its own 24-column grid, sharing its dialog edit mode.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class DialogSectionScope internal constructor(
@@ -142,7 +142,7 @@ class DialogSectionScope internal constructor(
     /**
      * Adds a row whose elements take at most 24 columns; an empty row is omitted.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun row(content: BlockRowScope.() -> Unit) {
         val row = Div().apply { addClassName(CssClass.BlockRow) }
@@ -155,7 +155,7 @@ class DialogSectionScope internal constructor(
  * Builds a form dialog of [title] and an optional [subtitle] with rows and a footer; open it with the returned handle.
  * [size] gives the width when the default one does not fit the fields or a table.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun dialog(title: String, subtitle: String? = null, size: DialogSize = DialogSize.M, content: DialogScope.() -> Unit): DialogHandle {
     val texts = currentUiLocalization()

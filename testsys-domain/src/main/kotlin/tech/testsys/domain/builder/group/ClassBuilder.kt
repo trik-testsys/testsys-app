@@ -21,7 +21,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  * @property students the ids of the enrolled students.
  * @property contests the ids of the assigned contests.
  * @property invite the id of the invite code of the class, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ClassDataBuilder : Builder<ClassData> {
 
@@ -40,7 +40,7 @@ class ClassDataBuilder : Builder<ClassData> {
     /**
      * Sets [invite] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun invite(invite: Long) {
         this.invite = ClassInviteId(invite)
@@ -49,7 +49,7 @@ class ClassDataBuilder : Builder<ClassData> {
     /**
      * Sets [owner] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun owner(owner: Long) {
         this.owner = MultipleRoleUserId(owner)
@@ -58,7 +58,7 @@ class ClassDataBuilder : Builder<ClassData> {
     /**
      * Sets [students] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun students(students: Iterable<Long>) {
         this.students = students.map { MultipleRoleUserId(it) }.toMutableList()
@@ -67,7 +67,7 @@ class ClassDataBuilder : Builder<ClassData> {
     /**
      * Sets [contests] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun contests(contests: Iterable<Long>) {
         this.contests = contests.map { ContestId(it) }.toMutableList()
@@ -93,7 +93,7 @@ class ClassDataBuilder : Builder<ClassData> {
 /**
  * Builder of [Class] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ClassBuilder : DomainEntityWithDataBuilder<Class, ClassData, ClassDataBuilder>() {
 

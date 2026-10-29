@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [RegistrationRequest] and [RegistrationRequestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object RegistrationRequestMapping : EntityMapping<RegistrationRequest, RegistrationRequestJpaEntity> {
@@ -21,7 +21,7 @@ object RegistrationRequestMapping : EntityMapping<RegistrationRequest, Registrat
     /**
      * Assembles a [RegistrationRequest] from [jpaEntity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: RegistrationRequestJpaEntity) = registrationRequest {
         populateFields(jpaEntity)
@@ -36,7 +36,7 @@ object RegistrationRequestMapping : EntityMapping<RegistrationRequest, Registrat
     /**
      * Creates a new [RegistrationRequestJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: RegistrationRequestData) = RegistrationRequestJpaEntity(
         email = data.email,
@@ -49,7 +49,7 @@ object RegistrationRequestMapping : EntityMapping<RegistrationRequest, Registrat
      * Creates the [RegistrationRequestJpaEntity] row replacing [current] from [entity], keeping `email`, `createdAt`
      * and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: RegistrationRequest, current: RegistrationRequestJpaEntity) = RegistrationRequestJpaEntity(
         email = current.email,

@@ -30,7 +30,7 @@ import java.lang.reflect.Method
  * Connects the configurations of the infrastructure modules that implement the ports of the operations and count
  * technical failures. The companion object registers the call log of the infrastructure beans.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 @Import(
@@ -46,7 +46,7 @@ class InfraConfiguration {
     /**
      * Static infrastructure beans: they are created before the auto-proxy creator wraps the application beans.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     companion object {
         private const val CONTRACT_PACKAGE = "tech.testsys.domain.contract"
@@ -64,7 +64,7 @@ class InfraConfiguration {
          * Writes at DEBUG the calls of the domain ports and service interfaces implemented by the infrastructure
          * modules, outside their transactions and transaction repeats.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         @JvmStatic
         @Bean

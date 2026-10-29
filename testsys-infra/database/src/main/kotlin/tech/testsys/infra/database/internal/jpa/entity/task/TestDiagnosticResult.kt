@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property requestId the request identifier.
  * @property testId the polygon identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -25,7 +25,7 @@ data class TestDiagnosticResultId(val requestId: Long, val testId: Long) : Compo
 /**
  * A completed polygon result, including a result without messages.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -34,28 +34,28 @@ class TestDiagnosticResultJpaEntity(id: TestDiagnosticResultId) : CompositeJpaEn
 /**
  * Stored severity of a polygon diagnostic.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class DiagnosticSeverityJpaEnum {
     /**
      * A info message.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     INFO,
 
     /**
      * A warning message.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     WARNING,
 
     /**
      * A error message.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     ERROR,
 }
@@ -70,7 +70,7 @@ enum class DiagnosticSeverityJpaEnum {
  * @property reason the typed reason discriminator.
  * @property parameters the encoded reason parameters.
  * @property location the encoded XML location, or `null` for the whole file.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

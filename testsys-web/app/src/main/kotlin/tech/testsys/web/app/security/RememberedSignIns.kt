@@ -46,7 +46,7 @@ private const val TOUCHED_AT_ATTRIBUTE = "tech.testsys.signIn.touchedAt"
  * [tokenHash] with the signed-in user in [store]. A sign-in idle for [idleTimeout] is not restored; the next sign-in
  * deletes it and records the end of a supervisor signed in as a user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RememberedSignIns(
     private val store: CabinetSignInStore,
@@ -61,7 +61,7 @@ class RememberedSignIns(
      * Remembers [signIn] for the session of [request], already signed in with its new id, replacing a sign-in the
      * session remembered before, and sets the cookie on [response].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun remember(request: HttpServletRequest, response: HttpServletResponse, signIn: StoredCabinetSignIn) {
         val session = request.getSession(true)
@@ -81,7 +81,7 @@ class RememberedSignIns(
      * Returns the active sign-in of the cookie of [request] with its token digest, or `null` without one; a cookie
      * without an active sign-in is cleared on [response], and an idle sign-in stays in the store.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun find(request: HttpServletRequest, response: HttpServletResponse): Pair<String, StoredCabinetSignIn>? {
         val token = request.cookies?.firstOrNull { cookie -> cookie.name == cookieName }?.value ?: return null
@@ -94,7 +94,7 @@ class RememberedSignIns(
     /**
      * Marks [session] as restored from the sign-in with token digest [hash].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun attach(session: HttpSession, hash: String) {
         session.setAttribute(TOKEN_HASH_ATTRIBUTE, hash)
@@ -104,7 +104,7 @@ class RememberedSignIns(
     /**
      * Records the request of the remembered sign-in of [session], at most once a minute.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun touch(session: HttpSession) {
         val hash = session.getAttribute(TOKEN_HASH_ATTRIBUTE) as? String ?: return
@@ -119,14 +119,14 @@ class RememberedSignIns(
     /**
      * Returns the token digest of the sign-in remembered by [session], or `null` if it remembers none.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tokenHashOf(session: HttpSession): String? = session.getAttribute(TOKEN_HASH_ATTRIBUTE) as? String
 
     /**
      * Forgets the sign-in of the session or the cookie of [request] and clears the cookie on [response].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun forget(request: HttpServletRequest, response: HttpServletResponse) {
         val session = request.getSession(false)
@@ -140,7 +140,7 @@ class RememberedSignIns(
     /**
      * Handler of a sign-out, including an expired session, that forgets its sign-in.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun logoutHandler(): LogoutHandler = LogoutHandler { request, response, _ -> forget(request, response) }
 
@@ -149,7 +149,7 @@ class RememberedSignIns(
      * [authenticate], which returns `null` for a sign-in the interface cannot restore, and then calls [onRestored]
      * with the new session. An authenticated request records the request of its sign-in.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun restoreFilter(
         authenticate: (StoredCabinetSignIn) -> Authentication?,

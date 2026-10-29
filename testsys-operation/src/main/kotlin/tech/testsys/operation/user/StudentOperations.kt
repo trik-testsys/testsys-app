@@ -43,7 +43,7 @@ import java.time.temporal.ChronoUnit
 /**
  * Operations performed by students in a selected class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class StudentOperations(
@@ -58,7 +58,7 @@ class StudentOperations(
      * Enrolls [user] in the class whose valid invite code matches [inviteCode] case-insensitively and returns the class.
      * An already enrolled student gets the class unchanged; missing role, unmatched and expired codes are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.student.joinClass")
     @RawInviteCodeDependency(reason = "Finds the invite by hashing the normalized input with the current deterministic algorithm.")
@@ -79,7 +79,7 @@ class StudentOperations(
      * Returns pairs of first entry time and contest for [user] in [classId], including future and completed contests.
      * The time is null until entry in this class; entries in other classes are independent.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.student.viewContests")
     fun viewContests(user: MultipleRoleUser, classId: ClassId): OperationResult<List<Pair<Instant?, Contest>>, ViewStudentContestsError> =
@@ -101,7 +101,7 @@ class StudentOperations(
      * Returns the first entry of [user] into [contestId] in [classId].
      * A new entry requires the current start-inclusive, end-exclusive interval; a repeat keeps its first time.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.student.enterContest")
     fun enterContest(
@@ -148,7 +148,7 @@ class StudentOperations(
      * Returns the classes [user] is enrolled in as a student, ordered by identifier.
      * Classes are taken from the student role of [user] and kept only if they still list [user] as a student.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.student.viewClasses")
     fun viewClasses(user: MultipleRoleUser): OperationResult<List<Class>, ViewStudentClassesError> =

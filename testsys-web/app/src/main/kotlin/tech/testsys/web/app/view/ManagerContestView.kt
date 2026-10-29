@@ -44,7 +44,7 @@ private const val MIN_RESULT_COLUMNS = 24
  * Contest in a class or competition of a Manager (testsys.web.page.manager.contest): the contest details and the table of
  * the best results and submission counts of the students or participants by task, with its download as a CSV file.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("manager/classes/:classId([0-9]+)/contests/:contestId([0-9]+)")
 @RouteAlias("manager/competitions/:competitionId([0-9]+)/contests/:contestId([0-9]+)")

@@ -88,7 +88,7 @@ private fun byteUnits(texts: UiLocalization): List<String> = with(texts.messages
  * @property maxMemoryBytes the total isReserved memory of concurrently running handlers.
  * @property mimeTypes isAllowed MIME types, empty for any; a trailing slash-star matches a MIME family.
  * @property extensions isAllowed dot-prefixed filename extensions, empty for any; MIME and extension constraints combine with AND.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class UploadLimits(
     val maxFiles: Int,
@@ -117,7 +117,7 @@ data class UploadLimits(
  * @property contentType the client-provided MIME type checked against configured limits.
  * @property size the actual number of received bytes.
  * @property isCancelled whether the owning transfer has been cancelled.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class UploadedFile internal constructor(
     val id: String,
@@ -134,7 +134,7 @@ class UploadedFile internal constructor(
      * Opens a new bounded stream while the handler owns the temporary content.
      *
      * @throws IOException if the handler has finished or the transfer was cancelled.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun openStream(): InputStream {
         ensureActive()
@@ -177,7 +177,7 @@ class UploadedFile internal constructor(
     /**
      * Checks cooperative cancellation before application processing continues.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun ensureActive() {
         if (isCancelled || buffer == null) throw InterruptedIOException("Upload '$filename' is cancelled or expired")
@@ -192,13 +192,13 @@ class UploadedFile internal constructor(
 /**
  * Latest lifecycle event of the real file transfer; each event names the file it concerns.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface FileUploadState {
     /**
      * No current transfer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object Idle : FileUploadState
 
@@ -208,7 +208,7 @@ sealed interface FileUploadState {
      * @property filename the transferring file.
      * @property bytes the actual received byte count.
      * @property total the declared length, or null if unknown.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Uploading(val filename: String, val bytes: Long, val total: Long?) : FileUploadState
 
@@ -216,7 +216,7 @@ sealed interface FileUploadState {
      * The application is processing temporary content.
      *
      * @property filename the processed file.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Processing(val filename: String) : FileUploadState
 
@@ -225,7 +225,7 @@ sealed interface FileUploadState {
      *
      * @property filename the completed file.
      * @property bytes its actual byte count.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Done(val filename: String, val bytes: Long) : FileUploadState
 
@@ -234,14 +234,14 @@ sealed interface FileUploadState {
      *
      * @property filename the failed file.
      * @property cause the diagnostic exception for application logging.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Error(val filename: String, val cause: Exception) : FileUploadState
 
     /**
      * User cancellation without retaining temporary bytes.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object Cancelled : FileUploadState
 }
@@ -253,7 +253,7 @@ sealed interface FileUploadState {
  * @property isEditable whether this action accepts files; row actions also follow their block mode.
  * @property fileIds a snapshot of successfully completed transfers still present in the list, in reservation order.
  * @property state the read-only signal of the latest transfer lifecycle event.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class FileDropHandle internal constructor(
     private val drop: FileDropDisplay,
@@ -287,21 +287,21 @@ class FileDropHandle internal constructor(
     /**
      * Binds whether transfers can start to [signal].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEnabled(signal: Signal<Boolean>): SignalBinding<Boolean> = enabled.bind(signal)
 
     /**
      * Binds the action edit mode to [signal].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEditable(signal: Signal<Boolean>): SignalBinding<Boolean> = editable.bind(signal)
 
     /**
      * Cancels running reception and requests cooperative handler cancellation.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun cancel() {
         drop.cancel()
@@ -310,7 +310,7 @@ class FileDropHandle internal constructor(
     /**
      * Cancels running work, clears the visible file list and resets the file-count quota.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun clear() {
         drop.clear()
@@ -329,7 +329,7 @@ class FileDropHandle internal constructor(
  *
  * @param consume the synchronous handler, which must finish reading before returning and cooperate with cancellation.
  * @param configure the returned action's state and bindings.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.fileDrop(
     label: String,
@@ -348,7 +348,7 @@ fun ContentScope.fileDrop(
  *
  * @param consume the synchronous temporary-content handler.
  * @param configure the returned action configuration.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.fileDrop(
     label: String,

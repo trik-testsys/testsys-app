@@ -18,7 +18,7 @@ import java.time.Instant
 /**
  * Participant cabinet with the contests of their competition and separate remaining-time cells.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("participant/:section?(contests)")
 @RolesAllowed("PARTICIPANT")

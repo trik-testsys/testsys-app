@@ -16,7 +16,7 @@ import tech.testsys.web.app.security.CabinetSignIn
  * transaction per call. A failed operation throws `OperationException`, which rolls the transaction back, except in
  * [confirmRegistration] and [confirmAccessRestoration].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -28,14 +28,14 @@ class UserService(
     /**
      * Runs [UserOperations.authenticate] and returns the principal of the found user instead of the user data.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun authenticate(accessToken: String): CabinetPrincipal = CabinetPrincipal.of(operations.authenticate(accessToken).getOrThrow())
 
     /**
      * Runs [UserOperations.authenticateByPassword] and returns the principal of the found user instead of the user data.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun authenticateByPassword(email: String, password: String): CabinetPrincipal =
         CabinetPrincipal.of(operations.authenticateByPassword(email = email, password = password).getOrThrow())
@@ -43,7 +43,7 @@ class UserService(
     /**
      * Runs [UserOperations.requestRegistration].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun requestRegistration(email: String): RegistrationRequestId = operations.requestRegistration(email).getOrThrow()
 
@@ -51,7 +51,7 @@ class UserService(
      * Runs [UserOperations.confirmRegistration]. The transaction commits even if the operation fails, so that a spent
      * attempt to enter the code is kept.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(noRollbackFor = [OperationException::class])
     fun confirmRegistration(registrationRequestId: RegistrationRequestId, confirmationCode: String, name: String, password: String) {
@@ -63,7 +63,7 @@ class UserService(
      * Runs [MultipleRoleUserOperations.requestAccessRestoration]; throws `IllegalStateException` while a supervisor is
      * signed in as some user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun requestAccessRestoration(email: String) {
         checkNotImpersonated()
@@ -75,7 +75,7 @@ class UserService(
      * `IllegalStateException` while a supervisor is signed in as some user. The transaction commits even if the
      * operation fails, so that a spent attempt to enter the code is kept.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(noRollbackFor = [OperationException::class])
     fun confirmAccessRestoration(email: String, confirmationCode: String, password: String) {

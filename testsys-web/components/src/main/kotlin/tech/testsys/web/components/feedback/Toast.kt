@@ -23,7 +23,7 @@ internal const val TOAST_DURATION_MS: Int = 4000
  * Shows a toast of [kind] with a [title] and an optional [description] in the bottom right corner of the current UI;
  * call it from event handlers.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun toast(kind: FeedbackKind, title: String, description: String? = null) {
     val icon = Span(svgIcon(kind.toastIcon, ICON_SIZE_SMALL)).apply { addClassName(CssClass.ToastIcon) }

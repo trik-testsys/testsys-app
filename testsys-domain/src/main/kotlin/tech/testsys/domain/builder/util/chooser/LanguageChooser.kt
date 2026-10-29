@@ -6,14 +6,14 @@ import tech.testsys.domain.model.task.TrikSupportedLanguage
 /**
  * DSL chooser of a [TrikSupportedLanguage].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LanguageChooser : Chooser<TrikSupportedLanguage>() {
 
     /**
      * Selects [TrikSupportedLanguage.Python].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun python() = makeChoice(object : Builder<TrikSupportedLanguage> {
         override fun build() = TrikSupportedLanguage.Python
@@ -22,7 +22,7 @@ class LanguageChooser : Chooser<TrikSupportedLanguage>() {
     /**
      * Selects [TrikSupportedLanguage.JavaScript].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun javaScript() = makeChoice(object : Builder<TrikSupportedLanguage> {
         override fun build() = TrikSupportedLanguage.JavaScript
@@ -31,7 +31,7 @@ class LanguageChooser : Chooser<TrikSupportedLanguage>() {
     /**
      * Selects [TrikSupportedLanguage.VisualLanguage].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun visualLanguage() = makeChoice(object : Builder<TrikSupportedLanguage> {
         override fun build() = TrikSupportedLanguage.VisualLanguage

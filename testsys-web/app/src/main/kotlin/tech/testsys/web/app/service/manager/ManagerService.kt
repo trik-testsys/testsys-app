@@ -24,7 +24,7 @@ import tech.testsys.web.app.service.toVo
  * Runs [ManagerOperations] for the current user in one transaction per call.
  * A failed operation throws `OperationException`, which rolls the transaction back.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -32,7 +32,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.editClass].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun editClass(classId: ClassId, className: String, description: String): ClassVo =
         operations.editClass(currentUser.multipleRoleUser(), classId, className = className, description = description).getOrThrow().toVo()
@@ -40,7 +40,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.editCompetition].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun editCompetition(competitionId: CompetitionId, competitionName: String, description: String): CompetitionVo =
         operations.editCompetition(
@@ -53,14 +53,14 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.createClass].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createClass(className: String): ClassVo = operations.createClass(currentUser.multipleRoleUser(), className).getOrThrow().toVo()
 
     /**
      * Runs [ManagerOperations.createCompetition].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createCompetition(competitionName: String): CompetitionVo =
         operations.createCompetition(currentUser.multipleRoleUser(), competitionName).getOrThrow().toVo()
@@ -68,7 +68,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.viewClasses].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewClasses(pagination: Pagination, filter: ClassFilter = ClassFilter()): Page<ClassVo> =
@@ -77,7 +77,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.viewClass].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewClass(classId: ClassId): ClassDetailsVo = operations.viewClass(currentUser.multipleRoleUser(), classId).getOrThrow().toVo()
@@ -85,7 +85,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.createClassInvite].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createClassInvite(classId: ClassId): ClassInviteVo =
         operations.createClassInvite(currentUser.multipleRoleUser(), classId).getOrThrow().toVo()
@@ -93,7 +93,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.extendClassInvite].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun extendClassInvite(classId: ClassId): ClassInviteVo =
         operations.extendClassInvite(currentUser.multipleRoleUser(), classId).getOrThrow().toVo()
@@ -101,7 +101,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.viewCompetitions].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewCompetitions(pagination: Pagination, filter: CompetitionFilter = CompetitionFilter()): Page<CompetitionVo> =
@@ -111,7 +111,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.viewCompetition].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewCompetition(competitionId: CompetitionId): CompetitionDetailsVo =
@@ -120,7 +120,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.viewClassContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewClassContest(classId: ClassId, contestId: ContestId): ContestResultsVo =
@@ -129,7 +129,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.viewCompetitionContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewCompetitionContest(competitionId: CompetitionId, contestId: ContestId): ContestResultsVo =
@@ -138,7 +138,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.addClassContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addClassContest(classId: ClassId, contestId: ContestId): ClassVo =
         operations.addClassContest(currentUser.multipleRoleUser(), classId, contestId).getOrThrow().toVo()
@@ -146,7 +146,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.addCompetitionContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addCompetitionContest(competitionId: CompetitionId, contestId: ContestId): CompetitionVo =
         operations.addCompetitionContest(currentUser.multipleRoleUser(), competitionId, contestId).getOrThrow().toVo()
@@ -154,7 +154,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.createParticipants].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createParticipants(competitionId: CompetitionId, participantCount: Int): List<IssuedParticipantVo> =
         operations.createParticipants(currentUser.multipleRoleUser(), competitionId, participantCount).getOrThrow()
@@ -163,7 +163,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.deleteParticipants].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun deleteParticipants(competitionId: CompetitionId, participantIds: Set<SingleRoleUserId>): List<ParticipantVo> =
         operations.deleteParticipants(currentUser.multipleRoleUser(), competitionId, participantIds).getOrThrow()
@@ -172,7 +172,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.viewAvailableContests].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewAvailableContests(pagination: Pagination, name: String? = null): Page<ContestVo> =

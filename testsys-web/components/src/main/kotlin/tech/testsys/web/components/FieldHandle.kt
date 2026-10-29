@@ -19,7 +19,7 @@ import tech.testsys.web.components.core.setObscured
  *
  * @property isObscured whether the value is blurred until its area is hovered or focused; a manual change while
  * [bindObscured] is bound, and a second binding, throw [BindingActiveException].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 open class FieldHandle internal constructor(component: Component, private val valueArea: Component) : ElementHandle(component) {
     private val originalTabIndex = valueArea.element.getAttribute(HtmlAttribute.TabIndex)
@@ -43,7 +43,7 @@ open class FieldHandle internal constructor(component: Component, private val va
     /**
      * Binds [isObscured] to [signal] without changing the value, visibility or edit mode.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindObscured(signal: Signal<Boolean>): SignalBinding<Boolean> = obscured.bind(signal)
 }

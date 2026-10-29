@@ -20,7 +20,7 @@ import java.time.Instant
  * @property competition the context identifier, or null if not set yet.
  * @property contest the context identifier, or null if not set yet.
  * @property enteredAt the first entry moment, or null if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ParticipantContestEntryDataBuilder : Builder<ParticipantContestEntryData> {
 
@@ -35,7 +35,7 @@ class ParticipantContestEntryDataBuilder : Builder<ParticipantContestEntryData> 
     /**
      * Sets [participant] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun participant(participant: Long) {
         this.participant = SingleRoleUserId(participant)
@@ -44,7 +44,7 @@ class ParticipantContestEntryDataBuilder : Builder<ParticipantContestEntryData> 
     /**
      * Sets [competition] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun competition(competition: Long) {
         this.competition = CompetitionId(competition)
@@ -53,7 +53,7 @@ class ParticipantContestEntryDataBuilder : Builder<ParticipantContestEntryData> 
     /**
      * Sets [contest] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun contest(contest: Long) {
         this.contest = ContestId(contest)
@@ -70,7 +70,7 @@ class ParticipantContestEntryDataBuilder : Builder<ParticipantContestEntryData> 
 /**
  * Builder of [ParticipantContestEntry] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ParticipantContestEntryBuilder :
     DomainEntityWithDataBuilder<ParticipantContestEntry, ParticipantContestEntryData, ParticipantContestEntryDataBuilder>() {

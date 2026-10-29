@@ -16,7 +16,7 @@ import java.util.concurrent.Executor
  * exclusive execution within one application instance; processing is scheduled on a testing request and a graded author submission.
  * A technical exception records a terminal failure, then goes to [onTechnicalFailure], like a logged exception of recording or lookup.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskValidationDispatcher(
     private val requests: TaskValidationRequestRepository,
@@ -31,7 +31,7 @@ class TaskValidationDispatcher(
      * Subscribes to grading results and schedules every active request after resending its unfinished submissions.
      * Called once at application startup, before requests are scheduled.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun start() {
         grader.subscribeOnGraded { submissionId -> executor.execute { reported { onGraded(submissionId) } } }
@@ -49,7 +49,7 @@ class TaskValidationDispatcher(
      * Schedules processing of [requestId] without waiting for it; a request already waiting to be processed
      * is not scheduled twice.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun schedule(requestId: TaskValidationRequestId) {
         if (scheduled.add(requestId)) executor.execute { reported { process(requestId) } }

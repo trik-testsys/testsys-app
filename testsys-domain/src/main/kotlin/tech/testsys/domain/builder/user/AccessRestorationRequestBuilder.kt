@@ -18,7 +18,7 @@ import java.time.Instant
  * @property confirmationCode the confirmation code, or `null` if not set yet.
  * @property expiresAt the moment the confirmation code expires, or `null` if not set yet.
  * @property attemptsLeft the number of remaining attempts, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class AccessRestorationRequestDataBuilder : Builder<AccessRestorationRequestData> {
 
@@ -33,7 +33,7 @@ class AccessRestorationRequestDataBuilder : Builder<AccessRestorationRequestData
     /**
      * Sets [user] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun user(user: Long) {
         this.user = MultipleRoleUserId(user)
@@ -50,7 +50,7 @@ class AccessRestorationRequestDataBuilder : Builder<AccessRestorationRequestData
 /**
  * Builder of [AccessRestorationRequest] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class AccessRestorationRequestBuilder :
     DomainEntityWithDataBuilder<AccessRestorationRequest, AccessRestorationRequestData, AccessRestorationRequestDataBuilder>() {

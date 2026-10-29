@@ -60,7 +60,7 @@ private const val RESOURCE_CONTENT_TYPE = "application/octet-stream"
  * exercises to download, the time left, sending a solution in an allowed language and the sent solutions with their results,
  * the best of them marked. Each kind of user has its own page with its own route and texts.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class StudyTaskView(
     private val headers: CabinetHeaders,
@@ -278,7 +278,7 @@ abstract class StudyTaskView(
 /**
  * Task of a contest of a class of a Student (testsys.web.page.study.task).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("student/classes/:classId([0-9]+)/contests/:contestId([0-9]+)/tasks/:taskId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -298,7 +298,7 @@ class StudentTaskView(
 /**
  * Task of a contest of the competition of a Participant (testsys.web.page.study.task).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("participant/contests/:contestId([0-9]+)/tasks/:taskId([0-9]+)")
 @RolesAllowed("PARTICIPANT")

@@ -35,7 +35,7 @@ private const val CONTEST_DETAILS_COLUMNS = 16
  * Contest of a Participant or a Student (testsys.web.page.study.contest): its details, starting it, the time left and its
  * tasks, which open after the start. Each kind of user has its own page with its own route and texts.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class StudyContestView(private val headers: CabinetHeaders, private val clock: Clock) :
     TestSysView(),
@@ -127,7 +127,7 @@ abstract class StudyContestView(private val headers: CabinetHeaders, private val
 /**
  * Contest of a class of a Student (testsys.web.page.study.contest).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("student/classes/:classId([0-9]+)/contests/:contestId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -146,7 +146,7 @@ class StudentContestView(
 /**
  * Contest of the competition of a Participant (testsys.web.page.study.contest).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("participant/contests/:contestId([0-9]+)")
 @RolesAllowed("PARTICIPANT")

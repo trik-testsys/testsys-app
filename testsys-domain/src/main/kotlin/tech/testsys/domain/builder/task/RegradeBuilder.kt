@@ -18,7 +18,7 @@ import tech.testsys.domain.model.task.TestId
  * @property task the id of the regraded task, or `null` if not set yet.
  * @property tests the ids of the polygons of the committed revision.
  * @property submissions the ids of the submissions sent to grading again.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RegradeDataBuilder : Builder<RegradeData> {
 
@@ -31,7 +31,7 @@ class RegradeDataBuilder : Builder<RegradeData> {
     /**
      * Sets [task] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun task(task: Long) {
         this.task = TaskId(task)
@@ -40,7 +40,7 @@ class RegradeDataBuilder : Builder<RegradeData> {
     /**
      * Sets [tests] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tests(tests: Iterable<Long>) {
         this.tests = tests.map { TestId(it) }.toMutableList()
@@ -49,7 +49,7 @@ class RegradeDataBuilder : Builder<RegradeData> {
     /**
      * Sets [submissions] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun submissions(submissions: Iterable<Long>) {
         this.submissions = submissions.map { SubmissionId(it) }.toMutableList()
@@ -69,7 +69,7 @@ class RegradeDataBuilder : Builder<RegradeData> {
 /**
  * Builder of [Regrade] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RegradeBuilder : DomainEntityWithDataBuilder<Regrade, RegradeData, RegradeDataBuilder>() {
 

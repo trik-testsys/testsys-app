@@ -17,7 +17,7 @@ import java.util.UUID
  * Lifecycle state of a [TaskJpaEntity]: [NEW] has no committed revision, [UNCOMMITTED] has WIP changes over the last
  * one, [COMMITTED] equals it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class TaskStatusJpaEnum {
@@ -31,7 +31,7 @@ enum class TaskStatusJpaEnum {
  *
  * @property exerciseId id of the exercise.
  * @property taskContentId id of the task content revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -43,7 +43,7 @@ data class ExerciseToTaskContentId(
 /**
  * Join row: a [ExerciseJpaEntity] belongs to a [TaskContentJpaEntity] revision.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -55,7 +55,7 @@ class ExerciseToTaskContentJpaEntity(id: ExerciseToTaskContentId) : CompositeJpa
  *
  * @property testId id of the test.
  * @property taskContentId id of the task content revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -67,7 +67,7 @@ data class TestToTaskContentId(
 /**
  * Join row: a [TestJpaEntity] belongs to a [TaskContentJpaEntity] revision.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -79,7 +79,7 @@ class TestToTaskContentJpaEntity(id: TestToTaskContentId) : CompositeJpaEntity<T
  *
  * @property developerSolutionId id of the developer solution.
  * @property taskContentId id of the task content revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -91,7 +91,7 @@ data class DeveloperSolutionToTaskContentId(
 /**
  * Join row: a [DeveloperSolutionJpaEntity] belongs to a [TaskContentJpaEntity] revision.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -104,7 +104,7 @@ class DeveloperSolutionToTaskContentJpaEntity(id: DeveloperSolutionToTaskContent
  *
  * @property trikStudioVersionId id of the TRIK Studio version.
  * @property taskContentId id of the task content revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -116,7 +116,7 @@ data class TrikStudioVersionToTaskContentId(
 /**
  * Join row: a [TrikStudioVersionJpaEntity] is supported by a [TaskContentJpaEntity] revision.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -129,7 +129,7 @@ class TrikStudioVersionToTaskContentJpaEntity(id: TrikStudioVersionToTaskContent
  *
  * @property communityId id of the community.
  * @property taskId id of the task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -141,7 +141,7 @@ data class CommunityToTaskId(
 /**
  * Join row: a task is shared to a community (`TaskData.sharedTo`).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -153,7 +153,7 @@ class CommunityToTaskJpaEntity(id: CommunityToTaskId) : CompositeJpaEntity<Commu
  * solutions and TRIK Studio versions are attached through the `*ToTaskContentJpaEntity` join rows.
  *
  * @property statementId id of the [StatementJpaEntity], or `null` if not attached yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -171,7 +171,7 @@ class TaskContentJpaEntity(
  * @property status lifecycle state of the task.
  * @property wipContentId id of the WIP revision.
  * @property committedContentId id of the last committed revision, or `null` while [status] is [TaskStatusJpaEnum.NEW].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -192,7 +192,7 @@ class TaskJpaEntity(
  *
  * @property taskId id of the task.
  * @property versionBucket the uploaded resource version chain.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -204,7 +204,7 @@ data class VersionBucketToTaskId(
 /**
  * Join row recording the task to which a resource version chain is currently uploaded.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor

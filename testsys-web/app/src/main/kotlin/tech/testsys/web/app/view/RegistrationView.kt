@@ -36,7 +36,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * with the password; after registration the new user is signed in by the e-mail address and the password and opens the
  * main page. Links lead back to signing in.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("registration")
 @AnonymousAllowed

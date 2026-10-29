@@ -56,7 +56,7 @@ private const val DETAILS_COLUMNS = 14
  * Contest of a Developer (testsys.web.page.developer.contest): its details, tasks and access of communities. Only the
  * owner changes the contest, and only until access is shared; otherwise the page explains why it cannot be changed.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("developer/contests/:contestId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

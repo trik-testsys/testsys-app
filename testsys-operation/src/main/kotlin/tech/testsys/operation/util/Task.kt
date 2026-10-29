@@ -19,7 +19,7 @@ import tech.testsys.operation.error.raise
  * [TaskContent.Committed] content.
  *
  * @param E the type of the error returned for a committed task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun <E : OperationError> Task.getWip(onCommited: E): OperationResult<WipTaskContent, E> = operation {
@@ -35,7 +35,7 @@ fun <E : OperationError> Task.getWip(onCommited: E): OperationResult<WipTaskCont
  * if the task has [TaskContent.Committed] content.
  *
  * @param E the type of the error returned for a committed task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun <E : OperationError> Task.changeWip(onCommited: E, change: WipTaskContentBuilder.() -> Unit): OperationResult<Task, E> = operation {
@@ -57,7 +57,7 @@ fun <E : OperationError> Task.changeWip(onCommited: E, change: WipTaskContentBui
 /**
  * Returns the editable content, copying the last committed revision when this task has no WIP revision yet.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun Task.getEditableContent(): WipTaskContent = when (val content = data.content) {
@@ -70,7 +70,7 @@ fun Task.getEditableContent(): WipTaskContent = when (val content = data.content
  * Applies [change] to the WIP revision, creating it from the last committed revision when necessary.
  * Preserves task metadata, uploaded chains, the optimistic locking token and the last committed content.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun Task.changeEditableContent(change: WipTaskContentBuilder.() -> Unit): Task = withData {

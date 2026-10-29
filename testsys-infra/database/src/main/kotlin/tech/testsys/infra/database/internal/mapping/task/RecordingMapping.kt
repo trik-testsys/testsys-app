@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.utils.populateFields
 /**
  * Mapping between [Recording] and [RecordingJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object RecordingMapping : EntityMapping<Recording, RecordingJpaEntity> {
@@ -21,7 +21,7 @@ object RecordingMapping : EntityMapping<Recording, RecordingJpaEntity> {
     /**
      * Assembles a [Recording] from [jpaEntity] and its [file].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: RecordingJpaEntity, file: FileData) = recording {
         populateFields(jpaEntity)
@@ -34,7 +34,7 @@ object RecordingMapping : EntityMapping<Recording, RecordingJpaEntity> {
     /**
      * Creates a new [RecordingJpaEntity] row from [data] referencing the stored file [fileDataId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: RecordingData, fileDataId: Long) = RecordingJpaEntity(
         fileDataId = fileDataId,

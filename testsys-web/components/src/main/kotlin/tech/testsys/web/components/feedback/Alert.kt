@@ -20,7 +20,7 @@ import tech.testsys.web.components.layout.ContentScope
 /**
  * Adds an inline message of [kind] with a [title] and an optional [text].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.alert(kind: FeedbackKind, title: String, text: String? = null): ElementHandle =
     ElementHandle(buildAlert(kind, title, text).also { alert -> add(alert) })
@@ -28,7 +28,7 @@ fun ContentScope.alert(kind: FeedbackKind, title: String, text: String? = null):
 /**
  * Adds an inline message of [kind] on [size] columns of the row, or on the rest of it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.alert(kind: FeedbackKind, title: String, text: String? = null, size: Int? = null): ElementHandle =
     ElementHandle(place(size, buildAlert(kind, title, text)))

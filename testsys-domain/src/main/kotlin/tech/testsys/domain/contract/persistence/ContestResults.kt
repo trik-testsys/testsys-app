@@ -12,7 +12,7 @@ import tech.testsys.domain.model.user.UserId
  * @property bestScore the highest result among submissions with a successful verdict, or `null` if there are none.
  * @property submissionCount the number of submissions in any grading state.
  * @throws IllegalArgumentException if [submissionCount] is not positive.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestTaskResult(
     val authorId: UserId,
@@ -34,7 +34,7 @@ data class ContestTaskResult(
  *
  * @property submissions the number of submissions in any grading state.
  * @property authors the number of distinct authors with at least one of these submissions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionCount(
     val submissions: Long,

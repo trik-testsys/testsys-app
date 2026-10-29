@@ -18,7 +18,7 @@ import java.util.Properties
  * Hibernate [BeforeExecutionGenerator] behind [SnowflakeId], reading [NODE_ID_SETTING] in [configure].
  * It keeps a supplied id only for [CommunityJpaEntity]; other entities receive generated ids.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 class HibernateSnowflakeIdGenerator(

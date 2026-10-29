@@ -8,13 +8,13 @@ import org.springframework.core.env.Environment
  *
  * @property address the listener address.
  * @property port the listener port; zero requests a random port in tests.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class MetricsWebSettings(val address: String, val port: Int) {
     /**
      * Binds the metrics server settings before any infrastructure starts.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     companion object {
         private const val MAXIMUM_PORT = 65_535
@@ -23,7 +23,7 @@ data class MetricsWebSettings(val address: String, val port: Int) {
          * Binds and validates `testsys.metrics.address` and `testsys.metrics.port` from [environment].
          *
          * @throws org.springframework.boot.context.properties.bind.BindException if a value is missing or cannot be converted.
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         fun from(environment: Environment): MetricsWebSettings {
             val settings = Binder.get(environment).bindOrCreate("testsys.metrics", MetricsWebSettings::class.java)

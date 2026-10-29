@@ -16,7 +16,7 @@ import tech.testsys.web.service.security.ServiceSignInResult
 /**
  * Service login on the guest card with one secret field, cleared after every submitted attempt.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("login")
 @PageTitle("Служебный вход")

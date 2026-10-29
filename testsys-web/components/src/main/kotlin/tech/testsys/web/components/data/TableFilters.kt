@@ -37,7 +37,7 @@ import java.util.UUID
 /**
  * Scope of table filter fields, built from the ordinary block row DSL.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class TableFiltersScope internal constructor(
@@ -49,7 +49,7 @@ class TableFiltersScope internal constructor(
     /**
      * Adds a row of ordinary fields on the block columns.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun row(content: BlockRowScope.() -> Unit) {
         val row = Div().apply { addClassName(CssClass.BlockRow) }
@@ -62,7 +62,7 @@ class TableFiltersScope internal constructor(
  * Handle of the table filter panel, whose fields retain their draft when collapsed.
  *
  * @property isExpanded whether the filter fields and actions are shown.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TableFiltersHandle internal constructor(
     component: Div,
@@ -88,7 +88,7 @@ class TableFiltersHandle internal constructor(
  * @param onRefresh refreshes the first table page after successful application or resetting.
  * @param content declares ordinary fields in rows.
  * @throws IllegalStateException if the block already has filters, or this is the content of a load.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockScope.filters(
     onApply: () -> Boolean,

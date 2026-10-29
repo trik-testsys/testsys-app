@@ -11,7 +11,7 @@ import tech.testsys.web.components.error.NotFoundPage
 /**
  * Missing-route handler backed by the shared branded page.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @AnonymousAllowed
 class ServiceNotFoundView : NotFoundPage(), HasErrorParameter<NotFoundException> {

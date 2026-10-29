@@ -19,7 +19,7 @@ import java.time.Instant
  * @property confirmationCode the confirmation code, or `null` if not set yet.
  * @property expiresAt the moment the confirmation code expires, or `null` if not set yet.
  * @property attemptsLeft the number of remaining attempts, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class EmailChangeRequestDataBuilder : Builder<EmailChangeRequestData> {
 
@@ -36,7 +36,7 @@ class EmailChangeRequestDataBuilder : Builder<EmailChangeRequestData> {
     /**
      * Sets [user] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun user(user: Long) {
         this.user = MultipleRoleUserId(user)
@@ -54,7 +54,7 @@ class EmailChangeRequestDataBuilder : Builder<EmailChangeRequestData> {
 /**
  * Builder of [EmailChangeRequest] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class EmailChangeRequestBuilder :
     DomainEntityWithDataBuilder<EmailChangeRequest, EmailChangeRequestData, EmailChangeRequestDataBuilder>() {

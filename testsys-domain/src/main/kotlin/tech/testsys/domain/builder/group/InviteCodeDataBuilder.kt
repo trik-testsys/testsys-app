@@ -9,7 +9,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
  * Base class of invite data builders. Required: [code] or [storedCode].
  *
  * @param Data the type of the built invite data.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class InviteCodeDataBuilder<Data> : Builder<Data> {
 
@@ -18,7 +18,7 @@ abstract class InviteCodeDataBuilder<Data> : Builder<Data> {
     /**
      * Hashes [rawInviteCode] with [algorithm] and sets its stored value and algorithm together.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun code(rawInviteCode: String, algorithm: HashAlgorithm) {
         codeHash = InviteCodeHash.hashInviteCode(rawInviteCode = rawInviteCode, algorithm = algorithm)
@@ -27,7 +27,7 @@ abstract class InviteCodeDataBuilder<Data> : Builder<Data> {
     /**
      * Restores [hash] from stored data without hashing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun storedCode(hash: InviteCodeHash) {
         codeHash = hash

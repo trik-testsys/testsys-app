@@ -43,7 +43,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * Persistence adapter searching [User] entities of every kind and recording their logins in [UserJpaEntity] rows.
  * Found users are assembled by [MultipleRoleUserRepository] and [ObserverRepository].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

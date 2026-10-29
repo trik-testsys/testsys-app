@@ -24,7 +24,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * password and a fixed-role user by the access code, chosen by a switch on the guest card, then opens the page saved
  * before signing in, or the start page of the user. Links lead to access restoration and registration.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("login")
 @AnonymousAllowed

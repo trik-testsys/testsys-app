@@ -10,7 +10,7 @@ import tech.testsys.web.components.layout.ContentScope
 /**
  * Adds a paragraph of plain text.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.text(value: String): TextHandle = textHandle(Div(value).also { paragraph -> add(paragraph) })
 
@@ -18,14 +18,14 @@ fun ContentScope.text(value: String): TextHandle = textHandle(Div(value).also { 
  * Adds a paragraph of text that follows [signal]; a manual [TextHandle.text] afterwards throws
  * [BindingActiveException].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.text(signal: Signal<String>): TextHandle = bindTextHandle(Div().also { paragraph -> add(paragraph) }, signal)
 
 /**
  * Adds a paragraph of plain text on [size] columns of the row, or on the rest of it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.text(value: String, size: Int? = null): TextHandle = textHandle(place(size, Div(value)))
 
@@ -33,7 +33,7 @@ fun BlockRowScope.text(value: String, size: Int? = null): TextHandle = textHandl
  * Adds a paragraph on [size] columns of the row, or on the rest of it, that follows [signal]; a manual
  * [TextHandle.text] afterwards throws [BindingActiveException].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.text(signal: Signal<String>, size: Int? = null): TextHandle = bindTextHandle(place(size, Div()), signal)
 

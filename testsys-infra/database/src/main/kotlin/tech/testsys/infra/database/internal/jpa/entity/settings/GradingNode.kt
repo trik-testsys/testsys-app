@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property address the unique gRPC target of the node.
  * @property isActive whether the node participates in grading.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @Table(uniqueConstraints = [UniqueConstraint(name = "uk_ts_grading_node_address", columnNames = ["address"])])

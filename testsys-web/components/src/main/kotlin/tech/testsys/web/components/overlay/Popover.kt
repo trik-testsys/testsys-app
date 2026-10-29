@@ -24,20 +24,20 @@ import tech.testsys.web.components.layout.Placement
 /**
  * Alignment of a popup relative to its trigger.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class PopoverAlignment {
     /**
      * Aligns the left edges.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Start,
 
     /**
      * Aligns the right edges.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     End,
 }
@@ -47,7 +47,7 @@ enum class PopoverAlignment {
  *
  * @property isOpen whether the popup is open.
  * @property isEnabled whether its trigger accepts interaction.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class PopoverHandle internal constructor(root: Div, private val popup: Popover, private val trigger: Button) : ElementHandle(root) {
     private var closed: () -> Unit = {}
@@ -73,7 +73,7 @@ class PopoverHandle internal constructor(root: Div, private val popup: Popover, 
     /**
      * Opens the popup if its trigger is enabled and visible.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun open() {
         if (isEnabled && isVisible) popup.open()
@@ -82,7 +82,7 @@ class PopoverHandle internal constructor(root: Div, private val popup: Popover, 
     /**
      * Closes the popup.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun close() {
         popup.close()
@@ -91,7 +91,7 @@ class PopoverHandle internal constructor(root: Div, private val popup: Popover, 
     /**
      * Replaces the closing [listener].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onClose(listener: () -> Unit) {
         closed = listener
@@ -103,7 +103,7 @@ class PopoverHandle internal constructor(root: Div, private val popup: Popover, 
  *
  * @param configure the returned popup configuration.
  * @param content the popup body composition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.popover(
     label: String,
@@ -140,7 +140,7 @@ fun ContentScope.popover(
  *
  * @param configure the returned popup configuration.
  * @param content the popup body composition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.popover(
     label: String,

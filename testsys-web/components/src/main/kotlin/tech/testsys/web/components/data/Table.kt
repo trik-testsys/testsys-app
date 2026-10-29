@@ -21,7 +21,7 @@ internal const val DEFAULT_PAGE_SIZE: Int = 20
  * @property selected the keys of the selected rows, kept across pages.
  * @property selection the keys of the selected rows as a read-only signal; changes with every change of the
  * selection, including [clearSelection].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
@@ -58,14 +58,14 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
      * Binds [isVisible] to [signal]: every value it produces is shown at once. A manual [isVisible] while bound,
      * and a second binding, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindVisible(signal: Signal<Boolean>): SignalBinding<Boolean> = visible.bind(signal)
 
     /**
      * Unselects all rows.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun clearSelection() {
         table.clearSelection()
@@ -74,7 +74,7 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
     /**
      * Runs [listener] with the keys of the selected rows after every change of the selection.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onSelectionChange(listener: (Set<Any>) -> Unit) {
         table.onSelectionChange = listener
@@ -85,7 +85,7 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
      * called from any thread: the fetch runs in the UI thread. A closed page ignores the call; a detached table, e.g.
      * after navigation to another route, fetches nothing until it is attached again and then refreshes once.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun refresh(toFirstPage: Boolean = false) {
         val shownBy = ui
@@ -121,7 +121,7 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
  * @param T the type of the rows.
  * @throws IllegalArgumentException if [pageSize] is below one or the table declares no columns.
  * @throws IllegalStateException if the block already holds rows, a table, an empty state or a load.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T> BlockScope.table(
     key: (T) -> Any,

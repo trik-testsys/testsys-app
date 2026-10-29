@@ -10,7 +10,7 @@ import java.time.Duration
 /**
  * Configures the [LoginAttemptLimiter] shared by the sign-in ways of the main interface.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 class SignInLimitConfiguration {
@@ -18,7 +18,7 @@ class SignInLimitConfiguration {
      * Limiter closing a key for `testsys.web.sign-in-limit.duration` once its failures within that time reach
      * `testsys.web.sign-in-limit.failures`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun loginAttemptLimiter(environment: Environment, clock: Clock): LoginAttemptLimiter {

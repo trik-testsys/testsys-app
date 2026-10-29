@@ -13,7 +13,7 @@ import kotlin.reflect.KProperty0
  *
  * @param Id the identifier type of the referenced entities.
  * @param Entity the type of the referenced entities.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <Id : DomainId, Entity : DomainEntity<Id>> List<Id>.lazify() = LazyEntityList<Id, Entity>(this)
 
@@ -22,7 +22,7 @@ fun <Id : DomainId, Entity : DomainEntity<Id>> List<Id>.lazify() = LazyEntityLis
  *
  * @param Id the identifier type of the referenced entity.
  * @param Entity the type of the referenced entity.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <Id : DomainId, Entity : DomainEntity<Id>> Id.lazify() = LazyEntity<Id, Entity>(this)
 

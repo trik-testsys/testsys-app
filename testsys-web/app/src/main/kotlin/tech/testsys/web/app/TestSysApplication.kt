@@ -16,7 +16,7 @@ import tech.testsys.web.app.config.OperationsConfiguration
  * Main web child using its parent's infrastructure and explicit auto-configuration imports.
  * The application annotation also lets development tools discover this child.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringBootApplication
 @ComponentScan(
@@ -34,7 +34,7 @@ class TestSysApplication
 /**
  * Starts the infrastructure and both web applications with one shutdown hook.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun main(args: Array<String>) {
     TestSysRuntime.start(args).installShutdownHook()

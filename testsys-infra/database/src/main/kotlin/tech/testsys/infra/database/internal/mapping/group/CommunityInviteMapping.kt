@@ -19,7 +19,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 /**
  * Mapping between [CommunityInvite] and [CommunityInviteJpaEntity]; the `role` column selects the variant.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object CommunityInviteMapping : EntityMapping<CommunityInvite, CommunityInviteJpaEntity> {
@@ -27,7 +27,7 @@ object CommunityInviteMapping : EntityMapping<CommunityInvite, CommunityInviteJp
     /**
      * Assembles the [CommunityInvite] variant selected by the role of [jpaEntity] without hashing its stored code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: CommunityInviteJpaEntity): CommunityInvite = when (jpaEntity.role) {
         CommunityInviteRoleJpaEnum.MANAGER -> toManager(jpaEntity)
@@ -37,7 +37,7 @@ object CommunityInviteMapping : EntityMapping<CommunityInvite, CommunityInviteJp
     /**
      * Assembles a [CommunityInvite.Manager] from [jpaEntity] of the manager role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toManager(jpaEntity: CommunityInviteJpaEntity): CommunityInvite.Manager {
         require(jpaEntity.role == CommunityInviteRoleJpaEnum.MANAGER) {
@@ -49,7 +49,7 @@ object CommunityInviteMapping : EntityMapping<CommunityInvite, CommunityInviteJp
     /**
      * Assembles a [CommunityInvite.Developer] from [jpaEntity] of the developer role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDeveloper(jpaEntity: CommunityInviteJpaEntity): CommunityInvite.Developer {
         require(jpaEntity.role == CommunityInviteRoleJpaEnum.DEVELOPER) {
@@ -61,7 +61,7 @@ object CommunityInviteMapping : EntityMapping<CommunityInvite, CommunityInviteJp
     /**
      * Creates a new [CommunityInviteJpaEntity] row of [kind] from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: CommunityInviteData, kind: CommunityInvite.Kind) = CommunityInviteJpaEntity(
         role = kind.toJpaEnum(),
@@ -73,7 +73,7 @@ object CommunityInviteMapping : EntityMapping<CommunityInvite, CommunityInviteJp
     /**
      * Creates the [CommunityInviteJpaEntity] row replacing [current] from [entity], keeping `role`, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: CommunityInvite, current: CommunityInviteJpaEntity) = CommunityInviteJpaEntity(
         role = current.role,

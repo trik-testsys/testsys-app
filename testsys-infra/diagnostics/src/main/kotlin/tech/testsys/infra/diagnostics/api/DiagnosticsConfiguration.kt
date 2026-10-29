@@ -14,7 +14,7 @@ import tech.testsys.infra.settings.api.settingsOf
 /**
  * Registers the synchronous polygon adapter and its application configuration.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 @ComponentScan(basePackages = ["tech.testsys.infra.diagnostics.api", "tech.testsys.infra.diagnostics.internal"])

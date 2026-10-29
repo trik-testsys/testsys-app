@@ -16,7 +16,7 @@ import java.time.Instant
  * @property userKind the name of the kind of the signed-in user, `SERVICE` for the service interface.
  * @property impersonatedBy the raw id of the supervisor signed in as the user, or `null`.
  * @property lastSeenAt the moment of the last request of the sign-in, recorded at most once a minute.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @Table(uniqueConstraints = [UniqueConstraint(name = "uk_ts_cabinet_sign_in_token_hash", columnNames = ["token_hash"])])

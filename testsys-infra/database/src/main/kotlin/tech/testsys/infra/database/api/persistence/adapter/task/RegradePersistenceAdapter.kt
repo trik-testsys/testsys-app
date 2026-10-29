@@ -27,7 +27,7 @@ import tech.testsys.infra.database.internal.utils.requireId
  * Tests and submissions are stored in join tables on save and dropped on remove after the regrade version is
  * incremented; a regrade is fixed on creation, so [update] always fails.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

@@ -30,7 +30,7 @@ import java.time.Instant
  * Persistence adapter of [TaskValidationRequest] entities backed by [TaskValidationRequestJpaEntity].
  * [findOrCreateActive] guards the task version to prevent concurrent creation of identical active snapshots.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

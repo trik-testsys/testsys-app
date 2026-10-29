@@ -12,7 +12,7 @@ import java.nio.file.Path
  * @property solution the path of solution files, including developer solutions.
  * @property recording the path of recording files.
  * @property logs the path of logs files.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class FileStoragePaths(
     val statement: Path,

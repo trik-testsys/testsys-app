@@ -9,7 +9,7 @@ import java.time.Instant
 /**
  * Identifier of a [Regrade].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class RegradeId(
@@ -22,7 +22,7 @@ value class RegradeId(
  * @property task the task whose submissions were sent to grading again; fixed on creation.
  * @property tests the polygons of the committed revision that caused the regrade; fixed on creation.
  * @property submissions the submissions sent to grading again; fixed on creation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class RegradeData(
     val task: LazyEntity<TaskId, Task>,
@@ -35,7 +35,7 @@ data class RegradeData(
  * moment is the moment the submissions were sent.
  *
  * @property data the data of the regrade.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Regrade(
     id: RegradeId,

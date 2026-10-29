@@ -8,7 +8,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  * JPA entity of the administrator role data.
  *
  * @property userId id of the user holding the role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

@@ -5,7 +5,7 @@ package tech.testsys.infra.database.codegen.api.jpa
  * and taking the fields of its composite id. The class must have a single primary constructor parameter `id: T`, where `T`
  * is a `data class` with `val`-only primary constructor parameters.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)

@@ -5,7 +5,7 @@ package tech.testsys.web.components
  *
  * @property DESIGN_SYSTEM tokens and `.ts-*` classes packaged as public UI resources.
  * @property VAADIN_OVERRIDES the mapping of Lumo and Vaadin components onto the design system tokens.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 object TestSysTheme {
     const val DESIGN_SYSTEM: String = "testsys-ui/styles/styles.css"

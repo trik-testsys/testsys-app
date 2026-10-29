@@ -15,7 +15,7 @@ import tech.testsys.web.components.texts.UiLocalization
  * Scope of a flow of content without sizes: head, footer and row groups of a block, the value of a field, table cells,
  * dialog footers, page head actions and empty state actions.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class ContentScope internal constructor(
@@ -26,7 +26,7 @@ class ContentScope internal constructor(
     /**
      * Lays out [content] in a line with the standard gap, wrapping it when it does not fit.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun horizontal(content: ContentScope.() -> Unit) {
         group(CssClass.Hstack, content)
@@ -35,7 +35,7 @@ class ContentScope internal constructor(
     /**
      * Lays out [content] in a column with the standard gap.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun vertical(content: ContentScope.() -> Unit) {
         group(CssClass.Vstack, content)

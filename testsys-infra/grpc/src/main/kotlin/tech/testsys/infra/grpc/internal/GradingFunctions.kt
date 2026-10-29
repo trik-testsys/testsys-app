@@ -122,7 +122,7 @@ private fun checkFields(fields: List<Proto.FieldResult>, expectedTests: List<Tes
 /**
  * Pure log scoring extension for the grading adapter.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalGrpcApi
 fun interface LogParser {
@@ -131,7 +131,7 @@ fun interface LogParser {
      *
      * @param content the raw bytes of the node's log file.
      * @return the score, or `null` if the format or numeric value is invalid.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun parse(content: ByteArray): Score?
 }

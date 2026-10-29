@@ -40,7 +40,7 @@ private const val SIGN_IN_COOKIE = "TESTSYS_APP_SIGN_IN"
  * and sends a guest to [AuthenticationView], and executor tasks run with the security and log contexts of their submitter.
  * Pages sign users in through [CabinetSignIn], kept over restarts by [RememberedSignIns]; signing out leads to the root.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 @EnableWebSecurity
@@ -54,7 +54,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
      * Decorator of the application executor tasks that runs each task with the security context and the log context
      * of its submitter.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun securityContextTaskDecorator(): TaskDecorator = TaskDecorator { task ->
@@ -74,7 +74,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
     /**
      * Publisher of the HTTP session events of the servlet container as application events.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun httpSessionEventPublisher(): HttpSessionEventPublisher = HttpSessionEventPublisher()
@@ -83,7 +83,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
      * Remembered sign-ins of the main interface in the cookie `TESTSYS_APP_SIGN_IN`, idle for at most the session
      * timeout.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun cabinetSignIns(): RememberedSignIns = signIns
@@ -92,7 +92,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
      * Keeps [sessionDestroyed] from deleting the remembered sign-ins of the sessions closed by the shutdown of [event]:
      * they stay and are restored after the restart.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @EventListener
     fun contextClosed(event: ContextClosedEvent) {
@@ -104,7 +104,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
      * a supervisor signed in as a user (testsys.user.single.supervisor.impersonate). A sign-in already deleted
      * elsewhere is not recorded again; one still remembered at the shutdown stays and is not recorded.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @EventListener
     fun sessionDestroyed(event: HttpSessionDestroyedEvent) {
@@ -120,7 +120,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
     /**
      * Navigation access control checking the access annotations of the pages with [AuthenticationView] as login view.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun navigationAccessControlConfigurer(): NavigationAccessControlConfigurer = NavigationAccessControlConfigurer()
@@ -131,7 +131,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
      * Registry of the cabinet sessions in the memory of this instance, filled by [CabinetSignIn] and used by
      * [CabinetSessions] to end the sessions of a user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
@@ -140,7 +140,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
      * Filter chain with the Vaadin defaults except the HTTP access rules: every request is permitted, a guest session is
      * restored from [cabinetSignIns] into [sessionRegistry], and an expired or signed-out session leads to the root.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun securityFilterChain(http: HttpSecurity, sessionRegistry: SessionRegistry, cabinetSignIns: RememberedSignIns): SecurityFilterChain {

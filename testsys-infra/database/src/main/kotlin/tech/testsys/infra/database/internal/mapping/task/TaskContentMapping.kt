@@ -21,7 +21,7 @@ import tech.testsys.infra.database.internal.utils.requireId
  * Mapping between one content revision of a task, [WipTaskContent] or [CommittedTaskContent], and [TaskContentJpaEntity];
  * the sealed `TaskContent` is composed by [TaskMapping].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object TaskContentMapping {
@@ -29,7 +29,7 @@ object TaskContentMapping {
     /**
      * Fills [builder] with the work-in-progress [revision]; exercises may be empty and the statement reference may be missing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun populateWip(builder: WipTaskContentBuilder, revision: TaskContentRevision) {
         revision.jpaEntity.requireId()
@@ -40,7 +40,7 @@ object TaskContentMapping {
     /**
      * Fills [builder] with the committed [revision]; fails when exercises are empty or the statement reference is missing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun populateCommitted(builder: CommittedTaskContentBuilder, revision: TaskContentRevision) {
         require(revision.exerciseIds.isNotEmpty()) {
@@ -56,7 +56,7 @@ object TaskContentMapping {
     /**
      * Creates a new [TaskContentJpaEntity] row for the WIP [content].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(content: WipTaskContent) = TaskContentJpaEntity(
         statementId = content.statement?.id?.value,
@@ -65,7 +65,7 @@ object TaskContentMapping {
     /**
      * Creates a new [TaskContentJpaEntity] row for the committed [content].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(content: CommittedTaskContent) = TaskContentJpaEntity(
         statementId = content.statement.id.value,
@@ -74,7 +74,7 @@ object TaskContentMapping {
     /**
      * Creates the [ExerciseToTaskContentJpaEntity] rows linking the revision [taskContentId] with [exerciseIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toExerciseAssociations(taskContentId: Long, exerciseIds: List<ExerciseId>) = exerciseIds.distinct().map {
         ExerciseToTaskContentJpaEntity(exerciseId = it.value, taskContentId = taskContentId)
@@ -83,7 +83,7 @@ object TaskContentMapping {
     /**
      * Creates the [TestToTaskContentJpaEntity] rows linking the revision [taskContentId] with [testIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toTestAssociations(taskContentId: Long, testIds: List<TestId>) = testIds.distinct().map {
         TestToTaskContentJpaEntity(testId = it.value, taskContentId = taskContentId)
@@ -93,7 +93,7 @@ object TaskContentMapping {
      * Creates the [DeveloperSolutionToTaskContentJpaEntity] rows linking the revision [taskContentId] with
      * [developerSolutionIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDeveloperSolutionAssociations(taskContentId: Long, developerSolutionIds: List<DeveloperSolutionId>) =
         developerSolutionIds.distinct().map {
@@ -104,7 +104,7 @@ object TaskContentMapping {
      * Creates the [TrikStudioVersionToTaskContentJpaEntity] rows linking the revision [taskContentId] with
      * [trikStudioVersionIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toTrikStudioVersionAssociations(taskContentId: Long, trikStudioVersionIds: List<Long>) = trikStudioVersionIds.distinct().map {
         TrikStudioVersionToTaskContentJpaEntity(trikStudioVersionId = it, taskContentId = taskContentId)
@@ -126,7 +126,7 @@ object TaskContentMapping {
  * @property testIds the ids of the tests linked to the revision.
  * @property developerSolutionIds the ids of the developer solutions linked to the revision.
  * @property supportedVersions the TRIK Studio versions linked to the revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 data class TaskContentRevision(

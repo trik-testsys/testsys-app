@@ -27,7 +27,7 @@ import java.util.UUID
  * [FileDataStorage] stores its file in [FileStorageKind.Test]; [update] rejects replacing it
  * with [UnsupportedOperationException].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

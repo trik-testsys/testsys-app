@@ -10,7 +10,7 @@ import tech.testsys.web.components.core.Bindable
  *
  * @param T the type of display data.
  * @property data the currently presented data; manual changes while bound throw the usual binding exception.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DataHandle<T> internal constructor(component: Component, initial: T, render: (T) -> Unit) : ElementHandle(component) {
     private val state = Bindable(component.element, initial, render)
@@ -23,7 +23,7 @@ class DataHandle<T> internal constructor(component: Component, initial: T, rende
     /**
      * Binds the displayed data to [signal] while the component is attached.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindData(signal: Signal<T>): SignalBinding<T> = state.bind(signal)
 }

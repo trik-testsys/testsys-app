@@ -11,7 +11,7 @@ import org.springframework.transaction.support.TransactionTemplate
  *
  * @param transactionManager the manager that opens the transactions.
  * @property retry the policy that repeats conflicting transactions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RetryingTransactionOperations(
     transactionManager: PlatformTransactionManager,

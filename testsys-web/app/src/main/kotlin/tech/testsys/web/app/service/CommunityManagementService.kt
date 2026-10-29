@@ -10,55 +10,55 @@ import tech.testsys.web.app.service.administrator.CommunityInviteVo
 /**
  * Community data and actions shared by administrator and supervisor pages under their own access rules.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface CommunityManagementService : UserListingService {
     /**
      * Lists visible communities with user counts.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewCommunities(): List<Pair<CommunityVo, Long>>
 
     /**
      * Edits a visible community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun editCommunity(communityId: CommunityId, communityName: String, description: String): CommunityVo
 
     /**
      * Reads both invite codes.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewCommunityInvites(communityId: CommunityId): List<CommunityInviteVo>
 
     /**
      * Replaces an invite code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createCommunityInvite(communityId: CommunityId, kind: CommunityInvite.Kind): CommunityInviteVo
 
     /**
      * Extends an invite code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun extendCommunityInvite(communityId: CommunityId, kind: CommunityInvite.Kind): CommunityInviteVo
 
     /**
      * Finds contests shared to the community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewCommunityContests(communityId: CommunityId, pagination: Pagination, name: String? = null): Page<ContestVo>
 
     /**
      * Creates an observer and returns it with its original access code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): IssuedObserverVo
 }

@@ -10,7 +10,7 @@ import java.util.UUID
  * JPA entity of [tech.testsys.domain.model.task.Exercise].
  *
  * @property language programming language of the exercise.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

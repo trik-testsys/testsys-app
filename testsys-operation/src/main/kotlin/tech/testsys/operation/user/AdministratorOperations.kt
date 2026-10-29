@@ -119,7 +119,7 @@ private const val MAX_COMMUNITY_NAME_CODE_POINTS = 255
 /**
  * Operations of a user with the [Administrator] role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class AdministratorOperations(
@@ -150,7 +150,7 @@ class AdministratorOperations(
      * Only contests shared to that community or the public community are allowed; the original fresh access code is
      * returned with the saved observer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.createObserver")
     fun createObserver(
@@ -192,7 +192,7 @@ class AdministratorOperations(
      * Returns a [pagination] page matching [filter] of users of communities created by [user], preserving stored state.
      * Missing administrator role is an expected failure; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUsers")
     fun viewUsers(
@@ -211,7 +211,7 @@ class AdministratorOperations(
      * Returns [userId] with all its stored data and its last login, or `null` without one, if it is available to [user],
      * preserving stored state. Missing role, user and access are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUser(user: MultipleRoleUser, userId: UserId): OperationResult<Pair<User<*>, Instant?>, ViewUserError> =
@@ -230,7 +230,7 @@ class AdministratorOperations(
      * Returns the tasks created by [userId] viewed as in [viewUser], each with its latest validation request, or `null`
      * if never validated, and the communities it is shared to; empty if the viewed user is not a developer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserTasks(
@@ -263,7 +263,7 @@ class AdministratorOperations(
      * Returns the contests created by [userId] viewed as in [viewUser], each with its tasks and the number of grading
      * submissions of every task in the contest; empty if the viewed user is not a developer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserContests(
@@ -293,7 +293,7 @@ class AdministratorOperations(
      * Returns the classes created by [userId] viewed as in [viewUser], each with the grading submissions of its current
      * students in its current contests; empty if the viewed user is not a manager.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserClasses(
@@ -319,7 +319,7 @@ class AdministratorOperations(
      * Returns the competitions created by [userId] viewed as in [viewUser], each with the grading submissions of its
      * current participants in its contests; empty if the viewed user is not a manager.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserCompetitions(
@@ -348,7 +348,7 @@ class AdministratorOperations(
      * Returns the judgment orders issued by [userId] viewed as in [viewUser], each with the solution of its submission and
      * the previous result of the submission, or `null` without one; empty if the viewed user is not a judge.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserJudgments(
@@ -375,7 +375,7 @@ class AdministratorOperations(
      * Returns the contests assigned to the observer [userId] viewed as in [viewUser], each with the competitions it is
      * currently part of; empty if the viewed user is not an observer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserAssignedContests(
@@ -469,7 +469,7 @@ class AdministratorOperations(
      * Returns the communities created by [user] in ascending id order, each with the number of users available to [user]
      * through it, the administrator included. Missing role is an expected failure; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewCommunities")
     fun viewCommunities(user: MultipleRoleUser): OperationResult<List<Pair<Community, Long>>, ViewCommunitiesError> =
@@ -490,7 +490,7 @@ class AdministratorOperations(
      * administrator role and new manager and developer invite codes. The name must be nonblank and contain at most 255
      * Unicode code points; storage exceptions, including an invite code collision, propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.createCommunity")
     fun createCommunity(
@@ -575,7 +575,7 @@ class AdministratorOperations(
      * keeping its owner, invite codes and members. Name rules match [createCommunity]; missing role, community and access
      * are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.editCommunity")
     fun editCommunity(
@@ -601,7 +601,7 @@ class AdministratorOperations(
      * and of the public community if the role is new; a member already in that role is returned unchanged. Missing role,
      * user, community, access, a fixed role of the user and the judge role are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.grantRole")
     fun grantRole(
@@ -634,7 +634,7 @@ class AdministratorOperations(
      * Removes the membership of [userId] in [communityId] owned by [user] in [role], keeping the role and its data.
      * Missing role, user, community, access, the public community and a missing membership are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.removeFromCommunity")
     fun removeFromCommunity(
@@ -663,7 +663,7 @@ class AdministratorOperations(
      * Deletes [observerId] of a community owned by [user], so that its access code stops working, and returns the observer
      * as it was before the deletion. Missing role, observer and access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.deleteObserver")
     fun deleteObserver(user: MultipleRoleUser, observerId: SingleRoleUserId): OperationResult<Observer, DeleteObserverError> =
@@ -685,7 +685,7 @@ class AdministratorOperations(
      * whose names contain [name], from which an observer of the community is assigned. Missing role, community and
      * access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.createObserver")
     fun viewCommunityContests(
@@ -711,7 +711,7 @@ class AdministratorOperations(
      * Replaces the invite code for [kind] in [communityId] owned by [user] with a new code and a fresh expiration moment.
      * Missing role, community and access are expected failures; storage exceptions, including a code collision, propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.inviteUser")
     @RawInviteCodeDependency(reason = "Returns the issued invite code from the stored value.")
@@ -731,7 +731,7 @@ class AdministratorOperations(
      * Restarts the validity period of the invite code for [kind] in [communityId] owned by [user] without changing
      * the code, including an expired code. Missing role, community and access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.extendInvite")
     @RawInviteCodeDependency(reason = "Returns the issued invite code from the stored value.")
@@ -751,7 +751,7 @@ class AdministratorOperations(
      * Returns both invite codes of [communityId] owned by [user] as issued, the manager code before the developer one.
      * Expired codes are returned unchanged; missing role, community and access are expected failures; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewInvites")
     @RawInviteCodeDependency(reason = "Returns the issued invite codes from the stored values.")
@@ -770,7 +770,7 @@ class AdministratorOperations(
      * Replaces the expired invite code for [kind] in [communityId] owned by [user] with a new code and a fresh expiration
      * moment; a still valid code is returned unchanged. Missing role, community and access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.inviteUser")
     fun refreshCommunityInvite(

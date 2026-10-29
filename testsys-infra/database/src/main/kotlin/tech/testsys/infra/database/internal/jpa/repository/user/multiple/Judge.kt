@@ -10,7 +10,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [JudgeDataJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -19,14 +19,14 @@ interface JudgeDataJpaEntityRepository : SnowflakeJpaEntityRepository<JudgeDataJ
     /**
      * Finds the judge data row of the user [userId], or `null` if the user does not hold the role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByUserId(userId: Long): JudgeDataJpaEntity?
 
     /**
      * Finds which of the users [userIds] hold the role, in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e.userId from JudgeDataJpaEntity e where e.userId in :userIds")
     fun findUserIdsByUserIdIn(@Param("userIds") userIds: Collection<Long>): List<Long>

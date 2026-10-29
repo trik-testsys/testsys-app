@@ -27,7 +27,7 @@ import java.time.ZoneId
 /**
  * Service card of a user of any kind with its data read on opening; the access code is not shown.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("users/:$SERVICE_USER_ID_PARAMETER")
 @PageTitle("Пользователь")

@@ -10,7 +10,7 @@ import java.time.Instant
 /**
  * Identifier of a [JudgmentOrder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class JudgmentOrderId(
@@ -24,7 +24,7 @@ value class JudgmentOrderId(
  * @property submission the submission the order applies to; fixed on creation and ignored on update.
  * @property score the score the judge awards to the submission.
  * @property reason the judge's justification of the ruling.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class JudgmentOrderData(
     val judge: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
@@ -37,7 +37,7 @@ data class JudgmentOrderData(
  * A judge's manual ruling on a [Submission]: a new score replacing the graded one.
  *
  * @property data the data of the judgment order.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class JudgmentOrder(
     id: JudgmentOrderId,

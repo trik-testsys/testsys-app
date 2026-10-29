@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [Competition] and [CompetitionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
@@ -24,7 +24,7 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
     /**
      * Assembles a [Competition] from [jpaEntity], the ids of the participants projected onto it and the ids of its contests.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: CompetitionJpaEntity, participantIds: List<SingleRoleUserId>, contestIds: List<ContestId>) = competition {
         populateFields(jpaEntity)
@@ -41,7 +41,7 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
     /**
      * Creates a new [CompetitionJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: CompetitionData) = CompetitionJpaEntity(
         name = data.name,
@@ -52,7 +52,7 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
     /**
      * Creates the [CompetitionJpaEntity] row replacing [current] from [entity], keeping `ownerId`, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Competition, current: CompetitionJpaEntity) = CompetitionJpaEntity(
         name = entity.data.name,
@@ -67,7 +67,7 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
     /**
      * Creates the [ContestToCompetitionJpaEntity] rows linking the competition [competitionId] with [contestIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toContestAssociations(competitionId: Long, contestIds: List<ContestId>) = contestIds.distinct().map {
         ContestToCompetitionJpaEntity(

@@ -32,7 +32,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
  * The competition is fixed on creation and ignored on update. Update and remove increment the user version first;
  * [save], [saveToCompetition] and remove also increment the competition version.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

@@ -11,7 +11,7 @@ import java.time.Instant
  *
  * @property testId the concrete polygon identifier, or `null` if not set.
  * @property reports the diagnostic messages; an empty list represents completed analysis without messages.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TestDiagnosticResultBuilder : Builder<TestDiagnosticResult> {
     var testId: TestId? = null
@@ -20,7 +20,7 @@ class TestDiagnosticResultBuilder : Builder<TestDiagnosticResult> {
     /**
      * Sets [testId] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun testId(testId: Long) {
         this.testId = TestId(testId)
@@ -38,7 +38,7 @@ class TestDiagnosticResultBuilder : Builder<TestDiagnosticResult> {
  * @property severity the level, or `null` if not set.
  * @property data the reason chooser.
  * @property location the XML location, or `null` for a file message.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DiagnosticReportBuilder : Builder<DiagnosticReport> {
     var severity: DiagnosticSeverity? = null
@@ -56,7 +56,7 @@ class DiagnosticReportBuilder : Builder<DiagnosticReport> {
  *
  * @property path the indexed XML element path.
  * @property attribute the attribute name, or `null` for an element.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DiagnosticLocationBuilder : Builder<DiagnosticLocation> {
     var path: MutableList<DiagnosticPathSegment> = mutableListOf()
@@ -73,7 +73,7 @@ class DiagnosticLocationBuilder : Builder<DiagnosticLocation> {
  *
  * @property tag the element tag, or `null` if not set.
  * @property index the one-based same-tag sibling index, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DiagnosticPathSegmentBuilder : Builder<DiagnosticPathSegment> {
     var tag: String? = null
@@ -90,7 +90,7 @@ class DiagnosticPathSegmentBuilder : Builder<DiagnosticPathSegment> {
  *
  * @property description the technical failure details, or `null` if not set.
  * @property occurredAt the recorded failure moment, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskValidationTechnicalFailureBuilder : Builder<TaskValidationTechnicalFailure> {
     var description: String? = null

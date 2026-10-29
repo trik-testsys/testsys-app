@@ -14,7 +14,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [DeveloperSolution] and [DeveloperSolutionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolutionJpaEntity> {
@@ -22,7 +22,7 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
     /**
      * Assembles a [DeveloperSolution] from [jpaEntity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: DeveloperSolutionJpaEntity) = developerSolution {
         populateFields(jpaEntity)
@@ -40,7 +40,7 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
     /**
      * Creates a new [DeveloperSolutionJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: DeveloperSolutionData) = DeveloperSolutionJpaEntity(
         name = data.name,
@@ -54,7 +54,7 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
      * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping `solutionId`,
      * `expectedScore`, `versionBucket`, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: DeveloperSolution, current: DeveloperSolutionJpaEntity) = DeveloperSolutionJpaEntity(
         name = entity.data.name,

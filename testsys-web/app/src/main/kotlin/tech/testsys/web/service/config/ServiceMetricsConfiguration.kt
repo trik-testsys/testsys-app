@@ -10,14 +10,14 @@ import tech.testsys.web.monitoring.WebRequestObservationConvention
 /**
  * Provides the metrics of the service interface: request labels and counting of page failures.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 class ServiceMetricsConfiguration {
     /**
      * Labels the HTTP requests of the service interface with `service` and its route templates.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun serviceRequestObservationConvention(): ServerRequestObservationConvention = WebRequestObservationConvention(SERVICE)
@@ -25,7 +25,7 @@ class ServiceMetricsConfiguration {
     /**
      * Counts unexpected exceptions of the service pages before they are shown.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun serviceWebFailures(failures: TechnicalFailures): WebFailures = WebFailures(SERVICE, failures)

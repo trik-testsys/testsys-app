@@ -33,7 +33,7 @@ import tech.testsys.web.components.layout.FieldParts
  * @property isEditable whether the user can change the value, otherwise the control is read-only; a field of a block row
  * is editable only if it and its block are. A manual change while [bindEditable] or `bindReadOnly` is bound, and a second binding,
  * throw [BindingActiveException].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ValueInput<T> internal constructor(
     private val parts: FieldParts?,
@@ -88,7 +88,7 @@ class ValueInput<T> internal constructor(
      * Binds [isEnabled] to [signal]: every value it produces is applied at once. A manual [isEnabled] while bound,
      * and a second binding, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEnabled(signal: Signal<Boolean>): SignalBinding<Boolean> = enabled.bind(signal)
 
@@ -97,7 +97,7 @@ class ValueInput<T> internal constructor(
      * read-only while its block is not editable. A manual [isEditable] or `readOnly` while bound, and a second binding, including
      * `bindReadOnly`, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEditable(signal: Signal<Boolean>): SignalBinding<Boolean> = editable.bind(signal)
 

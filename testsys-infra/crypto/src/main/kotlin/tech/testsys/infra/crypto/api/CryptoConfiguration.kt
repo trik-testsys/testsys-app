@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration
 /**
  * Registers the password hashing adapter of the module.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 @ComponentScan(basePackages = ["tech.testsys.infra.crypto.api"])

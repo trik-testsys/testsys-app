@@ -19,7 +19,7 @@ import java.time.Duration
  * Limits the number of HTTP requests of the main interface per client address with the Tomcat [RateLimitFilter].
  * Requests under `/VAADIN/` are not counted.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 class RateLimitConfiguration {
@@ -27,7 +27,7 @@ class RateLimitConfiguration {
      * Filter answering 429 to a client address that exceeds `testsys.web.rate-limit.requests` within one window
      * of `testsys.web.rate-limit.duration`, or only logging it when `testsys.web.rate-limit.enforce` is `false`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun rateLimitFilter(environment: Environment): FilterRegistrationBean<RateLimitFilter> {

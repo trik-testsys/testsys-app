@@ -35,7 +35,7 @@ private const val MIN_PAGE_TABS = 2
 /**
  * Scope of the page head: breadcrumbs, badges and notes next to the title, actions and section tabs.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class PageHeadScope internal constructor(private val texts: UiLocalization, private val view: Class<out Component>?) {
@@ -47,7 +47,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
     /**
      * Adds a parent page named [label] to the breadcrumbs, opened by [target] with [parameters].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun crumb(label: String, target: Class<out Component>, parameters: RouteParameters = RouteParameters.empty()) {
         crumbs += RouterLink(label, target, parameters)
@@ -56,7 +56,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
     /**
      * Adds a badge of [tone] next to the title, e.g. the state of a contest.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun badge(text: String, tone: Tone) {
         marks += buildBadge(text, tone)
@@ -65,7 +65,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
     /**
      * Adds a muted note next to the title, e.g. the format and the time of a contest.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun meta(text: String) {
         marks += Span(text).apply { addClassName(CssClass.PageHeadMeta) }
@@ -75,7 +75,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
      * Fills the right side of the title row with actions of the regular size.
      *
      * @throws IllegalStateException if the head already has actions.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun actions(content: ContentScope.() -> Unit) {
         check(actionsBar == null) { "Page head already has actions; call actions() once" }
@@ -89,7 +89,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
      *
      * @throws IllegalArgumentException if there are fewer than two tabs.
      * @throws IllegalStateException if the head already has tabs.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tabs(content: PageTabsScope.() -> Unit) {
         tabs(matchRouteParameters = false, content = content)
@@ -100,7 +100,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
      *
      * @throws IllegalArgumentException if there are fewer than two tabs.
      * @throws IllegalStateException if the head already has tabs.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tabs(matchRouteParameters: Boolean, content: PageTabsScope.() -> Unit) {
         check(tabsNav == null) { "Page head already has tabs; call tabs() once" }
@@ -135,7 +135,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
 /**
  * Scope of page tabs: the sections in order.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class PageTabsScope internal constructor(
@@ -150,7 +150,7 @@ class PageTabsScope internal constructor(
      * [activeOn] lists additional pages of this section; an exact target match takes priority.
      *
      * @throws IllegalArgumentException if [count] is negative.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tab(
         label: String,

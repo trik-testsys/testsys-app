@@ -38,7 +38,7 @@ import tech.testsys.web.components.overlay.confirm
  * Service snapshot of grading: unfinished runs by state and the checking node registry with the latest known
  * availability and queue load of its nodes. The page refreshes the snapshot every five seconds while it is open.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("grading")
 @PageTitle("Состояние проверки")

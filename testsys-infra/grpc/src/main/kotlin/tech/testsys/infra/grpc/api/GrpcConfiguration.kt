@@ -40,7 +40,7 @@ import java.util.concurrent.Executors
  * configured nodes first, before starting background work.
  * Repository ports, `TransactionOperations` and an optional node store are supplied by the application.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalGrpcApi::class)
 @Configuration

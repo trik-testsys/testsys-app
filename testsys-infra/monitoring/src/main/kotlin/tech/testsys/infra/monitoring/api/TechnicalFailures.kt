@@ -10,7 +10,7 @@ import java.util.WeakHashMap
  * caused by a counted one is not counted again, while a shared deeper cause does not merge different exceptions.
  * The companion object provides [NONE], which counts nothing.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TechnicalFailures(private val registry: MeterRegistry) {
     // Throwable keeps identity equality, so the weak maps track instances without holding them after their handling.
@@ -22,7 +22,7 @@ class TechnicalFailures(private val registry: MeterRegistry) {
      * Counts one failure at [stage] of [source]; [failure] is the exception, or `null` for a handled refusal without one.
      * Both names are lowercase words separated by underscores.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun record(source: String, stage: String, failure: Throwable? = null) {
         require(LABEL.matches(source)) { "Technical failure source must be a lowercase label: $source" }
@@ -53,7 +53,7 @@ class TechnicalFailures(private val registry: MeterRegistry) {
     /**
      * Holds [NONE], backed by a registry without children, for components started without a metrics registry.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     companion object {
         val NONE: TechnicalFailures = TechnicalFailures(CompositeMeterRegistry())

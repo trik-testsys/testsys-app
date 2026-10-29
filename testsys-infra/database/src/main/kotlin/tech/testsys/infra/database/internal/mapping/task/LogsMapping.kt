@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.utils.populateFields
 /**
  * Mapping between [Logs] and [LogsJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object LogsMapping : EntityMapping<Logs, LogsJpaEntity> {
@@ -21,7 +21,7 @@ object LogsMapping : EntityMapping<Logs, LogsJpaEntity> {
     /**
      * Assembles a [Logs] from [jpaEntity] and its [file].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: LogsJpaEntity, file: FileData) = logs {
         populateFields(jpaEntity)
@@ -34,7 +34,7 @@ object LogsMapping : EntityMapping<Logs, LogsJpaEntity> {
     /**
      * Creates a new [LogsJpaEntity] row from [data] referencing the stored file [fileDataId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: LogsData, fileDataId: Long) = LogsJpaEntity(
         fileDataId = fileDataId,

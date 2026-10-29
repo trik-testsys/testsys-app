@@ -25,7 +25,7 @@ import java.time.temporal.ChronoUnit
  * @property createdAt moment the row was created (UTC).
  * @property updatedAt moment of the last update (UTC).
  * @property version optimistic lock counter.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 @MappedSuperclass
@@ -40,7 +40,7 @@ abstract class JpaEntity(
 /**
  * Marker of composite primary keys of [CompositeJpaEntity]; implementations are [Embeddable] data classes.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 interface CompositeId : Serializable
@@ -51,7 +51,7 @@ interface CompositeId : Serializable
  *
  * @param T the composite key type.
  * @property id the composite primary key.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 @MappedSuperclass
@@ -90,7 +90,7 @@ abstract class CompositeJpaEntity<T : CompositeId>(
  * node id and a per-second counter. Lifecycle callbacks register the root's initial version for this transaction.
  *
  * @property id the primary key, `null` until persisted.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 @MappedSuperclass

@@ -33,14 +33,14 @@ import java.lang.reflect.Modifier
  * Registers the child-local retry advisor, with the parent's policy and transaction manager, the metrics and the call log
  * of the main interface; the infrastructure auto-proxy creator accepts only local advisor definitions.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 class MainWebConfiguration {
     /**
      * Labels the HTTP requests of the main interface with `main` and its route templates.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun mainRequestObservationConvention(): ServerRequestObservationConvention = WebRequestObservationConvention(MAIN)
@@ -48,7 +48,7 @@ class MainWebConfiguration {
     /**
      * Counts unexpected exceptions of the main interface pages before they are shown.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun mainWebFailures(failures: TechnicalFailures): WebFailures = WebFailures(MAIN, failures)
@@ -60,7 +60,7 @@ class MainWebConfiguration {
         /**
          * Wraps the child's transaction interceptor with the parent's retry policy; flat test contexts already own this advisor.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         @JvmStatic
         @Bean
@@ -78,7 +78,7 @@ class MainWebConfiguration {
          * Counts failed operations and technical failures of proxy service calls outside the transaction repeats.
          * Its dependencies are looked up at the first call, so this early bean does not create them.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         @JvmStatic
         @Bean
@@ -97,7 +97,7 @@ class MainWebConfiguration {
          * Writes proxy service calls at DEBUG inside the metrics and outside the transaction repeats, so a repeated
          * call is written once.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         @JvmStatic
         @Bean

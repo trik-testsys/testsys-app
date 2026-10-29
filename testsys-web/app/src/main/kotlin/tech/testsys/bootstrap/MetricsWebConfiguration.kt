@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Configuration
  * Metrics web child: a servlet server without Vaadin, security and sessions that only exposes the Prometheus scrape
  * endpoint of the shared registry. Its own requests are not observed.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 @ImportAutoConfiguration(
@@ -41,7 +41,7 @@ class MetricsWebConfiguration {
     /**
      * Scrapes the shared registry; an endpoint the parent already created is reused.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     @ConditionalOnMissingBean

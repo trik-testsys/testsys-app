@@ -16,7 +16,7 @@ import java.time.Instant
  *
  * @property taskId id of the task.
  * @property contestId id of the contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -28,7 +28,7 @@ data class TaskToContestId(
 /**
  * Join row: a task belongs to a contest.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -40,7 +40,7 @@ class TaskToContestJpaEntity(id: TaskToContestId) : CompositeJpaEntity<TaskToCon
  *
  * @property communityId id of the community.
  * @property contestId id of the contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -52,7 +52,7 @@ data class CommunityToContestId(
 /**
  * Join row: a contest is shared to a community (`ContestData.sharedTo`).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -69,7 +69,7 @@ class CommunityToContestJpaEntity(id: CommunityToContestId) : CompositeJpaEntity
  * @property contestDurationMillis total duration in milliseconds, or `null` if there is no end limit.
  * @property attemptDurationMillis individual duration in milliseconds, or `null` if there is no individual limit.
  * @property trikStudioVersionId id of the [TrikStudioVersionJpaEntity] the contest runs on.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

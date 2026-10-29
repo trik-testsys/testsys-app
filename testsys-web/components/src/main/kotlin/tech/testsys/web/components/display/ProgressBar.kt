@@ -25,14 +25,14 @@ private const val PERCENT_MAX = 100.0
 /**
  * Progress with either a known percentage or an unknown remaining duration.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ProgressValue {
     /**
      * Known progress; [percent] must be finite and between zero and one hundred.
      *
      * @property percent the completed percentage.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Determinate(val percent: Double) : ProgressValue {
         init {
@@ -45,7 +45,7 @@ sealed interface ProgressValue {
     /**
      * Active progress without a known total.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object Indeterminate : ProgressValue
 }
@@ -53,7 +53,7 @@ sealed interface ProgressValue {
 /**
  * Adds a progress indicator of [value] with accessible [label] and semantic [tone].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.progressBar(
     label: String,
@@ -92,7 +92,7 @@ fun ContentScope.progressBar(
 /**
  * Adds a progress indicator on [size] columns, or the remaining columns.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.progressBar(
     label: String,

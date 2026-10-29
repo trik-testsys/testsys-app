@@ -41,7 +41,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * Task and shared-community membership is synced through the join tables on save and update and dropped on remove;
  * update and remove increment the contest version first. The TRIK Studio version must already be registered by tag.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

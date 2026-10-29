@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property regradeId id of the regrade.
  * @property testId id of the test.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -25,7 +25,7 @@ data class TestToRegradeId(
 /**
  * Join row: a test belongs to the committed revision of a regrade (`RegradeData.tests`).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -37,7 +37,7 @@ class TestToRegradeJpaEntity(id: TestToRegradeId) : CompositeJpaEntity<TestToReg
  *
  * @property regradeId id of the regrade.
  * @property submissionId id of the submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -49,7 +49,7 @@ data class SubmissionToRegradeId(
 /**
  * Join row: a submission was sent to grading again by a regrade (`RegradeData.submissions`).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -60,7 +60,7 @@ class SubmissionToRegradeJpaEntity(id: SubmissionToRegradeId) : CompositeJpaEnti
  * JPA entity of [tech.testsys.domain.model.task.Regrade].
  *
  * @property taskId id of the regraded task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

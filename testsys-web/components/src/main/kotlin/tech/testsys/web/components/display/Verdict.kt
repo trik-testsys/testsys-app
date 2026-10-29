@@ -18,7 +18,7 @@ import java.util.Locale
 /**
  * Adds a neutral numeric verdict with [score] and optional application-provided [label].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.verdict(score: Double, label: String? = null, configure: DataHandle<Double>.() -> Unit = {}): DataHandle<Double> {
     val root = Span().apply { addClassNames(CssClass.Verdict, CssClass.VerdictScore) }
@@ -38,7 +38,7 @@ fun ContentScope.verdict(score: Double, label: String? = null, configure: DataHa
 /**
  * Adds a numeric verdict on [size] columns, or the remaining columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.verdict(
     score: Double,

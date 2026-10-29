@@ -7,7 +7,7 @@ import java.time.Instant
 /**
  * Identifier of a [Solution].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class SolutionId(
@@ -19,7 +19,7 @@ value class SolutionId(
  *
  * @property file the uploaded program file; fixed on creation.
  * @property language the programming language of the program; fixed on creation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SolutionData(
     val file: FileData,
@@ -30,7 +30,7 @@ data class SolutionData(
  * A TRIK Studio program uploaded to the system.
  *
  * @property data the data of the solution.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Solution(
     id: SolutionId,

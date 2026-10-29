@@ -41,14 +41,14 @@ private const val HOURS_PER_DAY = 24L
 /**
  * Timer data: a static duration or a live deadline.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface TimerValue {
     /**
      * An unchanging duration, limited to zero when negative.
      *
      * @property duration the shown remaining duration.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Static(val duration: Duration) : TimerValue
 
@@ -56,7 +56,7 @@ sealed interface TimerValue {
      * A live deadline, updated only while attached.
      *
      * @property instant the moment at which the timer reaches zero.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Until(val instant: Instant) : TimerValue
 }
@@ -64,7 +64,7 @@ sealed interface TimerValue {
 /**
  * Presentation of timer numbers.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class TimerVariant { Chip, Hero, Tiles, Text }
 
@@ -88,7 +88,7 @@ internal object TimerRuntime {
 /**
  * Adds a [value] countdown labelled by [label], in the chosen [variant].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.timer(
     label: String,
@@ -108,7 +108,7 @@ fun ContentScope.timer(
 /**
  * Adds a timer on [size] columns, or the remaining columns.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.timer(
     label: String,
@@ -126,7 +126,7 @@ fun BlockRowScope.timer(
  *
  * @property data the static duration or live deadline.
  * @property remainingSeconds the nonnegative rounded-down remaining seconds.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TimerHandle internal constructor(private val display: TimerDisplay, initial: TimerValue) : ElementHandle(display) {
     private val state = Bindable(display.element, initial, display::present)
@@ -140,7 +140,7 @@ class TimerHandle internal constructor(private val display: TimerDisplay, initia
     /**
      * Binds the deadline or duration to [signal].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindData(signal: Signal<TimerValue>): SignalBinding<TimerValue> = state.bind(signal)
 }

@@ -16,49 +16,49 @@ import java.time.Instant
 /**
  * Stored execution stage of a task validation request.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class TaskValidationExecutionJpaEnum {
     /**
      * The unfinished diagnostics stage, including any separately saved polygon progress.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     PENDING_DIAGNOSTICS,
 
     /**
      * The awaiting submissions stage.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     AWAITING_SUBMISSIONS,
 
     /**
      * The stopped by diagnostics stage.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     STOPPED_BY_DIAGNOSTICS,
 
     /**
      * The created submissions stage.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     SUBMISSIONS_CREATED,
 
     /**
      * The completed author testing stage.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     COMPLETED,
 
     /**
      * The technical failure stage.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     TECHNICAL_FAILURE,
 }
@@ -66,21 +66,21 @@ enum class TaskValidationExecutionJpaEnum {
 /**
  * Stored reason of a failed author submission.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class AuthorSubmissionFailureJpaEnum {
     /**
      * The submission scored another total than expected.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     SCORE_MISMATCH,
 
     /**
      * The submission finished with a grading error or timeout.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     GRADING_FAILED,
 }
@@ -96,7 +96,7 @@ enum class AuthorSubmissionFailureJpaEnum {
  * @property failureDescription the stored failureDescription.
  * @property failureOccurredAt the stored failureOccurredAt.
  * @property completedAt the stored completedAt.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -119,7 +119,7 @@ class TaskValidationRequestJpaEntity(
  *
  * @property testId the input identifier.
  * @property requestId the request identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -128,7 +128,7 @@ data class TestToTaskValidationRequestId(val testId: Long, val requestId: Long) 
 /**
  * Pinned test input or reference of a task validation request.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -142,7 +142,7 @@ class TestToTaskValidationRequestJpaEntity(
  *
  * @property developerSolutionId the input identifier.
  * @property requestId the request identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -153,7 +153,7 @@ data class DeveloperSolutionToTaskValidationRequestId(val developerSolutionId: L
  *
  * @property solutionId the stored solutionId.
  * @property expectedScore the stored expectedScore.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -168,7 +168,7 @@ class DeveloperSolutionToTaskValidationRequestJpaEntity(
  *
  * @property trikStudioVersionId the input identifier.
  * @property requestId the request identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -177,7 +177,7 @@ data class TrikStudioVersionToTaskValidationRequestId(val trikStudioVersionId: L
 /**
  * Pinned trikstudioversion input or reference of a task validation request.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -191,7 +191,7 @@ class TrikStudioVersionToTaskValidationRequestJpaEntity(
  *
  * @property submissionId the input identifier.
  * @property requestId the request identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -203,7 +203,7 @@ data class SubmissionToTaskValidationRequestId(val submissionId: Long, val reque
  * @property position the required position in author solution and version order.
  * @property failure the stored failure reason of completed testing, or `null` if the submission passed or testing is unfinished.
  * @property actualScore the stored total score of a mismatching submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

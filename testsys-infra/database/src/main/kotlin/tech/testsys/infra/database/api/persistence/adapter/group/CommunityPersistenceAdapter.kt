@@ -29,7 +29,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * The invite references are fixed on creation and both invites are removed together with the community.
  * Update and remove increment the community version; remove also increments the versions of the removed invites.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

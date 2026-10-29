@@ -41,7 +41,7 @@ import tech.testsys.infra.database.internal.utils.toDomain
  * Persistence adapter of [Submission] entities backed by [SubmissionJpaEntity].
  * Reads judgment order ids and author id kinds from their rows; a developer solution test requires a registered version.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

@@ -12,7 +12,7 @@ import tech.testsys.web.components.navigation.header.CabinetHeader
  * Base class of a Cabinet or guest page built with the design system DSL; built-in texts come from the localization bound to
  * the current UI.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class TestSysView : Composite<Div>() {
     private var isBuilding = false

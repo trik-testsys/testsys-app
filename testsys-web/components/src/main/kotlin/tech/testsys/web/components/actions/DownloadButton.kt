@@ -69,7 +69,7 @@ private const val PROGRESS_NANOS_INTERVAL = 100_000_000L
  * @property contentType the MIME content type.
  * @property length the optional nonnegative expected length.
  * @property openStream the stream factory, called outside the session lock for this attempt only.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DownloadContent(
     val filename: String,
@@ -90,7 +90,7 @@ data class DownloadContent(
  * Cooperative cancellation context of one producer and its streaming attempt.
  *
  * @property isCancelled whether preparation or transfer has been cancelled.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DownloadContext internal constructor() {
 
@@ -103,7 +103,7 @@ class DownloadContext internal constructor() {
      * Checks cancellation before the producer continues its work.
      *
      * @throws InterruptedIOException if the attempt was cancelled.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun ensureActive() {
         if (isCancelled) throw InterruptedIOException("Download attempt was cancelled")
@@ -131,21 +131,21 @@ class DownloadContext internal constructor() {
 /**
  * Honest server-side download lifecycle, without claiming a file was saved on the client's disk.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadState {
 
     /**
      * No current attempt.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object Idle : DownloadState
 
     /**
      * The application producer is preparing content.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object Preparing : DownloadState
 
@@ -154,7 +154,7 @@ sealed interface DownloadState {
      *
      * @property bytes the actual transferred byte count.
      * @property total the expected byte count, or null if unknown.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Downloading(val bytes: Long, val total: Long?) : DownloadState
 
@@ -162,7 +162,7 @@ sealed interface DownloadState {
      * The server finished writing and closed its streams.
      *
      * @property bytes the actual transferred byte count.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Done(val bytes: Long) : DownloadState
 
@@ -170,7 +170,7 @@ sealed interface DownloadState {
      * Preparation or streaming failed.
      *
      * @property cause the exception for application diagnostics.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Error(val cause: Exception) : DownloadState
 }
@@ -180,7 +180,7 @@ sealed interface DownloadState {
  *
  * @property isEnabled whether new attempts may start; disabling cancels the current attempt.
  * @property state the read-only signal of the current attempt.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DownloadHandle internal constructor(
     private val download: DownloadDisplay,
@@ -199,21 +199,21 @@ class DownloadHandle internal constructor(
     /**
      * Binds whether attempts may start to [signal].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEnabled(signal: Signal<Boolean>): SignalBinding<Boolean> = enabled.bind(signal)
 
     /**
      * Starts a fresh attempt if attached, visible, enabled and no attempt is active.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun start() = download.start()
 
     /**
      * Cancels preparation or transfer and removes its registered resource.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun cancel() = download.cancel()
 }
@@ -223,7 +223,7 @@ class DownloadHandle internal constructor(
  *
  * @param produce the application producer cooperating with the supplied cancellation context.
  * @param configure the returned download action configuration.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.downloadAction(
     label: String,
@@ -236,7 +236,7 @@ fun ContentScope.downloadAction(
  *
  * @param produce the application producer cooperating with the supplied cancellation context.
  * @param configure the returned download action configuration.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.iconDownloadAction(
     label: String,
@@ -249,7 +249,7 @@ fun ContentScope.iconDownloadAction(
  *
  * @param produce the application producer cooperating with its cancellation context.
  * @param configure the returned download action configuration.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.downloadAction(
     label: String,

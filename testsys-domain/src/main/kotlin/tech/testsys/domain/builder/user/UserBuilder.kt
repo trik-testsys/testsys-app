@@ -16,7 +16,7 @@ import tech.testsys.domain.model.user.UserId
  * @param U the type of the built user.
  * @param Data the type of the user data.
  * @param DataBuilder the builder type of [Data].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class UserBuilder<UI : UserId, U : User<UI>, Data, DataBuilder : Builder<Data>> :
     DomainEntityWithDataBuilder<U, Data, DataBuilder>()
@@ -25,7 +25,7 @@ abstract class UserBuilder<UI : UserId, U : User<UI>, Data, DataBuilder : Builde
  * Base class of fixed-role user data builders. Required: [accessToken] or [storedAccessToken].
  *
  * @param Data the type of the built user data.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class UserDataBuilder<Data : SingleRoleUserData> : Builder<Data> {
 
@@ -34,7 +34,7 @@ abstract class UserDataBuilder<Data : SingleRoleUserData> : Builder<Data> {
     /**
      * Hashes [rawAccessToken] with [hasher] and sets its stored value and algorithm together.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun accessToken(rawAccessToken: String, hasher: AccessTokenHasher) {
         tokenHash = hasher.hash(rawAccessToken)
@@ -43,7 +43,7 @@ abstract class UserDataBuilder<Data : SingleRoleUserData> : Builder<Data> {
     /**
      * Restores [hash] from stored data without hashing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun storedAccessToken(hash: AccessTokenHash) {
         tokenHash = hash

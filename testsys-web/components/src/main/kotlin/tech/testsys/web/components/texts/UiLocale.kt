@@ -19,7 +19,7 @@ private const val UNKNOWN_SCREEN_WIDTH = -1
  * the browser time zone of the session, or [fallbackTimeZone] until the browser reports it; a zone reported after the
  * UI was created rebinds the localization and reloads the page once.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun initializeUiLocale(ui: UI, region: SupportedRegion, fallbackTimeZone: ZoneId) {
     val details = ui.page.extendedClientDetails

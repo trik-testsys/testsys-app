@@ -15,7 +15,7 @@ import java.time.Instant
  * @property code the stored invite-code representation.
  * @property codeHashAlgorithm the algorithm used to produce the stored invite-code representation.
  * @property expiresAt the moment the invite stops being valid.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

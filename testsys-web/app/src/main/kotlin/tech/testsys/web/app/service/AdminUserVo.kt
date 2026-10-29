@@ -31,7 +31,7 @@ import java.time.Instant
  * @property id the identifier of the user.
  * @property createdAt the moment the user was created.
  * @property name the nickname of the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AdminUserVo {
     val id: UserId
@@ -44,7 +44,7 @@ sealed interface AdminUserVo {
  *
  * @property email the e-mail address of the user.
  * @property roles the roles of the user, including memberships in communities of other administrators.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class MultipleRoleUserVo(
     override val id: MultipleRoleUserId,
@@ -60,7 +60,7 @@ data class MultipleRoleUserVo(
  * @property accessTokenHash the stored access code with its hashing algorithm.
  * @property community the identifier of the community of the observer.
  * @property contests the identifiers of the contests assigned to the observer.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ObserverVo(
     override val id: SingleRoleUserId,
@@ -76,7 +76,7 @@ data class ObserverVo(
  *
  * @property observer the created observer.
  * @property accessToken the original access code issued to [observer].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class IssuedObserverVo(
     val observer: ObserverVo,
@@ -87,7 +87,7 @@ data class IssuedObserverVo(
  * Data of a participant visible to a supervisor.
  *
  * @property accessTokenHash the stored access code with its hashing algorithm.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ParticipantVo(
     override val id: SingleRoleUserId,
@@ -101,7 +101,7 @@ data class ParticipantVo(
  * Non-fixed role of a [MultipleRoleUserVo] with the identifiers of its data.
  *
  * @property memberOf the identifiers of the communities the user is a member of in this role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RoleVo {
     val memberOf: List<CommunityId>
@@ -110,7 +110,7 @@ sealed interface RoleVo {
 /**
  * The administrator role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class AdministratorRoleVo(override val memberOf: List<CommunityId>) : RoleVo
 
@@ -119,7 +119,7 @@ data class AdministratorRoleVo(override val memberOf: List<CommunityId>) : RoleV
  *
  * @property tasks the identifiers of the tasks created by the developer.
  * @property contests the identifiers of the contests created by the developer.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperRoleVo(override val memberOf: List<CommunityId>, val tasks: List<TaskId>, val contests: List<ContestId>) : RoleVo
 
@@ -128,7 +128,7 @@ data class DeveloperRoleVo(override val memberOf: List<CommunityId>, val tasks: 
  *
  * @property classes the identifiers of the classes created by the manager.
  * @property competitions the identifiers of the competitions created by the manager.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ManagerRoleVo(override val memberOf: List<CommunityId>, val classes: List<ClassId>, val competitions: List<CompetitionId>) :
     RoleVo
@@ -137,7 +137,7 @@ data class ManagerRoleVo(override val memberOf: List<CommunityId>, val classes: 
  * The judge role.
  *
  * @property judgmentOrders the identifiers of the judgment orders issued by the judge.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class JudgeRoleVo(override val memberOf: List<CommunityId>, val judgmentOrders: List<JudgmentOrderId>) : RoleVo
 
@@ -146,7 +146,7 @@ data class JudgeRoleVo(override val memberOf: List<CommunityId>, val judgmentOrd
  *
  * @property classes the identifiers of the classes of the student.
  * @property submissions the identifiers of the submissions of the student.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StudentRoleVo(override val memberOf: List<CommunityId>, val classes: List<ClassId>, val submissions: List<SubmissionId>) : RoleVo
 

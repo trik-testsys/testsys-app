@@ -9,13 +9,13 @@ import java.time.Instant
 /**
  * DSL chooser of the execution state of a task validation request.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
     /**
      * Selects [TaskValidationExecution.PendingDiagnostics].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun pendingDiagnostics() = makeChoice(object : Builder<TaskValidationExecution> {
         override fun build() = TaskValidationExecution.PendingDiagnostics
@@ -25,7 +25,7 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
      * Selects [TaskValidationExecution.AwaitingSubmissions] configured by [builder].
      * Repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun awaitingSubmissions(builder: AwaitingSubmissionsBuilder.() -> Unit) {
         val currentBuilder = choice as? AwaitingSubmissionsBuilder ?: AwaitingSubmissionsBuilder()
@@ -36,7 +36,7 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
      * Selects [TaskValidationExecution.StoppedByDiagnostics] configured by [builder].
      * Repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun stoppedByDiagnostics(builder: StoppedByDiagnosticsBuilder.() -> Unit) {
         val currentBuilder = choice as? StoppedByDiagnosticsBuilder ?: StoppedByDiagnosticsBuilder()
@@ -47,7 +47,7 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
      * Selects [TaskValidationExecution.SubmissionsCreated] configured by [builder].
      * Repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun submissionsCreated(builder: SubmissionsCreatedBuilder.() -> Unit) {
         val currentBuilder = choice as? SubmissionsCreatedBuilder ?: SubmissionsCreatedBuilder()
@@ -58,7 +58,7 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
      * Selects [TaskValidationExecution.Completed] configured by [builder].
      * Repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun completed(builder: CompletedValidationBuilder.() -> Unit) {
         val currentBuilder = choice as? CompletedValidationBuilder ?: CompletedValidationBuilder()
@@ -69,7 +69,7 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
      * Selects [TaskValidationExecution.TechnicalFailure.IncompleteDiagnostics] configured by [builder].
      * Repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun incompleteDiagnosticsFailure(builder: IncompleteDiagnosticsFailureBuilder.() -> Unit) {
         val currentBuilder = choice as? IncompleteDiagnosticsFailureBuilder ?: IncompleteDiagnosticsFailureBuilder()
@@ -80,7 +80,7 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
      * Selects [TaskValidationExecution.TechnicalFailure.CompletedDiagnostics] configured by [builder].
      * Repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun completedDiagnosticsFailure(builder: CompletedDiagnosticsFailureBuilder.() -> Unit) {
         val currentBuilder = choice as? CompletedDiagnosticsFailureBuilder ?: CompletedDiagnosticsFailureBuilder()
@@ -91,7 +91,7 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
      * Selects [TaskValidationExecution.TechnicalFailure.CreatedSubmissions] configured by [builder].
      * Repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createdSubmissionsFailure(builder: CreatedSubmissionsFailureBuilder.() -> Unit) {
         val currentBuilder = choice as? CreatedSubmissionsFailureBuilder ?: CreatedSubmissionsFailureBuilder()
@@ -103,7 +103,7 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
  * Builder of [TaskValidationExecution.AwaitingSubmissions].
  *
  * @property diagnostics the results of the completed diagnostic stage.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class AwaitingSubmissionsBuilder : Builder<TaskValidationExecution> {
     var diagnostics: MutableList<TestDiagnosticResult> = mutableListOf()
@@ -118,7 +118,7 @@ class AwaitingSubmissionsBuilder : Builder<TaskValidationExecution> {
  *
  * @property diagnostics the results of the completed diagnostic stage.
  * @property completedAt the terminal stop moment, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class StoppedByDiagnosticsBuilder : Builder<TaskValidationExecution> {
     var diagnostics: MutableList<TestDiagnosticResult> = mutableListOf()
@@ -135,7 +135,7 @@ class StoppedByDiagnosticsBuilder : Builder<TaskValidationExecution> {
  *
  * @property diagnostics the results of the completed diagnostic stage.
  * @property submissions the identifiers of the created submissions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SubmissionsCreatedBuilder : Builder<TaskValidationExecution> {
     var diagnostics: MutableList<TestDiagnosticResult> = mutableListOf()
@@ -144,7 +144,7 @@ class SubmissionsCreatedBuilder : Builder<TaskValidationExecution> {
     /**
      * Sets [submissions] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun submissions(submissions: Iterable<Long>) {
         this.submissions = submissions.map { SubmissionId(it) }.toMutableList()
@@ -163,7 +163,7 @@ class SubmissionsCreatedBuilder : Builder<TaskValidationExecution> {
  * @property submissions the ordered author submission identifiers.
  * @property failures the failed author submissions, empty if testing succeeded.
  * @property completedAt the terminal completion moment, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CompletedValidationBuilder : Builder<TaskValidationExecution> {
     var diagnostics: MutableList<TestDiagnosticResult> = mutableListOf()
@@ -174,7 +174,7 @@ class CompletedValidationBuilder : Builder<TaskValidationExecution> {
     /**
      * Sets [submissions] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun submissions(submissions: Iterable<Long>) {
         this.submissions = submissions.map { SubmissionId(it) }.toMutableList()
@@ -192,7 +192,7 @@ class CompletedValidationBuilder : Builder<TaskValidationExecution> {
  * Builder of [TaskValidationExecution.TechnicalFailure.IncompleteDiagnostics]. Required: [failure].
  *
  * @property failure the technical stop, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class IncompleteDiagnosticsFailureBuilder : Builder<TaskValidationExecution> {
     var failure: TaskValidationTechnicalFailure? = null
@@ -207,7 +207,7 @@ class IncompleteDiagnosticsFailureBuilder : Builder<TaskValidationExecution> {
  *
  * @property diagnostics the results of the completed diagnostic stage.
  * @property failure the technical stop, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CompletedDiagnosticsFailureBuilder : Builder<TaskValidationExecution> {
     var diagnostics: MutableList<TestDiagnosticResult> = mutableListOf()
@@ -225,7 +225,7 @@ class CompletedDiagnosticsFailureBuilder : Builder<TaskValidationExecution> {
  * @property diagnostics the results of the completed diagnostic stage.
  * @property submissions the identifiers of the created submissions.
  * @property failure the technical stop, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CreatedSubmissionsFailureBuilder : Builder<TaskValidationExecution> {
     var diagnostics: MutableList<TestDiagnosticResult> = mutableListOf()
@@ -235,7 +235,7 @@ class CreatedSubmissionsFailureBuilder : Builder<TaskValidationExecution> {
     /**
      * Sets [submissions] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun submissions(submissions: Iterable<Long>) {
         this.submissions = submissions.map { SubmissionId(it) }.toMutableList()

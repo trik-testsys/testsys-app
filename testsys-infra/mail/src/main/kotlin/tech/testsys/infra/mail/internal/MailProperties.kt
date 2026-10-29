@@ -19,7 +19,7 @@ import java.time.ZoneId
  * @property from the sender address of every letter.
  * @property region the region whose messages render the letters.
  * @property timeZone the time zone of the rendered messages.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalMailApi
 class MailProperties(

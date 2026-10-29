@@ -22,7 +22,7 @@ import tech.testsys.web.service.view.ServiceLoginView
  * The start and sign-in pages of both interfaces load their dependencies on bootstrap: the two interfaces share the
  * `""` and `login` paths, so the default choice of eager routes by path would leave one of them without its chunk.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Push
 @LoadDependenciesOnStartup(MainView::class, AuthenticationView::class, ServiceHomeView::class, ServiceLoginView::class)

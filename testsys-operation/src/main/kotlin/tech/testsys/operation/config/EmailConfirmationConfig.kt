@@ -7,7 +7,7 @@ import java.time.Duration
  *
  * @property confirmationCodeLifetime how long a newly issued confirmation code is accepted.
  * @property maxConfirmationAttempts the number of attempts to enter a newly issued confirmation code.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface EmailConfirmationConfig {
 

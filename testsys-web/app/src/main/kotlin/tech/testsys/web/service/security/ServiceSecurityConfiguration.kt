@@ -31,7 +31,7 @@ private const val SIGN_IN_COOKIE = "TESTSYS_SERVICE_SIGN_IN"
  * Service-only navigation, request authorization and logout, preserving the standard Vaadin CSRF protection; the
  * service sign-in survives a restart through [RememberedSignIns] while the startup secret stays the same.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 @EnableWebSecurity
@@ -39,7 +39,7 @@ class ServiceSecurityConfiguration {
     /**
      * Propagates the submitting service identity into this child's application executor.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun serviceSecurityTaskDecorator(): TaskDecorator = TaskDecorator { task -> DelegatingSecurityContextRunnable(task) }
@@ -47,7 +47,7 @@ class ServiceSecurityConfiguration {
     /**
      * Checks service page annotations and sends guests to the service login page.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun serviceNavigationAccessControl(): NavigationAccessControlConfigurer = NavigationAccessControlConfigurer()
@@ -58,7 +58,7 @@ class ServiceSecurityConfiguration {
      * Remembered service sign-ins in the cookie `TESTSYS_SERVICE_SIGN_IN`, idle for at most the session timeout of
      * [environment], with token digests bound to the startup secret of [settings].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun serviceSignIns(store: CabinetSignInStore, settings: ServiceWebSettings, environment: Environment, clock: Clock): RememberedSignIns =
@@ -68,7 +68,7 @@ class ServiceSecurityConfiguration {
      * Allows framework traffic and declared routes, denying other requests by default. A request without a signed-in
      * session is signed in from its sign-in in [serviceSignIns]; signing out forgets it.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun serviceSecurityFilterChain(http: HttpSecurity, serviceSignIns: RememberedSignIns): SecurityFilterChain {

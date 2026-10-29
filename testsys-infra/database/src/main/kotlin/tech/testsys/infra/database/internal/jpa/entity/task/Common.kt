@@ -11,7 +11,7 @@ import java.util.UUID
 /**
  * Column form of [tech.testsys.domain.model.task.TrikSupportedLanguage].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class TrikSupportedLanguageEnum {
@@ -27,7 +27,7 @@ enum class TrikSupportedLanguageEnum {
  * @property uploadedFileName the name the file was uploaded with.
  * @property storedFileName the key of the blob in the external storage.
  * @property contentHash SHA-256 hex digest of the content, used to detect changes without loading the blob.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -43,7 +43,7 @@ class FileDataJpaEntity(
  *
  * @property tag the Docker image tag that grading nodes run.
  * @property studioVersion the version number shown to people.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -59,7 +59,7 @@ class TrikStudioVersionJpaEntity(
  * @property description the description of the resource.
  * @property fileDataId id of the [FileDataJpaEntity] holding the content.
  * @property versionBucket identity shared by all versions of the resource.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @MappedSuperclass
 @InternalDatabaseApi

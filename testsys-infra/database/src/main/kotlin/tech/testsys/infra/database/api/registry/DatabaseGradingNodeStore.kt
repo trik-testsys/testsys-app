@@ -16,7 +16,7 @@ import tech.testsys.infra.settings.api.registry.StoredGradingNode
  * Checking node registry storage in independent transactions; idempotent writes repeat only database conflicts.
  * A commit exception is propagated so the registry can read back the outcome.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

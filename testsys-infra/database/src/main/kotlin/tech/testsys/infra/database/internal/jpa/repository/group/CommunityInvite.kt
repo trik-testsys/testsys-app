@@ -11,7 +11,7 @@ import java.time.Instant
 /**
  * Spring Data repository for [CommunityInviteJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -20,7 +20,7 @@ interface CommunityInviteJpaEntityRepository : SnowflakeJpaEntityRepository<Comm
     /**
      * Finds the invite of [role] with the stored [code] produced by [codeHashAlgorithm].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByRoleAndCodeAndCodeHashAlgorithm(
         role: CommunityInviteRoleJpaEnum,
@@ -31,7 +31,7 @@ interface CommunityInviteJpaEntityRepository : SnowflakeJpaEntityRepository<Comm
     /**
      * Finds the invites of [role] expiring at or before [now], ordered by id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByRoleAndExpiresAtLessThanEqualOrderByIdAsc(role: CommunityInviteRoleJpaEnum, now: Instant): List<CommunityInviteJpaEntity>
 }

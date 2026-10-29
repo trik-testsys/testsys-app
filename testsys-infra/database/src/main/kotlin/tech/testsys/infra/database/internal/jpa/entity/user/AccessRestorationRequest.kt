@@ -12,7 +12,7 @@ import java.time.Instant
  * @property confirmationCode the confirmation code sent to the e-mail address of the user.
  * @property expiresAt the moment the confirmation code expires.
  * @property attemptsLeft the number of remaining attempts to enter the code.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

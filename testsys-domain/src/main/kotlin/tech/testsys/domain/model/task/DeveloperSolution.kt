@@ -8,7 +8,7 @@ import java.time.Instant
 /**
  * Identifier of a [DeveloperSolution].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class DeveloperSolutionId(
@@ -25,7 +25,7 @@ value class DeveloperSolutionId(
  *   fixed on creation; update fails if it differs.
  * @property versionBucket the version chain shared by all versions of the same logical developer solution;
  *   fixed on creation and ignored on update.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperSolutionData(
     val name: String,
@@ -39,7 +39,7 @@ data class DeveloperSolutionData(
  * A task author's reference solution together with the score it is expected to receive; used to validate the task.
  *
  * @property data the data of the developer solution.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DeveloperSolution(
     id: DeveloperSolutionId,

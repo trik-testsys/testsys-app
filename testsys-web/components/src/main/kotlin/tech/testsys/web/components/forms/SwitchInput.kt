@@ -9,7 +9,7 @@ import tech.testsys.web.components.layout.BlockRowScope
 /**
  * Adds a boolean switch on [size] columns beside [labelSize] label columns.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.switchInput(
     label: String,

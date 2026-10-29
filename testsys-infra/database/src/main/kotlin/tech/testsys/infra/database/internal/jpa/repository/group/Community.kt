@@ -8,7 +8,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [CommunityJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -17,14 +17,14 @@ interface CommunityJpaEntityRepository : SnowflakeJpaEntityRepository<CommunityJ
     /**
      * Finds the community referencing [managerInviteId] as its manager invite or [developerInviteId] as its developer invite.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByManagerInviteIdOrDeveloperInviteId(managerInviteId: Long, developerInviteId: Long): CommunityJpaEntity?
 
     /**
      * Finds the communities owned by [ownerId] in ascending id order.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByOwnerIdOrderByIdAsc(ownerId: Long): List<CommunityJpaEntity>
 }

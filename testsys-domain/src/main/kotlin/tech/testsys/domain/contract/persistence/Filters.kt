@@ -17,7 +17,7 @@ import java.time.Instant
  * @property state the required lifecycle state, or `null` for any state.
  * @property communityId the community granted access to the task, or null for any sharing; never expands access.
  * @property excludeOwnerId the owner whose tasks are excluded before pagination and counting, or `null` for no exclusion.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskFilter(
     val name: String? = null,
@@ -30,7 +30,7 @@ data class TaskFilter(
     /**
      * Lifecycle state to select.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     enum class State {
         NEW,
@@ -45,7 +45,7 @@ data class TaskFilter(
  * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
  * @property ownerId the required owner, or `null` for any authorized owner.
  * @property communityId the community granted access to the contest, or null for any sharing; never expands access.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestFilter(
     val name: String? = null,
@@ -60,7 +60,7 @@ data class ContestFilter(
  * @property contestId the exact contest identifier, or `null` for every accessible contest; never expands access.
  * @property competitionName a literal case-insensitive competition-name substring, or `null` for any name.
  * @property competitionId the exact competition identifier, or `null` for every accessible competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ObserverContestFilter(
     val name: String? = null,
@@ -76,7 +76,7 @@ data class ObserverContestFilter(
  * @property submissionId the submission whose current successful verdict is selected, or null for any submission.
  * @property classId the class containing both the current student author and the contest, or null for any class.
  * @property competitionId the competition containing both the current participant author and the contest, or null for any competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class VerdictFilter(
     val authorId: UserId? = null,
@@ -92,7 +92,7 @@ data class VerdictFilter(
  * @property roles roles of which the user must hold any in an administrator's community, or null for any role.
  * @property communityId the only administrator's community whose membership counts, or null for all; never expands access.
  * @throws IllegalArgumentException if [roles] is empty.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class UserFilter(
     val name: String? = null,
@@ -107,7 +107,7 @@ data class UserFilter(
     /**
      * Community role to select.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     enum class Role {
         ADMINISTRATOR,
@@ -126,7 +126,7 @@ data class UserFilter(
  * @property createdFrom the inclusive lower creation-time bound, or null for no lower bound.
  * @property createdTo the inclusive upper creation-time bound, or null for no upper bound.
  * @throws IllegalArgumentException if [createdFrom] is later than [createdTo].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassFilter(
     val name: String? = null,
@@ -148,7 +148,7 @@ data class ClassFilter(
  * @property createdFrom the inclusive lower creation-time bound, or null for no lower bound.
  * @property createdTo the inclusive upper creation-time bound, or null for no upper bound.
  * @throws IllegalArgumentException if [createdFrom] is later than [createdTo].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionFilter(
     val name: String? = null,

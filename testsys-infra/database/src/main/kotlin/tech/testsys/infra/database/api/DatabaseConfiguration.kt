@@ -40,7 +40,7 @@ import java.time.Clock
  * Configures JPA, persistence adapters, the access-code hasher, file storage and transaction retries for the application.
  * The companion object registers [TransactionRetry] and an advisor outside the transaction interceptor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 @EntityScan(basePackages = ["tech.testsys.infra.database.internal.jpa.entity"])
@@ -53,7 +53,7 @@ class DatabaseConfiguration {
      * Binds the cleanup settings at creation, then reads them from the current snapshot of the shared holder,
      * or from [environment] without the holder.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun fileStorageCleanupSettings(environment: Environment, runtime: RuntimeSettings? = null): Settings<FileStorageCleanupProperties> =
@@ -62,7 +62,7 @@ class DatabaseConfiguration {
     /**
      * Dedicated UTC clock for file cleanup, selected explicitly so application clocks remain unambiguous.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean(defaultCandidate = false)
     fun fileStorageCleanupClock(): Clock = Clock.systemUTC()
@@ -70,7 +70,7 @@ class DatabaseConfiguration {
     /**
      * Transactional maintenance queries for orphan file rows.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     @OptIn(InternalDatabaseApi::class)
@@ -82,7 +82,7 @@ class DatabaseConfiguration {
     /**
      * Bounded filesystem traversal for maintenance cleanup.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     @OptIn(InternalDatabaseApi::class)
@@ -91,7 +91,7 @@ class DatabaseConfiguration {
     /**
      * Naming strategy applied to every entity of the module; Spring Boot passes it to Hibernate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     @OptIn(InternalDatabaseApi::class)
@@ -100,7 +100,7 @@ class DatabaseConfiguration {
     /**
      * Programmatic transactions repeated on a conflict; replaces the `TransactionTemplate` of Spring Boot.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun transactionOperations(transactionManager: PlatformTransactionManager, transactionRetry: TransactionRetry): TransactionOperations =
@@ -110,7 +110,7 @@ class DatabaseConfiguration {
      * Hasher of access codes keyed with the required `testsys.access-token.secret` property; changing the secret
      * invalidates every stored access code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun accessTokenHasher(environment: Environment): AccessTokenHasher {
@@ -121,7 +121,7 @@ class DatabaseConfiguration {
     /**
      * Absolute paths of the stored files, bound once from `testsys.file-storage.paths`; a missing path fails startup.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun fileStoragePaths(environment: Environment): FileStoragePaths =
@@ -130,7 +130,7 @@ class DatabaseConfiguration {
     /**
      * Static infrastructure beans: they are created before the auto-proxy creator wraps the application beans.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     companion object {
 
@@ -138,7 +138,7 @@ class DatabaseConfiguration {
          * The policy shared by all repeated transactions; each repeat is counted in the metrics registry, if any.
          * The registry is looked up at the first repeat, so this early bean does not create it.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         @JvmStatic
         @Bean
@@ -151,7 +151,7 @@ class DatabaseConfiguration {
          * Advisor of the methods the transaction advisor matches, ordered just outside it, so that each repeat
          * of a conflicting method runs in a new transaction.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         @JvmStatic
         @Bean

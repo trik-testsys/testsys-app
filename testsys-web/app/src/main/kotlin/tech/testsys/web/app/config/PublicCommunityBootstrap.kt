@@ -30,7 +30,7 @@ private const val MAX_COMMUNITY_NAME_CODE_POINTS = 255
  * Creates or verifies the configured public community before operations use its id.
  *
  * @property ownerEmail the reserved address of this bootstrap's technical owner.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class PublicCommunityBootstrap(
@@ -48,7 +48,7 @@ class PublicCommunityBootstrap(
     /**
      * Returns the configured id after creating or checking the public community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun ensure(environment: Environment): CommunityId {
         val properties = Binder.get(environment).bindOrCreate("testsys.operation.community", PublicCommunityProperties::class.java)

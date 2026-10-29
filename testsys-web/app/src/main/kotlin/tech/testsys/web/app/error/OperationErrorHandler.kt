@@ -22,7 +22,7 @@ import tech.testsys.web.monitoring.WebFailures
  * Error handler of every session: a failed operation in an event handler shows an error toast by the kind
  * of the failure, any other exception is counted in [failures] and goes to the default Vaadin handler.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringComponent
 class OperationErrorHandler(private val failures: WebFailures) : VaadinServiceInitListener, ErrorHandler {

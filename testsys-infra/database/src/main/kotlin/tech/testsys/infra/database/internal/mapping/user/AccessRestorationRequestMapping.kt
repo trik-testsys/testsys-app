@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [AccessRestorationRequest] and [AccessRestorationRequestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object AccessRestorationRequestMapping : EntityMapping<AccessRestorationRequest, AccessRestorationRequestJpaEntity> {
@@ -21,7 +21,7 @@ object AccessRestorationRequestMapping : EntityMapping<AccessRestorationRequest,
     /**
      * Assembles an [AccessRestorationRequest] from [jpaEntity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: AccessRestorationRequestJpaEntity) = accessRestorationRequest {
         populateFields(jpaEntity)
@@ -36,7 +36,7 @@ object AccessRestorationRequestMapping : EntityMapping<AccessRestorationRequest,
     /**
      * Creates a new [AccessRestorationRequestJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: AccessRestorationRequestData) = AccessRestorationRequestJpaEntity(
         userId = data.user.id.value,
@@ -49,7 +49,7 @@ object AccessRestorationRequestMapping : EntityMapping<AccessRestorationRequest,
      * Creates the [AccessRestorationRequestJpaEntity] row replacing [current] from [entity], keeping `userId`,
      * `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: AccessRestorationRequest, current: AccessRestorationRequestJpaEntity) = AccessRestorationRequestJpaEntity(
         userId = current.userId,

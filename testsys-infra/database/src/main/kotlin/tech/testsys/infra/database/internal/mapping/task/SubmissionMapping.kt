@@ -25,7 +25,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [Submission] and [SubmissionJpaEntity]; the sealed status and kind are flattened into nullable columns.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
@@ -35,7 +35,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
      * for developer solution tests;
      * fails on inconsistent status or kind columns.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(
         jpaEntity: SubmissionJpaEntity,
@@ -59,7 +59,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
     /**
      * Creates a new [SubmissionJpaEntity] row from [data]; [trikStudioVersionId] is required for developer solution tests.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: SubmissionData, trikStudioVersionId: Long?): SubmissionJpaEntity {
         val statusEncoded = encodeStatus(data.status)
@@ -88,7 +88,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
      * Creates the [SubmissionJpaEntity] row replacing [current] from [entity],
      * keeping `authorId`, `solutionId`, `taskId`, `trikStudioVersionId`, the kind columns, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Submission, current: SubmissionJpaEntity): SubmissionJpaEntity {
         val statusEncoded = encodeStatus(entity.data.status)

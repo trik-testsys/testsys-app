@@ -9,7 +9,7 @@ import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
  *
  * @param Domain the domain entity type.
  * @param Jpa the JPA entity type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 interface EntityMapping<Domain : DomainEntity<*>, Jpa : JpaEntity>

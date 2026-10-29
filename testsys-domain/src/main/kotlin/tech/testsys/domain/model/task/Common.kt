@@ -7,7 +7,7 @@ import java.util.UUID
  * Globally unique identifier shared by all versions of one logical resource, across all resource types.
  *
  * @property value the raw identifier of the version chain.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class VersionBucket(
@@ -17,27 +17,27 @@ value class VersionBucket(
 /**
  * Programming language of a TRIK Studio program.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface TrikSupportedLanguage {
     /**
      * Python.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     object Python : TrikSupportedLanguage
 
     /**
      * JavaScript.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     object JavaScript : TrikSupportedLanguage
 
     /**
      * The visual (diagram-based) language of TRIK Studio.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     object VisualLanguage : TrikSupportedLanguage
 }
@@ -46,7 +46,7 @@ sealed interface TrikSupportedLanguage {
  * Score awarded to a solution.
  *
  * @property value the raw score.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class Score(
@@ -58,7 +58,7 @@ value class Score(
  *
  * @property tag the Docker image tag, e.g. `"trikset/trik-studio:2026.2"`.
  * @property version the version number, e.g. `"2026.2"`.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TrikStudioVersion(
     val tag: String,
@@ -71,7 +71,7 @@ data class TrikStudioVersion(
  *
  * @property uploadedFilename the original name of the file as it entered the system.
  * @property content the inline bytes or stored reference of the file.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class FileData(
     val uploadedFilename: String,
@@ -80,7 +80,7 @@ class FileData(
     /**
      * Creates a file with inline [content].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     constructor(uploadedFilename: String, content: ByteArray) : this(uploadedFilename, FileContent.Inline(content))
 }
@@ -88,14 +88,14 @@ class FileData(
 /**
  * Binary content held in memory or referenced in file storage.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface FileContent {
     /**
      * Content supplied in memory.
      *
      * @property bytes the raw bytes.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     class Inline(val bytes: ByteArray) : FileContent
 
@@ -104,7 +104,7 @@ sealed interface FileContent {
      *
      * @property ref the opaque blob reference.
      * @property kind the storage directory kind.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Stored(val ref: StoredBlobRef, val kind: FileStorageKind) : FileContent
 }
@@ -112,48 +112,48 @@ sealed interface FileContent {
 /**
  * Storage directory kind of a file.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class FileStorageKind {
     /**
      * Statement files.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Statement,
 
     /**
      * Exercise files.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Exercise,
 
     /**
      * Test files.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Test,
 
     /**
      * Solution files.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Solution,
 
     /**
      * Recording files.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Recording,
 
     /**
      * Logs files.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Logs,
 }

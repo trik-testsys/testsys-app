@@ -41,13 +41,13 @@ internal fun pagerArrow(name: IconName, label: String): NativeButton = NativeBut
 /**
  * Adds an icon of the standard size next to a text; an icon never replaces a label.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.icon(name: IconName): ElementHandle = ElementHandle(svgIcon(name).also { icon -> add(icon) })
 
 /**
  * Adds an icon of the standard size on [size] columns of the row, or on the rest of it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.icon(name: IconName, size: Int? = null): ElementHandle = ElementHandle(place(size, svgIcon(name)))

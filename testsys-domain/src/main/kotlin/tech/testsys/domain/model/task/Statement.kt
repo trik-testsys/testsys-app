@@ -7,7 +7,7 @@ import java.time.Instant
 /**
  * Identifier of a [Statement].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class StatementId(
@@ -22,7 +22,7 @@ value class StatementId(
  * @property description the description of the statement.
  * @property versionBucket the version chain shared by all versions of the same logical statement;
  *   fixed on creation and ignored on update.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StatementData(
     val file: FileData,
@@ -35,7 +35,7 @@ data class StatementData(
  * A PDF/TXT document describing a task to solvers.
  *
  * @property data the data of the statement.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Statement(
     id: StatementId,

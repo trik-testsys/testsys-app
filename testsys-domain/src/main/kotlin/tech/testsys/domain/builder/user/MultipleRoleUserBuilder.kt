@@ -33,7 +33,7 @@ import java.time.Instant
  *
  * @param Role the type of the built role.
  * @property memberOf the ids of the communities the role is a member of.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class CompatibleUserRoleBuilderWithoutData<Role : CompatibleUserRole> : Builder<Role> {
 
@@ -42,7 +42,7 @@ abstract class CompatibleUserRoleBuilderWithoutData<Role : CompatibleUserRole> :
     /**
      * Sets [memberOf] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun memberOf(communities: Iterable<Long>) {
         memberOf = communities.map { CommunityId(it) }.toMutableList()
@@ -56,7 +56,7 @@ abstract class CompatibleUserRoleBuilderWithoutData<Role : CompatibleUserRole> :
  * @param Data the type of the role data.
  * @param DataBuilder the builder type of [Data].
  * @property memberOf the ids of the communities the role is a member of.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data, DataBuilder : Builder<Data>> :
     DomainEntityWithDataBuilder<Role, Data, DataBuilder>() {
@@ -66,7 +66,7 @@ abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data
     /**
      * Sets [memberOf] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun memberOf(communities: Iterable<Long>) {
         memberOf = communities.map { CommunityId(it) }.toMutableList()
@@ -78,7 +78,7 @@ abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data
  *
  * @property tasks the ids of the tasks authored by the developer.
  * @property contests the ids of the contests authored by the developer.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DeveloperDataBuilder : Builder<DeveloperData> {
 
@@ -89,7 +89,7 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
     /**
      * Sets [tasks] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tasks(tasks: Iterable<Long>) {
         this.tasks = tasks.map { TaskId(it) }.toMutableList()
@@ -98,7 +98,7 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
     /**
      * Sets [contests] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun contests(contests: Iterable<Long>) {
         this.contests = contests.map { ContestId(it) }.toMutableList()
@@ -115,7 +115,7 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
 /**
  * Builder of the [Developer] role. Required: [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DeveloperBuilder : CompatibleUserRoleBuilderWithData<Developer, DeveloperData, DeveloperDataBuilder>() {
 
@@ -136,7 +136,7 @@ class DeveloperBuilder : CompatibleUserRoleBuilderWithData<Developer, DeveloperD
  *
  * @property classes the ids of the classes the student is enrolled in.
  * @property submissions the ids of the submissions made by the student.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class StudentDataBuilder : Builder<StudentData> {
 
@@ -147,7 +147,7 @@ class StudentDataBuilder : Builder<StudentData> {
     /**
      * Sets [classes] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun classes(classes: Iterable<Long>) {
         this.classes = classes.map { ClassId(it) }.toMutableList()
@@ -156,7 +156,7 @@ class StudentDataBuilder : Builder<StudentData> {
     /**
      * Sets [submissions] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun submissions(submissions: Iterable<Long>) {
         this.submissions = submissions.map { SubmissionId(it) }.toMutableList()
@@ -173,7 +173,7 @@ class StudentDataBuilder : Builder<StudentData> {
 /**
  * Builder of the [Student] role. Required: [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class StudentBuilder : CompatibleUserRoleBuilderWithData<Student, StudentData, StudentDataBuilder>() {
 
@@ -192,7 +192,7 @@ class StudentBuilder : CompatibleUserRoleBuilderWithData<Student, StudentData, S
 /**
  * Builder of the [Administrator] role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class AdministratorBuilder : CompatibleUserRoleBuilderWithoutData<Administrator>() {
 
@@ -205,7 +205,7 @@ class AdministratorBuilder : CompatibleUserRoleBuilderWithoutData<Administrator>
  * Builder of [JudgeData].
  *
  * @property judgmentOrders the ids of the rulings issued by the judge.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class JudgeDataBuilder : Builder<JudgeData> {
 
@@ -214,7 +214,7 @@ class JudgeDataBuilder : Builder<JudgeData> {
     /**
      * Sets [judgmentOrders] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun judgmentOrders(judgmentOrders: Iterable<Long>) {
         this.judgmentOrders = judgmentOrders.map { JudgmentOrderId(it) }.toMutableList()
@@ -228,7 +228,7 @@ class JudgeDataBuilder : Builder<JudgeData> {
 /**
  * Builder of the [Judge] role. Required: [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class JudgeBuilder : CompatibleUserRoleBuilderWithData<Judge, JudgeData, JudgeDataBuilder>() {
 
@@ -249,7 +249,7 @@ class JudgeBuilder : CompatibleUserRoleBuilderWithData<Judge, JudgeData, JudgeDa
  *
  * @property classes the ids of the classes owned by the manager.
  * @property competitions the ids of the competitions owned by the manager.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ManagerDataBuilder : Builder<ManagerData> {
 
@@ -260,7 +260,7 @@ class ManagerDataBuilder : Builder<ManagerData> {
     /**
      * Sets [classes] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun classes(classes: Iterable<Long>) {
         this.classes = classes.map { ClassId(it) }.toMutableList()
@@ -269,7 +269,7 @@ class ManagerDataBuilder : Builder<ManagerData> {
     /**
      * Sets [competitions] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun competitions(competitions: Iterable<Long>) {
         this.competitions = competitions.map { CompetitionId(it) }.toMutableList()
@@ -284,7 +284,7 @@ class ManagerDataBuilder : Builder<ManagerData> {
 /**
  * Builder of the [Manager] role. Required: [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ManagerBuilder : CompatibleUserRoleBuilderWithData<Manager, ManagerData, ManagerDataBuilder>() {
 
@@ -309,7 +309,7 @@ private typealias Roles = MutableList<CompatibleUserRole>
  * @property passwordHash the stored password representation of the user, or `null` if not set yet.
  * @property name the name of the user, or `null` if not set yet.
  * @property email the e-mail address of the user, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
 
@@ -324,7 +324,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     /**
      * Configures the roles of the user with [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun roles(builder: Roles.() -> Unit) {
         roles.builder()
@@ -333,7 +333,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     /**
      * Adds a [Developer] role configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun Roles.developer(builder: DeveloperBuilder.() -> Unit) {
         DeveloperBuilder()
@@ -345,7 +345,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     /**
      * Adds a [Student] role configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun Roles.student(builder: StudentBuilder.() -> Unit) {
         StudentBuilder()
@@ -357,7 +357,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     /**
      * Adds a [Judge] role configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun Roles.judge(builder: JudgeBuilder.() -> Unit) {
         JudgeBuilder()
@@ -369,7 +369,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     /**
      * Adds a [Manager] role configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun Roles.manager(builder: ManagerBuilder.() -> Unit) {
         ManagerBuilder()
@@ -381,7 +381,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     /**
      * Adds an [Administrator] role configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun Roles.administrator(builder: AdministratorBuilder.() -> Unit) {
         AdministratorBuilder()
@@ -401,7 +401,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
 /**
  * Builder of [MultipleRoleUser] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class MultipleRoleUserBuilder :
     UserBuilder<MultipleRoleUserId, MultipleRoleUser, MultipleRoleUserData, MultipleRoleUserDataBuilder>() {

@@ -53,7 +53,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * Content revisions are replaced wholesale as task content rows on save and update and dropped together with the
  * shared-community and uploaded-resource join rows on remove; update and remove increment the task version first.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

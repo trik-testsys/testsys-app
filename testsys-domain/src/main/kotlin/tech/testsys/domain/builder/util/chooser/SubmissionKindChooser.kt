@@ -11,14 +11,14 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 /**
  * DSL chooser of a [SubmissionKind].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SubmissionKindChooser : Chooser<SubmissionKind>() {
 
     /**
      * Selects [SubmissionKind.Grading] configured by [builder]; repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun grading(builder: GradingSubmissionKindBuilder.() -> Unit) {
         val currentBuilder = choice as? GradingSubmissionKindBuilder ?: GradingSubmissionKindBuilder()
@@ -28,7 +28,7 @@ class SubmissionKindChooser : Chooser<SubmissionKind>() {
     /**
      * Selects [SubmissionKind.DeveloperSolutionTest] configured by [builder]; repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun developerSolutionTest(builder: DeveloperSolutionTestSubmissionKindBuilder.() -> Unit) {
         val currentBuilder = choice as? DeveloperSolutionTestSubmissionKindBuilder
@@ -41,7 +41,7 @@ class SubmissionKindChooser : Chooser<SubmissionKind>() {
  * Builder of [SubmissionKind.DeveloperSolutionTest]. Required: [trikStudioVersion].
  *
  * @property trikStudioVersion the TRIK Studio version used for the test run, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DeveloperSolutionTestSubmissionKindBuilder : Builder<SubmissionKind> {
 
@@ -50,7 +50,7 @@ class DeveloperSolutionTestSubmissionKindBuilder : Builder<SubmissionKind> {
     /**
      * Sets [trikStudioVersion] from a raw Docker image [tag] and a version number [version].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun trikStudioVersion(tag: String, version: String) {
         trikStudioVersion = TrikStudioVersion(tag = tag, version = version)
@@ -66,7 +66,7 @@ class DeveloperSolutionTestSubmissionKindBuilder : Builder<SubmissionKind> {
  * Builder of [SubmissionKind.Grading]. Required: [contest].
  *
  * @property contest the id of the contest the submission was made in, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class GradingSubmissionKindBuilder : Builder<SubmissionKind> {
 
@@ -75,7 +75,7 @@ class GradingSubmissionKindBuilder : Builder<SubmissionKind> {
     /**
      * Sets [contest] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun contest(contestId: Long) {
         contest = ContestId(contestId)

@@ -13,7 +13,7 @@ import java.util.HexFormat
  * @property address the listener address configured for deployment.
  * @property port the listener port; zero requests a random port in tests.
  * @property grafanaUrl the absolute http or https address of Grafana opened from the service cabinet without signing in.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ServiceWebSettings private constructor(
     val address: String,
@@ -24,7 +24,7 @@ class ServiceWebSettings private constructor(
     /**
      * Compares the digest of [candidate] without returning on a matching prefix.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun matches(candidate: String): Boolean = MessageDigest.isEqual(secretDigest, digest(candidate))
 
@@ -32,7 +32,7 @@ class ServiceWebSettings private constructor(
      * Returns the SHA-256 hex digest of the sign-in [token] bound to the startup secret, so that a changed secret
      * invalidates the sign-ins made with the previous one.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun signInTokenHash(token: String): String {
         val digest = MessageDigest.getInstance("SHA-256")
@@ -53,7 +53,7 @@ class ServiceWebSettings private constructor(
          * @throws IllegalArgumentException if the secret or the Grafana address is missing or invalid, the address is blank
          * or the port is out of range.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         fun from(environment: Environment): ServiceWebSettings {
             val binder = strictBinder(environment)

@@ -7,7 +7,7 @@ import java.util.EnumMap
 /**
  * Immutable complete set of canonical, validated settings values.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SettingsValues(values: Map<SettingKey, String>) {
     private val values = Collections.unmodifiableMap(EnumMap<SettingKey, String>(SettingKey::class.java).apply { putAll(values) })
@@ -15,7 +15,7 @@ class SettingsValues(values: Map<SettingKey, String>) {
     /**
      * Returns the canonical value of [key].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     operator fun get(key: SettingKey): String = values.getValue(key)
 
@@ -25,28 +25,28 @@ class SettingsValues(values: Map<SettingKey, String>) {
     /**
      * Returns an integer setting.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun int(key: SettingKey): Int = get(key).toInt()
 
     /**
      * Returns a long setting.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun long(key: SettingKey): Long = get(key).toLong()
 
     /**
      * Returns a boolean setting.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun boolean(key: SettingKey): Boolean = get(key).toBooleanStrict()
 
     /**
      * Returns a duration setting.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun duration(key: SettingKey): Duration = Duration.parse(get(key))
 }

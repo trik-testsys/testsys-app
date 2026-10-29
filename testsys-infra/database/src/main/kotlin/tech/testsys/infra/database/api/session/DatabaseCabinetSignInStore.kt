@@ -17,7 +17,7 @@ private const val SERVICE_KIND = "SERVICE"
  * Sign-in storage backed by [CabinetSignInJpaEntity] in independent transactions; every call repeats only database
  * conflicts.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

@@ -8,7 +8,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [RegistrationRequestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -17,7 +17,7 @@ interface RegistrationRequestJpaEntityRepository : SnowflakeJpaEntityRepository<
     /**
      * Finds the request row whose e-mail address equals [email].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByEmail(email: String): RegistrationRequestJpaEntity?
 }

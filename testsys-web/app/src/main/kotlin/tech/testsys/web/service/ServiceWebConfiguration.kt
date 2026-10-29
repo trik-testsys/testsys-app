@@ -12,7 +12,7 @@ import tech.testsys.bootstrap.WebAutoConfiguration
  * Isolated service web child using explicit auto-configuration imports and scanning only service pages and the common shell.
  * The application annotation also lets development tools discover this child.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringBootApplication(proxyBeanMethods = false)
 @ComponentScan(

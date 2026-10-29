@@ -9,7 +9,7 @@ import tech.testsys.domain.model.LazyEntityList
  * @property developerSolution the concrete author solution version.
  * @property solution the immutable program.
  * @property expectedScore the expected score.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperSolutionValidationInput(
     val developerSolution: LazyEntity<DeveloperSolutionId, DeveloperSolution>,
@@ -23,7 +23,7 @@ data class DeveloperSolutionValidationInput(
  * @property tests the concrete polygon versions.
  * @property developerSolutions the author programs and expectations.
  * @property supportedTrikStudioVersions the execution environment versions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskValidationSnapshot(
     val tests: LazyEntityList<TestId, Test>,
@@ -33,14 +33,14 @@ data class TaskValidationSnapshot(
     /**
      * Operations on [TaskValidationSnapshot] values.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     companion object {
         /**
          * Lists every author solution and TRIK Studio version pair of [snapshot] in the canonical order
          * of author submissions: by author solution identifier, then by Docker image tag.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         fun authorRuns(snapshot: TaskValidationSnapshot): List<AuthorSolutionRun> {
             val versions = snapshot.supportedTrikStudioVersions.sortedBy { it.tag }
@@ -56,7 +56,7 @@ data class TaskValidationSnapshot(
  *
  * @property input the author solution inputs.
  * @property trikStudioVersion the execution environment version.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class AuthorSolutionRun(
     val input: DeveloperSolutionValidationInput,

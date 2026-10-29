@@ -8,7 +8,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [AccessRestorationRequestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -17,7 +17,7 @@ interface AccessRestorationRequestJpaEntityRepository : SnowflakeJpaEntityReposi
     /**
      * Finds the request row of the user [userId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByUserId(userId: Long): AccessRestorationRequestJpaEntity?
 }

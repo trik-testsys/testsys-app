@@ -23,7 +23,7 @@ import java.time.Instant
  * @param U the type of the built user.
  * @param Data the type of the user data.
  * @param DataBuilder the builder type of [Data].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class SingleRoleUserBuilder<U : SingleRoleUser, Data, DataBuilder : Builder<Data>> :
     UserBuilder<SingleRoleUserId, U, Data, DataBuilder>() {
@@ -37,7 +37,7 @@ abstract class SingleRoleUserBuilder<U : SingleRoleUser, Data, DataBuilder : Bui
  *
  * @property competition the id of the competition the participant belongs to, or `null` if not set yet.
  * @property name the name of the participant, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ParticipantDataBuilder : UserDataBuilder<ParticipantData>() {
 
@@ -48,7 +48,7 @@ class ParticipantDataBuilder : UserDataBuilder<ParticipantData>() {
     /**
      * Sets [competition] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun competition(competitionId: Long) {
         this.competition = CompetitionId(competitionId)
@@ -68,7 +68,7 @@ class ParticipantDataBuilder : UserDataBuilder<ParticipantData>() {
 /**
  * Builder of [Participant] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, ParticipantDataBuilder>() {
 
@@ -94,7 +94,7 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, P
  * @property community the id of the community the observer is a member of, or `null` if not set yet.
  * @property contests the ids of the contests assigned to the observer.
  * @property name the name of the observer, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
 
@@ -107,7 +107,7 @@ class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
     /**
      * Sets [community] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun community(communityId: Long) {
         this.community = CommunityId(communityId)
@@ -116,7 +116,7 @@ class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
     /**
      * Sets [contests] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun contests(contests: Iterable<Long>) {
         this.contests = contests.map { ContestId(it) }.toMutableList()
@@ -137,7 +137,7 @@ class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
 /**
  * Builder of [Observer] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDataBuilder>() {
 
@@ -161,7 +161,7 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDa
  * Builder of [SupervisorData]. Required: [accessToken] or [storedAccessToken], [name].
  *
  * @property name the name of the supervisor, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SupervisorDataBuilder : UserDataBuilder<SupervisorData>() {
 
@@ -176,7 +176,7 @@ class SupervisorDataBuilder : UserDataBuilder<SupervisorData>() {
 /**
  * Builder of [Supervisor] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SupervisorBuilder : SingleRoleUserBuilder<Supervisor, SupervisorData, SupervisorDataBuilder>() {
 

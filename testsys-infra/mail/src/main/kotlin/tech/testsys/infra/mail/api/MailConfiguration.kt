@@ -16,7 +16,7 @@ import tech.testsys.infra.mail.internal.MailSettings
  * Registers the SMTP adapter of the user mail port with its defaults; the application overrides the
  * `testsys.mail.*` properties through the Spring Environment, which is bound once at startup.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalMailApi::class)
 @Configuration

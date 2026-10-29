@@ -18,7 +18,7 @@ import tech.testsys.infra.monitoring.api.TechnicalFailures
  * within active transaction synchronization a letter is sent after the commit and a failure is logged and counted
  * in [failures].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalMailApi::class)

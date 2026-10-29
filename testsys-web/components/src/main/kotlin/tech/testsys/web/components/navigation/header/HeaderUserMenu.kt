@@ -31,7 +31,7 @@ import java.util.Locale
  * User menu supplied by the application; destructive items follow ordinary items.
  *
  * @property items the links and actions in display order.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class HeaderUserMenu(val items: List<HeaderUserMenuItem>) {
     init {
@@ -50,7 +50,7 @@ data class HeaderUserMenu(val items: List<HeaderUserMenuItem>) {
  * @property destination the route or handler.
  * @property isEnabled whether the item can be selected.
  * @property isDestructive whether the action is visually separated and marked as destructive.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class HeaderUserMenuItem(
     val label: String,

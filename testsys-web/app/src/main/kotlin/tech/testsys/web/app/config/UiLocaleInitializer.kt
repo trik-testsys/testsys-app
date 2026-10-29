@@ -21,7 +21,7 @@ private const val ACCEPT_LANGUAGE = "Accept-Language"
  * the browser languages, then from `testsys.web.localization.default-region`; dates start in
  * `testsys.web.localization.default-time-zone` until the browser reports its zone.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringComponent
 class UiLocaleInitializer(environment: Environment) : VaadinServiceInitListener {

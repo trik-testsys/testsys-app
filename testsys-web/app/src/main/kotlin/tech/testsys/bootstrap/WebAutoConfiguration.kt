@@ -30,7 +30,7 @@ internal const val WEB_DEFAULTS = "classpath:web-defaults.properties"
  * registry belong to the shared parent. Each importing child owns its web server and application executor
  * and gets the defaults of the module parameters from `web-defaults.properties`.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 @PropertySource(WEB_DEFAULTS)

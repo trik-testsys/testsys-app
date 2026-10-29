@@ -19,7 +19,7 @@ import java.time.Duration
  * @param delay the base pause before the first repeat, doubled for each next one.
  * @param jitter the random deviation of the first pause, doubled together with it.
  * @param onRetry called before every repeat, for example to count repeats.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TransactionRetry(
     maxRetries: Long = DEFAULT_MAX_RETRIES,
@@ -43,7 +43,7 @@ class TransactionRetry(
      * in the log. Each call of [attempt] must open its own transaction.
      *
      * @param T the result type.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun <T> run(name: String, attempt: () -> T): T {
         if (TransactionSynchronizationManager.isActualTransactionActive()) return attempt()

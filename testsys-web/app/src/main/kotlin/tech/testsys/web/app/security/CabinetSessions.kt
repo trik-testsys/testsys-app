@@ -11,7 +11,7 @@ import tech.testsys.infra.database.api.session.CabinetSignInUserId
  * remembered sign-ins from [store]; an expired session is signed out on its next request. Sessions live in the memory
  * of one application instance, remembered sign-ins are deleted for every instance.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 class CabinetSessions(
@@ -24,7 +24,7 @@ class CabinetSessions(
      * remembered sign-ins, except the session with id [except] of the current request and its sign-in; sessions of a
      * supervisor signed in as the user stay.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun expire(userId: Long, except: String? = null) {
         registry.getAllSessions(CabinetPrincipal(userId = userId, kind = UserKind.MULTIPLE_ROLE), false)

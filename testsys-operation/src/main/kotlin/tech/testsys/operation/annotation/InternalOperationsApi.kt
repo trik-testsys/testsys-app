@@ -3,7 +3,7 @@ package tech.testsys.operation.annotation
 /**
  * Opt-in marker for declarations internal to the operation module; callers outside it must opt in explicitly.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @RequiresOptIn
 @Target(

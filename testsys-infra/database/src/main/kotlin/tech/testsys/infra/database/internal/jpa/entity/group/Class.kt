@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property studentId id of the student.
  * @property classId id of the class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -27,7 +27,7 @@ data class StudentToClassId(
 /**
  * Join row: a student is a member of a class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -39,7 +39,7 @@ class StudentToClassJpaEntity(id: StudentToClassId) : CompositeJpaEntity<Student
  *
  * @property contestId id of the contest.
  * @property classId id of the class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -51,7 +51,7 @@ data class ContestToClassId(
 /**
  * Join row: a contest is assigned to a class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -65,7 +65,7 @@ class ContestToClassJpaEntity(id: ContestToClassId) : CompositeJpaEntity<Contest
  * @property description the description of the class.
  * @property ownerId id of the manager owning the class.
  * @property inviteId id of the invite code of the class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

@@ -12,7 +12,7 @@ import tech.testsys.web.app.service.study.toVo
  * @property submission the submission data.
  * @property lastJudgment the latest judgment, or `null` without judgments.
  * @property finalScore the latest judgment score or the automatic total.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class JudgeResultVo(
     val verdict: VerdictVo,

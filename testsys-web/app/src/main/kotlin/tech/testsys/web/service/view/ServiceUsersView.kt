@@ -56,7 +56,7 @@ private val ROLE_LABELS: Map<ServiceUserRole, String> = mapOf(
  * Service search of users of every kind by id, name, e-mail, roles and related community, class or competition;
  * a row opens the card of the user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("users")
 @PageTitle("Пользователи")

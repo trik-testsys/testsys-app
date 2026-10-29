@@ -14,7 +14,7 @@ import java.time.Instant
  * Runs [ParticipantOperations] for the current user in one transaction per call.
  * A failed operation throws `OperationException`, which rolls the transaction back.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -22,7 +22,7 @@ class ParticipantService(private val operations: ParticipantOperations, private 
     /**
      * Runs [ParticipantOperations.viewContests].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewContests(): List<Pair<Instant?, ContestVo>> = operations.viewContests(currentUser.singleRoleUser())
@@ -31,7 +31,7 @@ class ParticipantService(private val operations: ParticipantOperations, private 
     /**
      * Runs [ParticipantOperations.enterContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun enterContest(contestId: ContestId): ParticipantContestEntryVo =
         operations.enterContest(currentUser.singleRoleUser(), contestId).getOrThrow().toVo()

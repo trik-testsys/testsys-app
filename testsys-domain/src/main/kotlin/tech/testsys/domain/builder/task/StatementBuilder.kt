@@ -16,7 +16,7 @@ import tech.testsys.domain.model.task.VersionBucket
  * @property name the name of the statement, or `null` if not set yet.
  * @property description the description of the statement, or `null` if not set yet.
  * @property versionBucket the version chain shared by all versions of the statement, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class StatementDataBuilder : Builder<StatementData> {
 
@@ -33,7 +33,7 @@ class StatementDataBuilder : Builder<StatementData> {
      *
      * @param uploadedFilename the original name of the uploaded file.
      * @param content the raw binary content of the file.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
@@ -42,7 +42,7 @@ class StatementDataBuilder : Builder<StatementData> {
     /**
      * Sets [file] without reading its contents.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(file: FileData) {
         _file = file
@@ -66,7 +66,7 @@ class StatementDataBuilder : Builder<StatementData> {
 /**
  * Builder of [Statement] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class StatementBuilder : DomainEntityWithDataBuilder<Statement, StatementData, StatementDataBuilder>() {
 

@@ -28,7 +28,7 @@ private const val ROLES_COLUMNS = 12
  * Main page of the Cabinet of a user with non-fixed roles (testsys.web.page.multi.main): the roles of the user with links
  * to their pages, the communities of the user with the roles in each of them and joining a community by an invite code.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("home")
 @RolesAllowed("MULTIPLE_ROLE")

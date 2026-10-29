@@ -43,7 +43,7 @@ private const val EDGE_REACH = 4
  * [IllegalArgumentException].
  * @property pageCount the number of pages; a smaller count shows the last page in place of a later current one, a
  * count below 1 throws [IllegalArgumentException].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class PaginationHandle internal constructor(
     private val root: Div,
@@ -96,7 +96,7 @@ class PaginationHandle internal constructor(
      * Runs [listener] with the page a user chooses by a page button or an arrow; a click on the current page does
      * not run it. Replaces a listener set by an earlier call.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onChange(listener: (Int) -> Unit) {
         this.listener = listener
@@ -107,7 +107,7 @@ class PaginationHandle internal constructor(
      * A user choice then only runs the listener of [onChange], and the pagination shows it once [signal] takes it.
      * A manual [page] while bound, and a second binding, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindPage(signal: Signal<Int>): SignalBinding<Int> = current.bind(signal)
 
@@ -155,7 +155,7 @@ class PaginationHandle internal constructor(
  * reacts to a choice through [PaginationHandle.onChange].
  *
  * @throws IllegalArgumentException if [pageCount] is below 1 or [page] is not within `1..pageCount`.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.pagination(pageCount: Int, page: Int = 1, configure: PaginationHandle.() -> Unit = {}): PaginationHandle {
     val handle = PaginationHandle(Div(), texts, pageCount = pageCount, page = page)

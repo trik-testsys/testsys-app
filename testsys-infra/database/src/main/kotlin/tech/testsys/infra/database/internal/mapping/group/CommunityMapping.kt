@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [Community] and [CommunityJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
@@ -21,7 +21,7 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
     /**
      * Assembles a [Community] from [jpaEntity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: CommunityJpaEntity) = community {
         populateFields(jpaEntity)
@@ -37,7 +37,7 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
     /**
      * Creates a new [CommunityJpaEntity] row from [data], optionally using the supplied [id].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: CommunityData, id: Long? = null) = CommunityJpaEntity(
         name = data.name,
@@ -52,7 +52,7 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
      * Creates the [CommunityJpaEntity] row replacing [current] from [entity], keeping `ownerId`, the invite ids,
      * `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Community, current: CommunityJpaEntity) = CommunityJpaEntity(
         name = entity.data.name,

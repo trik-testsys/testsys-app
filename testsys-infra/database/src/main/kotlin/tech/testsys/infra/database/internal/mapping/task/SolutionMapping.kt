@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 /**
  * Mapping between [Solution] and [SolutionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object SolutionMapping : EntityMapping<Solution, SolutionJpaEntity> {
@@ -23,7 +23,7 @@ object SolutionMapping : EntityMapping<Solution, SolutionJpaEntity> {
     /**
      * Assembles a [Solution] from [jpaEntity] and its [file].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: SolutionJpaEntity, file: FileData) = solution {
         populateFields(jpaEntity)
@@ -37,7 +37,7 @@ object SolutionMapping : EntityMapping<Solution, SolutionJpaEntity> {
     /**
      * Creates a new [SolutionJpaEntity] row from [data] referencing the stored file [fileDataId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: SolutionData, fileDataId: Long) = SolutionJpaEntity(
         fileDataId = fileDataId,

@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * logging each failure without stopping other invites or later passes.
  * [close] shuts [executor] down, interrupting a running pass; repeated calls are safe.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Suppress("LongParameterList")
 class InviteRefresher(
@@ -53,7 +53,7 @@ class InviteRefresher(
      * Called once at application startup.
      *
      * @throws IllegalStateException if already started or a refresh period is zero or negative.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun start() {
         val classPeriod = classInviteConfig.refreshPeriod

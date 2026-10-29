@@ -79,14 +79,14 @@ import java.util.random.RandomGenerator
 /**
  * Assembles the operation classes from the ports supplied by the infrastructure modules.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 class OperationsConfiguration {
     /**
      * Supervisor operations over all users and communities.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun supervisorOperations(
@@ -108,7 +108,7 @@ class OperationsConfiguration {
     /**
      * Clock of the operations that check time.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun clock(): Clock = Clock.systemUTC()
@@ -116,7 +116,7 @@ class OperationsConfiguration {
     /**
      * Cryptographically strong generator of confirmation and access codes.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun randomGenerator(): RandomGenerator = SecureRandom()
@@ -124,7 +124,7 @@ class OperationsConfiguration {
     /**
      * Creates or verifies the public community with the required configured id before supplying it to operations.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun communityConfig(
@@ -160,7 +160,7 @@ class OperationsConfiguration {
      * `testsys.operation.supervisor` after all singletons of the shared infrastructure are created, before the web
      * contexts start.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun supervisorBootstrap(
@@ -179,7 +179,7 @@ class OperationsConfiguration {
      * Email confirmation settings from the current snapshot of [runtime], retained for the transaction that reads them
      * first so that the lifetime and attempts form one pair.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun emailConfirmationSettings(environment: Environment, runtime: RuntimeSettings): Settings<EmailConfirmationProperties> {
@@ -190,7 +190,7 @@ class OperationsConfiguration {
     /**
      * Confirmation code lifetime and attempts from [settings].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun emailConfirmationConfig(settings: Settings<EmailConfirmationProperties>): EmailConfirmationConfig {
@@ -203,7 +203,7 @@ class OperationsConfiguration {
     /**
      * Community invite settings from the current snapshot of [runtime].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun communityInviteSettings(environment: Environment, runtime: RuntimeSettings): Settings<CommunityInviteProperties> =
@@ -212,7 +212,7 @@ class OperationsConfiguration {
     /**
      * Community invite validity from [settings] and a static refresh period from [environment].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun communityInviteConfig(environment: Environment, settings: Settings<CommunityInviteProperties>): CommunityInviteConfig {
@@ -226,7 +226,7 @@ class OperationsConfiguration {
     /**
      * Operations of Administrators.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun administratorOperations(
@@ -272,7 +272,7 @@ class OperationsConfiguration {
     /**
      * Operations of any user without a fixed role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun multipleRoleUserOperations(
@@ -306,7 +306,7 @@ class OperationsConfiguration {
     /**
      * Operations of any user, including login and registration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun userOperations(
@@ -340,7 +340,7 @@ class OperationsConfiguration {
     /**
      * Grader for operations running in a service transaction.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun afterCommitGrader(grader: BalancingGrader): AfterCommitGrader = AfterCommitGrader(grader)
@@ -348,7 +348,7 @@ class OperationsConfiguration {
     /**
      * Processing of saved task validation requests; it runs outside service transactions and grades at once.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun taskValidationOperations(
@@ -363,7 +363,7 @@ class OperationsConfiguration {
     /**
      * Single-thread executor of the task validation dispatcher, shut down by [TaskValidationDispatcherLifecycle].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean(destroyMethod = "", defaultCandidate = false)
     fun taskValidationExecutor(): ThreadPoolExecutor =
@@ -378,7 +378,7 @@ class OperationsConfiguration {
      * Dispatcher of task validation requests; a request scheduled in a transaction is processed after it completes.
      * Its technical failures are counted in [failures].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun taskValidationDispatcher(
@@ -398,7 +398,7 @@ class OperationsConfiguration {
     /**
      * Starts the task validation dispatcher with the context and stops its executor before the grader closes.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun taskValidationDispatcherLifecycle(
@@ -409,7 +409,7 @@ class OperationsConfiguration {
     /**
      * Operations of Developers.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun developerOperations(
@@ -445,7 +445,7 @@ class OperationsConfiguration {
     /**
      * Operations of Judges.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun judgeOperations(
@@ -477,7 +477,7 @@ class OperationsConfiguration {
     /**
      * Operations of Participants.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun participantOperations(
@@ -490,7 +490,7 @@ class OperationsConfiguration {
     /**
      * Operations of Observers.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun observerOperations(
@@ -504,7 +504,7 @@ class OperationsConfiguration {
     /**
      * Operations of Students.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun studentOperations(
@@ -518,7 +518,7 @@ class OperationsConfiguration {
     /**
      * Operations of Participants and Students in a Contest.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun studyOperations(
@@ -558,7 +558,7 @@ class OperationsConfiguration {
     /**
      * Competition settings from the current snapshot of [runtime].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun competitionSettings(environment: Environment, runtime: RuntimeSettings): Settings<CompetitionProperties> =
@@ -567,7 +567,7 @@ class OperationsConfiguration {
     /**
      * Participant limit of competitions from [settings].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun competitionConfig(settings: Settings<CompetitionProperties>): CompetitionConfig {
@@ -579,7 +579,7 @@ class OperationsConfiguration {
     /**
      * Class invite settings from the current snapshot of [runtime].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun classInviteSettings(environment: Environment, runtime: RuntimeSettings): Settings<ClassInviteProperties> =
@@ -588,7 +588,7 @@ class OperationsConfiguration {
     /**
      * Class invite validity from [settings] and a static refresh period from [environment].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun classInviteConfig(environment: Environment, settings: Settings<ClassInviteProperties>): ClassInviteConfig {
@@ -602,7 +602,7 @@ class OperationsConfiguration {
     /**
      * Operations of Managers.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun managerOperations(

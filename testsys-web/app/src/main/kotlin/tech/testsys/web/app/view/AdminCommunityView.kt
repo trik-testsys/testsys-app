@@ -45,7 +45,7 @@ private const val DETAILS_COLUMNS = 12
 /**
  * Community details and applicable management actions shared by administrator and supervisor routes.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class CommunityDetailsView(
     private val headers: CabinetHeaders,
@@ -288,7 +288,7 @@ abstract class CommunityDetailsView(
 /**
  * Community detail route for an administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("admin/communities/:communityId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [TestToRegradeJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -25,7 +25,7 @@ interface TestToRegradeJpaEntityRepository : CompositeJpaEntityRepository<TestTo
     /**
      * Finds the association rows of the regrade [regradeId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TestToRegradeJpaEntity e where e.id.regradeId = :regradeId")
     fun findAllByRegradeId(@Param("regradeId") regradeId: Long): List<TestToRegradeJpaEntity>
@@ -33,7 +33,7 @@ interface TestToRegradeJpaEntityRepository : CompositeJpaEntityRepository<TestTo
     /**
      * Finds the ids of the regrades [regradeIds] paired with the ids of their tests in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.regradeId, e.id.testId) " +
@@ -45,7 +45,7 @@ interface TestToRegradeJpaEntityRepository : CompositeJpaEntityRepository<TestTo
 /**
  * Spring Data repository for [SubmissionToRegradeJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -55,7 +55,7 @@ interface SubmissionToRegradeJpaEntityRepository :
     /**
      * Finds the association rows of the regrade [regradeId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from SubmissionToRegradeJpaEntity e where e.id.regradeId = :regradeId")
     fun findAllByRegradeId(@Param("regradeId") regradeId: Long): List<SubmissionToRegradeJpaEntity>
@@ -63,7 +63,7 @@ interface SubmissionToRegradeJpaEntityRepository :
     /**
      * Finds the ids of the regrades [regradeIds] paired with the ids of their submissions in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.regradeId, e.id.submissionId) " +
@@ -75,7 +75,7 @@ interface SubmissionToRegradeJpaEntityRepository :
 /**
  * Spring Data repository for [RegradeJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -84,7 +84,7 @@ interface RegradeJpaEntityRepository : SnowflakeJpaEntityRepository<RegradeJpaEn
     /**
      * Finds the regrades of the task [taskId] ordered by creation time and then by id, both ascending.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByTaskIdOrderByCreatedAtAscIdAsc(taskId: Long): List<RegradeJpaEntity>
 
@@ -92,7 +92,7 @@ interface RegradeJpaEntityRepository : SnowflakeJpaEntityRepository<RegradeJpaEn
      * Counts, for each of the existing regrades [regradeIds], its distinct submissions with a verdict created not
      * earlier than the regrade whose test verdicts ran exactly on the regrade's tests: on each of them and on no other.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         """
@@ -122,7 +122,7 @@ interface RegradeJpaEntityRepository : SnowflakeJpaEntityRepository<RegradeJpaEn
  * @property regradeId id of the regrade.
  * @property graded the number of its submissions with a verdict created not earlier than the regrade whose test
  *   verdicts ran exactly on the regrade's tests.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 interface RegradeGradedCountJpaProjection {

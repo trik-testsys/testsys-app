@@ -14,7 +14,7 @@ import tech.testsys.domain.model.task.SolutionId
  * Builder of [SolutionData]. Required: [file], a choice in [language].
  *
  * @property language the chooser of the programming language.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SolutionDataBuilder : Builder<SolutionData> {
 
@@ -27,7 +27,7 @@ class SolutionDataBuilder : Builder<SolutionData> {
      *
      * @param uploadedFilename the original name of the uploaded file.
      * @param content the raw binary content of the file.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
@@ -36,7 +36,7 @@ class SolutionDataBuilder : Builder<SolutionData> {
     /**
      * Sets [file] without reading its contents.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(file: FileData) {
         _file = file
@@ -55,7 +55,7 @@ class SolutionDataBuilder : Builder<SolutionData> {
 /**
  * Builder of [Solution] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SolutionBuilder : DomainEntityWithDataBuilder<Solution, SolutionData, SolutionDataBuilder>() {
 

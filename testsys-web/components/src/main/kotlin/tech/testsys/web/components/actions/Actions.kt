@@ -27,7 +27,7 @@ internal enum class ActionRole(val attribute: String) {
 /**
  * Adds the main action of a block; by convention a block has one.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Main, label, icon, configure)
@@ -35,7 +35,7 @@ fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: Ac
 /**
  * Adds the main action of a guest card, as wide as the card, under its fields.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun GuestCardScope.mainAction(label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     body.mainAction(label, configure = configure)
@@ -43,7 +43,7 @@ fun GuestCardScope.mainAction(label: String, configure: ActionHandle.() -> Unit 
 /**
  * Adds a neutral action.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.action(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Neutral, label, icon, configure)
@@ -51,7 +51,7 @@ fun ContentScope.action(label: String, icon: IconName? = null, configure: Action
 /**
  * Adds an action that deletes or cancels something.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.destructiveAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Destructive, label, icon, configure)
@@ -59,7 +59,7 @@ fun ContentScope.destructiveAction(label: String, icon: IconName? = null, config
 /**
  * Adds an inline text action.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Link, label, icon, configure)
@@ -67,7 +67,7 @@ fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: Ac
 /**
  * Adds a neutral action shown as an icon only; [label] is read by screen readers and shown as a tooltip.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addIconAction(ActionRole.Neutral, icon, label, configure)
@@ -75,7 +75,7 @@ fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHand
 /**
  * Adds the main action as an icon; [label] provides its accessible name and tooltip.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.mainIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addIconAction(ActionRole.Main, icon, label, configure)
@@ -83,7 +83,7 @@ fun ContentScope.mainIconAction(icon: IconName, label: String, configure: Action
 /**
  * Adds a destructive action as an icon; [label] provides its accessible name and tooltip.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.destructiveIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addIconAction(ActionRole.Destructive, icon, label, configure)

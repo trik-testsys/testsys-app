@@ -44,7 +44,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * Returns the start page of a user of [kind]: the main page for a user with non-fixed roles, the page of the fixed role
  * for the others.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun startPageOf(kind: UserKind): Class<out Component> = when (kind) {
     UserKind.MULTIPLE_ROLE -> MultiMainView::class.java
@@ -56,7 +56,7 @@ fun startPageOf(kind: UserKind): Class<out Component> = when (kind) {
 /**
  * Returns the label of [role] for pages in the region of the current UI.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun labelOf(role: RoleVo): String = currentLocalization().pageCabinet.roleName(
     role = when (role) {
@@ -71,7 +71,7 @@ fun labelOf(role: RoleVo): String = currentLocalization().pageCabinet.roleName(
 /**
  * Returns the page of [role].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun rolePageOf(role: RoleVo): Class<out Component> = when (role) {
     is AdministratorRoleVo -> AdminView::class.java
@@ -85,7 +85,7 @@ fun rolePageOf(role: RoleVo): Class<out Component> = when (role) {
  * Builds the Cabinet header of the signed-in user (testsys.web.component.header).
  * Its companion holds the keys of the sections «Главная», active on the start pages, and «Меню», active on the role pages.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringComponent
 class CabinetHeaders(private val currentUser: CurrentUser, private val authenticationContext: AuthenticationContext) {
@@ -94,7 +94,7 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
      * with search and the nickname menu with the profile, unless the role is fixed, the return of a supervisor signed in
      * as the user, and signing out.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun cabinet(active: String? = null): CabinetHeader {
         val user = currentUser.user()

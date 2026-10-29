@@ -12,7 +12,7 @@ import org.springframework.core.env.Environment
  * Logback listener that puts the Spring [Environment] back into the logger context when Logback rereads its
  * configuration, because the JSON console encoder of Spring Boot does not start without it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LogbackEnvironmentListener : ContextAwareBase(), LoggerContextListener, LifeCycle {
     private var environment: Any? = null

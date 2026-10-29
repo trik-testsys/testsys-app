@@ -7,7 +7,7 @@ import tech.testsys.domain.model.user.UserId
 /**
  * Read-only selection of every non-supervisor user for the Supervisor cabinet.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface SupervisorUserReadPort {
 
@@ -18,7 +18,7 @@ interface SupervisorUserReadPort {
      * @param pagination requested page and order.
      * @param filter optional name, role and community conditions.
      * @return users of their concrete kinds, with an exact filtered total; an absent page is empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findUsers(pagination: Pagination, filter: UserFilter = UserFilter()): Page<User<*>>
 
@@ -27,7 +27,7 @@ interface SupervisorUserReadPort {
      *
      * @param userId identifier of the requested user.
      * @return its concrete kind or `null` when absent or a supervisor.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findUserById(userId: UserId): User<*>?
 
@@ -36,7 +36,7 @@ interface SupervisorUserReadPort {
      *
      * @param communityId community to count, including its owner and observers.
      * @return exact count, or zero for an unknown community.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun countUsersInCommunity(communityId: CommunityId): Long
 }

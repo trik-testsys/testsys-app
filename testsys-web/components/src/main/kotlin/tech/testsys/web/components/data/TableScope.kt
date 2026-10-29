@@ -57,7 +57,7 @@ internal class TableSpec<T>(
  *
  * @param T the type of the rows.
  * @property gridColumns the inherited or explicitly expanded logical capacity for reusable column builders.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class TableScope<T> internal constructor(
@@ -84,7 +84,7 @@ class TableScope<T> internal constructor(
      * [sortKey] enables sorting by an application key.
      *
      * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun textColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> String?) {
         add(title, sortKey, size, CellKind.Text) { row -> value(row) ?: EMPTY_CELL }
@@ -95,7 +95,7 @@ class TableScope<T> internal constructor(
      * [isObscured] column blurs each value until it is hovered or focused, like an obscured field.
      *
      * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun codeColumn(title: String, sortKey: String? = null, size: Int? = null, isObscured: Boolean = false, value: (T) -> String?) {
         if (!isObscured) {
@@ -120,7 +120,7 @@ class TableScope<T> internal constructor(
      * [textColumn].
      *
      * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun numberColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> Number?) {
         add(title, sortKey, size, CellKind.Number) { row -> formatNumber(value(row), texts) }
@@ -130,7 +130,7 @@ class TableScope<T> internal constructor(
      * Adds a monospace column of dates in the calendar format of the locale. [sortKey] and [size] are as in [textColumn].
      *
      * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun dateColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> LocalDate?) {
         add(title, sortKey, size, CellKind.Date) { row -> formatDate(value(row), texts) }
@@ -141,7 +141,7 @@ class TableScope<T> internal constructor(
      * [textColumn].
      *
      * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun dateTimeColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> LocalDateTime?) {
         add(title, sortKey, size, CellKind.Date) { row -> formatDateTime(value(row), texts) }
@@ -152,7 +152,7 @@ class TableScope<T> internal constructor(
      * are as in [textColumn].
      *
      * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun column(title: String, sortKey: String? = null, size: Int? = null, content: ContentScope.(T) -> Unit) {
         checkBeforeMenuColumn()
@@ -165,7 +165,7 @@ class TableScope<T> internal constructor(
      * Adds the last column on [size] fractions with an action menu of each row filled by [content].
      *
      * @throws IllegalStateException if the table already has a menu column.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun menuColumn(size: Int = 1, content: MenuScope.(T) -> Unit) {
         menuColumn(ariaLabel = { texts.messages.uiOverlay.menuActions() }, size = size, content = content)
@@ -175,7 +175,7 @@ class TableScope<T> internal constructor(
      * Adds the last action menu column on [size] fractions with a complete accessible name from [ariaLabel].
      *
      * @throws IllegalStateException if the table already has a menu column.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun menuColumn(ariaLabel: (T) -> String, size: Int = 1, content: MenuScope.(T) -> Unit) {
         check(!hasMenuColumn) { "Table already has a menu column" }
@@ -191,7 +191,7 @@ class TableScope<T> internal constructor(
      * Sets the empty state shown instead of rows when there are none: [title], optional [description], [icon]
      * and [actions], e.g. a reset of the filter.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun empty(title: String, description: String? = null, icon: IconName = IconName.File, actions: ContentScope.() -> Unit = {}) {
         emptyContent = EmptyContent(title = title, description = description, icon = icon, actions = actions)
@@ -204,7 +204,7 @@ class TableScope<T> internal constructor(
      *
      * @param isClickable whether the row accepts clicks and receives interactive styling.
      * @param listener the action performed for an accepted row click.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onRowClick(isNavigation: Boolean = false, isClickable: (T) -> Boolean = { true }, listener: (T) -> Unit) {
         isRowClickable = isClickable

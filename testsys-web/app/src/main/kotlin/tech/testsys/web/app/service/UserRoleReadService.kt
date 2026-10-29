@@ -10,48 +10,48 @@ import tech.testsys.web.app.service.student.ClassVo
 /**
  * Reads sections of user details under the current actor's access rules.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface UserRoleReadService {
     /**
      * Reads developer tasks.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewUserTasks(userId: UserId): List<Triple<TaskVo, TaskValidationRequestVo?, List<CommunityVo>>>
 
     /**
      * Reads developer contests.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewUserContests(userId: UserId): List<Pair<ContestVo, List<Pair<TaskVo, Long>>>>
 
     /**
      * Reads manager classes.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewUserClasses(userId: UserId): List<Pair<ClassVo, SubmissionCount>>
 
     /**
      * Reads manager competitions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewUserCompetitions(userId: UserId): List<Pair<CompetitionVo, SubmissionCount>>
 
     /**
      * Reads judge orders.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewUserJudgments(userId: UserId): List<Triple<JudgmentOrderVo, SolutionId, Long?>>
 
     /**
      * Reads observer assignments.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewUserAssignedContests(userId: UserId): List<Pair<ContestVo, List<CompetitionVo>>>
 }

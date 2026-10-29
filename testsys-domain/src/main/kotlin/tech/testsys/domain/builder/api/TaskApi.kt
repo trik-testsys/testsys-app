@@ -88,189 +88,189 @@ import tech.testsys.domain.model.task.WipTaskContent
 /**
  * Builds [ContestData] with a [ContestDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun contestData(builder: ContestDataBuilder.() -> Unit) = ContestDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Contest] with a [ContestBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun contest(builder: ContestBuilder.() -> Unit) = ContestBuilder().apply(builder).build()
 
 /**
  * Builds [DeveloperSolutionData] with a [DeveloperSolutionDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun developerSolutionData(builder: DeveloperSolutionDataBuilder.() -> Unit) = DeveloperSolutionDataBuilder().apply(builder).build()
 
 /**
  * Builds a [DeveloperSolution] with a [DeveloperSolutionBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun developerSolution(builder: DeveloperSolutionBuilder.() -> Unit) = DeveloperSolutionBuilder().apply(builder).build()
 
 /**
  * Builds [ExerciseData] with an [ExerciseDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun exerciseData(builder: ExerciseDataBuilder.() -> Unit) = ExerciseDataBuilder().apply(builder).build()
 
 /**
  * Builds an [Exercise] with an [ExerciseBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun exercise(builder: ExerciseBuilder.() -> Unit) = ExerciseBuilder().apply(builder).build()
 
 /**
  * Builds [JudgmentOrderData] with a [JudgmentOrderDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun judgmentOrderData(builder: JudgmentOrderDataBuilder.() -> Unit) = JudgmentOrderDataBuilder().apply(builder).build()
 
 /**
  * Builds a [JudgmentOrder] with a [JudgmentOrderBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun judgmentOrder(builder: JudgmentOrderBuilder.() -> Unit) = JudgmentOrderBuilder().apply(builder).build()
 
 /**
  * Builds [LogsData] with a [LogsDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun logsData(builder: LogsDataBuilder.() -> Unit) = LogsDataBuilder().apply(builder).build()
 
 /**
  * Builds [Logs] with a [LogsBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun logs(builder: LogsBuilder.() -> Unit) = LogsBuilder().apply(builder).build()
 
 /**
  * Builds [RecordingData] with a [RecordingDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun recordingData(builder: RecordingDataBuilder.() -> Unit) = RecordingDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Recording] with a [RecordingBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun recording(builder: RecordingBuilder.() -> Unit) = RecordingBuilder().apply(builder).build()
 
 /**
  * Builds [SolutionData] with a [SolutionDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun solutionData(builder: SolutionDataBuilder.() -> Unit) = SolutionDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Solution] with a [SolutionBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun solution(builder: SolutionBuilder.() -> Unit) = SolutionBuilder().apply(builder).build()
 
 /**
  * Builds a [TestVerdict] with a [TestVerdictBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun testVerdict(builder: TestVerdictBuilder.() -> Unit) = TestVerdictBuilder().apply(builder).build()
 
 /**
  * Builds [VerdictData] with a [VerdictDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun verdictData(builder: VerdictDataBuilder.() -> Unit) = VerdictDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Verdict] with a [VerdictBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun verdict(builder: VerdictBuilder.() -> Unit) = VerdictBuilder().apply(builder).build()
 
 /**
  * Builds [RegradeData] with a [RegradeDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun regradeData(builder: RegradeDataBuilder.() -> Unit) = RegradeDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Regrade] with a [RegradeBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun regrade(builder: RegradeBuilder.() -> Unit) = RegradeBuilder().apply(builder).build()
 
 /**
  * Wraps this result into a [SubmissionStatus.Graded].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun GradingResult.graded() = SubmissionStatus.Graded(this)
 
 /**
  * Builds [StatementData] with a [StatementDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun statementData(builder: StatementDataBuilder.() -> Unit) = StatementDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Statement] with a [StatementBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun statement(builder: StatementBuilder.() -> Unit) = StatementBuilder().apply(builder).build()
 
 /**
  * Builds [SubmissionData] with a [SubmissionDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun submissionData(builder: SubmissionDataBuilder.() -> Unit) = SubmissionDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Submission] with a [SubmissionBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun submission(builder: SubmissionBuilder.() -> Unit) = SubmissionBuilder().apply(builder).build()
 
 /**
  * Builds [TaskData] with a [TaskDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun taskData(builder: TaskDataBuilder.() -> Unit) = TaskDataBuilder().apply(builder).build()
 
 /**
  * Builds [TaskContent.New] with a [WipTaskContentBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun taskContentNew(builder: WipTaskContentBuilder.() -> Unit) = TaskContent.New(WipTaskContentBuilder().apply(builder).build())
 
 /**
  * Builds [TaskContent.Committed] with a [CommittedTaskContentBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun taskContentCommitted(builder: CommittedTaskContentBuilder.() -> Unit) =
     TaskContent.Committed(CommittedTaskContentBuilder().apply(builder).build())
@@ -280,7 +280,7 @@ inline fun taskContentCommitted(builder: CommittedTaskContentBuilder.() -> Unit)
  *
  * @param wipBuilder the [WipTaskContentBuilder] block of the work-in-progress revision.
  * @param lastCommittedBuilder the [CommittedTaskContentBuilder] block of the last committed revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun taskContentUncommitted(
     wipBuilder: WipTaskContentBuilder.() -> Unit,
@@ -293,21 +293,21 @@ inline fun taskContentUncommitted(
 /**
  * Builds a [Task] with a [TaskBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun task(builder: TaskBuilder.() -> Unit) = TaskBuilder().apply(builder).build()
 
 /**
  * Builds [TestData] with a [TestDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun testData(builder: TestDataBuilder.() -> Unit) = TestDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Test] with a [TestBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun test(builder: TestBuilder.() -> Unit) = TestBuilder().apply(builder).build()
 
@@ -345,7 +345,7 @@ private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
 /**
  * Returns a copy of this submission with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Submission.withData(builder: SubmissionDataBuilder.() -> Unit): Submission {
     return Submission(
@@ -373,7 +373,7 @@ private fun ContestData.toBuilder(): ContestDataBuilder {
 /**
  * Returns a copy of this contest with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Contest.withData(builder: ContestDataBuilder.() -> Unit): Contest {
     return Contest(
@@ -397,7 +397,7 @@ private fun DeveloperSolutionData.toBuilder(): DeveloperSolutionDataBuilder {
 /**
  * Returns a copy of this developer solution with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun DeveloperSolution.withData(builder: DeveloperSolutionDataBuilder.() -> Unit): DeveloperSolution {
     return DeveloperSolution(
@@ -425,7 +425,7 @@ private fun ExerciseData.toBuilder(): ExerciseDataBuilder {
 /**
  * Returns a copy of this exercise with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Exercise.withData(builder: ExerciseDataBuilder.() -> Unit): Exercise {
     return Exercise(
@@ -448,7 +448,7 @@ private fun JudgmentOrderData.toBuilder(): JudgmentOrderDataBuilder {
 /**
  * Returns a copy of this judgment order with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun JudgmentOrder.withData(builder: JudgmentOrderDataBuilder.() -> Unit): JudgmentOrder {
     return JudgmentOrder(
@@ -468,7 +468,7 @@ private fun LogsData.toBuilder(): LogsDataBuilder {
 /**
  * Returns a copy of these logs with their data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Logs.withData(builder: LogsDataBuilder.() -> Unit): Logs {
     return Logs(
@@ -488,7 +488,7 @@ private fun RecordingData.toBuilder(): RecordingDataBuilder {
 /**
  * Returns a copy of this recording with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Recording.withData(builder: RecordingDataBuilder.() -> Unit): Recording {
     return Recording(
@@ -513,7 +513,7 @@ private fun SolutionData.toBuilder(): SolutionDataBuilder {
 /**
  * Returns a copy of this solution with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Solution.withData(builder: SolutionDataBuilder.() -> Unit): Solution {
     return Solution(
@@ -536,7 +536,7 @@ private fun StatementData.toBuilder(): StatementDataBuilder {
 /**
  * Returns a copy of this statement with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Statement.withData(builder: StatementDataBuilder.() -> Unit): Statement {
     return Statement(
@@ -559,7 +559,7 @@ private fun TestData.toBuilder(): TestDataBuilder {
 /**
  * Returns a copy of this test with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Test.withData(builder: TestDataBuilder.() -> Unit): Test {
     return Test(
@@ -613,7 +613,7 @@ private fun TaskData.toBuilder(): TaskDataBuilder {
 /**
  * Returns a copy of this task with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Task.withData(builder: TaskDataBuilder.() -> Unit): Task {
     return Task(
@@ -635,7 +635,7 @@ private fun VerdictData.toBuilder(): VerdictDataBuilder {
 /**
  * Returns a copy of this verdict with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Verdict.withData(builder: VerdictDataBuilder.() -> Unit): Verdict {
     return Verdict(
@@ -657,7 +657,7 @@ private fun RegradeData.toBuilder(): RegradeDataBuilder {
 /**
  * Returns a copy of this regrade with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Regrade.withData(builder: RegradeDataBuilder.() -> Unit): Regrade {
     return Regrade(
@@ -670,7 +670,7 @@ fun Regrade.withData(builder: RegradeDataBuilder.() -> Unit): Regrade {
 /**
  * Builds [TaskValidationRequestData] with a [TaskValidationRequestDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun taskValidationRequestData(builder: TaskValidationRequestDataBuilder.() -> Unit): TaskValidationRequestData =
     TaskValidationRequestDataBuilder().apply(builder).build()
@@ -678,7 +678,7 @@ inline fun taskValidationRequestData(builder: TaskValidationRequestDataBuilder.(
 /**
  * Builds [TaskValidationRequest] with a [TaskValidationRequestBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun taskValidationRequest(builder: TaskValidationRequestBuilder.() -> Unit): TaskValidationRequest =
     TaskValidationRequestBuilder().apply(builder).build()
@@ -686,7 +686,7 @@ inline fun taskValidationRequest(builder: TaskValidationRequestBuilder.() -> Uni
 /**
  * Builds [TaskValidationSnapshot] with a [TaskValidationSnapshotBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun taskValidationSnapshot(builder: TaskValidationSnapshotBuilder.() -> Unit): TaskValidationSnapshot =
     TaskValidationSnapshotBuilder().apply(builder).build()
@@ -694,7 +694,7 @@ inline fun taskValidationSnapshot(builder: TaskValidationSnapshotBuilder.() -> U
 /**
  * Builds [DeveloperSolutionValidationInput] with a [DeveloperSolutionValidationInputBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun developerSolutionValidationInput(builder: DeveloperSolutionValidationInputBuilder.() -> Unit): DeveloperSolutionValidationInput =
     DeveloperSolutionValidationInputBuilder().apply(builder).build()
@@ -702,7 +702,7 @@ inline fun developerSolutionValidationInput(builder: DeveloperSolutionValidation
 /**
  * Builds [TestDiagnosticResult] with a [TestDiagnosticResultBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun testDiagnosticResult(builder: TestDiagnosticResultBuilder.() -> Unit): TestDiagnosticResult =
     TestDiagnosticResultBuilder().apply(builder).build()
@@ -710,7 +710,7 @@ inline fun testDiagnosticResult(builder: TestDiagnosticResultBuilder.() -> Unit)
 /**
  * Builds [DiagnosticReport] with a [DiagnosticReportBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun diagnosticReport(builder: DiagnosticReportBuilder.() -> Unit): DiagnosticReport =
     DiagnosticReportBuilder().apply(builder).build()
@@ -718,7 +718,7 @@ inline fun diagnosticReport(builder: DiagnosticReportBuilder.() -> Unit): Diagno
 /**
  * Builds [DiagnosticLocation] with a [DiagnosticLocationBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun diagnosticLocation(builder: DiagnosticLocationBuilder.() -> Unit): DiagnosticLocation =
     DiagnosticLocationBuilder().apply(builder).build()
@@ -726,7 +726,7 @@ inline fun diagnosticLocation(builder: DiagnosticLocationBuilder.() -> Unit): Di
 /**
  * Builds [DiagnosticPathSegment] with a [DiagnosticPathSegmentBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun diagnosticPathSegment(builder: DiagnosticPathSegmentBuilder.() -> Unit): DiagnosticPathSegment =
     DiagnosticPathSegmentBuilder().apply(builder).build()
@@ -734,7 +734,7 @@ inline fun diagnosticPathSegment(builder: DiagnosticPathSegmentBuilder.() -> Uni
 /**
  * Builds [TaskValidationTechnicalFailure] with a [TaskValidationTechnicalFailureBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun taskValidationTechnicalFailure(builder: TaskValidationTechnicalFailureBuilder.() -> Unit): TaskValidationTechnicalFailure =
     TaskValidationTechnicalFailureBuilder().apply(builder).build()
@@ -742,7 +742,7 @@ inline fun taskValidationTechnicalFailure(builder: TaskValidationTechnicalFailur
 /**
  * Copies a [TaskValidationRequest] with [builder] applied to its data, retaining its identifier and version.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun TaskValidationRequest.withData(builder: TaskValidationRequestDataBuilder.() -> Unit): TaskValidationRequest {
     return taskValidationRequest {

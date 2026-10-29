@@ -11,7 +11,7 @@ import tech.testsys.web.components.ElementHandle
  *
  * @property isEditable whether the fields of the block can be edited; a field is editable only if it and its block are.
  * A manual change while [bindEditable] is bound, and a second binding, throw [BindingActiveException].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class BlockHandle internal constructor(
     component: Component,
@@ -29,7 +29,7 @@ class BlockHandle internal constructor(
      * [isEditable] while bound, and a second binding, throw [BindingActiveException].
      *
      * @throws IllegalStateException if the block has an editing switch, which drives its mode itself.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEditable(signal: Signal<Boolean>): SignalBinding<Boolean> {
         check(!hasEditingSwitch) { "Block has an editing switch that drives its mode; bind the mode or call editing(), not both" }

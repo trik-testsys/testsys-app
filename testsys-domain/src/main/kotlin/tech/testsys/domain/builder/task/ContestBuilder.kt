@@ -27,7 +27,7 @@ import java.time.Instant
  * @property attemptDuration the time limit of a single attempt, or `null` if there is no individual limit.
  * @property trikStudioVersion the TRIK Studio version of the contest, or `null` if not set yet.
  * @property sharedTo the ids of the communities the contest is shared to.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ContestDataBuilder : Builder<ContestData> {
 
@@ -52,7 +52,7 @@ class ContestDataBuilder : Builder<ContestData> {
     /**
      * Sets [owner] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun owner(owner: Long) {
         this.owner = MultipleRoleUserId(owner)
@@ -61,7 +61,7 @@ class ContestDataBuilder : Builder<ContestData> {
     /**
      * Sets [tasks] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tasks(tasks: Iterable<Long>) {
         this.tasks = tasks.map { TaskId(it) }.toMutableList()
@@ -70,7 +70,7 @@ class ContestDataBuilder : Builder<ContestData> {
     /**
      * Sets [trikStudioVersion] from a raw Docker image [tag] and a version number [version].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun trikStudioVersion(tag: String, version: String) {
         trikStudioVersion = TrikStudioVersion(
@@ -82,7 +82,7 @@ class ContestDataBuilder : Builder<ContestData> {
     /**
      * Sets [sharedTo] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun sharedTo(sharedTo: Iterable<Long>) {
         this.sharedTo = sharedTo.map { CommunityId(it) }.toMutableList()
@@ -111,7 +111,7 @@ class ContestDataBuilder : Builder<ContestData> {
 /**
  * Builder of [Contest] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ContestBuilder : DomainEntityWithDataBuilder<Contest, ContestData, ContestDataBuilder>() {
 

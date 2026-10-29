@@ -13,7 +13,7 @@ private const val ARGUMENTS = 3
  * CLI entry point invoked by the localization generation Gradle tasks with [args] `<resourceDir> <outputDir>
  * <package>`: the API of the resource directory is generated into the package.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun main(args: Array<String>) {
     require(args.size == ARGUMENTS) { "Expected the arguments <resourceDir> <outputDir> <package>, got ${args.size}" }

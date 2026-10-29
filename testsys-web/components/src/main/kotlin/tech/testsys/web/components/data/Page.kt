@@ -6,7 +6,7 @@ package tech.testsys.web.components.data
  * @property offset the index of the first row.
  * @property limit the most rows to return.
  * @property sort the order, or `null` for the natural order of the source.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class PageRequest(val offset: Int, val limit: Int, val sort: Sort?)
 
@@ -15,7 +15,7 @@ data class PageRequest(val offset: Int, val limit: Int, val sort: Sort?)
  *
  * @property key the sort key given to the column.
  * @property isDescending whether larger values come first.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class Sort(val key: String, val isDescending: Boolean)
 
@@ -25,6 +25,6 @@ data class Sort(val key: String, val isDescending: Boolean)
  * @param T the type of the rows.
  * @property rows the rows of the page.
  * @property total the number of rows in all pages.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class Page<T>(val rows: List<T>, val total: Int)

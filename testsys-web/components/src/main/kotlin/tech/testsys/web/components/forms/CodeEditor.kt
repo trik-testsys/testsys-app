@@ -35,7 +35,7 @@ private const val DEFAULT_EDITOR_LINES = 10
 /**
  * Adds a plain code editor with line numbers and [minLines] visible lines beside [labelSize] label columns.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.codeEditor(
     label: String,

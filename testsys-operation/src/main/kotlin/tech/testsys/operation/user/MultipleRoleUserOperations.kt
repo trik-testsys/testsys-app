@@ -61,7 +61,7 @@ import java.util.random.RandomGenerator
 /**
  * Operations available to any user without a fixed role, whatever their roles.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class MultipleRoleUserOperations(
@@ -84,7 +84,7 @@ class MultipleRoleUserOperations(
      * case-insensitively, granting the role with a public community membership if needed. Membership is decided
      * by the stored user, not by [user]: a stored member in that role is returned unchanged.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.joinCommunity")
     @RawInviteCodeDependency(reason = "Finds the invite by hashing the normalized input with the current deterministic algorithm.")
@@ -114,7 +114,7 @@ class MultipleRoleUserOperations(
      * Returns each role of [user] in the order of its roles, with the communities the user is a member of in that role in
      * ascending id order. The nickname and the e-mail address are the data of [user]; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.viewProfile")
     fun viewProfile(user: MultipleRoleUser): OperationResult<List<Pair<CompatibleUserRole, List<Community>>>, ViewProfileError> =
@@ -135,7 +135,7 @@ class MultipleRoleUserOperations(
      * to [email]; storage and mail exceptions propagate. An active request for the same address is resent unchanged,
      * while any other request of the user is overwritten with a new address, code, expiry and attempts.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.changeMail")
     fun requestEmailChange(user: MultipleRoleUser, email: String): OperationResult<Unit, RequestEmailChangeError> =
@@ -182,7 +182,7 @@ class MultipleRoleUserOperations(
      * one; on a match replaces the e-mail address of the stored user with the new one, removes the request and notifies
      * the previous address. Returns the updated user; storage and mail exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.changeMail")
     fun confirmEmailChange(user: MultipleRoleUser, confirmationCode: String): OperationResult<MultipleRoleUser, ConfirmEmailChangeError> =
@@ -214,7 +214,7 @@ class MultipleRoleUserOperations(
      * there, resending an active request unchanged; storage and mail exceptions propagate. An address bound to no user
      * or to the public community owner succeeds without writing or mailing anything.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.restoreAccess")
     fun requestAccessRestoration(email: String): OperationResult<Unit, RequestAccessRestorationError> =
@@ -249,7 +249,7 @@ class MultipleRoleUserOperations(
      * Checks the untrimmed [password] and spends an attempt of the restoration request of the user bound to [email];
      * if the trimmed [confirmationCode] matches, replaces the password, removes the request and returns the user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.restoreAccess")
     fun confirmAccessRestoration(
@@ -279,7 +279,7 @@ class MultipleRoleUserOperations(
      * Replaces the password of the stored [user] with the untrimmed [newPassword] if [currentPassword] equals its current
      * password exactly. Returns the updated user; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.changePassword")
     fun changePassword(

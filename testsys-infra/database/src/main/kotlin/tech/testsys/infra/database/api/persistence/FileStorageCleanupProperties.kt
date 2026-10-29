@@ -8,7 +8,7 @@ import java.time.Duration
  *
  * @property minimumAge the required time since a physical blob was last modified before removal; metadata has no age limit.
  * @property batchSize the maximum number of rows or blobs checked per batch.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SettingsProperties("testsys.file-storage.cleanup")
 data class FileStorageCleanupProperties(val minimumAge: Duration, val batchSize: Int) {

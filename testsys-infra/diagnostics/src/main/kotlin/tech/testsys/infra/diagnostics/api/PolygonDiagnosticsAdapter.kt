@@ -14,7 +14,7 @@ import tech.testsys.infra.settings.api.Settings
 /**
  * Synchronous polygon analysis adapter with independent parser and diagnostics for each call.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDiagnosticsApi::class)

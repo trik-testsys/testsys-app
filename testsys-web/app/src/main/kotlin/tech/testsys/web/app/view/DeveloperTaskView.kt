@@ -119,7 +119,7 @@ internal enum class ResourceUsage(val usage: TaskResourcesUsageValueUsage) {
  * attaching and detaching, its testing with committing and reverting, its regrades with their progress, and its access
  * of communities. Before an action that changes the state of the task, the page asks to confirm the new state.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("developer/tasks/:taskId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

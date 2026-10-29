@@ -29,7 +29,7 @@ private const val USERS_SECTION = "users"
  * Cabinet of an Administrator (testsys.web.page.admin): the tabs «Сообщества» and «Пользователи» are the sections of the
  * route; without a section the page opens «Сообщества».
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("admin/:section?(communities|users)")
 @RolesAllowed("MULTIPLE_ROLE")

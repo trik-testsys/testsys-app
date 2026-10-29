@@ -16,7 +16,7 @@ import tech.testsys.web.app.service.toVo
  * Runs [MultipleRoleUserOperations] for the current user in one transaction per call.
  * A failed operation throws `OperationException`, which rolls the transaction back, except in [confirmEmailChange].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -28,7 +28,7 @@ class MultipleRoleUserService(
     /**
      * Runs [MultipleRoleUserOperations.viewProfile] and adds the nickname and the e-mail address of the current user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewProfile(): ProfileVo {
@@ -42,7 +42,7 @@ class MultipleRoleUserService(
      * Runs [MultipleRoleUserOperations.requestEmailChange]; throws `IllegalStateException` while a supervisor is signed in
      * as the user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun requestEmailChange(email: String) {
         checkNotImpersonated()
@@ -53,7 +53,7 @@ class MultipleRoleUserService(
      * Runs [MultipleRoleUserOperations.confirmEmailChange]; throws `IllegalStateException` while a supervisor is signed in
      * as the user. The transaction commits even if the operation fails, so that a spent attempt to enter the code is kept.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(noRollbackFor = [OperationException::class])
     fun confirmEmailChange(confirmationCode: String): MultipleRoleUserVo {
@@ -65,7 +65,7 @@ class MultipleRoleUserService(
      * Runs [MultipleRoleUserOperations.changePassword] and ends the other sessions of the user, keeping the current one;
      * throws `IllegalStateException` while a supervisor is signed in as the user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun changePassword(currentPassword: String, newPassword: String) {
         checkNotImpersonated()
@@ -77,7 +77,7 @@ class MultipleRoleUserService(
     /**
      * Runs [MultipleRoleUserOperations.joinCommunity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun joinCommunity(inviteCode: String): MultipleRoleUserVo =
         operations.joinCommunity(currentUser.multipleRoleUser(), inviteCode).getOrThrow().toVo()

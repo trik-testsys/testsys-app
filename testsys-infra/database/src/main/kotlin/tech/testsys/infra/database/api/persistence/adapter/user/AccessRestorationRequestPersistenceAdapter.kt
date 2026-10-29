@@ -17,7 +17,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Persistence adapter of [AccessRestorationRequest] entities backed by [AccessRestorationRequestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

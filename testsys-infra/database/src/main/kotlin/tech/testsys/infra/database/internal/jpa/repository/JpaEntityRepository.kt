@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  * [NoRepositoryBean], so only the concrete sub-interfaces become beans.
  *
  * @param Entity the stored entity type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @NoRepositoryBean
 @InternalDatabaseApi
@@ -27,7 +27,7 @@ interface SnowflakeJpaEntityRepository<Entity : SnowflakeJpaEntity> :
  *
  * @param Entity the stored entity type.
  * @param ID the composite key type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @NoRepositoryBean
 @InternalDatabaseApi

@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.utils.populateFields
 /**
  * Mapping between [Regrade] and [RegradeJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object RegradeMapping : EntityMapping<Regrade, RegradeJpaEntity> {
@@ -24,7 +24,7 @@ object RegradeMapping : EntityMapping<Regrade, RegradeJpaEntity> {
     /**
      * Assembles a [Regrade] from [jpaEntity] and the ids of its tests and submissions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: RegradeJpaEntity, testIds: List<TestId>, submissionIds: List<SubmissionId>) = regrade {
         populateFields(jpaEntity)
@@ -39,7 +39,7 @@ object RegradeMapping : EntityMapping<Regrade, RegradeJpaEntity> {
     /**
      * Creates a new [RegradeJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: RegradeData) = RegradeJpaEntity(
         taskId = data.task.id.value,
@@ -48,7 +48,7 @@ object RegradeMapping : EntityMapping<Regrade, RegradeJpaEntity> {
     /**
      * Creates the [TestToRegradeJpaEntity] rows linking the regrade [regradeId] with [testIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toTestAssociations(regradeId: Long, testIds: List<TestId>) = testIds.distinct().map { testId ->
         TestToRegradeJpaEntity(
@@ -61,7 +61,7 @@ object RegradeMapping : EntityMapping<Regrade, RegradeJpaEntity> {
      * Creates the [SubmissionToRegradeJpaEntity] rows linking the regrade [regradeId] with [submissionIds], one row per
      * distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toSubmissionAssociations(regradeId: Long, submissionIds: List<SubmissionId>) = submissionIds.distinct().map { submissionId ->
         SubmissionToRegradeJpaEntity(

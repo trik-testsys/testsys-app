@@ -9,7 +9,7 @@ import java.time.Clock
 /**
  * Checks the configured code only after the limiter of client addresses allows the attempt.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 class ServiceAuthenticator(private val settings: ServiceWebSettings, clock: Clock) {
@@ -18,7 +18,7 @@ class ServiceAuthenticator(private val settings: ServiceWebSettings, clock: Cloc
     /**
      * Authenticates [code] from the container-verified client [address] without retaining it in the result.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun authenticate(address: String, code: String): ServiceSignInResult = when (limiter.attempt(address) { settings.matches(code) }) {
         LoginAttemptResult.SUCCESS -> ServiceSignInResult.Success

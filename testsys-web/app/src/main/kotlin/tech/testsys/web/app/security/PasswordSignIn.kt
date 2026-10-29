@@ -11,7 +11,7 @@ import tech.testsys.web.app.service.user.UserService
  * Signs a user with non-fixed roles in by the e-mail address and the password through [UserService] outside its
  * transaction, limiting failed attempts per normalized e-mail address with a [LoginAttemptLimiter].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalOperationsApi::class)
@@ -19,7 +19,7 @@ class PasswordSignIn(private val userService: UserService, private val limiter: 
     /**
      * Outcome of [signIn], without the entered password.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     sealed interface Result {
         /**
@@ -27,21 +27,21 @@ class PasswordSignIn(private val userService: UserService, private val limiter: 
          *
          * @property principal the signed-in user.
          * @property returnAddress the page saved before signing in and open to the user, or `null`.
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data class Success(val principal: CabinetPrincipal, val returnAddress: String?) : Result
 
         /**
          * The e-mail address or the password is wrong.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data object InvalidCredentials : Result
 
         /**
          * Signing in by this e-mail address is temporarily closed, including the failure that closes it.
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data object Blocked : Result
     }
@@ -50,7 +50,7 @@ class PasswordSignIn(private val userService: UserService, private val limiter: 
      * Checks [email] and [password] unless signing in by [email] is closed and on success signs the user in with
      * [CabinetSignIn.signIn].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun signIn(email: String, password: String): Result {
         var principal: CabinetPrincipal? = null

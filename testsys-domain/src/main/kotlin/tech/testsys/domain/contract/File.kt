@@ -8,7 +8,7 @@ import java.nio.file.Path
  * and only together with the path the blob was stored in.
  *
  * @property key the storage-specific key identifying the blob.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class StoredBlobRef(val key: String)
@@ -17,7 +17,7 @@ value class StoredBlobRef(val key: String)
  * Port for keeping the raw binary content of files outside the domain. The caller chooses the path of every
  * call; every [store] call creates a new blob, and existing blobs are never overwritten.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface FileBlobStorage {
 
@@ -27,7 +27,7 @@ interface FileBlobStorage {
      * @param content the raw bytes to store.
      * @param path the path chosen by the caller.
      * @return the reference to the new blob, valid only together with [path].
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun store(content: ByteArray, path: Path): StoredBlobRef
 
@@ -37,7 +37,7 @@ interface FileBlobStorage {
      * @param ref the reference returned by [store].
      * @param path the path the blob was stored in.
      * @return the raw bytes of the blob.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun load(ref: StoredBlobRef, path: Path): ByteArray
 
@@ -46,7 +46,7 @@ interface FileBlobStorage {
      *
      * @param ref the reference returned by [store].
      * @param path the path the blob was stored in.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun delete(ref: StoredBlobRef, path: Path)
 }
@@ -54,7 +54,7 @@ interface FileBlobStorage {
 /**
  * Synchronous reader of inline or stored file contents, usable outside a persistence transaction.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface FileContentReader {
     /**
@@ -62,7 +62,7 @@ interface FileContentReader {
      *
      * @param file the file whose bytes are needed.
      * @return the file contents.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun read(file: FileData): ByteArray
 }

@@ -17,7 +17,7 @@ import java.util.UUID
  * Atomic settings storage in independent transactions; database-only conflicts may be retried.
  * A commit exception is propagated so the coordinator can identify the write and compensate safely.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

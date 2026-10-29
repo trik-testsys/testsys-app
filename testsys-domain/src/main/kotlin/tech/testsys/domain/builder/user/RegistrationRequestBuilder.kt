@@ -16,7 +16,7 @@ import java.time.Instant
  * @property confirmationCode the confirmation code, or `null` if not set yet.
  * @property expiresAt the moment the confirmation code expires, or `null` if not set yet.
  * @property attemptsLeft the number of remaining attempts, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RegistrationRequestDataBuilder : Builder<RegistrationRequestData> {
 
@@ -46,7 +46,7 @@ class RegistrationRequestDataBuilder : Builder<RegistrationRequestData> {
 /**
  * Builder of [RegistrationRequest] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RegistrationRequestBuilder :
     DomainEntityWithDataBuilder<RegistrationRequest, RegistrationRequestData, RegistrationRequestDataBuilder>() {

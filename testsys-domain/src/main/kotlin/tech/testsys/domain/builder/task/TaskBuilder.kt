@@ -29,7 +29,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  * @property statement the id of the statement, or `null` if not set yet.
  * @property developerSolutions the ids of the developer solutions of the revision.
  * @property supportedTrikStudioVersions the TRIK Studio versions supported by the revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class TaskContentBuilder<T> : Builder<T> {
 
@@ -46,7 +46,7 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     /**
      * Sets [tests] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tests(tests: Iterable<Long>) {
         this.tests = tests.map { TestId(it) }.toMutableList()
@@ -55,7 +55,7 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     /**
      * Sets [exercises] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun exercises(exercises: Iterable<Long>) {
         this.exercises = exercises.map { ExerciseId(it) }.toMutableList()
@@ -64,7 +64,7 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     /**
      * Sets [statement] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun statement(statement: Long) {
         this.statement = StatementId(statement)
@@ -73,7 +73,7 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     /**
      * Sets [developerSolutions] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun developerSolutions(developerSolutions: Iterable<Long>) {
         this.developerSolutions = developerSolutions.map { DeveloperSolutionId(it) }.toMutableList()
@@ -82,7 +82,7 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     /**
      * Sets [supportedTrikStudioVersions] from pairs of a raw Docker image tag and a version number.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun supportedTrikStudioVersions(supportedTrikStudioVersions: Iterable<Pair<String, String>>) {
         this.supportedTrikStudioVersions = supportedTrikStudioVersions
@@ -94,7 +94,7 @@ abstract class TaskContentBuilder<T> : Builder<T> {
 /**
  * Builder of [CommittedTaskContent]. Required: nonempty [exercises], [statement].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CommittedTaskContentBuilder : TaskContentBuilder<CommittedTaskContent>() {
 
@@ -115,7 +115,7 @@ class CommittedTaskContentBuilder : TaskContentBuilder<CommittedTaskContent>() {
 /**
  * Builder of [WipTaskContent]; [exercises] may be empty and [statement] is optional.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class WipTaskContentBuilder : TaskContentBuilder<WipTaskContent>() {
 
@@ -139,7 +139,7 @@ class WipTaskContentBuilder : TaskContentBuilder<WipTaskContent>() {
  * @property sharedTo the ids of the communities the task is shared to.
  * @property content the chooser of the task content variant.
  * @property uploadedResources the version chains uploaded to the task, including unattached resources.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskDataBuilder : Builder<TaskData> {
 
@@ -158,7 +158,7 @@ class TaskDataBuilder : Builder<TaskData> {
     /**
      * Sets [owner] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun owner(owner: Long) {
         this.owner = MultipleRoleUserId(owner)
@@ -167,7 +167,7 @@ class TaskDataBuilder : Builder<TaskData> {
     /**
      * Sets [sharedTo] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun sharedTo(sharedTo: Iterable<Long>) {
         this.sharedTo = sharedTo.map { CommunityId(it) }.toMutableList()
@@ -192,7 +192,7 @@ class TaskDataBuilder : Builder<TaskData> {
 /**
  * Builder of [Task] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataBuilder>() {
 

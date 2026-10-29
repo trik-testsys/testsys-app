@@ -25,7 +25,7 @@ import tech.testsys.web.components.texts.currentUiLocalization
 /**
  * Scope of a guest page: one card in the middle and a line of links under it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class GuestPageScope internal constructor(private val main: Main, private val texts: UiLocalization) {
@@ -38,7 +38,7 @@ class GuestPageScope internal constructor(private val main: Main, private val te
      *
      * @throws IllegalArgumentException if [title] or [description] is blank.
      * @throws IllegalStateException if the page already has a card.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun card(title: String, description: String, step: String? = null, content: GuestCardScope.() -> Unit) {
         require(title.isNotBlank()) { "Guest card title must not be blank" }
@@ -62,7 +62,7 @@ class GuestPageScope internal constructor(private val main: Main, private val te
      * actions are separated by a middle dot.
      *
      * @throws IllegalStateException if the page already has links.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun links(content: ContentScope.() -> Unit) {
         check(!hasLinks) { "Guest page already has links" }
@@ -90,7 +90,7 @@ class GuestPageScope internal constructor(private val main: Main, private val te
  * Scope of the card of a guest page: fields with the label above, a segmented choice and the wide main action, one
  * under another.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class GuestCardScope internal constructor(internal val body: ContentScope)

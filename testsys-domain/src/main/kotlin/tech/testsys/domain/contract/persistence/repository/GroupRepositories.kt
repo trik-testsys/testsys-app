@@ -30,7 +30,7 @@ import java.time.Instant
 /**
  * Persistence port for [Class] entities. The invite of a class is fixed on creation; [save] needs a saved invite.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ClassRepository : EntityRepository<ClassData, ClassId, Class> {
 
@@ -42,7 +42,7 @@ interface ClassRepository : EntityRepository<ClassData, ClassId, Class> {
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
      * @param filter conditions combined with AND before paging and counting; unspecified conditions do not restrict selection.
      * @return owned classes, the original pagination and exact filtered total; absent matches or missing pages are empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToManager(ownerId: MultipleRoleUserId, pagination: Pagination, filter: ClassFilter = ClassFilter()): Page<Class>
 
@@ -54,7 +54,7 @@ interface ClassRepository : EntityRepository<ClassData, ClassId, Class> {
      * @param studentId the enrolled user; an already enrolled user is not added twice.
      * @return the stored class after enrollment.
      * @throws IllegalArgumentException if the class does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addStudent(classId: ClassId, studentId: MultipleRoleUserId): Class
 
@@ -65,7 +65,7 @@ interface ClassRepository : EntityRepository<ClassData, ClassId, Class> {
      * @param invite the data of the invite of the new class.
      * @param data the data of the new class computed from the id assigned to its invite.
      * @return the saved class.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun saveWithInvite(invite: ClassInviteData, data: (ClassInviteId) -> ClassData): Class
 
@@ -74,7 +74,7 @@ interface ClassRepository : EntityRepository<ClassData, ClassId, Class> {
      *
      * @param inviteId the invite of the searched class.
      * @return the class of the invite, or `null` if no class references it.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByInvite(inviteId: ClassInviteId): Class?
 }
@@ -82,7 +82,7 @@ interface ClassRepository : EntityRepository<ClassData, ClassId, Class> {
 /**
  * Persistence port for [ClassInvite] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ClassInviteRepository : EntityRepository<ClassInviteData, ClassInviteId, ClassInvite> {
 
@@ -91,7 +91,7 @@ interface ClassInviteRepository : EntityRepository<ClassInviteData, ClassInviteI
      *
      * @param codeHash the stored representation of the searched code; the caller normalizes and hashes the input.
      * @return the matching invite, or `null` if there is none.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @RawInviteCodeDependency(reason = "Finds the invite by comparing the stored value produced by a deterministic algorithm.")
     fun findByCode(codeHash: InviteCodeHash): ClassInvite?
@@ -101,7 +101,7 @@ interface ClassInviteRepository : EntityRepository<ClassInviteData, ClassInviteI
      *
      * @param now the moment compared with the expiration moments.
      * @return the ids of the expired invites in ascending order; empty if there are none.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findExpired(now: Instant): List<ClassInviteId>
 }
@@ -109,7 +109,7 @@ interface ClassInviteRepository : EntityRepository<ClassInviteData, ClassInviteI
 /**
  * Persistence port for [Community] entities. The invites of a community are fixed on creation; [save] needs saved invites.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Community> {
 
@@ -121,7 +121,7 @@ interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Com
      * @param developerInvite the data of the developer-role invite of the new community.
      * @param data the data of the new community computed from the ids assigned to its manager and developer invites.
      * @return the saved community.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun saveWithInvites(
         managerInvite: CommunityInviteData,
@@ -138,7 +138,7 @@ interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Com
      * @param developerInvite the developer-role invite data.
      * @param data community data computed from the saved invite ids.
      * @return the inserted community with [id].
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun saveWithIdAndInvites(
         id: CommunityId,
@@ -152,7 +152,7 @@ interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Com
      *
      * @param inviteId the invite of the searched community.
      * @return the community of the invite, or `null` if no community references it.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByInvite(inviteId: CommunityInviteId): Community?
 
@@ -162,7 +162,7 @@ interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Com
      *
      * @param ownerId the creator of the communities.
      * @return the communities of the owner in ascending id order; empty if there are none.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByOwner(ownerId: MultipleRoleUserId): List<Community>
 }
@@ -171,7 +171,7 @@ interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Com
  * Persistence port for the [Invite] variant of [CommunityInvite] entities; invites of other variants are absent from it.
  *
  * @param Invite the stored variant.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface CommunityInviteRepository<Invite : CommunityInvite> : EntityRepository<CommunityInviteData, CommunityInviteId, Invite> {
 
@@ -180,7 +180,7 @@ interface CommunityInviteRepository<Invite : CommunityInvite> : EntityRepository
      *
      * @param codeHash the stored representation of the searched code; the caller normalizes and hashes the input.
      * @return the matching invite, or `null` if there is none.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @RawInviteCodeDependency(reason = "Finds the invite by comparing the stored value produced by a deterministic algorithm.")
     fun findByCode(codeHash: InviteCodeHash): Invite?
@@ -190,7 +190,7 @@ interface CommunityInviteRepository<Invite : CommunityInvite> : EntityRepository
      *
      * @param now the moment compared with the expiration moments.
      * @return the ids of the expired invites in ascending order; empty if there are none.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findExpired(now: Instant): List<CommunityInviteId>
 }
@@ -198,21 +198,21 @@ interface CommunityInviteRepository<Invite : CommunityInvite> : EntityRepository
 /**
  * Persistence port for [CommunityInvite.Manager] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ManagerCommunityInviteRepository : CommunityInviteRepository<CommunityInvite.Manager>
 
 /**
  * Persistence port for [CommunityInvite.Developer] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface DeveloperCommunityInviteRepository : CommunityInviteRepository<CommunityInvite.Developer>
 
 /**
  * Persistence port for [Competition] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface CompetitionRepository : EntityRepository<CompetitionData, CompetitionId, Competition> {
 
@@ -224,7 +224,7 @@ interface CompetitionRepository : EntityRepository<CompetitionData, CompetitionI
      * @param pagination requested page; competition id and contest id ascending break sorting ties.
      * @param filter literal, case-insensitive names and exact ids combined with AND.
      * @return matching pairs and their exact total, including when the requested page is empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToObserver(
         contestIds: Set<ContestId>,
@@ -240,7 +240,7 @@ interface CompetitionRepository : EntityRepository<CompetitionData, CompetitionI
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
      * @param filter conditions combined with AND before paging and counting; unspecified conditions do not restrict selection.
      * @return owned competitions, the original pagination and exact filtered total; absent matches or missing pages are empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToManager(
         ownerId: MultipleRoleUserId,
@@ -254,7 +254,7 @@ interface CompetitionRepository : EntityRepository<CompetitionData, CompetitionI
      *
      * @param contestIds the contests to look for; an empty set matches nothing.
      * @return distinct matching competitions in ascending id order; empty if there are none.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByContestIds(contestIds: Set<ContestId>): List<Competition>
 }
@@ -264,6 +264,6 @@ interface CompetitionRepository : EntityRepository<CompetitionData, CompetitionI
  *
  * @property competition the competition containing the contest.
  * @property contest the assigned contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ObserverContest(val competition: Competition, val contest: Contest)

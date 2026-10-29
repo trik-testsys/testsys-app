@@ -44,7 +44,7 @@ import java.time.Instant
 /**
  * Runs supervisor operations for the signed-in user in one transaction per call.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -59,7 +59,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     /**
      * Reads one non-supervisor user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewUser(userId: UserId): Pair<AdminUserVo, Instant?> = operations.viewUser(currentUser.user(), userId)
@@ -68,7 +68,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     /**
      * Resolves a route id to either a multiple-role or a fixed-role user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewUserByIdValue(id: Long): Pair<AdminUserVo, Instant?> {
@@ -123,7 +123,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     /**
      * Reads one community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewCommunity(communityId: CommunityId): CommunityVo {
@@ -133,7 +133,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     /**
      * Adds a non-fixed-role user to any community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addToCommunity(userId: UserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUserVo =
         operations.addToCommunity(currentUser.user(), userId, communityId, role).getOrThrow().toVo()
@@ -141,7 +141,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     /**
      * Grants the administrator role to a non-fixed-role user without choosing a community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun grantAdministrator(userId: UserId): MultipleRoleUserVo =
         operations.grantAdministrator(currentUser.user(), userId).getOrThrow().toVo()
@@ -150,7 +150,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
      * Runs [SupervisorOperations.impersonate] and returns the principal of the found user marked with the current
      * supervisor instead of the user data.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun impersonate(userId: UserId): CabinetPrincipal {
@@ -165,7 +165,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     /**
      * Removes one membership from a community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun removeFromCommunity(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUserVo =
         operations.removeFromCommunity(currentUser.user(), userId, communityId, role).getOrThrow().toVo()
@@ -190,7 +190,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     /**
      * Refreshes an expired invite code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun refreshCommunityInvite(communityId: CommunityId, kind: CommunityInvite.Kind): CommunityInviteVo =
         operations.refreshCommunityInvite(currentUser.user(), communityId, kind).getOrThrow().toVo()

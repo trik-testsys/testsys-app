@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 /**
  * Mapping between [Supervisor] and its [UserJpaEntity] and [SupervisorDataJpaEntity] rows.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object SupervisorMapping {
@@ -24,7 +24,7 @@ object SupervisorMapping {
     /**
      * Assembles a [Supervisor] from [userJpaEntity] and [dataJpaEntity]; fails when the rows are not bound.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(userJpaEntity: UserJpaEntity, dataJpaEntity: SupervisorDataJpaEntity) = supervisor {
         populateFields(userJpaEntity)
@@ -41,7 +41,7 @@ object SupervisorMapping {
     /**
      * Creates a new single-role [UserJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toUserJpaEntity(data: SupervisorData) = UserJpaEntity(
         name = data.name,
@@ -55,7 +55,7 @@ object SupervisorMapping {
     /**
      * Creates the [UserJpaEntity] row replacing [current] from [entity], keeping its e-mail, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toUserJpaEntity(entity: Supervisor, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
@@ -73,7 +73,7 @@ object SupervisorMapping {
     /**
      * Creates a new [SupervisorDataJpaEntity] row of the user [userId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDataJpaEntity(userId: Long) = SupervisorDataJpaEntity(userId = userId)
 }

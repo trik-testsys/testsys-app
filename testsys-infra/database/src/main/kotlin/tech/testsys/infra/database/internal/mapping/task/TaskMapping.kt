@@ -23,7 +23,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [Task] and [TaskJpaEntity]; content revisions are mapped by [TaskContentMapping].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
@@ -33,7 +33,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
      * the uploaded chains [uploadedResourceBuckets];
      * fails when a revision required by the status of [jpaEntity] is missing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(
         jpaEntity: TaskJpaEntity,
@@ -57,7 +57,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     /**
      * Assembles a [Task] from the just stored [jpaEntity] and the [data] it was stored from; the owner comes from the row.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: TaskJpaEntity, data: TaskData): Task = task {
         populateFields(jpaEntity)
@@ -67,7 +67,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     /**
      * Creates a new [TaskJpaEntity] row from [data] and its content revisions [wipContentId] and [committedContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: TaskData, wipContentId: Long, committedContentId: Long?) = TaskJpaEntity(
         name = data.name,
@@ -82,7 +82,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
      * Creates the [TaskJpaEntity] row replacing [current] from [entity], [wipContentId] and [committedContentId];
      * keeps `ownerId`, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Task, current: TaskJpaEntity, wipContentId: Long, committedContentId: Long?) = TaskJpaEntity(
         name = entity.data.name,
@@ -100,7 +100,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     /**
      * Creates the [CommunityToTaskJpaEntity] rows linking the task [taskId] with [communityIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toSharedToAssociations(taskId: Long, communityIds: List<CommunityId>) = communityIds.distinct().map {
         CommunityToTaskJpaEntity(communityId = it.value, taskId = taskId)
@@ -109,7 +109,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     /**
      * Creates the [VersionBucketToTaskJpaEntity] rows linking [taskId] with [versionBuckets].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toUploadedResourceAssociations(taskId: Long, versionBuckets: Set<VersionBucket>): List<VersionBucketToTaskJpaEntity> =
         versionBuckets.map { VersionBucketToTaskJpaEntity(taskId = taskId, versionBucket = it.value) }
@@ -117,7 +117,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     /**
      * Maps the sealed variant of [content] to its [TaskStatusJpaEnum] discriminator.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun encodeStatus(content: TaskContent): TaskStatusJpaEnum = when (content) {
         is TaskContent.New -> TaskStatusJpaEnum.NEW
@@ -128,7 +128,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     /**
      * Returns the WIP content of [content], or `null` for a committed task.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun extractWip(content: TaskContent): WipTaskContent? = when (content) {
         is TaskContent.New -> content.wip
@@ -139,7 +139,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     /**
      * Returns the last committed content of [content], or `null` for a new task.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun extractCommitted(content: TaskContent): CommittedTaskContent? = when (content) {
         is TaskContent.New -> null

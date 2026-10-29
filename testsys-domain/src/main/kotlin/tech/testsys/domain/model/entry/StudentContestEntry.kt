@@ -14,7 +14,7 @@ import java.time.Instant
 /**
  * Identifier of a [StudentContestEntry].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class StudentContestEntryId(
@@ -28,7 +28,7 @@ value class StudentContestEntryId(
  * @property studyClass the entry context; fixed on creation.
  * @property contest the entry context; fixed on creation.
  * @property enteredAt the first entry moment; fixed on creation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StudentContestEntryData(
     val user: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
@@ -41,7 +41,7 @@ data class StudentContestEntryData(
  * The first persisted entry into its context.
  *
  * @property data the immutable entry data.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class StudentContestEntry(
     id: StudentContestEntryId,

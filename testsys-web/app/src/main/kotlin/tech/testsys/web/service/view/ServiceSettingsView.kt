@@ -23,7 +23,7 @@ import tech.testsys.web.components.forms.textInput
 /**
  * Service-only atomic settings editor, refreshed on navigation and after successful changes.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("settings")
 @PageTitle("Настройки Системы")

@@ -61,7 +61,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
  * Persistence adapter of [MultipleRoleUser] entities backed by [UserJpaEntity] rows of the multiple-role type.
  * [update] rejects removing the student role while the user is enrolled in a class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

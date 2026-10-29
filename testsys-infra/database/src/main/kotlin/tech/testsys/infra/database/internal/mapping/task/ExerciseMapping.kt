@@ -17,7 +17,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 /**
  * Mapping between [Exercise] and [ExerciseJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
@@ -25,7 +25,7 @@ object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
     /**
      * Assembles an [Exercise] from [jpaEntity] and its [file].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: ExerciseJpaEntity, file: FileData) = exercise {
         populateFields(jpaEntity)
@@ -44,7 +44,7 @@ object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
     /**
      * Creates a new [ExerciseJpaEntity] row from [data] referencing the stored file [fileDataId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: ExerciseData, fileDataId: Long) = ExerciseJpaEntity(
         name = data.name,
@@ -58,7 +58,7 @@ object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
      * Creates the [ExerciseJpaEntity] row replacing [current] from [entity], keeping `fileDataId`, `language`,
      * `versionBucket`, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Exercise, current: ExerciseJpaEntity) = ExerciseJpaEntity(
         name = entity.data.name,

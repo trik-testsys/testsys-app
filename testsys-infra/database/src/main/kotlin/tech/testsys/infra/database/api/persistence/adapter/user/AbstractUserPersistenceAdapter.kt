@@ -21,7 +21,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
  * @param Data the data type a new entity is created from.
  * @param Id the id type of the entity.
  * @param Entity the domain entity type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 abstract class AbstractUserPersistenceAdapter<Data, Id : UserId, Entity : User<Id>>(

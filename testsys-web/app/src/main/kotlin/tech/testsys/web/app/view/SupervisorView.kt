@@ -28,7 +28,7 @@ internal fun openSupervisorUser(user: AdminUserVo) {
 /**
  * Supervisor cabinet with all non-supervisor users and all communities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("supervisor/:section?(users|communities)")
 @RolesAllowed("SUPERVISOR")

@@ -12,7 +12,7 @@ import tech.testsys.web.components.texts.currentLocalization
 /**
  * Handles navigation denied by service access rules with the shared forbidden screen and status 403.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @AnonymousAllowed
 class ServiceAccessDeniedView : ErrorPage(), HasErrorParameter<AccessDeniedException> {

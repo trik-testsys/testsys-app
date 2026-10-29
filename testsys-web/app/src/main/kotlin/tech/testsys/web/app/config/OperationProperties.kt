@@ -7,7 +7,7 @@ import java.time.Duration
  * Competition settings, bound from `testsys.operation.competition`.
  *
  * @property maxParticipants the maximum total number of Participants in a Competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SettingsProperties("testsys.operation.competition")
 data class CompetitionProperties(val maxParticipants: Int)
@@ -17,7 +17,7 @@ data class CompetitionProperties(val maxParticipants: Int)
  *
  * @property confirmationCodeLifetime the validity of a confirmation code.
  * @property maxConfirmationAttempts the number of attempts to enter a confirmation code.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SettingsProperties("testsys.operation.email-confirmation")
 data class EmailConfirmationProperties(val confirmationCodeLifetime: Duration, val maxConfirmationAttempts: Int)
@@ -26,7 +26,7 @@ data class EmailConfirmationProperties(val confirmationCodeLifetime: Duration, v
  * Community invite settings, bound from `testsys.operation.community-invite`.
  *
  * @property ttl the validity of a Community invite code.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SettingsProperties("testsys.operation.community-invite")
 data class CommunityInviteProperties(val ttl: Duration)
@@ -35,7 +35,7 @@ data class CommunityInviteProperties(val ttl: Duration)
  * Class invite settings, bound from `testsys.operation.class-invite`.
  *
  * @property ttl the validity of a Class invite code.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SettingsProperties("testsys.operation.class-invite")
 data class ClassInviteProperties(val ttl: Duration)

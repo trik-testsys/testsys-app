@@ -13,7 +13,7 @@ import java.time.Instant
 /**
  * Identifier of a [SingleRoleUser]; shared by all fixed-role user kinds.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class SingleRoleUserId(
@@ -24,7 +24,7 @@ value class SingleRoleUserId(
  * Data common to every kind of [SingleRoleUser]: fixed-role users sign in with an access code.
  *
  * @property accessTokenHash the stored access-code representation together with its hashing algorithm.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface SingleRoleUserData : UserData {
     val accessTokenHash: AccessTokenHash
@@ -33,7 +33,7 @@ interface SingleRoleUserData : UserData {
 /**
  * Sealed base of users holding exactly one fixed role, which excludes any other role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed class SingleRoleUser(
     id: SingleRoleUserId,
@@ -45,7 +45,7 @@ sealed class SingleRoleUser(
  * Data of a [Participant].
  *
  * @property competition the competition the participant belongs to; fixed on creation and ignored on update.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ParticipantData(
     override val accessTokenHash: AccessTokenHash,
@@ -57,7 +57,7 @@ data class ParticipantData(
  * A fixed-role user who belongs to exactly one [Competition] and takes part in its contests.
  *
  * @property data the data of the participant.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Participant(
     id: SingleRoleUserId,
@@ -70,7 +70,7 @@ class Participant(
  *
  * @property community the community the observer is a member of.
  * @property contests the contests assigned to the observer.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ObserverData(
     override val accessTokenHash: AccessTokenHash,
@@ -83,7 +83,7 @@ data class ObserverData(
  * A fixed-role user who may view competitions containing any contest assigned to them, limited to those contests.
  *
  * @property data the data of the observer.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Observer(
     id: SingleRoleUserId,
@@ -94,7 +94,7 @@ class Observer(
 /**
  * Data of a [Supervisor].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SupervisorData(
     override val accessTokenHash: AccessTokenHash,
@@ -105,7 +105,7 @@ data class SupervisorData(
  * A fixed-role user who creates and manages other users.
  *
  * @property data the data of the supervisor.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Supervisor(
     id: SingleRoleUserId,

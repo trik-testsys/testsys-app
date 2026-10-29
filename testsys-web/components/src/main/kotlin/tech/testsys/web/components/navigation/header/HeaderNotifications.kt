@@ -34,7 +34,7 @@ import tech.testsys.web.components.core.svgIcon
  * @property items the signal containing the authoritative list.
  * @property onRead the handler called before opening an unread item; the application updates [items].
  * @property onReadAll the handler of the read-all action; the application updates [items].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class HeaderNotifications(
     val items: Signal<List<HeaderNotification>>,
@@ -50,7 +50,7 @@ class HeaderNotifications(
  * @property destination the related route or action.
  * @property isUnread whether the application considers the notification unread.
  * @property description the optional secondary text.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class HeaderNotification(
     val key: String,

@@ -15,14 +15,14 @@ import tech.testsys.web.components.layout.ContentScope
 /**
  * Adds a pill badge of a state with the page [text], coloured by its [tone].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.badge(text: String, tone: Tone): ElementHandle = ElementHandle(buildBadge(text, tone).also { badge -> add(badge) })
 
 /**
  * Adds a pill badge of a state on [size] columns of the row, or on the rest of it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.badge(text: String, tone: Tone, size: Int? = null): ElementHandle = ElementHandle(place(size, buildBadge(text, tone)))
 

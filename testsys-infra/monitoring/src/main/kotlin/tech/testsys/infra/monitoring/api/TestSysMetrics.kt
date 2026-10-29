@@ -22,7 +22,7 @@ package tech.testsys.infra.monitoring.api
  * @property STATE the label of the state of an unfinished grading run.
  * @property PARTICIPATION the label of the participation of a checking node in grading.
  * @property STATUS the label of the last known availability of a checking node.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 object TestSysMetrics {
     const val TECHNICAL_FAILURES: String = "testsys.technical.failures"

@@ -10,7 +10,7 @@ import kotlin.contracts.contract
  * the nested operation the error was taken from, so the original stack trace is kept.
  *
  * @property error the error the operation is interrupted with.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 class OperationFailure @PublishedApi internal constructor(
@@ -23,7 +23,7 @@ class OperationFailure @PublishedApi internal constructor(
  * Scope of a single [operation] call, able to interrupt it with an error.
  *
  * @param E the type of the errors the operation can be interrupted with.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 class Raise<in E : OperationError> @PublishedApi internal constructor() {
@@ -31,7 +31,7 @@ class Raise<in E : OperationError> @PublishedApi internal constructor() {
      * Interrupts the operation with [error]; [cause] is the exception of a nested operation the [error] originates
      * from, if any.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Suppress("MemberNameEqualsClassName")
     fun raise(error: E, cause: Throwable? = null): Nothing = throw OperationFailure(error, this, cause)
@@ -42,7 +42,7 @@ class Raise<in E : OperationError> @PublishedApi internal constructor() {
  *
  * @param T the type of the successful value.
  * @param E the type of the errors the operation can be interrupted with.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 inline fun <T, E : OperationError> operation(block: Raise<E>.() -> T): OperationResult<T, E> {
@@ -60,7 +60,7 @@ inline fun <T, E : OperationError> operation(block: Raise<E>.() -> T): Operation
  * Interrupts the enclosing operation with this error.
  *
  * @param E the type of the errors of the enclosing operation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 context(scope: Raise<E>)
@@ -72,7 +72,7 @@ fun <E : OperationError> E.raise(): Nothing = scope.raise(this)
  *
  * @param T the type of the successful value.
  * @param E the type of the errors of the enclosing operation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 context(raise: Raise<E>)
@@ -88,7 +88,7 @@ fun <T, E : OperationError> OperationResult<T, E>.getOrRaise(): T = when (this) 
  * @param T the type of the successful value.
  * @param N the type of the errors of the nested operation.
  * @param E the type of the errors of the enclosing operation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 context(raise: Raise<E>)
@@ -102,7 +102,7 @@ inline fun <T, N : OperationError, E : OperationError> OperationResult<T, N>.get
  * on failure.
  *
  * @param E the type of the errors of the enclosing operation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(ExperimentalContracts::class)
 @InternalOperationsApi
@@ -119,7 +119,7 @@ inline fun <E : OperationError> ensure(condition: Boolean, error: () -> E) {
  * Interrupts the enclosing operation with [error] if [condition] is false.
  *
  * @param E the type of the errors of the enclosing operation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(ExperimentalContracts::class)
 @InternalOperationsApi

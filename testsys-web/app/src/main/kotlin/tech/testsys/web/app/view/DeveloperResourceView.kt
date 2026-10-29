@@ -58,7 +58,7 @@ private const val FILE_CONTENT_TYPE = "application/octet-stream"
  * of its versions with downloading their files. Before changing an attached resource the page warns about the new
  * uncommitted changes of the task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("developer/tasks/:taskId([0-9]+)/resources/:resourceId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
 @RolesAllowed("MULTIPLE_ROLE")

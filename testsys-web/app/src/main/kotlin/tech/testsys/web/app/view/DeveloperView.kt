@@ -51,7 +51,7 @@ private val FILTER_STATES: Map<TaskFilter.State, TaskState> = mapOf(
  * Cabinet of a Developer (testsys.web.page.developer): the tabs «Задачи» and «Туры» are the sections of the route; without
  * a section the page opens «Задачи». A task opens its page only for its owner; any contest opens its page.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("developer/:section?(tasks|contests)")
 @RolesAllowed("MULTIPLE_ROLE")

@@ -16,7 +16,7 @@ import tech.testsys.web.components.texts.UiLocalization
 /**
  * Scope of a block row: elements side by side on the block columns; an element without a size takes the rest of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class BlockRowScope internal constructor(
@@ -30,14 +30,14 @@ class BlockRowScope internal constructor(
     /**
      * Lays out [content] in a line on [size] columns, or on the rest of the row if [size] is `null`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun horizontal(size: Int? = null, content: ContentScope.() -> Unit): ElementHandle = group(CssClass.Hstack, size, content)
 
     /**
      * Lays out [content] in a column on [size] columns, or on the rest of the row if [size] is `null`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun vertical(size: Int? = null, content: ContentScope.() -> Unit): ElementHandle = group(CssClass.Vstack, size, content)
 

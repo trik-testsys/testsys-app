@@ -10,7 +10,7 @@ import com.vaadin.flow.signals.Signal
  * Handle of a design system element that a page can show or hide after building it.
  *
  * @property isVisible whether the element is shown.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 open class ElementHandle internal constructor(internal val component: Component) {
@@ -24,7 +24,7 @@ open class ElementHandle internal constructor(internal val component: Component)
      * Binds [isVisible] to [signal]: every value it produces is shown at once. A manual [isVisible] while bound, and
      * a second binding, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     open fun bindVisible(signal: Signal<Boolean>): SignalBinding<Boolean> = component.bindVisible(signal)
 }
@@ -33,7 +33,7 @@ open class ElementHandle internal constructor(internal val component: Component)
  * Handle of an element whose text a page replaces, e.g. a counter or a paragraph of text.
  *
  * @property text the shown text.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TextHandle internal constructor(private val holder: HtmlContainer) : ElementHandle(holder) {
     var text: String
@@ -46,7 +46,7 @@ class TextHandle internal constructor(private val holder: HtmlContainer) : Eleme
      * Binds [text] to [signal]: every value it produces is shown at once. A manual [text] while bound, and a second
      * binding, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindText(signal: Signal<String>): SignalBinding<String> = holder.bindText(signal)
 }

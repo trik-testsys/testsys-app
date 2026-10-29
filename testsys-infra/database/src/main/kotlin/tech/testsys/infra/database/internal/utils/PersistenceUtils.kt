@@ -35,7 +35,7 @@ internal fun <Association, K> syncJoinTable(
  *
  * @param T the JPA entity type.
  * @param ID the primary key type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 fun <T : JpaEntity, ID : Any> CrudRepository<T, ID>.findByIdOrError(id: ID) = findById(id).orElse(null).requireById(id)

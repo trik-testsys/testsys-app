@@ -23,7 +23,7 @@ import java.time.Year
 /**
  * Scope of the page footer: links in display order, opened in the current tab.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class PageFooterScope internal constructor() {
@@ -32,7 +32,7 @@ class PageFooterScope internal constructor() {
     /**
      * Adds a link named [label] that opens [target] with [parameters].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun link(label: String, target: Class<out Component>, parameters: RouteParameters = RouteParameters.empty()) {
         links += RouterLink(label, target, parameters).apply { addClassName(CssClass.FooterLink) }
@@ -41,7 +41,7 @@ class PageFooterScope internal constructor() {
     /**
      * Adds a link named [label] that opens [href].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun link(label: String, href: String) {
         links += Anchor(href, label).apply { addClassName(CssClass.FooterLink) }

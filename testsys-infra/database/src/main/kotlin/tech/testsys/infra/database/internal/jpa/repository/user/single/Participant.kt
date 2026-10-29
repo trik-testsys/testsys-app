@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [ParticipantDataJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -20,28 +20,28 @@ interface ParticipantDataJpaEntityRepository : SnowflakeJpaEntityRepository<Part
     /**
      * Finds the participant data row of the user [userId], or `null` if the user does not hold the role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByUserId(userId: Long): ParticipantDataJpaEntity?
 
     /**
      * Finds the participant data rows of any of the users [userIds] in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByUserIdIn(userIds: Collection<Long>): List<ParticipantDataJpaEntity>
 
     /**
      * Finds the participant data rows of the competition [competitionId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByCompetitionId(competitionId: Long): List<ParticipantDataJpaEntity>
 
     /**
      * Finds the ids of the competitions [competitionIds] paired with the ids of their participants in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.competitionId, e.userId) " +

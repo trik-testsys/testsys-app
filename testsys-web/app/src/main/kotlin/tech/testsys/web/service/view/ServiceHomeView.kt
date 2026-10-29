@@ -13,7 +13,7 @@ import tech.testsys.web.components.display.text
  * Protected initial service page: the header leads to the service sections, and the monitoring block makes a plain
  * transition to Grafana; signing out is in the header menu.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("")
 @PageTitle("Служебный кабинет")

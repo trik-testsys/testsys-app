@@ -23,7 +23,7 @@ import tech.testsys.web.components.layout.ContentScope
 /**
  * Scope of an action menu: its items in order. Destructive items come last, after a separator the menu adds itself.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class MenuScope internal constructor(private val menu: ContextMenu) {
@@ -35,7 +35,7 @@ class MenuScope internal constructor(private val menu: ContextMenu) {
      * Adds an item named [label] that runs [onSelect]; an item that is not [isEnabled] is shown but cannot be chosen.
      *
      * @throws IllegalStateException if a destructive item is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun item(label: String, isEnabled: Boolean = true, onSelect: () -> Unit) {
         check(!hasDestructive) { "Menu item '$label' follows a destructive item; destructive items come last" }
@@ -45,7 +45,7 @@ class MenuScope internal constructor(private val menu: ContextMenu) {
     /**
      * Adds an item named [label] that deletes or cancels something and runs [onSelect].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun destructiveItem(label: String, onSelect: () -> Unit) {
         if (!hasDestructive && itemCount > 0) menu.addSeparator()
@@ -63,7 +63,7 @@ class MenuScope internal constructor(private val menu: ContextMenu) {
  * Adds a button that opens an action menu: "⋯" named for screen readers if [label] is `null`, a text button otherwise.
  *
  * @throws IllegalStateException if the menu has no items or an item follows a destructive one.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.menu(label: String? = null, content: MenuScope.() -> Unit): ElementHandle {
     if (label == null) return iconMenu(texts.messages.uiOverlay.menuActions(), content)

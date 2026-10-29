@@ -37,7 +37,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * read-only fields and, unless a supervisor is signed in as the user, the actions that open the dialogs of the e-mail
  * change, in two steps, the new address and then the code from the letter, and of the password change.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("profile")
 @RolesAllowed("MULTIPLE_ROLE")

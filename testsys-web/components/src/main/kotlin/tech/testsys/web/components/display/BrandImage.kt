@@ -14,7 +14,7 @@ import tech.testsys.web.components.layout.ContentScope
 /**
  * Canonical brand images whose proportions and geometry belong to the components core.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class BrandAsset(internal val path: String) {
     Icon(TestSysBrand.ICON),
@@ -26,7 +26,7 @@ enum class BrandAsset(internal val path: String) {
 /**
  * Adds the canonical [asset] with an application-provided accessible [label].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.brandImage(asset: BrandAsset, label: String, configure: ElementHandle.() -> Unit = {}): ElementHandle {
     val image = buildBrandImage(asset, label)
@@ -37,7 +37,7 @@ fun ContentScope.brandImage(asset: BrandAsset, label: String, configure: Element
 /**
  * Adds a canonical brand image on [size] columns, or the remainder.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.brandImage(
     asset: BrandAsset,

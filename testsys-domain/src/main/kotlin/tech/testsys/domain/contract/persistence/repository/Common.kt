@@ -10,7 +10,7 @@ import tech.testsys.domain.model.LazyEntityList
  *
  * @param Id the identifier type of the entity.
  * @param Entity the domain entity type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface EntityFinder<Id : DomainId, Entity : DomainEntity<Id>> {
 
@@ -19,7 +19,7 @@ interface EntityFinder<Id : DomainId, Entity : DomainEntity<Id>> {
      *
      * @param id the id of the entity.
      * @return the entity, or `null` if it does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findById(id: Id): Entity?
 
@@ -28,7 +28,7 @@ interface EntityFinder<Id : DomainId, Entity : DomainEntity<Id>> {
      *
      * @param ids the ids of the entities.
      * @return the found entities; missing ids are skipped.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByIds(ids: List<Id>): List<Entity>
 }
@@ -38,7 +38,7 @@ interface EntityFinder<Id : DomainId, Entity : DomainEntity<Id>> {
  *
  * @param Id the identifier type of the entity.
  * @param Entity the domain entity type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface EntityLoader<Id : DomainId, Entity : DomainEntity<Id>> {
 
@@ -48,7 +48,7 @@ interface EntityLoader<Id : DomainId, Entity : DomainEntity<Id>> {
      * @param field the lazy reference held by another entity.
      * @return the referenced entity.
      * @throws IllegalArgumentException if the referenced entity does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun load(field: LazyEntity<Id, Entity>): Entity
 
@@ -58,7 +58,7 @@ interface EntityLoader<Id : DomainId, Entity : DomainEntity<Id>> {
      * @param list the lazy list reference held by another entity.
      * @return the referenced entities.
      * @throws IllegalArgumentException if any referenced entity does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun load(list: LazyEntityList<Id, Entity>): List<Entity>
 }
@@ -69,7 +69,7 @@ interface EntityLoader<Id : DomainId, Entity : DomainEntity<Id>> {
  * @param Data the data type a new entity is created from.
  * @param Id the identifier type of the entity.
  * @param Entity the domain entity type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
 
@@ -78,7 +78,7 @@ interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
      *
      * @param data the data of the new entity.
      * @return the saved entity.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun save(data: Data): Entity
 
@@ -87,7 +87,7 @@ interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
      *
      * @param dataList the data of the new entities.
      * @return the saved entities.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun save(dataList: List<Data>): List<Entity>
 
@@ -98,7 +98,7 @@ interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
      * @param entity the entity with updated data.
      * @return the saved entity carrying the new version.
      * @throws IllegalArgumentException if [entity] carries no [DomainEntity.version] token.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun update(entity: Entity): Entity
 
@@ -108,7 +108,7 @@ interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
      * @param entityList the entities with updated data.
      * @return the saved entities carrying the new versions.
      * @throws IllegalArgumentException if any of [entityList] carries no [DomainEntity.version] token.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun update(entityList: List<Entity>): List<Entity>
 }
@@ -118,7 +118,7 @@ interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
  *
  * @param Id the identifier type of the entity.
  * @param Entity the domain entity type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface EntityRemover<Id : DomainId, Entity : DomainEntity<Id>> {
 
@@ -126,7 +126,7 @@ interface EntityRemover<Id : DomainId, Entity : DomainEntity<Id>> {
      * Removes an entity by id.
      *
      * @param id the id of the entity to remove.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun removeById(id: Id)
 
@@ -134,7 +134,7 @@ interface EntityRemover<Id : DomainId, Entity : DomainEntity<Id>> {
      * Removes entities by ids.
      *
      * @param ids the ids of the entities to remove.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun removeByIds(ids: List<Id>)
 
@@ -142,7 +142,7 @@ interface EntityRemover<Id : DomainId, Entity : DomainEntity<Id>> {
      * Removes an entity.
      *
      * @param entity the entity to remove.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun remove(entity: Entity)
 
@@ -150,7 +150,7 @@ interface EntityRemover<Id : DomainId, Entity : DomainEntity<Id>> {
      * Removes entities.
      *
      * @param entityList the entities to remove.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun remove(entityList: List<Entity>)
 }
@@ -161,7 +161,7 @@ interface EntityRemover<Id : DomainId, Entity : DomainEntity<Id>> {
  * @param Data the data type a new entity is created from.
  * @param Id the identifier type of the entity.
  * @param Entity the domain entity type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface EntityRepository<Data, Id : DomainId, Entity : DomainEntity<Id>> :
     EntitySaver<Data, Id, Entity>,

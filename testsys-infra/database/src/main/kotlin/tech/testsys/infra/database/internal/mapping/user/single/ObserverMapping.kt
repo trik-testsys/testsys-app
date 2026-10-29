@@ -18,7 +18,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 /**
  * Mapping between [Observer] and its [UserJpaEntity] and [ObserverDataJpaEntity] rows.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object ObserverMapping {
@@ -26,7 +26,7 @@ object ObserverMapping {
     /**
      * Assembles an [Observer] from [userJpaEntity], [dataJpaEntity] and [contestIds]; fails when the rows are not bound.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(userJpaEntity: UserJpaEntity, dataJpaEntity: ObserverDataJpaEntity, contestIds: List<ContestId>) = observer {
         populateFields(userJpaEntity)
@@ -44,7 +44,7 @@ object ObserverMapping {
     /**
      * Creates a new single-role [UserJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toUserJpaEntity(data: ObserverData) = UserJpaEntity(
         name = data.name,
@@ -58,7 +58,7 @@ object ObserverMapping {
     /**
      * Creates the [UserJpaEntity] row replacing [current] from [entity], keeping its e-mail, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toUserJpaEntity(entity: Observer, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
@@ -76,7 +76,7 @@ object ObserverMapping {
     /**
      * Creates a new [ObserverDataJpaEntity] row of the user [userId] from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDataJpaEntity(userId: Long, data: ObserverData) = ObserverDataJpaEntity(
         userId = userId,
@@ -87,7 +87,7 @@ object ObserverMapping {
      * Creates the [ObserverDataJpaEntity] row of the user [userId] replacing [current] from [entity],
      * keeping its id, `createdAt` and `version`; the version token of [entity] is checked on the user row.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDataJpaEntity(userId: Long, entity: Observer, current: ObserverDataJpaEntity) = ObserverDataJpaEntity(
         userId = userId,
@@ -101,7 +101,7 @@ object ObserverMapping {
     /**
      * Creates the [ContestToObserverJpaEntity] rows linking the observer [observerId] with [contestIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toContestAssociations(observerId: Long, contestIds: List<Long>) = contestIds.distinct().map {
         ContestToObserverJpaEntity(contestId = it, observerId = observerId)

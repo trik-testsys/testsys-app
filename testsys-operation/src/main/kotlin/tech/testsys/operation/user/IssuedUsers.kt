@@ -8,7 +8,7 @@ import tech.testsys.domain.model.user.Participant
  *
  * @property participant the saved participant.
  * @property accessToken the original access code issued to [participant].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class IssuedParticipant(
     val participant: Participant,
@@ -20,7 +20,7 @@ data class IssuedParticipant(
  *
  * @property observer the saved observer.
  * @property accessToken the original access code issued to [observer].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class IssuedObserver(
     val observer: Observer,

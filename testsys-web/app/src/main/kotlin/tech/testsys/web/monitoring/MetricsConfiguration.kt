@@ -12,14 +12,14 @@ import java.time.Duration
  * Shapes the single metrics registry of the shared parent: HTTP latency buckets for the average and the 95th percentile,
  * a bound on endpoint labels, no long task timers and no Spring Security observations.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 class MetricsConfiguration {
     /**
      * Publishes fixed latency buckets of HTTP requests; client-side percentiles are not computed.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun httpRequestBuckets(): MeterFilter = object : MeterFilter {
@@ -37,7 +37,7 @@ class MetricsConfiguration {
     /**
      * Denies HTTP meters beyond 100 distinct endpoint labels, guarding against an unnormalized path.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun httpEndpointLimit(): MeterFilter = MeterFilter.maximumAllowableTags(HTTP_SERVER_REQUESTS, URI, MAX_ENDPOINTS, MeterFilter.deny())
@@ -45,7 +45,7 @@ class MetricsConfiguration {
     /**
      * Drops long task timers, which observations would create for every active request.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun longTaskTimers(): MeterFilter = MeterFilter.deny { id -> id.type == Meter.Type.LONG_TASK_TIMER }
@@ -53,7 +53,7 @@ class MetricsConfiguration {
     /**
      * Skips the observations of Spring Security filters and authorizations; requests are observed once by the web layer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun securityObservations(): ObservationPredicate = ObservationPredicate { name, _ -> !name.startsWith("spring.security.") }

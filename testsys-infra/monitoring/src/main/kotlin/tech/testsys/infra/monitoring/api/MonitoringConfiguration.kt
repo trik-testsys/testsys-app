@@ -8,14 +8,14 @@ import org.springframework.context.annotation.Configuration
 /**
  * Registers the shared [TechnicalFailures] of the context; without a metrics registry failures are not exported.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration(proxyBeanMethods = false)
 class MonitoringConfiguration {
     /**
      * Counts technical failures in the registry of the context, or in none if the context has no registry.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun technicalFailures(registry: ObjectProvider<MeterRegistry>): TechnicalFailures =

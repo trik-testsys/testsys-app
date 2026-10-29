@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property contestId id of the contest.
  * @property competitionId id of the competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -27,7 +27,7 @@ data class ContestToCompetitionId(
 /**
  * Join row: a contest is assigned to a competition.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -40,7 +40,7 @@ class ContestToCompetitionJpaEntity(id: ContestToCompetitionId) : CompositeJpaEn
  * @property name the name of the competition.
  * @property description the description of the competition.
  * @property ownerId id of the manager owning the competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

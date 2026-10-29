@@ -53,7 +53,7 @@ private const val MAX_USER_NAME_LENGTH = 512
 /**
  * Operations available to any user of the system, whatever their roles, including registration of new users.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class UserOperations(
@@ -75,7 +75,7 @@ class UserOperations(
      * Returns the fixed-role user whose current access code equals [accessToken] exactly and records the current moment
      * as their last login, without changing the user data. Users without a fixed role have no access code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.authentication")
     fun authenticate(accessToken: String): OperationResult<User<*>, AuthenticateError> = operation<User<*>, AuthenticateError> {
@@ -93,7 +93,7 @@ class UserOperations(
      * current moment as their last login, without changing the user data. An unbound address takes a password check
      * too, and it, a wrong password and the technical public-community owner are refused with the same error.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.authentication")
     fun authenticateByPassword(email: String, password: String): OperationResult<MultipleRoleUser, AuthenticateByPasswordError> =
@@ -113,7 +113,7 @@ class UserOperations(
      * and mail exceptions propagate. An active request is resent unchanged, while an expired or exhausted one gets a
      * new code under the same id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.registration")
     fun requestRegistration(email: String): OperationResult<RegistrationRequestId, RequestRegistrationError> =
@@ -150,7 +150,7 @@ class UserOperations(
      * the trimmed [confirmationCode] with the sent one; on a match creates a student with [name] and [password] in the
      * public community and removes the request. Returns the created user; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.registration")
     fun confirmRegistration(

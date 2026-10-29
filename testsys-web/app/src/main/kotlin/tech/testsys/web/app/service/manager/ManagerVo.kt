@@ -30,7 +30,7 @@ import java.time.Instant
  * @property createdAt the moment the invite was created.
  * @property codeHash the stored invite code with its hashing algorithm.
  * @property expiresAt the moment the invite stops being valid.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassInviteVo(
     val id: ClassInviteId,
@@ -47,7 +47,7 @@ data class ClassInviteVo(
  * @property accessTokenHash the stored access code with its hashing algorithm.
  * @property name the nickname of the participant.
  * @property competition the identifier of the competition of the participant.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ParticipantVo(
     val id: SingleRoleUserId,
@@ -62,7 +62,7 @@ data class ParticipantVo(
  *
  * @property participant the created participant.
  * @property accessToken the original access code issued to [participant].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class IssuedParticipantVo(
     val participant: ParticipantVo,
@@ -76,7 +76,7 @@ data class IssuedParticipantVo(
  * @property invite the invite code of the class.
  * @property students the students in stored order, each with its last login, or `null` if never logged in.
  * @property contests the added contests in stored order.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassDetailsVo(
     val studyClass: ClassVo,
@@ -91,7 +91,7 @@ data class ClassDetailsVo(
  * @property competition the competition.
  * @property participants the participants in stored order, each with its last login, or `null` if never logged in.
  * @property contests the added contests in stored order.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionDetailsVo(
     val competition: CompetitionVo,
@@ -106,7 +106,7 @@ data class CompetitionDetailsVo(
  * @property tasks the tasks of the contest in stored order.
  * @property members the identifiers and nicknames of the class students or competition participants in stored order.
  * @property results the results of member and task pairs having submissions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestResultsVo(
     val contest: ContestVo,

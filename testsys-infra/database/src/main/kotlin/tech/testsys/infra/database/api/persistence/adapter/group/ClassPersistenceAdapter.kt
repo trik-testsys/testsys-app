@@ -38,7 +38,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * Persistence adapter of [Class] entities backed by [ClassJpaEntity].
  * Enrolling students also guards their user versions against concurrent removal of the student role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

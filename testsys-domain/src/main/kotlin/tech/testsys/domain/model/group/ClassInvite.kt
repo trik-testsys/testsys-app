@@ -7,7 +7,7 @@ import java.time.Instant
 /**
  * Identifier of a [ClassInvite].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class ClassInviteId(
@@ -19,7 +19,7 @@ value class ClassInviteId(
  *
  * @property codeHash the stored invite-code representation together with its hashing algorithm.
  * @property expiresAt the moment the invite stops being valid; the invite is valid strictly before it.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassInviteData(
     val codeHash: InviteCodeHash,
@@ -30,7 +30,7 @@ data class ClassInviteData(
  * The invite code by which a student joins the class that references it.
  *
  * @property data the data of the invite.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ClassInvite(
     id: ClassInviteId,

@@ -25,7 +25,7 @@ import java.time.Instant
 /**
  * Expected failure of an operation, returned in [OperationResult.Error].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface OperationError
 
@@ -35,28 +35,28 @@ sealed interface OperationError
 /**
  * An entity the operation refers to does not exist.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EntityNotExistsError : OperationError
 
 /**
  * The user has no access to an entity the operation refers to.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AccessDeniedError : OperationError
 
 /**
  * The user does not have the role required by the operation.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface MissedRequiredRoleError : OperationError
 
 /**
  * The user has no access to resource in current context
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ResourceAccessError : OperationError
 
@@ -67,133 +67,133 @@ sealed interface ResourceAccessError : OperationError
 /**
  * Failure of creating a class owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateClassError : OperationError
 
 /**
  * Failure of creating a competition owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateCompetitionError : OperationError
 
 /**
  * Failure of listing classes owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewClassesError : OperationError
 
 /**
  * Failure of viewing a class owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewClassError : OperationError
 
 /**
  * Failure of listing competitions owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewCompetitionsError : OperationError
 
 /**
  * Failure of viewing a competition owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewCompetitionError : OperationError
 
 /**
  * Failure of viewing the results of a contest added to a class owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewClassContestError : OperationError
 
 /**
  * Failure of viewing the results of a contest added to a competition owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewCompetitionContestError : OperationError
 
 /**
  * Failure of adding a contest to a class owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AddClassContestError : OperationError
 
 /**
  * Failure of adding a contest to a competition owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AddCompetitionContestError : OperationError
 
 /**
  * Failure of creating participants in a competition owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateParticipantsError : OperationError
 
 /**
  * Failure of creating or replacing the invite code of a class owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateClassInviteError : OperationError
 
 /**
  * Failure of extending the invite code of a class owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ExtendClassInviteError : OperationError
 
 /**
  * Failure of replacing the expired invite code of a class on behalf of its owning manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RefreshClassInviteError : OperationError
 
 /**
  * Failure of deleting selected participants of a competition owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DeleteParticipantsError : OperationError
 
 /**
  * Failure of listing the contests the manager can add to classes and competitions.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewAvailableContestsError : OperationError
 
 /**
  * Failure of editing the name and description of a class owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EditClassError : OperationError
 
 /**
  * Failure of editing the name and description of a competition owned by the manager.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EditCompetitionError : OperationError
 
 /**
  * The user does not hold the manager role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object MissedManagerRoleError :
     DeleteParticipantsError,
@@ -219,7 +219,7 @@ data object MissedManagerRoleError :
 /**
  * The class name is empty or contains only whitespace.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object ClassNameBlankError : CreateClassError, EditClassError
 
@@ -227,14 +227,14 @@ data object ClassNameBlankError : CreateClassError, EditClassError
  * The class name exceeds 255 Unicode code points.
  *
  * @property className the supplied class name.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassNameTooLongError(val className: String) : CreateClassError, EditClassError
 
 /**
  * The competition name is empty or contains only whitespace.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object CompetitionNameBlankError : CreateCompetitionError, EditCompetitionError
 
@@ -242,7 +242,7 @@ data object CompetitionNameBlankError : CreateCompetitionError, EditCompetitionE
  * The competition name exceeds 255 Unicode code points.
  *
  * @property competitionName the supplied competition name.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionNameTooLongError(val competitionName: String) : CreateCompetitionError, EditCompetitionError
 
@@ -250,7 +250,7 @@ data class CompetitionNameTooLongError(val competitionName: String) : CreateComp
  * The class does not exist.
  *
  * @property classId the id of the missing class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassNotExistsError(val classId: ClassId) :
     ViewClassError,
@@ -274,7 +274,7 @@ data class ClassNotExistsError(val classId: ClassId) :
  * or the user is not enrolled in it.
  *
  * @property classId the id of the inaccessible class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassAccessDeniedError(val classId: ClassId) :
     ViewClassError,
@@ -297,7 +297,7 @@ data class ClassAccessDeniedError(val classId: ClassId) :
  * The competition does not exist.
  *
  * @property competitionId the id of the missing competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     DeleteParticipantsError,
@@ -319,7 +319,7 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
  * The competition is not accessible to the user.
  *
  * @property competitionId the id of the inaccessible competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
     DeleteParticipantsError,
@@ -335,7 +335,7 @@ data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
  *
  * @property classId the id of the class.
  * @property contestId the id of the contest missing from the class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestNotAddedToClassError(val classId: ClassId, val contestId: ContestId) : ViewClassContestError
 
@@ -344,7 +344,7 @@ data class ContestNotAddedToClassError(val classId: ClassId, val contestId: Cont
  *
  * @property competitionId the id of the competition.
  * @property contestId the id of the contest missing from the competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestNotAddedToCompetitionError(val competitionId: CompetitionId, val contestId: ContestId) :
     ViewCompetitionContestError
@@ -354,7 +354,7 @@ data class ContestNotAddedToCompetitionError(val competitionId: CompetitionId, v
  *
  * @property classId the id of the class.
  * @property contestId the id of the contest already added to the class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestAlreadyAddedToClassError(val classId: ClassId, val contestId: ContestId) : AddClassContestError
 
@@ -363,7 +363,7 @@ data class ContestAlreadyAddedToClassError(val classId: ClassId, val contestId: 
  *
  * @property competitionId the id of the competition.
  * @property contestId the id of the contest already added to the competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestAlreadyAddedToCompetitionError(val competitionId: CompetitionId, val contestId: ContestId) :
     AddCompetitionContestError
@@ -372,7 +372,7 @@ data class ContestAlreadyAddedToCompetitionError(val competitionId: CompetitionI
  * The requested number of new participants is zero or negative.
  *
  * @property participantCount the requested number of new participants.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class NonPositiveParticipantCountError(val participantCount: Int) : CreateParticipantsError
 
@@ -383,7 +383,7 @@ data class NonPositiveParticipantCountError(val participantCount: Int) : CreateP
  * @property currentParticipantCount the number of participants already in the competition.
  * @property participantCount the requested number of new participants.
  * @property maxParticipants the maximum total number of participants read for this call.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionParticipantLimitExceededError(
     val competitionId: CompetitionId,
@@ -397,7 +397,7 @@ data class CompetitionParticipantLimitExceededError(
  *
  * @property competitionId the id of the competition.
  * @property participantId the id of the missing participant.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionParticipantNotExistsError(val competitionId: CompetitionId, val participantId: SingleRoleUserId) :
     DeleteParticipantsError,
@@ -407,7 +407,7 @@ data class CompetitionParticipantNotExistsError(val competitionId: CompetitionId
  * The participant has submissions, so it cannot be deleted.
  *
  * @property participantId the id of the participant.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ParticipantHasSubmissionsError(val participantId: SingleRoleUserId) : DeleteParticipantsError
 
@@ -418,14 +418,14 @@ data class ParticipantHasSubmissionsError(val participantId: SingleRoleUserId) :
 /**
  * Failure of creating an observer in a community owned by the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateObserverError : OperationError
 
 /**
  * The observer name is empty or contains only whitespace.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object ObserverNameBlankError : CreateObserverError, CreateSupervisorObserverError
 
@@ -433,154 +433,154 @@ data object ObserverNameBlankError : CreateObserverError, CreateSupervisorObserv
  * The observer name exceeds 255 Unicode code points.
  *
  * @property observerName the rejected name.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ObserverNameTooLongError(val observerName: String) : CreateObserverError, CreateSupervisorObserverError
 
 /**
  * No contests were selected for the observer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object ObserverContestsEmptyError : CreateObserverError, CreateSupervisorObserverError
 
 /**
  * Failure of listing users available to the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewUsersError : OperationError
 
 /**
  * Failure of viewing one user available to the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewUserError : OperationError
 
 /**
  * Failure of listing the tasks created by a user available to the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewUserTasksError : OperationError
 
 /**
  * Failure of listing the contests created by a user available to the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewUserContestsError : OperationError
 
 /**
  * Failure of listing the classes created by a user available to the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewUserClassesError : OperationError
 
 /**
  * Failure of listing the competitions created by a user available to the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewUserCompetitionsError : OperationError
 
 /**
  * Failure of listing the judgment orders issued by a user available to the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewUserJudgmentsError : OperationError
 
 /**
  * Failure of listing the contests assigned to an observer available to the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewUserAssignedContestsError : OperationError
 
 /**
  * Failure of creating or replacing the invite code of a community owned by the administrator for a role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateCommunityInviteError : OperationError
 
 /**
  * Failure of extending the invite code of a community owned by the administrator for a role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ExtendCommunityInviteError : OperationError
 
 /**
  * Failure of viewing the invite codes of a community owned by the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewCommunityInvitesError : OperationError
 
 /**
  * Failure of replacing the expired invite code of a community for a role on behalf of its owning administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RefreshCommunityInviteError : OperationError
 
 /**
  * Failure of listing the communities created by the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewCommunitiesError : OperationError
 
 /**
  * Failure of creating a community owned by the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateCommunityError : OperationError
 
 /**
  * Failure of changing the name and description of a community owned by the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EditCommunityError : OperationError
 
 /**
  * Failure of making a user available to the administrator a member of their community in a role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface GrantRoleError : OperationError
 
 /**
  * Failure of removing a user from a community of the administrator in a role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RemoveFromCommunityError : OperationError
 
 /**
  * Failure of deleting an observer of a community of the administrator.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DeleteObserverError : OperationError
 
 /**
  * Failure of listing the contests shared to a community owned by the administrator, from which an observer is assigned.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewCommunityContestsError : OperationError
 
 /**
  * The user does not hold the administrator role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object MissedAdministratorRoleError :
     CreateObserverError,
@@ -608,7 +608,7 @@ data object MissedAdministratorRoleError :
 /**
  * The community name is empty or contains only whitespace.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object CommunityNameBlankError : CreateCommunityError, EditCommunityError, EditSupervisorCommunityError
 
@@ -616,7 +616,7 @@ data object CommunityNameBlankError : CreateCommunityError, EditCommunityError, 
  * The community name exceeds 255 Unicode code points.
  *
  * @property communityName the rejected name.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityNameTooLongError(val communityName: String) : CreateCommunityError, EditCommunityError, EditSupervisorCommunityError
 
@@ -624,7 +624,7 @@ data class CommunityNameTooLongError(val communityName: String) : CreateCommunit
  * The user holds a fixed role, so no role can be granted to them in a community.
  *
  * @property userId the id of the user with the fixed role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError, AddToCommunityError, GrantAdministratorError
 
@@ -632,7 +632,7 @@ data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError, AddToComm
  * The user does not exist.
  *
  * @property userId the id of the missing user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class UserNotExistsError(val userId: UserId) :
     ViewUserError,
@@ -656,7 +656,7 @@ data class UserNotExistsError(val userId: UserId) :
  * The user exists but is not available to the administrator.
  *
  * @property userId the id of the inaccessible user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class UserAccessDeniedError(val userId: UserId) :
     ViewUserError,
@@ -674,7 +674,7 @@ data class UserAccessDeniedError(val userId: UserId) :
  * The role cannot be granted by an administrator.
  *
  * @property role the rejected role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class RoleNotGrantableError(val role: CommunityRole) : GrantRoleError
 
@@ -682,7 +682,7 @@ data class RoleNotGrantableError(val role: CommunityRole) : GrantRoleError
  * The role cannot be removed by an administrator.
  *
  * @property role the rejected role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class RoleNotRemovableError(val role: CommunityRole) : RemoveFromCommunityError, RemoveSupervisorMemberError
 
@@ -690,7 +690,7 @@ data class RoleNotRemovableError(val role: CommunityRole) : RemoveFromCommunityE
  * The community is the public community, from which no user is removed.
  *
  * @property communityId the id of the public community.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityIsPublicError(val communityId: CommunityId) : RemoveFromCommunityError, RemoveSupervisorMemberError
 
@@ -700,7 +700,7 @@ data class CommunityIsPublicError(val communityId: CommunityId) : RemoveFromComm
  * @property userId the id of the user.
  * @property communityId the id of the community.
  * @property role the role the user is not a member in.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class UserNotCommunityMemberError(val userId: UserId, val communityId: CommunityId, val role: CommunityRole) :
     RemoveFromCommunityError,
@@ -713,56 +713,56 @@ data class UserNotCommunityMemberError(val userId: UserId, val communityId: Comm
 /**
  * Failure of listing users available to a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorUsersError : OperationError
 
 /**
  * Failure of reading developer tasks as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorUserTasksError : OperationError
 
 /**
  * Failure of reading developer contests as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorUserContestsError : OperationError
 
 /**
  * Failure of reading manager classes as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorUserClassesError : OperationError
 
 /**
  * Failure of reading manager competitions as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorUserCompetitionsError : OperationError
 
 /**
  * Failure of reading judge orders as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorUserJudgmentsError : OperationError
 
 /**
  * Failure of reading observer assignments as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorUserAssignedContestsError : OperationError
 
 /**
  * Failure of viewing one non-supervisor user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorUserError :
     ViewSupervisorUserTasksError,
@@ -775,98 +775,98 @@ sealed interface ViewSupervisorUserError :
 /**
  * Failure of listing all communities for a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorCommunitiesError : OperationError
 
 /**
  * Failure of viewing one community for a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorCommunityError : OperationError
 
 /**
  * Failure of adding a multiple-role user to any community in a non-fixed role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AddToCommunityError : OperationError
 
 /**
  * Failure of granting the administrator role to a multiple-role user without choosing a community.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface GrantAdministratorError : OperationError
 
 /**
  * Failure of editing a community as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EditSupervisorCommunityError : OperationError
 
 /**
  * Failure of removing a membership as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RemoveSupervisorMemberError : OperationError
 
 /**
  * Failure of creating an observer as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateSupervisorObserverError : OperationError
 
 /**
  * Failure of finding contests for a new observer as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorCommunityContestsError : OperationError
 
 /**
  * Failure of reading community invites as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSupervisorCommunityInvitesError : OperationError
 
 /**
  * Failure of replacing a community invite as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateSupervisorCommunityInviteError : OperationError
 
 /**
  * Failure of extending a community invite as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ExtendSupervisorCommunityInviteError : OperationError
 
 /**
  * Failure of refreshing a community invite as a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RefreshSupervisorCommunityInviteError : OperationError
 
 /**
  * Failure of signing a supervisor in as another user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ImpersonateError : OperationError
 
 /**
  * The actor is not a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object MissedSupervisorRoleError :
     ViewSupervisorUsersError,
@@ -890,7 +890,7 @@ data object MissedSupervisorRoleError :
  * Administrator role cannot be assigned in the public community.
  *
  * @property communityId the public community where the role was requested.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class AdministratorInPublicCommunityError(val communityId: CommunityId) : AddToCommunityError
 
@@ -898,7 +898,7 @@ data class AdministratorInPublicCommunityError(val communityId: CommunityId) : A
  * The user is the technical owner of the public community, whom nobody signs in as.
  *
  * @property userId the id of the technical owner.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ImpersonationDeniedError(val userId: UserId) :
     ImpersonateError,
@@ -911,7 +911,7 @@ data class ImpersonationDeniedError(val userId: UserId) :
 /**
  * Failure of joining a community by an invite code.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface JoinCommunityError : OperationError
 
@@ -919,7 +919,7 @@ sealed interface JoinCommunityError : OperationError
  * The entered code matches no community invite code.
  *
  * @property inviteCode the code as entered by the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityInviteCodeNotValidError(val inviteCode: String) : JoinCommunityError
 
@@ -927,14 +927,14 @@ data class CommunityInviteCodeNotValidError(val inviteCode: String) : JoinCommun
  * The community invite code matching the entered code has expired.
  *
  * @property inviteCode the code as entered by the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityInviteCodeExpiredError(val inviteCode: String) : JoinCommunityError
 
 /**
  * Failure of viewing the profile. It has no cases: a user with a fixed role is excluded by the parameter type.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewProfileError : OperationError
 
@@ -945,49 +945,49 @@ sealed interface ViewProfileError : OperationError
 /**
  * Failure of listing verdicts available to the judge.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewResultsError : OperationError
 
 /**
  * Failure of issuing a judgment order for a submission.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ChangeVerdictError : OperationError
 
 /**
  * Failure of viewing a submission available to the judge.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewSolutionError : OperationError
 
 /**
  * Failure of downloading the solution file of a submission available to the judge.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadSolutionError : OperationError
 
 /**
  * Failure of downloading the grading logs of a test of a submission available to the judge.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadLogsError : OperationError
 
 /**
  * Failure of downloading the recording of a test of a submission available to the judge.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadRecordingError : OperationError
 
 /**
  * The user does not hold the judge role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object MissedJudgeRoleError :
     ViewResultsError,
@@ -1002,7 +1002,7 @@ data object MissedJudgeRoleError :
  * The submission does not exist.
  *
  * @property submissionId the id of the missing submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionNotExistsError(val submissionId: SubmissionId) :
     DownloadParticipantSolutionError,
@@ -1018,7 +1018,7 @@ data class SubmissionNotExistsError(val submissionId: SubmissionId) :
  * The submission is outside the requested study context or the current judge cannot access its author.
  *
  * @property submissionId the id of the inaccessible submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionAccessDeniedError(val submissionId: SubmissionId) :
     DownloadParticipantSolutionError,
@@ -1034,7 +1034,7 @@ data class SubmissionAccessDeniedError(val submissionId: SubmissionId) :
  * The submission was created to test a developer solution, so it cannot receive a judgment order.
  *
  * @property submissionId the id of the developer solution test submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionIsDeveloperSolutionTestError(val submissionId: SubmissionId) : ChangeVerdictError
 
@@ -1042,7 +1042,7 @@ data class SubmissionIsDeveloperSolutionTestError(val submissionId: SubmissionId
  * The submission has no successful automatic grading result.
  *
  * @property submissionId the id of the submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionNotSuccessfullyGradedError(val submissionId: SubmissionId) :
     ChangeVerdictError,
@@ -1053,14 +1053,14 @@ data class SubmissionNotSuccessfullyGradedError(val submissionId: SubmissionId) 
  * The requested judgment score is negative.
  *
  * @property score the invalid score.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class NegativeJudgmentScoreError(val score: Score) : ChangeVerdictError
 
 /**
  * The judgment reason is empty or contains only whitespace.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object BlankJudgmentReasonError : ChangeVerdictError
 
@@ -1069,7 +1069,7 @@ data object BlankJudgmentReasonError : ChangeVerdictError
  *
  * @property submissionId the id of the submission.
  * @property testId the id of the test.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TestNotInVerdictError(val submissionId: SubmissionId, val testId: TestId) : DownloadLogsError, DownloadRecordingError
 
@@ -1078,7 +1078,7 @@ data class TestNotInVerdictError(val submissionId: SubmissionId, val testId: Tes
  *
  * @property submissionId the id of the submission.
  * @property testId the id of the test.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class RecordingNotExistsError(val submissionId: SubmissionId, val testId: TestId) :
     DownloadRecordingError,
@@ -1092,7 +1092,7 @@ data class RecordingNotExistsError(val submissionId: SubmissionId, val testId: T
  * The task name exceeds the Unicode code point limit.
  *
  * @property taskName the rejected task name.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskNameTooLongError(val taskName: String) : CreateTaskError, EditTaskInfoError
 
@@ -1100,7 +1100,7 @@ data class TaskNameTooLongError(val taskName: String) : CreateTaskError, EditTas
  * The contest name exceeds the Unicode code point limit.
  *
  * @property contestName the rejected contest name.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestNameTooLongError(val contestName: String) : CreateContestError, EditContestError
 
@@ -1108,7 +1108,7 @@ data class ContestNameTooLongError(val contestName: String) : CreateContestError
  * The TRIK Studio version is not registered with this tag and version number: it was deleted or its tag was changed.
  *
  * @property trikStudioVersion the unregistered version.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TrikStudioVersionNotRegisteredError(val trikStudioVersion: TrikStudioVersion) :
     EntityNotExistsError,
@@ -1119,7 +1119,7 @@ data class TrikStudioVersionNotRegisteredError(val trikStudioVersion: TrikStudio
  * The resource name exceeds the Unicode code point limit.
  *
  * @property resourceName the rejected resource name.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ResourceNameTooLongError(val resourceName: String) :
     AddStatementError,
@@ -1135,7 +1135,7 @@ data class ResourceNameTooLongError(val resourceName: String) :
  * The uploaded file name exceeds the Unicode code point limit.
  *
  * @property uploadedFilename the rejected uploaded file name.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class UploadedFileNameTooLongError(val uploadedFilename: String) :
     AddStatementError,
@@ -1152,35 +1152,35 @@ data class UploadedFileNameTooLongError(val uploadedFilename: String) :
 /**
  * Expected failure of requesting testing of an owned task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface TestTaskError : OperationError
 
 /**
  * Expected failure of viewing the testing history of an owned task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewTaskValidationRequestsError : OperationError
 
 /**
  * Expected failure of committing the working revision of an owned task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CommitTaskError : OperationError
 
 /**
  * Expected failure of counting the submissions a commit of an owned task would send to grading again.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CountRegradeSubmissionsError : OperationError
 
 /**
  * Expected failure of viewing the regrades of an owned task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewRegradesError : OperationError
 
@@ -1188,7 +1188,7 @@ sealed interface ViewRegradesError : OperationError
  * The working revision has no successfully completed validation request with a matching snapshot.
  *
  * @property taskId the identifier of the task being committed.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskNotTestedError(val taskId: TaskId) : CommitTaskError
 
@@ -1196,7 +1196,7 @@ data class TaskNotTestedError(val taskId: TaskId) : CommitTaskError
  * The working task has no attached statement.
  *
  * @property taskId the identifier of the tested or committed task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskTestingNoStatementError(val taskId: TaskId) : TestTaskError, CommitTaskError
 
@@ -1205,7 +1205,7 @@ data class TaskTestingNoStatementError(val taskId: TaskId) : TestTaskError, Comm
  *
  * @property taskId the identifier of the tested or committed task.
  * @property language the author solution language without an exercise.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskTestingNoExerciseForLanguageError(val taskId: TaskId, val language: TrikSupportedLanguage) : TestTaskError, CommitTaskError
 
@@ -1213,7 +1213,7 @@ data class TaskTestingNoExerciseForLanguageError(val taskId: TaskId, val languag
  * The working task has no attached polygons.
  *
  * @property taskId the tested task identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskTestingNoPolygonsError(val taskId: TaskId) : TestTaskError
 
@@ -1221,7 +1221,7 @@ data class TaskTestingNoPolygonsError(val taskId: TaskId) : TestTaskError
  * The working task has no attached author solutions.
  *
  * @property taskId the tested task identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskTestingNoDeveloperSolutionsError(val taskId: TaskId) : TestTaskError
 
@@ -1229,245 +1229,245 @@ data class TaskTestingNoDeveloperSolutionsError(val taskId: TaskId) : TestTaskEr
  * The working task supports no TRIK Studio version.
  *
  * @property taskId the tested task identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskTestingNoTrikStudioVersionsError(val taskId: TaskId) : TestTaskError
 
 /**
  * Failure of listing contests available to the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewContestsError : OperationError
 
 /**
  * Failure of viewing a contest available to the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewContestError : OperationError
 
 /**
  * Failure of reverting a task owned by the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RevertTaskError : OperationError
 
 /**
  * Failure of listing tasks available to the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewTasksError : OperationError
 
 /**
  * Failure of viewing a task owned by the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewTaskError : OperationError
 
 /**
  * Failure of editing information of a task owned by the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EditTaskInfoError : OperationError
 
 /**
  * Failure of listing the developer's resources.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewResourcesError : OperationError
 
 /**
  * Failure of viewing a resource and its existing versions.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewResourceError : OperationError
 
 /**
  * Failure of obtaining the file reference of a resource version.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadResourceVersionError : OperationError
 
 /**
  * Failure of listing the TRIK Studio versions registered in the system.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewTrikStudioVersionsError : OperationError
 
 /**
  * Failure of updating a statement uploaded to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface UpdateStatementError : OperationError
 
 /**
  * Failure of updating an exercise uploaded to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface UpdateExerciseError : OperationError
 
 /**
  * Failure of updating a polygon uploaded to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface UpdateTestError : OperationError
 
 /**
  * Failure of updating a developer solution uploaded to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface UpdateDeveloperSolutionError : OperationError
 
 /**
  * Failure of uploading a new statement to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AddStatementError : OperationError
 
 /**
  * Failure of uploading a new exercise to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AddExerciseError : OperationError
 
 /**
  * Failure of uploading a new polygon to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AddTestError : OperationError
 
 /**
  * Failure of uploading a new developer solution to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AddDeveloperSolutionError : OperationError
 
 /**
  * Failure of creating a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateTaskError : OperationError
 
 /**
  * Failure of creating a contest.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface CreateContestError : OperationError
 
 /**
  * Failure of editing a contest owned by the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EditContestError : OperationError
 
 /**
  * Failure of sharing a contest to communities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ShareContestError : OperationError
 
 /**
  * Failure of attaching a task to a contest.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AttachTaskError : OperationError
 
 /**
  * Failure of detaching a task from a contest.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DetachTaskError : OperationError
 
 /**
  * Failure of deleting a contest owned by the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DeleteContestError : OperationError
 
 /**
  * Failure of attaching a statement to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AttachStatementError : OperationError
 
 /**
  * Failure of attaching a exercise to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AttachExerciseError : OperationError
 
 /**
  * Failure of attaching a test to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AttachTestError : OperationError
 
 /**
  * Failure of attaching a developersolution to a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AttachDeveloperSolutionError : OperationError
 
 /**
  * Failure of sharing a task to communities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ShareTaskError : OperationError
 
 /**
  * Failure of detaching a statement version from a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DetachStatementError : OperationError
 
 /**
  * Failure of detaching an exercise version from a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DetachExerciseError : OperationError
 
 /**
  * Failure of detaching a polygon version from a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DetachTestError : OperationError
 
 /**
  * Failure of detaching a developer solution version from a task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DetachDeveloperSolutionError : OperationError
 // endregion
@@ -1477,7 +1477,7 @@ sealed interface DetachDeveloperSolutionError : OperationError
 /**
  * The user does not have the developer role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object MissedDeveloperRoleError :
     TestTaskError,
@@ -1525,7 +1525,7 @@ data object MissedDeveloperRoleError :
  * The contest end is specified without its start.
  *
  * @property endsAt the end moment supplied without a start.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestEndWithoutStartError(val endsAt: Instant) : CreateContestError, EditContestError
 
@@ -1534,7 +1534,7 @@ data class ContestEndWithoutStartError(val endsAt: Instant) : CreateContestError
  *
  * @property startsAt the requested start moment.
  * @property endsAt the requested end moment.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestEndNotAfterStartError(val startsAt: Instant, val endsAt: Instant) : CreateContestError, EditContestError
 
@@ -1542,7 +1542,7 @@ data class ContestEndNotAfterStartError(val startsAt: Instant, val endsAt: Insta
  * The individual time limit is zero or negative.
  *
  * @property attemptDuration the nonpositive individual limit.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class NonPositiveAttemptDurationError(val attemptDuration: Duration) : CreateContestError
 
@@ -1551,7 +1551,7 @@ data class NonPositiveAttemptDurationError(val attemptDuration: Duration) : Crea
  *
  * @property attemptDuration the requested individual limit.
  * @property contestDuration the available contest interval.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class AttemptDurationExceedsContestDurationError(
     val attemptDuration: Duration,
@@ -1562,7 +1562,7 @@ data class AttemptDurationExceedsContestDurationError(
  * The contest does not exist.
  *
  * @property contestId the id of the missing contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestNotExistsError(
     val contestId: ContestId,
@@ -1596,7 +1596,7 @@ data class ContestNotExistsError(
  * The user has no access to the contest for the requested operation.
  *
  * @property contestId the id of the contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestAccessDeniedError(
     val contestId: ContestId,
@@ -1628,7 +1628,7 @@ data class ContestAccessDeniedError(
  * The contest is shared to at least one community.
  *
  * @property contestId the id of the shared contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError, DetachTaskError, DeleteContestError
 
@@ -1636,7 +1636,7 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
  * The task does not exist.
  *
  * @property taskId the id of the missing task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskNotExistsError(val taskId: TaskId) :
     TestTaskError,
@@ -1682,7 +1682,7 @@ data class TaskNotExistsError(val taskId: TaskId) :
  * The statement does not exist.
  *
  * @property statementId the id of the missing statement.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StatementNotExistsError(val statementId: StatementId) :
     EntityNotExistsError,
@@ -1695,7 +1695,7 @@ data class StatementNotExistsError(val statementId: StatementId) :
  *
  * @property taskId the id of the task.
  * @property statementId the id of the resource outside the task's uploaded chains.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StatementNotUploadedToTaskError(val taskId: TaskId, val statementId: StatementId) :
     DetachStatementError,
@@ -1706,7 +1706,7 @@ data class StatementNotUploadedToTaskError(val taskId: TaskId, val statementId: 
 /**
  * The task already has a statement.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object TaskAlreadyHasStatementError : AttachStatementError
 
@@ -1714,7 +1714,7 @@ data object TaskAlreadyHasStatementError : AttachStatementError
  * The community does not exist.
  *
  * @property communityId the id of the missing community.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityNotExistsError(val communityId: CommunityId) :
     CreateObserverError,
@@ -1744,7 +1744,7 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
  * The user lacks the access to the task required by the operation.
  *
  * @property taskId the id of the task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
     TestTaskError,
@@ -1789,7 +1789,7 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
  * The user is not a member of the community, or it belongs to another user.
  *
  * @property communityId the id of the community.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityAccessDeniedError(val communityId: CommunityId) :
     CreateObserverError,
@@ -1809,7 +1809,7 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) :
  * The task has no committed version.
  *
  * @property taskId the id of the task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError, RevertTaskError
 
@@ -1819,7 +1819,7 @@ data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTas
  *
  * @property taskId the id of the incompatible task.
  * @property trikStudioVersion the version required by the contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskTrikStudioVersionNotSupportedError(
     val taskId: TaskId,
@@ -1831,7 +1831,7 @@ data class TaskTrikStudioVersionNotSupportedError(
  *
  * @property contestId the id of the contest.
  * @property taskId the id of the already attached task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : AttachTaskError
 
@@ -1840,7 +1840,7 @@ data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskI
  *
  * @property contestId the id of the contest.
  * @property taskId the id of the task absent from the contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskNotAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : DetachTaskError
 
@@ -1848,7 +1848,7 @@ data class TaskNotAttachedToContestError(val contestId: ContestId, val taskId: T
  * The task has no uncommitted changes to test, commit or revert.
  *
  * @property taskId the id of the committed task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, TestTaskError, CommitTaskError
 // endregion
@@ -1857,7 +1857,7 @@ data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, Test
  * The requested statement version is no longer the latest version in its chain.
  *
  * @property statementId the id of the requested version.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StatementVersionNotLatestError(val statementId: StatementId) : AttachStatementError, UpdateStatementError
 
@@ -1865,7 +1865,7 @@ data class StatementVersionNotLatestError(val statementId: StatementId) : Attach
  * The exercise does not exist.
  *
  * @property exerciseId the id of the missing resource.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ExerciseNotExistsError(val exerciseId: ExerciseId) :
     EntityNotExistsError,
@@ -1878,7 +1878,7 @@ data class ExerciseNotExistsError(val exerciseId: ExerciseId) :
  *
  * @property taskId the id of the task.
  * @property exerciseId the id of the resource outside the task's uploaded chains.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ExerciseNotUploadedToTaskError(val taskId: TaskId, val exerciseId: ExerciseId) :
     DetachExerciseError,
@@ -1890,7 +1890,7 @@ data class ExerciseNotUploadedToTaskError(val taskId: TaskId, val exerciseId: Ex
  * The requested exercise version is no longer the latest version in its chain.
  *
  * @property exerciseId the id of the requested version.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ExerciseVersionNotLatestError(val exerciseId: ExerciseId) : AttachExerciseError, UpdateExerciseError
 
@@ -1898,7 +1898,7 @@ data class ExerciseVersionNotLatestError(val exerciseId: ExerciseId) : AttachExe
  * The test does not exist.
  *
  * @property testId the id of the missing resource.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TestNotExistsError(val testId: TestId) :
     EntityNotExistsError,
@@ -1911,7 +1911,7 @@ data class TestNotExistsError(val testId: TestId) :
  *
  * @property taskId the id of the task.
  * @property testId the id of the resource outside the task's uploaded chains.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TestNotUploadedToTaskError(val taskId: TaskId, val testId: TestId) :
     AttachTestError,
@@ -1923,7 +1923,7 @@ data class TestNotUploadedToTaskError(val taskId: TaskId, val testId: TestId) :
  * The requested test version is no longer the latest version in its chain.
  *
  * @property testId the id of the requested version.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TestVersionNotLatestError(val testId: TestId) : AttachTestError, UpdateTestError
 
@@ -1931,7 +1931,7 @@ data class TestVersionNotLatestError(val testId: TestId) : AttachTestError, Upda
  * The developer solution does not exist.
  *
  * @property developerSolutionId the id of the missing resource.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperSolutionNotExistsError(
     val developerSolutionId: DeveloperSolutionId,
@@ -1942,7 +1942,7 @@ data class DeveloperSolutionNotExistsError(
  *
  * @property taskId the id of the task.
  * @property developerSolutionId the id of the resource outside the task's uploaded chains.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperSolutionNotUploadedToTaskError(
     val taskId: TaskId,
@@ -1953,7 +1953,7 @@ data class DeveloperSolutionNotUploadedToTaskError(
  * The requested developer solution version is no longer the latest version in its chain.
  *
  * @property developerSolutionId the id of the requested version.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperSolutionVersionNotLatestError(val developerSolutionId: DeveloperSolutionId) :
     AttachDeveloperSolutionError,
@@ -1964,7 +1964,7 @@ data class DeveloperSolutionVersionNotLatestError(val developerSolutionId: Devel
  *
  * @property taskId the id of the task.
  * @property versionBucket the already attached resource chain.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ResourceAlreadyAttachedError(
     val taskId: TaskId,
@@ -1980,7 +1980,7 @@ data class ResourceAlreadyAttachedError(
  *
  * @property taskId the id of the task.
  * @property language the programming language already occupied in the revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ExerciseLanguageAlreadyAttachedError(
     val taskId: TaskId,
@@ -1992,7 +1992,7 @@ data class ExerciseLanguageAlreadyAttachedError(
  *
  * @property taskId the task identifier.
  * @property versionId the unattached version identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ResourceVersionNotAttachedError(val taskId: TaskId, val versionId: DomainId) :
     DetachStatementError,
@@ -2004,7 +2004,7 @@ data class ResourceVersionNotAttachedError(val taskId: TaskId, val versionId: Do
  * The requested resource chain does not exist.
  *
  * @property versionBucket the missing resource chain.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ResourceNotExistsError(val versionBucket: VersionBucket) : EntityNotExistsError, ViewResourceError, DownloadResourceVersionError
 
@@ -2013,7 +2013,7 @@ data class ResourceNotExistsError(val versionBucket: VersionBucket) : EntityNotE
  *
  * @property taskId the task identifier.
  * @property versionBucket the resource chain outside the task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ResourceNotUploadedToTaskError(val taskId: TaskId, val versionBucket: VersionBucket) :
     ResourceAccessError,
@@ -2025,7 +2025,7 @@ data class ResourceNotUploadedToTaskError(val taskId: TaskId, val versionBucket:
  *
  * @property versionBucket the selected resource chain.
  * @property versionId the missing version identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val versionId: DomainId) :
     EntityNotExistsError,
@@ -2036,21 +2036,21 @@ data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val v
 /**
  * Failure of listing the observer's assigned contests.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewObserverContestsError : OperationError
 
 /**
  * Failure of downloading results of all competitions containing an observer's assigned contests.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadObserverResultError : OperationError
 
 /**
  * The user is not an observer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object MissedObserverRoleError : MissedRequiredRoleError, ViewObserverContestsError, DownloadObserverResultError
 
@@ -2061,119 +2061,119 @@ data object MissedObserverRoleError : MissedRequiredRoleError, ViewObserverConte
 /**
  * Failure of viewing a contest in the participant's competition.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewParticipantContestError : OperationError
 
 /**
  * Failure of viewing a contest in the selected class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewStudentContestError : OperationError
 
 /**
  * Failure of listing contests of the participant.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewParticipantContestsError : OperationError
 
 /**
  * Failure of listing contests of the selected class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewStudentContestsError : OperationError
 
 /**
  * Failure of listing classes of the student.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewStudentClassesError : OperationError
 
 /**
  * Failure of entering a participant contest.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EnterParticipantContestError : OperationError
 
 /**
  * Failure of entering a student contest.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface EnterStudentContestError : OperationError
 
 /**
  * Failure of viewing a task of a contest in the participant's competition.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewParticipantTaskError : OperationError
 
 /**
  * Failure of viewing a task of a contest in the selected class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ViewStudentTaskError : OperationError
 
 /**
  * Failure of downloading a statement or an exercise of a task in the participant's competition.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadParticipantTaskResourceError : OperationError
 
 /**
  * Failure of downloading an owned solution in the participant's study context.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadParticipantSolutionError : OperationError
 
 /**
  * Failure of downloading a statement or an exercise of a task in the selected class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadStudentTaskResourceError : OperationError
 
 /**
  * Failure of downloading an owned solution in the student's study context.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DownloadStudentSolutionError : OperationError
 
 /**
  * Failure of sending a solution for a task of a contest in the participant's competition.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface SendParticipantSolutionError : OperationError
 
 /**
  * Failure of sending a solution for a task of a contest in the selected class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface SendStudentSolutionError : OperationError
 
 /**
  * Failure of joining a class by an invite code.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface JoinClassError : OperationError
 
 /**
  * The user is not a participant.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object MissedParticipantRoleError :
     MissedRequiredRoleError,
@@ -2188,7 +2188,7 @@ data object MissedParticipantRoleError :
 /**
  * The user does not hold the student role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object MissedStudentRoleError :
     MissedRequiredRoleError,
@@ -2206,7 +2206,7 @@ data object MissedStudentRoleError :
  * The entered code matches no class invite code.
  *
  * @property inviteCode the code as entered by the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassInviteCodeNotValidError(val inviteCode: String) : JoinClassError
 
@@ -2214,7 +2214,7 @@ data class ClassInviteCodeNotValidError(val inviteCode: String) : JoinClassError
  * The class invite code matching the entered code has expired.
  *
  * @property inviteCode the code as entered by the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassInviteCodeExpiredError(val inviteCode: String) : JoinClassError
 
@@ -2223,7 +2223,7 @@ data class ClassInviteCodeExpiredError(val inviteCode: String) : JoinClassError
  *
  * @property contestId the requested contest.
  * @property startsAt the interval boundary.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestNotStartedError(val contestId: ContestId, val startsAt: Instant) :
     EnterParticipantContestError, EnterStudentContestError
@@ -2233,7 +2233,7 @@ data class ContestNotStartedError(val contestId: ContestId, val startsAt: Instan
  *
  * @property contestId the requested contest.
  * @property endsAt the interval boundary.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestEndedError(val contestId: ContestId, val endsAt: Instant) :
     EnterParticipantContestError,
@@ -2245,7 +2245,7 @@ data class ContestEndedError(val contestId: ContestId, val endsAt: Instant) :
  * The user has no first entry to the contest in the selected context.
  *
  * @property contestId the requested contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestNotEnteredError(val contestId: ContestId) :
     ViewParticipantTaskError,
@@ -2262,7 +2262,7 @@ data class ContestNotEnteredError(val contestId: ContestId) :
  *
  * @property contestId the requested contest.
  * @property expiresAt the end of the individual attempt.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestAttemptExpiredError(val contestId: ContestId, val expiresAt: Instant) :
     SendParticipantSolutionError,
@@ -2273,7 +2273,7 @@ data class ContestAttemptExpiredError(val contestId: ContestId, val expiresAt: I
  *
  * @property taskId the requested task.
  * @property language the language of the sent solution.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SolutionLanguageNotAllowedError(val taskId: TaskId, val language: TrikSupportedLanguage) :
     SendParticipantSolutionError,
@@ -2284,7 +2284,7 @@ data class SolutionLanguageNotAllowedError(val taskId: TaskId, val language: Tri
  *
  * @property taskId the requested task.
  * @property resourceId the requested version identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ResourceNotInCommittedTaskError(val taskId: TaskId, val resourceId: DomainId) :
     ResourceAccessError,
@@ -2298,28 +2298,28 @@ data class ResourceNotInCommittedTaskError(val taskId: TaskId, val resourceId: D
 /**
  * Failure of signing in to the system by the access code of a fixed-role user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AuthenticateError : OperationError
 
 /**
  * The entered access code is not assigned to any fixed-role user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object InvalidAccessTokenError : AuthenticateError
 
 /**
  * Failure of signing in to the system by the e-mail address and the password of a user without a fixed role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface AuthenticateByPasswordError : OperationError
 
 /**
  * The e-mail address is bound to no user who can sign in, or the password differs from the password of that user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object InvalidCredentialsError : AuthenticateByPasswordError
 
@@ -2327,42 +2327,42 @@ data object InvalidCredentialsError : AuthenticateByPasswordError
  * The new password is shorter than 8 or longer than 64 characters, has a character other than a Latin letter, a digit
  * and `!@#$%^&*()-_=+.,?`, or lacks a lowercase letter, an uppercase letter, a digit or one of those symbols.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object InvalidPasswordError : ConfirmRegistrationError, ConfirmAccessRestorationError, ChangePasswordError
 
 /**
  * Failure of requesting self-registration with an e-mail address.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RequestRegistrationError : OperationError
 
 /**
  * Failure of confirming self-registration by the code sent to the e-mail address with a nickname and a role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ConfirmRegistrationError : OperationError
 
 /**
  * The nickname is empty after trimming or longer than 512 Unicode code points.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object InvalidUserNameError : ConfirmRegistrationError
 
 /**
  * The e-mail address is longer than 255 Unicode code points or lacks exactly one `@` with non-empty parts around it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object InvalidEmailError : RequestRegistrationError, RequestEmailChangeError
 
 /**
  * The e-mail address is already bound to a user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object EmailAlreadyBoundError :
     RequestRegistrationError,
@@ -2374,7 +2374,7 @@ data object EmailAlreadyBoundError :
  * The registration request does not exist.
  *
  * @property registrationRequestId the id of the missing request.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class RegistrationRequestNotExistsError(val registrationRequestId: RegistrationRequestId) :
     ConfirmRegistrationError,
@@ -2383,21 +2383,21 @@ data class RegistrationRequestNotExistsError(val registrationRequestId: Registra
 /**
  * The confirmation code has expired.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object ConfirmationCodeExpiredError : ConfirmRegistrationError, ConfirmEmailChangeError, ConfirmAccessRestorationError
 
 /**
  * No attempts to enter the confirmation code are left.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object ConfirmationAttemptsExhaustedError : ConfirmRegistrationError, ConfirmEmailChangeError, ConfirmAccessRestorationError
 
 /**
  * The entered confirmation code differs from the sent one.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object InvalidConfirmationCodeError : ConfirmRegistrationError, ConfirmEmailChangeError, ConfirmAccessRestorationError
 
@@ -2408,28 +2408,28 @@ data object InvalidConfirmationCodeError : ConfirmRegistrationError, ConfirmEmai
 /**
  * Failure of requesting a change of the user's e-mail address.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RequestEmailChangeError : OperationError
 
 /**
  * Failure of confirming the new e-mail address of the user by the code sent to it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ConfirmEmailChangeError : OperationError
 
 /**
  * The new e-mail address equals the current e-mail address of the user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object EmailUnchangedError : RequestEmailChangeError
 
 /**
  * The user has no e-mail change request.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object EmailChangeRequestNotExistsError : ConfirmEmailChangeError, EntityNotExistsError
 
@@ -2437,35 +2437,35 @@ data object EmailChangeRequestNotExistsError : ConfirmEmailChangeError, EntityNo
  * Failure of requesting restoration of access by an e-mail address. It has no cases: the response does not disclose
  * whether the address is bound to a user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface RequestAccessRestorationError : OperationError
 
 /**
  * Failure of confirming restoration of access by the code sent to the e-mail address.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ConfirmAccessRestorationError : OperationError
 
 /**
  * The e-mail address is bound to no user with an access restoration request.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object AccessRestorationRequestNotExistsError : ConfirmAccessRestorationError, EntityNotExistsError
 
 /**
  * Failure of changing the password of the user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ChangePasswordError : OperationError
 
 /**
  * The entered current password differs from the password of the user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data object InvalidCurrentPasswordError : ChangePasswordError
 

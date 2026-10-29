@@ -14,7 +14,7 @@ import tech.testsys.infra.database.internal.utils.toDomain
  * rows. A concurrent registration or change to the same value violates a unique constraint, and the repeated
  * transaction refuses the value as already registered.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

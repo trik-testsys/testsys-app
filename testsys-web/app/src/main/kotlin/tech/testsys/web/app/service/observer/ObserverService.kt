@@ -17,7 +17,7 @@ import tech.testsys.web.app.service.toVo
 /**
  * Runs observer operations for the current user in read-only transactions.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional(readOnly = true)
@@ -26,7 +26,7 @@ class ObserverService(private val operations: ObserverOperations, private val cu
     /**
      * Returns current competition and assigned contest pairs for the observer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun viewContests(pagination: Pagination, filter: ObserverContestFilter = ObserverContestFilter()): Page<ObserverContestVo> =
         operations.viewContests(currentUser.singleRoleUser(), pagination, filter).getOrThrow().map { pair ->
@@ -36,7 +36,7 @@ class ObserverService(private val operations: ObserverOperations, private val cu
     /**
      * Generates results for all current competitions containing assigned contests.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun downloadResult(): ObserverResult = operations.downloadResult(currentUser.singleRoleUser()).getOrThrow()
 }
@@ -46,6 +46,6 @@ class ObserverService(private val operations: ObserverOperations, private val cu
  *
  * @property competition the competition containing the contest.
  * @property contest the assigned contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ObserverContestVo(val competition: CompetitionVo, val contest: ContestVo)

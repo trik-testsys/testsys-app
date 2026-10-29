@@ -10,14 +10,14 @@ import java.util.Base64
 /**
  * Mapping of polygon diagnostic messages and their XML locations.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object TestDiagnosticResultMapping {
     /**
      * Creates a stored message at [position] for the polygon result in [requestId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(requestId: Long, testId: Long, position: Int, report: DiagnosticReport): DiagnosticReportJpaEntity {
         val (reason, parameters) = when (val data = report.data) {
@@ -59,7 +59,7 @@ object TestDiagnosticResultMapping {
     /**
      * Restores a typed [DiagnosticReport] from a stored [row].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(row: DiagnosticReportJpaEntity): DiagnosticReport {
         val parameters = decode(row.parameters)

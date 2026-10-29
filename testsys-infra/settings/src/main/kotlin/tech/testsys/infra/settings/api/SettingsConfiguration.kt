@@ -16,7 +16,7 @@ import tech.testsys.infra.settings.internal.SettingsResolver
 /**
  * Restores one shared holder from committed storage before consumers can start; invalid storage aborts startup.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 @OptIn(InternalSettingsApi::class)
@@ -24,7 +24,7 @@ class SettingsConfiguration {
     /**
      * Restores the last durable set; no fallback hides database failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun runtimeSettings(store: SettingsStore, environment: Environment): RuntimeSettings =
@@ -33,7 +33,7 @@ class SettingsConfiguration {
     /**
      * Serializes service changes in the shared infrastructure context and counts their technical failures in [failures].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     @Proxyable(ProxyType.INTERFACES)

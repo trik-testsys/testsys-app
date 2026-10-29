@@ -18,7 +18,7 @@ private const val PASSWORD_SYMBOLS = "!@#$%^&*()-_=+.,?"
 /**
  * Generates a registration confirmation code of 8 decimal digits.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun RandomGenerator.nextConfirmationCode(): String = nextString(CONFIRMATION_CODE_ALPHABET, CONFIRMATION_CODE_LENGTH)
@@ -26,7 +26,7 @@ fun RandomGenerator.nextConfirmationCode(): String = nextString(CONFIRMATION_COD
 /**
  * Generates an access code of 16 Latin letters and digits in groups of four separated by `-`, e.g. `aB3d-x9Yz-0kLm-P7qR`.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun RandomGenerator.nextAccessToken(): String = List(ACCESS_TOKEN_GROUP_COUNT) {
@@ -37,7 +37,7 @@ fun RandomGenerator.nextAccessToken(): String = List(ACCESS_TOKEN_GROUP_COUNT) {
  * Checks that [value] has the format of codes from [nextAccessToken]: 16 Latin letters and digits in groups of four
  * separated by `-`, without surrounding whitespace.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun isAccessToken(value: String): Boolean {
@@ -52,7 +52,7 @@ fun isAccessToken(value: String): Boolean {
  * as entered, without trimming, so a space makes it invalid. Every allowed character takes one byte, so the password
  * always fits the 72 bytes bcrypt reads.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun isValidPassword(password: String): Boolean = password.length in MIN_PASSWORD_LENGTH..MAX_PASSWORD_LENGTH &&

@@ -160,7 +160,7 @@ import java.util.UUID
 /**
  * Operations of a user with the [Developer] role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class DeveloperOperations(
@@ -184,7 +184,7 @@ class DeveloperOperations(
      * without waiting for testing. Checks access and required working content before creating a request;
      * storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.testTask")
     fun testTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<TaskValidationRequest, TestTaskError> =
@@ -223,7 +223,7 @@ class DeveloperOperations(
      * Returns every saved testing request of [taskId] owned by [user], ordered by creation time and identifier,
      * each with its current state and, when completed, its failed submissions. Viewing preserves stored state.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.testTask")
     fun viewTaskValidationRequests(
@@ -243,7 +243,7 @@ class DeveloperOperations(
      * snapshot and its statement, exercises and attached contests still fit; returns the saved Committed task.
      * With [regradeSubmissions], a changed polygon set resends contest submissions to grading as a saved regrade.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.commitTask")
     fun commitTask(user: MultipleRoleUser, taskId: TaskId, regradeSubmissions: Boolean): OperationResult<Task, CommitTaskError> =
@@ -306,7 +306,7 @@ class DeveloperOperations(
      * Returns how many contest submissions of [taskId] owned by [user] a commit with regrade would send to grading
      * again, or `null` if the task is not Uncommitted or its polygon set is unchanged. Counting preserves stored state.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.commitTask")
     fun countRegradeSubmissions(user: MultipleRoleUser, taskId: TaskId): OperationResult<Int?, CountRegradeSubmissionsError> =
@@ -323,7 +323,7 @@ class DeveloperOperations(
      * Returns every regrade of [taskId] owned by [user] in creation order, each with the number of its submissions
      * graded on its tests since it started. Viewing preserves stored state.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.commitTask")
     fun viewRegrades(user: MultipleRoleUser, taskId: TaskId): OperationResult<List<Pair<Regrade, Int>>, ViewRegradesError> =
@@ -342,7 +342,7 @@ class DeveloperOperations(
      * each with the existing communities it is shared to. Viewing preserves stored state.
      * Missing developer role is an expected failure; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.viewContests")
     fun viewContests(
@@ -370,7 +370,7 @@ class DeveloperOperations(
      * existing communities it is shared to, in the order of the contest, preserving its data.
      * Missing role, contest and access are expected failures; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.viewContest")
     fun viewContest(
@@ -399,7 +399,7 @@ class DeveloperOperations(
      * Returns every TRIK Studio version registered in the system, from which [user] chooses the version of a contest and
      * the versions a task supports. Missing developer role is an expected failure; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.createContest")
     fun viewTrikStudioVersions(user: MultipleRoleUser): OperationResult<List<TrikStudioVersion>, ViewTrikStudioVersionsError> =
@@ -413,7 +413,7 @@ class DeveloperOperations(
      * Omitted [attemptDuration], [startsAt] and [endsAt] leave their limits unset; storage exceptions propagate.
      *
      * @throws IllegalArgumentException if a duration cannot be represented exactly in Long milliseconds.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.createContest")
     fun createContest(
@@ -463,7 +463,7 @@ class DeveloperOperations(
      * The resulting interval must fit exactly in Long milliseconds; unchanged values return the contest without saving.
      *
      * @throws IllegalArgumentException if the resulting interval cannot be represented exactly in Long milliseconds.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.editContest")
     fun editContest(
@@ -509,7 +509,7 @@ class DeveloperOperations(
      * Adds [communityIds] to the recipients of [contestId] owned by [user]; new recipients require Developer membership.
      * Requests without new recipients return the contest without saving; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.shareContest")
     fun shareContest(
@@ -547,7 +547,7 @@ class DeveloperOperations(
      * requiring a committed revision that supports the contest's TRIK Studio version and rejecting repeated attachment.
      * Only the contest's tasks change; the last committed revision is checked, and storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.attachTask")
     fun attachTask(user: MultipleRoleUser, contestId: ContestId, taskId: TaskId): OperationResult<Contest, AttachTaskError> =
@@ -583,7 +583,7 @@ class DeveloperOperations(
      * Detaches [taskId] from an unshared [contestId] owned by [user], changing only the contest's tasks.
      * Access to the task and its state are not checked; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.detachTask")
     fun detachTask(user: MultipleRoleUser, contestId: ContestId, taskId: TaskId): OperationResult<Contest, DetachTaskError> =
@@ -604,7 +604,7 @@ class DeveloperOperations(
      * Deletes an unshared [contestId] owned by [user] with its task attachments and returns the contest as it was before
      * deletion; its version can no longer be used for updates. Attached tasks do not change; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.contest.deleteContest")
     fun deleteContest(user: MultipleRoleUser, contestId: ContestId): OperationResult<Contest, DeleteContestError> =
@@ -624,7 +624,7 @@ class DeveloperOperations(
      * Viewing preserves stored state.
      * Missing developer role is an expected failure; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.viewTasks")
     fun viewTasks(
@@ -647,7 +647,7 @@ class DeveloperOperations(
      * Returns the task with [taskId] owned by [user] with the existing communities it is shared to, preserving its state
      * and both content revisions. Missing role, task and ownership are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.viewTask")
     fun viewTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<Pair<Task, List<Community>>, ViewTaskError> =
@@ -666,7 +666,7 @@ class DeveloperOperations(
      * A changed version set must be registered and affects only the editable revision; unchanged values return the task
      * without saving.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.editTaskInfo")
     fun editTaskInfo(
@@ -709,7 +709,7 @@ class DeveloperOperations(
      * Returns the latest existing resource versions uploaded to tasks owned by [user], including unattached chains.
      * Each entity's creation time is the last-change time of its resource; viewing does not change task state.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.viewResources")
     fun viewResources(user: MultipleRoleUser): OperationResult<List<DomainEntity<*>>, ViewResourcesError> =
@@ -735,7 +735,7 @@ class DeveloperOperations(
      * with its solution and other versions with `null`. Entities retain their current metadata and files; viewing does not
      * change task state.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.viewResource")
     fun viewResource(
@@ -770,7 +770,7 @@ class DeveloperOperations(
      * Returns the file of [versionId] in [versionBucket] uploaded to [taskId] owned by [user]: the uploaded file of the
      * version, or the file of its solution for a developer solution. Older versions are accepted; the task does not change.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.viewResource")
     fun downloadResourceVersion(
@@ -804,7 +804,7 @@ class DeveloperOperations(
      * Creates a new task owned by [user] with [taskName] and [taskDescription]. The created task has
      * [TaskContent.New] content and no uploaded resources.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.createTask")
     fun createTask(user: MultipleRoleUser, taskName: String, taskDescription: String): OperationResult<Task, CreateTaskError> =
@@ -827,7 +827,7 @@ class DeveloperOperations(
      * Uploads [file] as a new statement named [resourceName] to [taskId] owned by [user].
      * Registers a new resource chain without attaching it or changing task revisions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.addResource")
     fun addStatement(
@@ -861,7 +861,7 @@ class DeveloperOperations(
      * Uploads [file] as a new polygon named [resourceName] to [taskId] owned by [user].
      * Registers a new resource chain without attaching it or changing task revisions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.addResource")
     fun addTest(user: MultipleRoleUser, taskId: TaskId, resourceName: String, file: FileData): OperationResult<Test, AddTestError> =
@@ -891,7 +891,7 @@ class DeveloperOperations(
      * Uploads [file] as a new exercise named [resourceName] to [taskId] owned by [user] using [language].
      * Registers a new resource chain without attaching it or changing task revisions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.addResource")
     fun addExercise(
@@ -932,7 +932,7 @@ class DeveloperOperations(
      * using [language] and [expectedScore]; registers a new chain without changing task revisions.
      * The uploaded resource is not attached to task content.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.addResource")
     fun addDeveloperSolution(
@@ -980,7 +980,7 @@ class DeveloperOperations(
      * Updates the latest [statementId] uploaded to [taskId] owned by [user], preserving omitted [resourceName].
      * A supplied [file] creates a new version without comparison and replaces only an existing editable chain link.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.updateResource")
     fun updateStatement(
@@ -1034,7 +1034,7 @@ class DeveloperOperations(
      * Updates the latest [exerciseId] uploaded to [taskId] owned by [user], preserving omitted [resourceName].
      * A supplied [file] creates a new version without comparison and replaces only an existing editable chain link.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.updateResource")
     fun updateExercise(
@@ -1090,7 +1090,7 @@ class DeveloperOperations(
      * Updates the latest [testId] uploaded to [taskId] owned by [user], preserving omitted [resourceName].
      * A supplied [file] creates a new version without comparison and replaces only an existing editable chain link.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.updateResource")
     fun updateTest(
@@ -1148,7 +1148,7 @@ class DeveloperOperations(
      * Updates the latest [developerSolutionId] uploaded to [taskId] owned by [user], preserving omitted [resourceName].
      * Supplied [file] or [expectedScore] creates a new version without comparison; replaces only an existing editable chain link.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.resource.updateResource")
     fun updateDeveloperSolution(
@@ -1216,7 +1216,7 @@ class DeveloperOperations(
      * Attaches the statement with [newStatementId] to the work-in-progress version of the task with [taskId] on
      * behalf of [user]. It must be the latest version of an uploaded chain; the editable revision allows one statement.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.attachResource")
     fun attachStatement(user: MultipleRoleUser, taskId: TaskId, newStatementId: StatementId): OperationResult<Task, AttachStatementError> =
@@ -1257,7 +1257,7 @@ class DeveloperOperations(
      * Attaches [newExerciseId] to the editable revision of [taskId] on behalf of [user]. It must be the latest version
      * of an uploaded chain; rejects an attached chain or another exercise using the same language.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.attachResource")
     fun attachExercise(user: MultipleRoleUser, taskId: TaskId, newExerciseId: ExerciseId): OperationResult<Task, AttachExerciseError> =
@@ -1290,7 +1290,7 @@ class DeveloperOperations(
      * Attaches [newTestId] to the editable revision of [taskId] on behalf of [user].
      * Requires the latest version of an uploaded chain and rejects an already attached chain.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.attachResource")
     fun attachTest(user: MultipleRoleUser, taskId: TaskId, newTestId: TestId): OperationResult<Task, AttachTestError> =
@@ -1320,7 +1320,7 @@ class DeveloperOperations(
      * Attaches [newDeveloperSolutionId] to the editable revision of [taskId] on behalf of [user].
      * Requires the latest version of an uploaded chain and rejects an already attached chain.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.attachResource")
     fun attachDeveloperSolution(
@@ -1353,7 +1353,7 @@ class DeveloperOperations(
      * Detaches the exact [statementId] from the editable revision of [taskId] owned by [user].
      * Preserves the last committed revision, uploaded chains and resource versions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.detachResource")
     fun detachStatement(user: MultipleRoleUser, taskId: TaskId, statementId: StatementId): OperationResult<Task, DetachStatementError> =
@@ -1379,7 +1379,7 @@ class DeveloperOperations(
      * Detaches the exact [exerciseId] from the editable revision of [taskId] owned by [user].
      * Preserves the last committed revision, uploaded chains and resource versions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.detachResource")
     fun detachExercise(user: MultipleRoleUser, taskId: TaskId, exerciseId: ExerciseId): OperationResult<Task, DetachExerciseError> =
@@ -1405,7 +1405,7 @@ class DeveloperOperations(
      * Detaches the exact [testId] from the editable revision of [taskId] owned by [user].
      * Preserves the last committed revision, uploaded chains and resource versions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.detachResource")
     fun detachTest(user: MultipleRoleUser, taskId: TaskId, testId: TestId): OperationResult<Task, DetachTestError> =
@@ -1431,7 +1431,7 @@ class DeveloperOperations(
      * Detaches the exact [developerSolutionId] from the editable revision of [taskId] owned by [user].
      * Preserves the last committed revision, uploaded chains and resource versions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.detachResource")
     fun detachDeveloperSolution(
@@ -1460,7 +1460,7 @@ class DeveloperOperations(
      * Shares the task with [taskId] owned by [user] to the communities with [communityIds], adding them to the
      * communities the task is already shared to.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.shareTask")
     fun shareTask(user: MultipleRoleUser, taskId: TaskId, communityIds: Set<CommunityId>): OperationResult<Task, ShareTaskError> =
@@ -1497,7 +1497,7 @@ class DeveloperOperations(
      * Restores the committed content of [taskId] owned by [user], creating latest resource versions when necessary.
      * Task and resource metadata are retained; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.revertTask")
     fun revertTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<Task, RevertTaskError> = operation<Task, RevertTaskError> {

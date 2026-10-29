@@ -7,13 +7,13 @@ import org.springframework.web.context.support.StandardServletEnvironment
  * Creates separate mutable environments for web and metrics children, leaving configuration-file and command-line
  * loading to Boot.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 object WebContextEnvironment {
     /**
      * Returns a new servlet environment whose property source collection is not shared with another context.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun create(): StandardServletEnvironment = StandardServletEnvironment()
 
@@ -21,7 +21,7 @@ object WebContextEnvironment {
      * Applies service-only listener and cookie settings after Boot has loaded deployment configuration.
      * Forwarded headers are ignored: clients reach the service listener directly.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun configureService(environment: StandardServletEnvironment, settings: ServiceWebSettings) {
         environment.propertySources.addFirst(
@@ -54,7 +54,7 @@ object WebContextEnvironment {
      * Applies the metrics listener and exposes only the Prometheus endpoint at `/actuator/prometheus`,
      * without static resources, the endpoint index or a separate management server.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun configureMetrics(environment: StandardServletEnvironment, settings: MetricsWebSettings) {
         environment.propertySources.addFirst(

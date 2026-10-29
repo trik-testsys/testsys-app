@@ -7,7 +7,7 @@ import java.time.Instant
 /**
  * Outcome of a sign-in attempt checked by [LoginAttemptLimiter].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class LoginAttemptResult {
 
@@ -21,7 +21,7 @@ enum class LoginAttemptResult {
  * [maximumFailures] within [window]; a blocked attempt never authenticates or extends the block, and the state lives
  * in instance memory. Keys are spread over stripes: attempts of keys in different stripes run in parallel.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LoginAttemptLimiter(
     private val clock: Clock,
@@ -34,7 +34,7 @@ class LoginAttemptLimiter(
     /**
      * Checks [authenticate] for [key] atomically with failure accounting.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun attempt(key: String, authenticate: () -> Boolean): LoginAttemptResult {
         val attempts = stripes[key.hashCode().mod(STRIPES)]

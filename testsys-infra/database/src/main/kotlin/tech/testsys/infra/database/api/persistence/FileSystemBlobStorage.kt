@@ -14,7 +14,7 @@ import java.util.UUID
  * [FileBlobStorage] keeping every blob as a file named by a random UUID directly in the given absolute path,
  * which [store] creates if missing. Loading a missing blob throws `NoSuchFileException`; deleting it again has no effect.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 class FileSystemBlobStorage : FileBlobStorage {

@@ -88,7 +88,7 @@ private const val MAX_NAME_CODE_POINTS = 255
 /**
  * Operations of a supervisor across all communities and non-supervisor users.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class SupervisorOperations(
@@ -106,7 +106,7 @@ class SupervisorOperations(
     /**
      * Returns a page of all non-supervisor users with last logins.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewUsers(
@@ -124,7 +124,7 @@ class SupervisorOperations(
     /**
      * Returns one non-supervisor user and their last login.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewUser(user: User<*>, userId: UserId): OperationResult<Pair<User<*>, Instant?>, ViewSupervisorUserError> =
@@ -138,7 +138,7 @@ class SupervisorOperations(
     /**
      * Reads the developer tasks of a non-supervisor user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewUserTasks(
@@ -152,7 +152,7 @@ class SupervisorOperations(
     /**
      * Reads the developer contests of a non-supervisor user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewUserContests(
@@ -166,7 +166,7 @@ class SupervisorOperations(
     /**
      * Reads the manager classes of a non-supervisor user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewUserClasses(
@@ -180,7 +180,7 @@ class SupervisorOperations(
     /**
      * Reads the manager competitions of a non-supervisor user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewUserCompetitions(
@@ -194,7 +194,7 @@ class SupervisorOperations(
     /**
      * Reads the judge orders of a non-supervisor user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewUserJudgments(
@@ -208,7 +208,7 @@ class SupervisorOperations(
     /**
      * Reads observer assignments of a non-supervisor user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewUserAssignedContests(
@@ -222,7 +222,7 @@ class SupervisorOperations(
     /**
      * Returns all communities in ascending id order with their distinct user counts.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewCommunities(user: User<*>): OperationResult<List<Pair<Community, Long>>, ViewSupervisorCommunitiesError> =
@@ -236,7 +236,7 @@ class SupervisorOperations(
     /**
      * Returns one community available to a supervisor.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.authorization")
     fun viewCommunity(user: User<*>, communityId: CommunityId): OperationResult<Community, ViewSupervisorCommunityError> =
@@ -250,7 +250,7 @@ class SupervisorOperations(
     /**
      * Adds a non-fixed-role [userId] to [communityId] in [role], preserving every other membership.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.addToCommunity")
     fun addToCommunity(
@@ -282,7 +282,7 @@ class SupervisorOperations(
      * Grants the administrator role to a non-fixed-role [userId] by creating their first community, or returns them
      * unchanged if they already hold the role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.grantAdministrator")
     fun grantAdministrator(user: User<*>, userId: UserId): OperationResult<MultipleRoleUser, GrantAdministratorError> =
@@ -300,7 +300,7 @@ class SupervisorOperations(
     /**
      * Returns the non-supervisor user [userId] for a supervisor to sign in as, unchanged and without recording a login.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.supervisor.impersonate")
     fun impersonate(user: User<*>, userId: UserId): OperationResult<User<*>, ImpersonateError> = operation<User<*>, ImpersonateError> {
@@ -316,7 +316,7 @@ class SupervisorOperations(
     /**
      * Edits the name and description of any community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.editCommunity")
     fun editCommunity(
@@ -336,7 +336,7 @@ class SupervisorOperations(
     /**
      * Removes a non-administrator membership outside the public community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.removeFromCommunity")
     fun removeFromCommunity(
@@ -362,7 +362,7 @@ class SupervisorOperations(
      * Creates an observer in any community for contests shared to it or to the public community and returns it with its
      * original access code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.createObserver")
     fun createObserver(
@@ -400,7 +400,7 @@ class SupervisorOperations(
     /**
      * Lists contests shared to any community or to the public community for observer assignment.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.createObserver")
     fun viewCommunityContests(
@@ -418,7 +418,7 @@ class SupervisorOperations(
     /**
      * Returns both invite codes of any community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewInvites")
     @RawInviteCodeDependency(reason = "Returns issued invite codes while Identity hashing is in use.")
@@ -436,7 +436,7 @@ class SupervisorOperations(
     /**
      * Replaces an invite code in any community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.inviteUser")
     @RawInviteCodeDependency(reason = "Returns the issued invite code while Identity hashing is in use.")
@@ -455,7 +455,7 @@ class SupervisorOperations(
     /**
      * Extends an invite code in any community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.extendInvite")
     @RawInviteCodeDependency(reason = "Returns the issued invite code while Identity hashing is in use.")
@@ -474,7 +474,7 @@ class SupervisorOperations(
     /**
      * Refreshes an expired invite code in any community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.inviteUser")
     fun refreshCommunityInvite(

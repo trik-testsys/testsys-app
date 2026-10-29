@@ -21,7 +21,7 @@ private const val MAX_SEGMENTED_CHOICES = 4
  * Adds one radio choice from [items] shown by [itemLabel] on [size] columns, beside [labelSize] label columns.
  *
  * @param T the type of the choices.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> BlockRowScope.radio(
     label: String,
@@ -45,7 +45,7 @@ fun <T : Any> BlockRowScope.radio(
  * Adds a segmented choice from [items] shown by [itemLabel] on [size] columns beside [labelSize] label columns.
  *
  * @param T the type of the choices.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> BlockRowScope.segmentedControl(
     label: String,
@@ -115,7 +115,7 @@ internal class ChoiceField<T : Any>(
  * Adds a compact segmented filter of [items], ignoring the block edit mode.
  *
  * @param T the type of the choices.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> ContentScope.segmentedControl(
     label: String,
@@ -132,7 +132,7 @@ fun <T : Any> ContentScope.segmentedControl(
  * Adds a segmented choice of [items] across the width of a guest card; [label] is only its accessible name.
  *
  * @param T the type of the choices.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> GuestCardScope.segmentedControl(
     label: String,

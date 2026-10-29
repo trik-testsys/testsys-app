@@ -22,7 +22,7 @@ import tech.testsys.web.app.security.CabinetSignIn
  * Puts the id of the signed-in user, the id of the supervisor signed in as them, and the path of the open page into
  * the log context of every Vaadin request of the main interface and writes each opened page at DEBUG.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringComponent
 class RequestLogContext :

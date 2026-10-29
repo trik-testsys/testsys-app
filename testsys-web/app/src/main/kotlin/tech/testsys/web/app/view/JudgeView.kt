@@ -52,7 +52,7 @@ internal fun openJudgeSolution(submissionId: SubmissionId) {
  * and filtered by author, submission, class and competition; a row opens the submission. Without a section the page
  * opens «Посылки».
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("judge/:section?(submissions)")
 @RolesAllowed("MULTIPLE_ROLE")

@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
  * @property revision the durable revision known at publication.
  * @property values the saved, resolved values.
  * @property activeMaxMessageBytes the inbound limit used by every channel in this process.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Suppress("DataClassContainsFunctions")
 data class SettingsSnapshot(val revision: Long, val values: SettingsValues, val activeMaxMessageBytes: Int) {
@@ -28,7 +28,7 @@ data class SettingsSnapshot(val revision: Long, val values: SettingsValues, val 
      *
      * @param T the properties class.
      * @throws org.springframework.boot.context.properties.bind.BindException if a value cannot be bound or is rejected.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun <T : Any> get(type: Class<T>, environment: Environment): T = type.cast(
         bound.computeIfAbsent(type to environment) {
@@ -41,7 +41,7 @@ data class SettingsSnapshot(val revision: Long, val values: SettingsValues, val 
      * Binds the [SettingsProperties] class [T] from the saved values over [environment] once per [environment].
      *
      * @param T the properties class.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     inline fun <reified T : Any> get(environment: Environment): T = get(T::class.java, environment)
 }

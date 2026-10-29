@@ -39,7 +39,7 @@ import tech.testsys.web.components.texts.UiLocalization
  * The control takes [size] columns beside [labelSize] label columns.
  *
  * @param T the type of the selectable items.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> BlockRowScope.multiSelect(
     label: String,
@@ -296,7 +296,7 @@ internal class MultiSelectField<T : Any>(
 /**
  * Presentation of accepted multi-selection values.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class MultiSelectDisplay { Chips, Count }
 
@@ -304,7 +304,7 @@ enum class MultiSelectDisplay { Chips, Count }
  * Adds a compact local multi-selection filter that ignores the block edit mode.
  *
  * @param T the type of the options.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> ContentScope.multiSelect(
     label: String,

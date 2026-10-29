@@ -22,7 +22,7 @@ import tech.testsys.web.components.core.setRole
  * @property ICON the light emblem on a brand-color square, displayed with the wordmark in headers.
  * @property FAVICON the canonical resource path of the rounded emblem with its background.
  * @property FAVICON_URL the versioned favicon URL used by browsers.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 object TestSysBrand {
     const val EMBLEM: String = "testsys-ui/brand/emblem/svg/TestSys-mono-emblem-transparent.svg"

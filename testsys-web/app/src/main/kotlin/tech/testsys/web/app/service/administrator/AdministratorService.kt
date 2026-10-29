@@ -42,7 +42,7 @@ import java.time.Instant
  * Runs [AdministratorOperations] for the current user in one transaction per call.
  * A failed operation throws `OperationException`, which rolls the transaction back.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -60,7 +60,7 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     /**
      * Runs [AdministratorOperations.viewUser].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewUser(userId: UserId): Pair<AdminUserVo, Instant?> {
@@ -117,7 +117,7 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     /**
      * Runs [AdministratorOperations.createCommunity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createCommunity(communityName: String, description: String = ""): CommunityVo = operations.createCommunity(
         user = currentUser.multipleRoleUser(),
@@ -137,7 +137,7 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     /**
      * Runs [AdministratorOperations.grantRole].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun grantRole(userId: UserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUserVo =
         operations.grantRole(currentUser.multipleRoleUser(), userId, communityId, role).getOrThrow().toVo()
@@ -145,7 +145,7 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     /**
      * Runs [AdministratorOperations.removeFromCommunity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun removeFromCommunity(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUserVo =
         operations.removeFromCommunity(currentUser.multipleRoleUser(), userId, communityId, role).getOrThrow().toVo()
@@ -153,7 +153,7 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     /**
      * Runs [AdministratorOperations.deleteObserver].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun deleteObserver(observerId: SingleRoleUserId): ObserverVo =
         operations.deleteObserver(currentUser.multipleRoleUser(), observerId).getOrThrow().toVo()

@@ -28,7 +28,7 @@ import tech.testsys.web.components.core.setAriaBusy
  * @property cooldownSeconds how many seconds the action ignores clicks after each attach, for example after each opening
  * of its dialog; `0` means no cooldown, a negative value throws [IllegalArgumentException]. The cooldown does not cover
  * [clickOnEnter], so a positive value on an action clicked on Enter throws [IllegalStateException].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class ActionHandle internal constructor(
@@ -70,7 +70,7 @@ class ActionHandle internal constructor(
      * Binds [isEnabled] to [signal]: every value it produces is applied at once. A manual [isEnabled] while bound,
      * and a second binding, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindEnabled(signal: Signal<Boolean>): SignalBinding<Boolean> = button.bindEnabled(signal)
 
@@ -78,14 +78,14 @@ class ActionHandle internal constructor(
      * Binds [isLoading] to [signal]: every value it produces is shown at once. A manual [isLoading] while bound,
      * and a second binding, throw [BindingActiveException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindLoading(signal: Signal<Boolean>): SignalBinding<Boolean> = loading.bind(signal)
 
     /**
      * Runs [listener] when the action is clicked while it is not loading.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onClick(listener: () -> Unit) {
         button.addClickListener { _ -> if (!loading.value) listener() }
@@ -95,7 +95,7 @@ class ActionHandle internal constructor(
      * Clicks the action when Enter is pressed anywhere on the page, so that a form submits from the keyboard. The
      * shortcut ignores [cooldownSeconds], so calling it on an action with a cooldown throws [IllegalStateException].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun clickOnEnter() {
         check(cooldownSeconds == 0) { "Action with a cooldown of $cooldownSeconds seconds cannot be clicked on Enter" }

@@ -34,7 +34,7 @@ import java.time.Instant
  * Runs [DeveloperOperations] for the current user in one transaction per call.
  * A failed operation throws `OperationException`, which rolls the transaction back.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -42,14 +42,14 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.testTask].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun testTask(taskId: TaskId): TaskValidationRequestVo = operations.testTask(currentUser.multipleRoleUser(), taskId).getOrThrow().toVo()
 
     /**
      * Runs [DeveloperOperations.viewTaskValidationRequests].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewTaskValidationRequests(taskId: TaskId): List<TaskValidationRequestVo> =
@@ -59,7 +59,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.commitTask].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun commitTask(taskId: TaskId, regradeSubmissions: Boolean): TaskVo =
         operations.commitTask(currentUser.multipleRoleUser(), taskId, regradeSubmissions).getOrThrow().toVo()
@@ -67,7 +67,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.countRegradeSubmissions].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun countRegradeSubmissions(taskId: TaskId): Int? =
@@ -76,7 +76,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.viewRegrades]; each regrade comes with the number of its graded submissions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewRegrades(taskId: TaskId): List<Pair<RegradeVo, Int>> =
@@ -85,7 +85,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.viewContests].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewContests(pagination: Pagination, filter: ContestFilter = ContestFilter()): Page<Pair<ContestVo, List<CommunityVo>>> =
@@ -95,7 +95,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.viewContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewContest(contestId: ContestId): Triple<ContestVo, List<TaskVo>, List<CommunityVo>> {
@@ -106,7 +106,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.viewTrikStudioVersions].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewTrikStudioVersions(): List<TrikStudioVersion> = operations.viewTrikStudioVersions(currentUser.multipleRoleUser()).getOrThrow()
@@ -114,7 +114,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.createContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createContest(
         contestName: String,
@@ -136,7 +136,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.editContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun editContest(contestId: ContestId, contestName: String, startsAt: Instant?, endsAt: Instant?): ContestVo = operations.editContest(
         user = currentUser.multipleRoleUser(),
@@ -149,7 +149,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.shareContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun shareContest(contestId: ContestId, communityIds: Set<CommunityId>): ContestVo =
         operations.shareContest(currentUser.multipleRoleUser(), contestId, communityIds).getOrThrow().toVo()
@@ -157,7 +157,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.attachTask].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun attachTask(contestId: ContestId, taskId: TaskId): ContestVo =
         operations.attachTask(currentUser.multipleRoleUser(), contestId, taskId).getOrThrow().toVo()
@@ -165,7 +165,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.detachTask].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun detachTask(contestId: ContestId, taskId: TaskId): ContestVo =
         operations.detachTask(currentUser.multipleRoleUser(), contestId, taskId).getOrThrow().toVo()
@@ -173,7 +173,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.deleteContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun deleteContest(contestId: ContestId): ContestVo =
         operations.deleteContest(currentUser.multipleRoleUser(), contestId).getOrThrow().toVo()
@@ -181,7 +181,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.viewTasks].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewTasks(pagination: Pagination, filter: TaskFilter = TaskFilter()): Page<TaskVo> =
@@ -190,7 +190,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.viewTask].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewTask(taskId: TaskId): Pair<TaskVo, List<CommunityVo>> {
@@ -201,7 +201,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.editTaskInfo].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun editTaskInfo(
         taskId: TaskId,
@@ -219,7 +219,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.viewResources].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewResources(): List<ResourceVo> = operations.viewResources(currentUser.multipleRoleUser())
@@ -228,7 +228,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.viewResource].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewResource(taskId: TaskId, versionBucket: VersionBucket): List<Pair<ResourceVo, SolutionVo?>> =
@@ -238,7 +238,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.downloadResourceVersion].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun downloadResourceVersion(taskId: TaskId, versionBucket: VersionBucket, versionId: DomainId): FileData =
@@ -247,7 +247,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.createTask].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createTask(taskName: String, taskDescription: String): TaskVo = operations.createTask(
         user = currentUser.multipleRoleUser(),
@@ -258,7 +258,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.addStatement].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addStatement(taskId: TaskId, resourceName: String, file: FileData): StatementVo =
         operations.addStatement(currentUser.multipleRoleUser(), taskId, resourceName, file).getOrThrow().toVo()
@@ -266,7 +266,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.addTest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addTest(taskId: TaskId, resourceName: String, file: FileData): TestVo =
         operations.addTest(currentUser.multipleRoleUser(), taskId, resourceName, file).getOrThrow().toVo()
@@ -274,7 +274,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.addExercise].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addExercise(taskId: TaskId, resourceName: String, file: FileData, language: TrikSupportedLanguage): ExerciseVo =
         operations.addExercise(currentUser.multipleRoleUser(), taskId, resourceName, file, language).getOrThrow().toVo()
@@ -282,7 +282,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.addDeveloperSolution].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addDeveloperSolution(
         taskId: TaskId,
@@ -302,7 +302,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.updateStatement].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun updateStatement(taskId: TaskId, statementId: StatementId, resourceName: String? = null, file: FileData? = null): StatementVo =
         operations.updateStatement(currentUser.multipleRoleUser(), taskId, statementId, resourceName, file)
@@ -311,7 +311,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.updateExercise].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun updateExercise(taskId: TaskId, exerciseId: ExerciseId, resourceName: String? = null, file: FileData? = null): ExerciseVo =
         operations.updateExercise(currentUser.multipleRoleUser(), taskId, exerciseId, resourceName, file)
@@ -320,7 +320,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.updateTest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun updateTest(taskId: TaskId, testId: TestId, resourceName: String? = null, file: FileData? = null): TestVo =
         operations.updateTest(currentUser.multipleRoleUser(), taskId, testId, resourceName, file).getOrThrow().toVo()
@@ -328,7 +328,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.updateDeveloperSolution].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun updateDeveloperSolution(
         taskId: TaskId,
@@ -348,7 +348,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.attachStatement].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun attachStatement(taskId: TaskId, newStatementId: StatementId): TaskVo =
         operations.attachStatement(currentUser.multipleRoleUser(), taskId, newStatementId).getOrThrow().toVo()
@@ -356,7 +356,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.attachExercise].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun attachExercise(taskId: TaskId, newExerciseId: ExerciseId): TaskVo =
         operations.attachExercise(currentUser.multipleRoleUser(), taskId, newExerciseId).getOrThrow().toVo()
@@ -364,7 +364,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.attachTest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun attachTest(taskId: TaskId, newTestId: TestId): TaskVo =
         operations.attachTest(currentUser.multipleRoleUser(), taskId, newTestId).getOrThrow().toVo()
@@ -372,7 +372,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.attachDeveloperSolution].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun attachDeveloperSolution(taskId: TaskId, newDeveloperSolutionId: DeveloperSolutionId): TaskVo =
         operations.attachDeveloperSolution(currentUser.multipleRoleUser(), taskId, newDeveloperSolutionId).getOrThrow().toVo()
@@ -380,7 +380,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.detachStatement].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun detachStatement(taskId: TaskId, statementId: StatementId): TaskVo =
         operations.detachStatement(currentUser.multipleRoleUser(), taskId, statementId).getOrThrow().toVo()
@@ -388,7 +388,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.detachExercise].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun detachExercise(taskId: TaskId, exerciseId: ExerciseId): TaskVo =
         operations.detachExercise(currentUser.multipleRoleUser(), taskId, exerciseId).getOrThrow().toVo()
@@ -396,7 +396,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.detachTest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun detachTest(taskId: TaskId, testId: TestId): TaskVo =
         operations.detachTest(currentUser.multipleRoleUser(), taskId, testId).getOrThrow().toVo()
@@ -404,7 +404,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.detachDeveloperSolution].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun detachDeveloperSolution(taskId: TaskId, developerSolutionId: DeveloperSolutionId): TaskVo =
         operations.detachDeveloperSolution(currentUser.multipleRoleUser(), taskId, developerSolutionId).getOrThrow().toVo()
@@ -412,7 +412,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.shareTask].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun shareTask(taskId: TaskId, communityIds: Set<CommunityId>): TaskVo =
         operations.shareTask(currentUser.multipleRoleUser(), taskId, communityIds).getOrThrow().toVo()
@@ -420,7 +420,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.revertTask].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun revertTask(taskId: TaskId): TaskVo = operations.revertTask(currentUser.multipleRoleUser(), taskId).getOrThrow().toVo()
 }

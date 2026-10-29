@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [EmailChangeRequest] and [EmailChangeRequestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object EmailChangeRequestMapping : EntityMapping<EmailChangeRequest, EmailChangeRequestJpaEntity> {
@@ -21,7 +21,7 @@ object EmailChangeRequestMapping : EntityMapping<EmailChangeRequest, EmailChange
     /**
      * Assembles an [EmailChangeRequest] from [jpaEntity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: EmailChangeRequestJpaEntity) = emailChangeRequest {
         populateFields(jpaEntity)
@@ -37,7 +37,7 @@ object EmailChangeRequestMapping : EntityMapping<EmailChangeRequest, EmailChange
     /**
      * Creates a new [EmailChangeRequestJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: EmailChangeRequestData) = EmailChangeRequestJpaEntity(
         userId = data.user.id.value,
@@ -51,7 +51,7 @@ object EmailChangeRequestMapping : EntityMapping<EmailChangeRequest, EmailChange
      * Creates the [EmailChangeRequestJpaEntity] row replacing [current] from [entity], keeping `userId`, `createdAt`
      * and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: EmailChangeRequest, current: EmailChangeRequestJpaEntity) = EmailChangeRequestJpaEntity(
         userId = current.userId,

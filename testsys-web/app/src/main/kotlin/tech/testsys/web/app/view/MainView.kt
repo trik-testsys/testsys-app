@@ -11,7 +11,7 @@ import tech.testsys.web.components.TestSysView
  * Address of the system without a path (testsys.web.page.main): a guest goes to signing in, a signed-in user goes to
  * their start page.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("")
 @AnonymousAllowed

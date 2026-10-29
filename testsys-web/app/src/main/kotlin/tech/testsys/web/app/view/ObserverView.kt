@@ -26,7 +26,7 @@ import tech.testsys.web.components.texts.currentLocalization
 /**
  * Observer cabinet with current competition and assigned contest pairs and a results download.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("observer/:section?(contests)")
 @RolesAllowed("OBSERVER")

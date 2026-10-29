@@ -13,7 +13,7 @@ import tech.testsys.web.components.texts.UiLocalization
 /**
  * Scope of a page row: blocks side by side whose sizes take at most 24 columns in total.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class PageRowScope internal constructor(private val row: Div, private val texts: UiLocalization) {
@@ -25,7 +25,7 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
      *
      * @throws IllegalArgumentException if [size] is out of `1..24`.
      * @throws IllegalStateException if the block does not fit in the row.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun block(size: Int? = null, title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
         place(size, BlockHeading(title, subtitle), highlight = false, content)
@@ -36,7 +36,7 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
      *
      * @throws IllegalArgumentException if [size] is out of `1..24`.
      * @throws IllegalStateException if the block does not fit in the row or the row already holds a highlight block.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun highlightBlock(size: Int? = null, title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
         place(size, BlockHeading(title, subtitle), highlight = true, content)
@@ -46,7 +46,7 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
      *
      * @throws IllegalArgumentException if [size] is out of `1..24`.
      * @throws IllegalStateException if the space does not fit in the row.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun space(size: Int) {
         track.take(size)

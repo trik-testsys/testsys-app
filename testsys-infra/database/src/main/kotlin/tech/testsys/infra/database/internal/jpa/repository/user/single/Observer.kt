@@ -14,7 +14,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [ContestToObserverJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -24,7 +24,7 @@ interface ContestToObserverJpaEntityRepository :
     /**
      * Finds the association rows of the observer [observerId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ContestToObserverJpaEntity e where e.id.observerId = :observerId")
     fun findAllByObserverId(@Param("observerId") observerId: Long): List<ContestToObserverJpaEntity>
@@ -32,7 +32,7 @@ interface ContestToObserverJpaEntityRepository :
     /**
      * Finds the ids of the observers [observerIds] paired with the ids of the contests they watch in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.observerId, e.id.contestId) " +
@@ -43,7 +43,7 @@ interface ContestToObserverJpaEntityRepository :
     /**
      * Finds the association rows of the contest [contestId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ContestToObserverJpaEntity e where e.id.contestId = :contestId")
     fun findAllByContestId(@Param("contestId") contestId: Long): List<ContestToObserverJpaEntity>
@@ -52,7 +52,7 @@ interface ContestToObserverJpaEntityRepository :
 /**
  * Spring Data repository for [ObserverDataJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -61,14 +61,14 @@ interface ObserverDataJpaEntityRepository : SnowflakeJpaEntityRepository<Observe
     /**
      * Finds the observer data row of the user [userId], or `null` if the user does not hold the role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByUserId(userId: Long): ObserverDataJpaEntity?
 
     /**
      * Finds the observer data rows of any of the users [userIds] in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByUserIdIn(userIds: Collection<Long>): List<ObserverDataJpaEntity>
 }

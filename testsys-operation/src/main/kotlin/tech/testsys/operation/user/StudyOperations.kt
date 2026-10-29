@@ -86,7 +86,7 @@ import java.time.Instant
 /**
  * Operations shared by participants and students for studying available contests.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class StudyOperations(
@@ -112,7 +112,7 @@ class StudyOperations(
      * Viewing is allowed regardless of dates and does not save an entry; storage exceptions propagate.
      *
      * @return the first entry time or `null`, the contest and task results; tasks are empty before entry or contest start.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.viewContest")
     fun viewContest(
@@ -140,7 +140,7 @@ class StudyOperations(
      * Viewing is allowed regardless of dates and does not save an entry; storage exceptions propagate.
      *
      * @return the first entry time or `null`, the contest and task results; tasks are empty before entry or contest start.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.viewContest")
     fun viewContest(
@@ -169,7 +169,7 @@ class StudyOperations(
      * Requires a saved first entry; works after the contest end, saves nothing, and storage exceptions propagate.
      *
      * @return the task with its committed resources, allowed languages, submissions in repository order and the best one.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.viewTask")
     fun viewTask(user: SingleRoleUser, contestId: ContestId, taskId: TaskId): OperationResult<StudyTask, ViewParticipantTaskError> =
@@ -199,7 +199,7 @@ class StudyOperations(
      * Requires a saved first entry in [classId]; works after the contest end, saves nothing, and storage exceptions propagate.
      *
      * @return the task with its committed resources, allowed languages, submissions in repository order and the best one.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.viewTask")
     fun viewTask(
@@ -232,7 +232,7 @@ class StudyOperations(
      * Returns the file of statement or exercise [resourceId] of the last committed revision of [taskId] of [contestId]
      * in the competition of [user]. Requires a saved first entry; works after the contest end and saves nothing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.viewTask")
     fun downloadTaskResource(
@@ -266,7 +266,7 @@ class StudyOperations(
      * Returns the file of statement or exercise [resourceId] of the last committed revision of [taskId] of [contestId]
      * in [classId] for [user]. Requires a saved first entry in [classId]; works after the contest end and saves nothing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.viewTask")
     fun downloadTaskResource(
@@ -301,7 +301,7 @@ class StudyOperations(
      * Returns the file of owned grading [submissionId] for [taskId] of [contestId]
      * in the competition of [user]. Requires a saved first entry; works after the contest end and saves nothing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.viewTask")
     fun downloadSolution(
@@ -341,7 +341,7 @@ class StudyOperations(
      * Returns the file of owned grading [submissionId] for [taskId] of [contestId]
      * in [classId] for [user]. Requires a saved first entry in [classId]; works after the contest end and saves nothing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.viewTask")
     fun downloadSolution(
@@ -382,7 +382,7 @@ class StudyOperations(
      * Saves [file] in [language] as a queued grading submission of [user] for [taskId] of [contestId] in their competition.
      * Requires a first entry before the contest and attempt ends; the caller passes the result to the grader after commit.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.sendSolution")
     fun sendSolution(
@@ -422,7 +422,7 @@ class StudyOperations(
      * Saves [file] in [language] as a queued grading submission of [user] for [taskId] of [contestId] in [classId].
      * Requires a first entry in [classId] before the contest and attempt ends; the caller passes the result to the grader after commit.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.study.sendSolution")
     fun sendSolution(
@@ -643,7 +643,7 @@ class StudyOperations(
      * @property task the original task.
      * @property bestScore the highest final score, or `null` without successful grading.
      * @property lastSubmission the latest submission by creation time and identifier, or `null` if none exists.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class StudyContestTask(val task: Task, val bestScore: Int?, val lastSubmission: Submission?)
 
@@ -656,7 +656,7 @@ class StudyOperations(
      * @property languages the distinct languages of the developer solutions of the last committed revision, in their order.
      * @property submissions the grading submissions of the user in repository order.
      * @property best the submission with the highest final score, or `null` if none has a successful verdict.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class StudyTask(
         val task: Task,
@@ -673,7 +673,7 @@ class StudyOperations(
      * @property submission the original submission with unresolved references.
      * @property filename the uploaded file name of the solution.
      * @property score the score of the last judgment order, otherwise the verdict total, or `null` without a successful verdict.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class StudySubmission(
         val submission: Submission,

@@ -8,7 +8,7 @@ import tech.testsys.web.components.texts.currentLocalization
 /**
  * Community details and applicable management actions for a supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("supervisor/communities/:communityId([0-9]+)")
 @RolesAllowed("SUPERVISOR")

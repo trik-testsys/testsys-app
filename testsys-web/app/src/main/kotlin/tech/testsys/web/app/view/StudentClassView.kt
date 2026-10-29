@@ -22,7 +22,7 @@ import java.time.Instant
  * Class of a Student (testsys.web.page.student.class): the name and description of the class and its contests with their
  * dates, time to pass and state for the student; a contest row opens its page.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("student/classes/:classId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

@@ -11,7 +11,7 @@ import tech.testsys.domain.model.task.Submission
  * a submission that is not saved; inside a transaction [sendToGrade] answers [GradingAdmission.Accepted] without
  * waiting for the delegate. Outside a transaction and for other methods it calls [delegate] at once.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class AfterCommitGrader(private val delegate: Grader) : Grader by delegate {
     override fun sendToGrade(submission: Submission): GradingAdmission {

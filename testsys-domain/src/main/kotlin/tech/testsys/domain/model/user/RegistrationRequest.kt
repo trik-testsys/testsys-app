@@ -7,7 +7,7 @@ import java.time.Instant
 /**
  * Identifier of a [RegistrationRequest].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class RegistrationRequestId(
@@ -21,7 +21,7 @@ value class RegistrationRequestId(
  * @property confirmationCode the confirmation code sent to [email].
  * @property expiresAt the moment from which [confirmationCode] is no longer accepted.
  * @property attemptsLeft the number of remaining attempts to enter [confirmationCode].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class RegistrationRequestData(
     val email: String,
@@ -34,7 +34,7 @@ data class RegistrationRequestData(
  * A pending self-registration of a user awaiting confirmation of its e-mail address by a code.
  *
  * @property data the data of the request.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RegistrationRequest(
     id: RegistrationRequestId,

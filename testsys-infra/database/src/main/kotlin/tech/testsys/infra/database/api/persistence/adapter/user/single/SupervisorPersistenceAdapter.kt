@@ -26,7 +26,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
  * Persistence adapter of [Supervisor] entities backed by [UserJpaEntity] rows having a supervisor data row.
  * Update and remove increment the user version first.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

@@ -22,7 +22,7 @@ internal fun currentUiLocalization(): UiLocalization {
  * Messages of the region of the current UI; pages use them for their own texts.
  *
  * @throws IllegalStateException if there is no current UI or [initializeUiLocale] has not been called for it.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun currentLocalization(): Localization = currentUiLocalization().messages
 
@@ -30,6 +30,6 @@ fun currentLocalization(): Localization = currentUiLocalization().messages
  * Time zone of the user of the current UI, in which pages show and read dates.
  *
  * @throws IllegalStateException if there is no current UI or [initializeUiLocale] has not been called for it.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun currentTimeZone(): ZoneId = currentUiLocalization().timeZone

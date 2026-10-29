@@ -15,7 +15,7 @@ import java.time.Instant
  * @property task the identifier of the regraded task.
  * @property tests the identifiers of the tests the submissions are graded on.
  * @property submissions the identifiers of the submissions sent to grading again.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class RegradeVo(
     val id: RegradeId,

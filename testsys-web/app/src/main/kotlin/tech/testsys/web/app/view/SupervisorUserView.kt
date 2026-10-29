@@ -149,7 +149,7 @@ class SupervisorUserView(
                         guide(texts.userCommunityGuide())
                         val community = communities.firstOrNull { it.id == user.community }
                         row {
-                            textInput(texts.name(), labelSize = 6, size = 18) {
+                            textInput(texts.name(), labelSize = 2, size = 22) {
                                 value = community?.name.orEmpty()
                                 isEditable = false
                             }
@@ -161,7 +161,7 @@ class SupervisorUserView(
                     block(title = texts.userParticipantTitle()) {
                         guide(texts.userParticipantGuide())
                         row {
-                            codeInput(texts.id(), labelSize = 6, size = 18) {
+                            codeInput(texts.id(), labelSize = 2, size = 4) {
                                 value = user.competition.value.toString()
                                 isEditable = false
                             }
@@ -179,7 +179,7 @@ class SupervisorUserView(
             block(title = texts.details()) {
                 guide(texts.userDetailsGuide())
                 row {
-                    codeInput(texts.id(), labelSize = 3, size = 6) {
+                    codeInput(texts.id(), labelSize = 3, size = 4) {
                         value = user.id.value.toString()
                         isEditable = false
                     }
@@ -189,7 +189,7 @@ class SupervisorUserView(
                     }
                 }
                 row {
-                    dateTimeInput(texts.lastLogin(), labelSize = 3, size = 6) {
+                    dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) {
                         value = login?.toUserDateTime()
                         isEditable = false
                     }

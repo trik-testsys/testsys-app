@@ -302,6 +302,20 @@ class ActionTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should drain the cooldown bar over the given seconds`() {
+            buildTestContent { mainAction("Отправить") { cooldownSeconds = 2 } }
+            val action = button("Отправить")
+
+            val call = pendingJavaScript().single { call ->
+                call.owner == action.element.node && "data-ts-cooldown" in call.invocation.expression
+            }
+
+            assertTrue("setProperty('--ts-cooldown-duration', left + 's')" in call.invocation.expression)
+            assertTrue("removeProperty('--ts-cooldown-duration')" in call.invocation.expression)
+            assertEquals(2, call.invocation.parameters.first())
+        }
+
+        @Test
         fun `should not start a cooldown by default`() {
             buildTestContent { mainAction("Отправить") }
 

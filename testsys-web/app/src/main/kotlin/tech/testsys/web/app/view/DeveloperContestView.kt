@@ -143,37 +143,37 @@ class DeveloperContestView(
                 )
             }
             row {
-                codeInput(texts.id(), labelSize = 7, size = 17) {
+                codeInput(texts.id(), labelSize = 5, size = 6) {
                     value = contest.id.value.toString()
                     isEditable = false
                 }
             }
             row {
-                textInput(texts.name(), labelSize = 7, size = 17) {
+                textInput(texts.name(), labelSize = 5, size = 19) {
                     draft.forField(this)
                         .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textInput(texts.trikStudioVersion(), labelSize = 7, size = 17) {
+                textInput(texts.trikStudioVersion(), labelSize = 5, size = 8) {
                     value = contest.trikStudioVersion.version
                     isEditable = false
                 }
             }
             row {
-                textArea(texts.description(), labelSize = 7, size = 17, maxLines = 4) {
+                textArea(texts.description(), labelSize = 5, size = 19, maxLines = 4) {
                     value = contest.description
                     isEditable = false
                 }
             }
             row {
-                startsAt = dateTimeInput(texts.startsAt(), labelSize = 7, size = 17) {
+                startsAt = dateTimeInput(texts.startsAt(), labelSize = 5, size = 8) {
                     draft.forField(this).bind({ values -> values.startsAt }, { values, start -> values.startsAt = start })
                 }
             }
             row {
-                dateTimeInput(texts.endsAt(), labelSize = 7, size = 17) {
+                dateTimeInput(texts.endsAt(), labelSize = 5, size = 8) {
                     draft.forField(this)
                         .scheduleRules { startsAt.value }
                         .withValidator({ end -> fitsAttempt(contest.attemptDuration, startsAt.value, end) }, texts.contestLimitExceeds())
@@ -181,7 +181,7 @@ class DeveloperContestView(
                 }
             }
             row {
-                textInput(texts.attemptLimit(), labelSize = 7, size = 17) {
+                textInput(texts.attemptLimit(), labelSize = 5, size = 8) {
                     value = contest.attemptDuration?.let { duration -> texts.contestAttemptMinutes(minutes = duration.toMinutes()) }
                         ?: texts.contestNoAttemptLimit()
                     isEditable = false

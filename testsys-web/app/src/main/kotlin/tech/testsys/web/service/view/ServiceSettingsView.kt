@@ -56,7 +56,7 @@ class ServiceSettingsView(
                         keys.forEach { key ->
                             row {
                                 val input =
-                                    textInput(LABELS.getValue(key), labelSize = 10, size = 13, hint = key.property)
+                                    textInput(LABELS.getValue(key), labelSize = 5, size = 6, hint = key.property)
                                 form.bind(key, input)
                                 input.isEditable = overview.persistence == SettingsPersistence.Known
                                 horizontal(size = 1) { iconAction(IconName.Info, label = settingHelp(key, snapshot)) }
@@ -65,7 +65,7 @@ class ServiceSettingsView(
                         }
                     }
                     row {
-                        textInput("Публичное Сообщество (ID)", labelSize = 10, size = 14) {
+                        textInput("Публичное Сообщество (ID)", labelSize = 5, size = 4) {
                             value = runtime.publicCommunityId.value.toString()
                             isEditable = false
                         }

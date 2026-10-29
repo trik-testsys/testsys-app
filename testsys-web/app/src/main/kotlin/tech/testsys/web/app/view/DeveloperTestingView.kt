@@ -70,17 +70,17 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
                 block(title = texts.details()) {
                     guide(texts.testingDetailsGuide())
                     row {
-                        codeInput(texts.startedAt(), labelSize = 6, size = 18) {
+                        codeInput(texts.startedAt(), labelSize = 2, size = 4) {
                             value = texts.testingStartedAtValue(startedAt = request.createdAt)
                             isEditable = false
                         }
                     }
                     row {
                         val (label, tone) = validationStatusOf(execution)
-                        field(texts.state(), labelSize = 6, size = 18) { badge(label, tone) }
+                        field(texts.state(), labelSize = 2, size = 22) { badge(label, tone) }
                     }
                     row {
-                        textInput(texts.summary(), labelSize = 6, size = 18) {
+                        textInput(texts.summary(), labelSize = 2, size = 22) {
                             value = summaryOf(execution)
                             isEditable = false
                         }

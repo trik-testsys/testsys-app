@@ -1,9 +1,14 @@
 package tech.testsys.web.app.config
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
@@ -15,12 +20,18 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Supervisor
+import tech.testsys.infra.database.api.session.CabinetSignInStore
+import tech.testsys.infra.database.api.session.CabinetSignInUserId
+import tech.testsys.infra.database.api.session.CabinetSignInUserKind
+import tech.testsys.infra.database.api.session.StoredCabinetSignIn
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.util.nextAccessToken
 import tech.testsys.web.app.AppFixtures
 import tech.testsys.web.app.AppTestConfiguration
+import tech.testsys.web.app.security.SecurityConfiguration
 import tech.testsys.web.app.security.UserKind
 import java.security.SecureRandom
+import java.time.Instant
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -28,6 +39,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -53,6 +65,9 @@ class SupervisorBootstrapTests {
 
     @Autowired
     private lateinit var fixtures: AppFixtures
+
+    @Autowired
+    private lateinit var signIns: CabinetSignInStore
 
     @Autowired
     private lateinit var configuration: Environment
@@ -99,6 +114,48 @@ class SupervisorBootstrapTests {
         assertEquals(accessTokenHasher.hash(token), found.data.accessTokenHash)
         assertNull(supervisors.findByAccessToken(oldToken))
         assertEquals(before.id, supervisors.findByAccessToken(token)?.id)
+    }
+
+    @Test
+    fun `should end the remembered sign-ins of the supervisor and write the end of those as users when the access code changes`() {
+        val supervisor = single().id.value
+        val user = fixtures.userOf(UserKind.MULTIPLE_ROLE).id.value
+        rememberSignInsOf(supervisor, user)
+
+        val lines = logged { bootstrap().ensure(environment(newToken())) }
+
+        assertNull(signIns.find("supervisor-$supervisor", idleSince = Instant.EPOCH))
+        assertNull(signIns.find("as-user-$supervisor", idleSince = Instant.EPOCH))
+        assertEquals(listOf(Level.INFO to "Session of supervisor $supervisor as user $user ended"), lines)
+    }
+
+    @Test
+    fun `should end the remembered sign-ins of the supervisor even if the new access code is not stored`() {
+        val before = single()
+        val supervisor = before.id.value
+        rememberSignInsOf(supervisor, fixtures.userOf(UserKind.MULTIPLE_ROLE).id.value)
+        val failingSupervisors = object : SupervisorRepository by supervisors {
+            override fun update(entity: Supervisor): Supervisor = error("Simulated failure of the update of supervisor $supervisor")
+        }
+        val bootstrap =
+            SupervisorBootstrap(failingSupervisors, participants, observers, transactions, accessTokenHasher, signIns)
+
+        assertFailsWith<IllegalStateException> { bootstrap.ensure(environment(newToken())) }
+
+        assertNull(signIns.find("supervisor-$supervisor", idleSince = Instant.EPOCH))
+        assertNull(signIns.find("as-user-$supervisor", idleSince = Instant.EPOCH))
+        assertEquals(before.data.accessTokenHash, single().data.accessTokenHash)
+    }
+
+    @Test
+    fun `should keep the remembered sign-ins of the supervisor when only the name changes`() {
+        val supervisor = single().id.value
+        signIns.create("name-$supervisor", supervisorSignIn(supervisor), Instant.now())
+
+        bootstrap().ensure(environment("Supe-rvis-or00-0001", "Renamed supervisor"))
+
+        assertNotNull(signIns.find("name-$supervisor", idleSince = Instant.EPOCH))
+        signIns.delete("name-$supervisor")
     }
 
     @Test
@@ -215,9 +272,38 @@ class SupervisorBootstrapTests {
         }
     }
 
-    private fun bootstrap() = SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher)
+    private fun bootstrap() = SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher, signIns)
 
     private fun single(): Supervisor = assertNotNull(supervisors.findSingle())
+
+    private fun supervisorSignIn(supervisor: Long) =
+        StoredCabinetSignIn.User(userId = CabinetSignInUserId(supervisor), kind = CabinetSignInUserKind.SUPERVISOR)
+
+    private fun rememberSignInsOf(supervisor: Long, user: Long) {
+        val now = Instant.now()
+        signIns.create("supervisor-$supervisor", supervisorSignIn(supervisor), now)
+        signIns.create(
+            "as-user-$supervisor",
+            StoredCabinetSignIn.User(
+                userId = CabinetSignInUserId(user),
+                kind = CabinetSignInUserKind.MULTIPLE_ROLE,
+                impersonatedBy = CabinetSignInUserId(supervisor),
+            ),
+            now,
+        )
+    }
+
+    private fun logged(action: () -> Unit): List<Pair<Level, String>> {
+        val logger = assertIs<Logger>(LoggerFactory.getLogger(SecurityConfiguration::class.java))
+        val appender = ListAppender<ILoggingEvent>().apply { start() }
+        logger.addAppender(appender)
+        try {
+            action()
+        } finally {
+            logger.detachAppender(appender)
+        }
+        return appender.list.map { line -> line.level to line.formattedMessage }
+    }
 
     private fun assertRejectName(name: String) {
         val before = single()

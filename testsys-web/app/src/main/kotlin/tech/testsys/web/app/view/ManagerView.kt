@@ -158,8 +158,8 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
             onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
-                name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.filterNameHint())
-                dates = dateRangeInput(texts.filterCreated(), labelSize = 4, size = 8)
+                name = textInput(texts.name(), labelSize = 3, size = 9, hint = texts.filterNameHint())
+                dates = dateRangeInput(texts.filterCreated(), labelSize = 3, size = 9)
             }
         }
 

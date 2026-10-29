@@ -92,13 +92,48 @@ vaadin-button[data-ts-role="link"][disabled] {
   --vaadin-button-background: transparent;
   --vaadin-button-border: 1px solid transparent;
 }
-/* Cooldown of an action button: looks disabled and shows the seconds left; the client makes it inert. */
+/* Cooldown of an action button: looks disabled, shows the seconds left and a draining bar; the client makes it inert. */
 vaadin-button[data-ts-cooldown] {
   --vaadin-button-background: var(--canvas);
   --vaadin-button-text-color: var(--text-tertiary);
   --vaadin-button-border: 1px solid var(--border-default);
+  position: relative;
+  overflow: hidden;
+  padding-inline-end: calc(var(--space-2) * 2 + 1.5em);
 }
-vaadin-button[data-ts-cooldown]::after { content: attr(data-ts-cooldown); margin-inline-start: 6px; font-family: var(--font-mono); }
+/* The bar takes over the Lumo hover overlay of the host, so it sets every overlay property it relies on. */
+vaadin-button[data-ts-cooldown]::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 1;
+  border-radius: 0;
+  pointer-events: none;
+  transform-origin: left;
+  animation: ts-cooldown-drain var(--ts-cooldown-duration) linear forwards;
+}
+@keyframes ts-cooldown-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { vaadin-button[data-ts-cooldown]::before { animation:none; content:none; } }
+/*
+ * The countdown sits at the end of the button, inside the room the padding leaves, so a full-width button shows it too.
+ * It takes over the Lumo press overlay of the host: transparent, blurred and fading in.
+ */
+vaadin-button[data-ts-cooldown]::after {
+  content: attr(data-ts-cooldown);
+  position: absolute;
+  inset: 0 var(--space-2) 0 auto;
+  display: flex;
+  align-items: center;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  opacity: 1;
+  background: none;
+  filter: none;
+  transform: none;
+  transition: none;
+}
 vaadin-button[aria-busy="true"] { cursor: progress; }
 vaadin-button > .ts-spinner { display: inline-block; }
 /* A column keeps buttons at their own width, like the line does. */

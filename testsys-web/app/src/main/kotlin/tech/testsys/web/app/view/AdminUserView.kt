@@ -157,10 +157,10 @@ class AdminUserView(
             block(title = texts.details()) {
                 guide(texts.userDetailsGuide())
                 row {
-                    codeInput(texts.id(), labelSize = 3, size = 6) { value = user.id.value.toString() }
+                    codeInput(texts.id(), labelSize = 3, size = 4) { value = user.id.value.toString() }
                     textInput(texts.nickname(), labelSize = 3, size = 8) { value = user.name }
                 }
-                row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 6) { value = lastLogin?.toUserDateTime() } }
+                row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) { value = lastLogin?.toUserDateTime() } }
                 if (user is ObserverVo) {
                     actions { destructiveAction(texts.userObserverDelete()) { onClick { deleteObserver(user) } } }
                 }

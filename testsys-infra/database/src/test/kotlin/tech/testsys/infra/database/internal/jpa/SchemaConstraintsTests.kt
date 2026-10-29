@@ -118,6 +118,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                     "ts_access_restoration_request" -> mapOf("id" to "2", "user_id" to "2")
                     "ts_class_invite", "ts_community_invite" -> mapOf("id" to "3", "code" to "'new-code'")
                     "ts_diagnostic_report" -> mapOf("id" to "2", "position" to "1")
+                    "ts_cabinet_sign_in" -> mapOf("id" to "2", "token_hash" to "'other-token'")
                     else -> mapOf("id" to "2")
                 }
                 jdbc.update(insertSql(table, original + identity + values))
@@ -297,6 +298,14 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                 "submission_id" to "1",
                 "score" to "0",
                 "reason" to "''",
+            ),
+            "ts_cabinet_sign_in" to mapOf(
+                "id" to "1",
+                "token_hash" to "'token'",
+                "user_id" to "1",
+                "user_kind" to "'MULTIPLE_ROLE'",
+                "impersonated_by" to "NULL",
+                "last_seen_at" to TIME,
             ),
         )
         private val multipleRoleCredentials = mapOf(
@@ -516,6 +525,8 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             addAll(enumCases("ts_community_invite", "code_hash_algorithm", listOf("IDENTITY")))
             addAll(enumCases("ts_community_invite", "role", listOf("MANAGER", "DEVELOPER")))
             addAll(enumCases("ts_diagnostic_report", "severity", listOf("INFO", "WARNING", "ERROR")))
+            addAll(enumCases("ts_cabinet_sign_in", "user_kind", listOf("MULTIPLE_ROLE", "PARTICIPANT", "OBSERVER", "SUPERVISOR")))
+            addAll(cabinetSignInUsers())
             addAll(
                 enumCases(
                     table = "ts_diagnostic_report",
@@ -592,6 +603,34 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                             )
                         }
                     }
+                }
+            }
+        }
+
+        /** Only a service sign-in has no user, and only a sign-in of a user can be impersonated. */
+        private fun cabinetSignInUsers(): List<RowCase> = buildList {
+            for (user in listOf("NULL", "1")) {
+                for (kind in listOf("'SERVICE'", "'MULTIPLE_ROLE'")) {
+                    add(
+                        RowCase(
+                            table = "ts_cabinet_sign_in",
+                            values = mapOf("user_id" to user, "user_kind" to kind),
+                            isAccepted = (user to kind) in listOf("NULL" to "'SERVICE'", "1" to "'MULTIPLE_ROLE'"),
+                            constraint = "ck_ts_cabinet_sign_in_service_user",
+                        ),
+                    )
+                }
+            }
+            for (impersonatedBy in listOf("NULL", "2")) {
+                for ((user, kind) in listOf("1" to "'MULTIPLE_ROLE'", "NULL" to "'SERVICE'")) {
+                    add(
+                        RowCase(
+                            table = "ts_cabinet_sign_in",
+                            values = mapOf("impersonated_by" to impersonatedBy, "user_id" to user, "user_kind" to kind),
+                            isAccepted = impersonatedBy == "NULL" || user != "NULL",
+                            constraint = "ck_ts_cabinet_sign_in_impersonated_user",
+                        ),
+                    )
                 }
             }
         }

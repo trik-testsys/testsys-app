@@ -9,6 +9,9 @@ import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.server.VaadinService
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -20,6 +23,9 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.event.ContextClosedEvent
+import org.springframework.context.support.GenericApplicationContext
+import org.springframework.mock.env.MockEnvironment
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.mock.web.MockHttpSession
@@ -27,9 +33,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextImpl
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
 import org.springframework.security.web.session.HttpSessionDestroyedEvent
+import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.view.MultiMainView
+import java.time.Clock
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
@@ -47,6 +55,10 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
             super.append(event)
         }
     }.apply { start() }
+
+    private val store = mockk<CabinetSignInStore>(relaxed = true)
+
+    private val configuration = SecurityConfiguration(store, MockEnvironment(), Clock.systemUTC())
 
     @AfterEach
     fun detachAppender() {
@@ -68,7 +80,7 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
         val seen = AtomicReference<String?>()
         val left = AtomicReference<Map<String, String>?>()
         MDC.put("route", "/developer/tasks")
-        val task = SecurityConfiguration().securityContextTaskDecorator().decorate { seen.set(MDC.get("route")) }
+        val task = configuration.securityContextTaskDecorator().decorate { seen.set(MDC.get("route")) }
         MDC.clear()
 
         val worker = Thread {
@@ -110,7 +122,7 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
     fun `should write the supervisor and user ids at INFO when the session of a supervisor signed in as a user ends`() {
         val event = destroyedSession(CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE, impersonatedBy = 7))
 
-        val lines = logged { SecurityConfiguration().sessionDestroyed(event) }
+        val lines = logged { configuration.sessionDestroyed(event) }
 
         assertEquals(listOf(Level.INFO to "Session of supervisor 7 as user 42 ended"), lines)
     }
@@ -132,7 +144,7 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
         val event = destroyedSession(CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE, impersonatedBy = 7))
         MDC.clear()
 
-        logged { SecurityConfiguration().sessionDestroyed(event) }
+        logged { configuration.sessionDestroyed(event) }
 
         assertEquals(listOf(mapOf("user" to "42", "impersonatedBy" to "7")), appender.list.map { line -> line.mdcPropertyMap })
         assertTrue(MDC.getCopyOfContextMap().isNullOrEmpty())
@@ -142,16 +154,53 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
     fun `should write nothing when the session of a user who signed in themselves ends`() {
         val event = destroyedSession(CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE))
 
-        val lines = logged { SecurityConfiguration().sessionDestroyed(event) }
+        val lines = logged { configuration.sessionDestroyed(event) }
 
         assertTrue(lines.isEmpty())
     }
 
-    private fun destroyedSession(principal: CabinetPrincipal): HttpSessionDestroyedEvent {
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun `should delete the remembered sign-in of a destroyed session and write its end only if it was deleted`(isDeleted: Boolean) {
+        every { store.delete("hash") } returns isDeleted
+        val principal = CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE, impersonatedBy = 7)
+        val event = destroyedSession(principal, hash = "hash")
+
+        val lines = logged { configuration.sessionDestroyed(event) }
+
+        verify { store.delete("hash") }
+        val ended = listOf(Level.INFO to "Session of supervisor 7 as user 42 ended")
+        assertEquals(if (isDeleted) ended else emptyList(), lines)
+    }
+
+    @Test
+    fun `should keep the remembered sign-in of a session closed by the shutdown and write nothing`() {
+        val principal = CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE, impersonatedBy = 7)
+        val event = destroyedSession(principal, hash = "hash")
+        configuration.contextClosed(ContextClosedEvent(GenericApplicationContext()))
+
+        val lines = logged { configuration.sessionDestroyed(event) }
+
+        verify(exactly = 0) { store.delete(any()) }
+        assertTrue(lines.isEmpty())
+    }
+
+    @Test
+    fun `should write the end of a session signed out during the shutdown`() {
+        val event = destroyedSession(CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE, impersonatedBy = 7))
+        configuration.contextClosed(ContextClosedEvent(GenericApplicationContext()))
+
+        val lines = logged { configuration.sessionDestroyed(event) }
+
+        assertEquals(listOf(Level.INFO to "Session of supervisor 7 as user 42 ended"), lines)
+    }
+
+    private fun destroyedSession(principal: CabinetPrincipal, hash: String? = null): HttpSessionDestroyedEvent {
         val context = SecurityContextImpl(UsernamePasswordAuthenticationToken(principal, null, emptyList()))
         val session = MockHttpSession().apply {
             setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context)
         }
+        hash?.let { signInHash -> configuration.cabinetSignIns().attach(session, signInHash) }
         return HttpSessionDestroyedEvent(session)
     }
 

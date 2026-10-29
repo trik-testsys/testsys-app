@@ -64,7 +64,7 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
                 block(title = texts.joinTitle()) {
                     guide(texts.joinGuide())
                     lateinit var inviteCode: ValueInput<String>
-                    row { inviteCode = codeInput(texts.joinInviteCode(), labelSize = 10, size = 14) }
+                    row { inviteCode = codeInput(texts.joinInviteCode(), labelSize = 7, size = 10) }
                     footer {
                         mainAction(texts.joinSubmit()) {
                             clickOnEnter()

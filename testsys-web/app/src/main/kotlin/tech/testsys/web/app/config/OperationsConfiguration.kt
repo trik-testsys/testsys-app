@@ -44,6 +44,7 @@ import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.user.AccessTokenHasher
+import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
@@ -169,8 +170,9 @@ class OperationsConfiguration {
         observers: ObserverRepository,
         transactions: TransactionOperations,
         accessTokenHasher: AccessTokenHasher,
+        signIns: CabinetSignInStore,
     ): SmartInitializingSingleton = SmartInitializingSingleton {
-        SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher).ensure(environment)
+        SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher, signIns).ensure(environment)
     }
 
     /**

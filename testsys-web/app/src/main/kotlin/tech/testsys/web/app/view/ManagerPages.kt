@@ -109,7 +109,7 @@ internal fun PageScope.managerContestsBlock(
                 display = ContestVo::name,
                 columns = {
                     codeColumn(texts.id(), size = 6) { contest -> contest.id.value.toString() }
-                    textColumn(texts.name(), size = 16) { contest -> contest.name }
+                    textColumn(texts.name()) { contest -> contest.name }
                 },
                 hint = texts.contestsLookupHint(),
                 dialogSize = DialogSize.L,

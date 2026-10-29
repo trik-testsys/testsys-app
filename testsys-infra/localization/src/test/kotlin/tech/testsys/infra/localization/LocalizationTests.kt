@@ -2214,8 +2214,11 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should quote the exercise name in task download exercise`() {
-            assertEquals("Скачать Упражнение «main.qrs»", l.pageStudent.taskDownloadExercise(name = "main.qrs"))
+        fun `should name the exercise language in task download exercise`() {
+            assertEquals(
+                "Скачать Упражнение · Визуальный язык TRIK Studio",
+                l.pageStudent.taskDownloadExercise(language = "Визуальный язык TRIK Studio"),
+            )
         }
 
         @Test
@@ -2607,8 +2610,8 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should quote the exercise name in task download exercise`() {
-            assertEquals("Скачать Упражнение «main.qrs»", l.pageParticipant.taskDownloadExercise(name = "main.qrs"))
+        fun `should name the exercise language in task download exercise`() {
+            assertEquals("Скачать Упражнение · Python", l.pageParticipant.taskDownloadExercise(language = "Python"))
         }
 
         @Test

@@ -11,27 +11,42 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.RouterLink
+import com.vaadin.flow.server.VaadinServletRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.studentData
+import tech.testsys.infra.database.api.session.CabinetSignInStore
+import tech.testsys.infra.database.api.session.CabinetSignInUserId
+import tech.testsys.infra.database.api.session.CabinetSignInUserKind
+import tech.testsys.infra.database.api.session.StoredCabinetSignIn
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
+import tech.testsys.web.app.security.RememberedSignIns
 import tech.testsys.web.app.security.UserKind
+import java.time.Instant
 
 @SpringBootTest
 class CabinetHeadersTests : MockSpringVaadinTests() {
     private val logger = assertInstanceOf(Logger::class.java, LoggerFactory.getLogger(CabinetSignIn::class.java))
     private val appender = ListAppender<ILoggingEvent>().apply { start() }
+
+    @Autowired
+    private lateinit var store: CabinetSignInStore
+
+    @Autowired
+    private lateinit var cabinetSignIns: RememberedSignIns
 
     @AfterEach
     fun detachAppender() {
@@ -142,6 +157,42 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should forget the remembered sign-in when the user signs out`() {
+        signIn(fixtures.userOf(UserKind.MULTIPLE_ROLE))
+        UI.getCurrent().navigate(MultiMainView::class.java)
+        val hash = checkNotNull(rememberedHash())
+
+        UI.getCurrent()._get<NativeButton> { text = "Выйти" }._click()
+
+        assertNull(store.find(hash, idleSince = Instant.EPOCH))
+    }
+
+    @Test
+    fun `should replace the remembered sign-in of a supervisor signed in as a user by their own on the return`() {
+        val supervisor = fixtures.supervisor()
+        val member = fixtures.userOf(UserKind.MULTIPLE_ROLE)
+        CabinetSignIn.signIn(CabinetPrincipal.of(member).copy(impersonatedBy = supervisor.id.value))
+        val asUser = checkNotNull(rememberedHash())
+        val asUserSignIn = store.find(asUser, idleSince = Instant.EPOCH)
+        UI.getCurrent().navigate(MultiMainView::class.java)
+
+        UI.getCurrent()._get<NativeButton> { text = "Вернуться к Супервайзеру" }._click()
+
+        val returned = checkNotNull(rememberedHash())
+        val supervisorId = CabinetSignInUserId(supervisor.id.value)
+        val expectedAsUser = StoredCabinetSignIn.User(
+            userId = CabinetSignInUserId(member.id.value),
+            kind = CabinetSignInUserKind.MULTIPLE_ROLE,
+            impersonatedBy = supervisorId,
+        )
+        assertEquals(expectedAsUser, asUserSignIn)
+        assertNotEquals(asUser, returned)
+        assertNull(store.find(asUser, idleSince = Instant.EPOCH))
+        val expectedOwn = StoredCabinetSignIn.User(userId = supervisorId, kind = CabinetSignInUserKind.SUPERVISOR)
+        assertEquals(expectedOwn, store.find(returned, idleSince = Instant.EPOCH))
+    }
+
+    @Test
     fun `should mark the nickname and offer the return before signing out to a supervisor signed in as a user`() {
         val member = fixtures.userOf(UserKind.MULTIPLE_ROLE, name = "Анна Петрова")
         CabinetSignIn.signIn(CabinetPrincipal.of(member).copy(impersonatedBy = fixtures.supervisor().id.value))
@@ -205,6 +256,10 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
 
         assertTrue(UI.getCurrent()._find<NativeButton> { text = "Вернуться к Супервайзеру" }.isEmpty())
     }
+
+    /** Token digest of the sign-in remembered by the session of the current request. */
+    private fun rememberedHash(): String? =
+        VaadinServletRequest.getCurrent()?.httpServletRequest?.getSession(false)?.let(cabinetSignIns::tokenHashOf)
 
     /** Labels of the menu links marked as the current page. */
     private fun currentMenuLinks(): List<String> = UI.getCurrent()._find<RouterLink>()

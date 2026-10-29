@@ -56,11 +56,11 @@ class ObserverView(private val headers: CabinetHeaders, private val service: Obs
                             Page(result.content, result.totalElements.toInt())
                         },
                     ) {
-                        textColumn(texts.competition(), sortKey = "competitionName", size = 5) { it.competition.name }
-                        textColumn(texts.contest(), sortKey = "name", size = 5) { it.contest.name }
+                        textColumn(texts.competition(), sortKey = "competitionName", size = 6) { it.competition.name }
+                        textColumn(texts.contest(), sortKey = "name", size = 6) { it.contest.name }
                         dateTimeColumn(texts.startsAt(), size = 4) { it.contest.startsAt?.toUserDateTime() }
                         dateTimeColumn(texts.endsAt(), size = 4) { it.contest.endsAt?.toUserDateTime() }
-                        textColumn(texts.attemptDuration(), size = 4) { studyDurationText(it.contest.attemptDuration) }
+                        textColumn(texts.attemptDuration()) { studyDurationText(it.contest.attemptDuration) }
                         empty(texts.contestsEmpty(), texts.contestsEmptyHint())
                     }
 
@@ -94,12 +94,12 @@ class ObserverView(private val headers: CabinetHeaders, private val service: Obs
                         onRefresh = { rows.refresh(toFirstPage = true) },
                     ) {
                         row {
-                            competitionName = textInput(texts.competition(), labelSize = 4, size = 8)
-                            contestName = textInput(texts.contest(), labelSize = 4, size = 8)
+                            competitionName = textInput(texts.competition(), labelSize = 3, size = 9)
+                            contestName = textInput(texts.contest(), labelSize = 3, size = 9)
                         }
                         row {
-                            competitionId = textInput(texts.filterCompetitionId(), labelSize = 4, size = 8)
-                            contestId = textInput(texts.filterContestId(), labelSize = 4, size = 8)
+                            competitionId = textInput(texts.filterCompetitionId(), labelSize = 3, size = 9)
+                            contestId = textInput(texts.filterContestId(), labelSize = 3, size = 9)
                         }
                     }
                     actions {

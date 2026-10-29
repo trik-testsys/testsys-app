@@ -190,7 +190,7 @@ class JudgeSolutionView(
         val draft = Binder<JudgmentDraft>()
         val issuing = dialog(title = texts.solutionDialogTitle()) {
             row {
-                integerInput(texts.solutionScore(), labelSize = 6, size = 18, min = 0) {
+                integerInput(texts.solutionScore(), labelSize = 6, size = 6, min = 0) {
                     draft.forField(this)
                         .asRequired(texts.solutionDialogScoreRequired())
                         .bind({ values -> values.score }, { values, score -> values.score = score })

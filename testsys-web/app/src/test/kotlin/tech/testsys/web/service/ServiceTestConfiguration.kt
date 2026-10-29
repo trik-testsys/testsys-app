@@ -24,6 +24,7 @@ import tech.testsys.domain.model.user.User
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserSearch
+import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.infra.grpc.api.GradingNodeImportPreview
 import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
@@ -155,4 +156,7 @@ class ServiceTestConfiguration {
 
     @Bean
     fun clock(): Clock = Clock.systemUTC()
+
+    @Bean
+    fun cabinetSignInStore(): CabinetSignInStore = mockk(relaxed = true)
 }

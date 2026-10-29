@@ -170,7 +170,9 @@ dev-режим кладёт в `build/` — так задаёт `vaadin.build.fo
 Приложение обновляет открытые страницы без действия пользователя через push Vaadin по WebSocket (`/VAADIN/push`),
 см. раздел «Живые обновления» в [components/README.md](../../testsys-web/components/README.md). Реверс-прокси перед приложением
 должен пропускать заголовки `Upgrade`/`Connection` для этого пути. При нескольких экземплярах приложения нужны
-sticky sessions: сессия Vaadin и состояние её UI живут в памяти одного экземпляра. Живые обновления между
+sticky sessions: сессия Vaadin и состояние её UI живут в памяти одного экземпляра. Вход другой экземпляр
+восстанавливает из БД, а состояние UI — нет, см. раздел «Сохранённый вход» в
+[app/README.md](../../testsys-web/app/README.md#сохранённый-вход). Живые обновления между
 экземплярами не распространяются: фоновые `refresh`/`reload` и локальные сигналы действуют только на страницы
 своего экземпляра.
 
@@ -221,6 +223,7 @@ Workflow лежат в `.github/workflows`.
 | Прокси-сервис операций                          | `testsys-web/app/.../service/<actor>/<Actor>Service.kt`, см. [app/README.md](../../testsys-web/app/README.md#прокси-сервисы) |
 | Служебную замену Кодов-приглашений с истёкшим сроком | `refreshClassInvite` в `ManagerOperations` и `refreshCommunityInvite` в `AdministratorOperations`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Служебные чтение и запись данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
+| Хранение входов в основной и служебный интерфейсы | `testsys-infra:database`, пакет `api/session`, см. [database/README.md](../../testsys-infra/database/README.md#входы-в-интерфейсы) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
 | Дашборд, настройку мониторинга или сбора логов | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/config/loki.yml`, `deploy/config/alloy.alloy`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |

@@ -190,6 +190,28 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should drain the cooldown bar of an action only when motion is allowed`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+        val bar = "vaadin-button[data-ts-cooldown]::before"
+
+        assertEquals("ts-cooldown-drain var(--ts-cooldown-duration) linear forwards", rule(overrides, bar)["animation"])
+        assertEquals("1", rule(overrides, bar)["opacity"])
+        assertTrue(overrides.contains("@keyframes ts-cooldown-drain"))
+        assertTrue(overrides.contains("@media (prefers-reduced-motion: reduce) { $bar"))
+    }
+
+    @Test
+    fun `should show the cooldown seconds over the hidden Lumo overlay of an action`() {
+        val countdown = rule(text(TestSysTheme.VAADIN_OVERRIDES), "vaadin-button[data-ts-cooldown]::after")
+
+        assertEquals("attr(data-ts-cooldown)", countdown["content"])
+        assertEquals("absolute", countdown["position"])
+        assertEquals("1", countdown["opacity"])
+        assertEquals("none", countdown["filter"])
+        assertEquals("none", countdown["transition"])
+    }
+
+    @Test
     fun `should pin the drawer to the right edge of the viewport`() {
         val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
 

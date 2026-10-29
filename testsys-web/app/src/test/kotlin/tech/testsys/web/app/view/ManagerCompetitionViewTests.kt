@@ -167,6 +167,26 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should close the dialog of the created participants with a destructive action after a cooldown`() {
+        val competition = fixtures.competition(owner = signInManager())
+        open(competition.id)
+        UI.getCurrent()._get<Button> { text = "Создать Участников" }._click()
+        UI.getCurrent()._get<Dialog>()._get<IntegerField>()._value = 2
+
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        // Read before the next lookup: every Karibu lookup runs a round trip that drops the pending calls.
+        val calls = UI.getCurrent().internals.let { internals ->
+            internals.stateTree.runExecutionsBeforeClientResponse()
+            internals.dumpPendingJavaScriptInvocations()
+        }
+        val close = UI.getCurrent()._get<Dialog>()._get<Button> { text = "Закрыть" }
+        val cooldowns = calls.filter { call -> call.owner == close.element.node && "data-ts-cooldown" in call.invocation.expression }
+        assertEquals("destructive", close.element.getAttribute("data-ts-role"))
+        assertEquals(listOf<Any?>(3), cooldowns.map { call -> call.invocation.parameters.first() })
+    }
+
+    @Test
     fun `should delete the selected participants after the confirmation with one notification`() {
         val competition = fixtures.competition(owner = signInManager())
         val first = participantOf(competition)

@@ -2,6 +2,7 @@ package tech.testsys.bootstrap
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -35,6 +36,20 @@ class ServiceWebSettingsTests {
         assertFalse(settings.matches(secret + "A"))
         assertFalse(settings.matches("B" + secret.drop(1)))
         assertFalse(settings.toString().contains(secret))
+    }
+
+    @Test
+    fun `should bind the digest of a sign-in token to the secret`() {
+        fun settingsOf(secret: String) = ServiceWebSettings.from(
+            serviceEnvironment(secret).withProperty("testsys.service.grafana-url", "http://127.0.0.1:3000/"),
+        )
+
+        val first = settingsOf("A".repeat(64)).signInTokenHash("token")
+        val same = settingsOf("A".repeat(64)).signInTokenHash("token")
+        val other = settingsOf("B".repeat(64)).signInTokenHash("token")
+
+        assertEquals(first, same)
+        assertNotEquals(first, other)
     }
 
     @Test

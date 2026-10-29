@@ -5,6 +5,7 @@ import tech.testsys.infra.settings.api.strictBinder
 import java.net.URI
 import java.net.URISyntaxException
 import java.security.MessageDigest
+import java.util.HexFormat
 
 /**
  * Validated service listener settings and a digest of its startup secret; string rendering never includes the secret.
@@ -26,6 +27,18 @@ class ServiceWebSettings private constructor(
      * @since %CURRENT_VERSION%
      */
     fun matches(candidate: String): Boolean = MessageDigest.isEqual(secretDigest, digest(candidate))
+
+    /**
+     * Returns the SHA-256 hex digest of the sign-in [token] bound to the startup secret, so that a changed secret
+     * invalidates the sign-ins made with the previous one.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun signInTokenHash(token: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(secretDigest)
+        return HexFormat.of().formatHex(digest.digest(token.toByteArray(Charsets.UTF_8)))
+    }
 
     companion object {
         private const val MINIMUM_SECRET_LENGTH = 64

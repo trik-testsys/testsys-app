@@ -232,7 +232,7 @@ class DeveloperTaskView(
                         }
                     }
                     row {
-                        codeInput(texts.versionId(), labelSize = 6, size = 18) {
+                        codeInput(texts.versionId(), labelSize = 6, size = 7) {
                             value = resource.id.value.toString()
                             isEditable = false
                         }
@@ -285,20 +285,20 @@ class DeveloperTaskView(
                 onCancel = { draft.readBean(initial) },
             )
             row {
-                codeInput(texts.id(), labelSize = 6, size = 18) {
+                codeInput(texts.id(), labelSize = 5, size = 6) {
                     value = task.id.value.toString()
                     isEditable = false
                 }
             }
             row {
-                textInput(texts.name(), labelSize = 6, size = 18) {
+                textInput(texts.name(), labelSize = 5, size = 19) {
                     draft.forField(this)
                         .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
+                textArea(texts.description(), labelSize = 5, size = 19, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -306,8 +306,8 @@ class DeveloperTaskView(
             row {
                 multiSelect(
                     texts.trikStudioVersions(),
-                    labelSize = 6,
-                    size = 18,
+                    labelSize = 5,
+                    size = 19,
                     items = versions,
                     itemLabel = TrikStudioVersion::version,
                 ) {
@@ -423,14 +423,14 @@ class DeveloperTaskView(
             onRefresh = refresh,
         ) {
             row {
-                name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.nameHint())
-                kind = select(texts.type(), labelSize = 4, size = 8, items = ResourceKind.entries, itemLabel = ::kindLabelOf)
+                name = textInput(texts.name(), labelSize = 3, size = 9, hint = texts.nameHint())
+                kind = select(texts.type(), labelSize = 3, size = 9, items = ResourceKind.entries, itemLabel = ::kindLabelOf)
             }
             row {
                 usage = select(
                     texts.taskResourcesUsage(),
-                    labelSize = 4,
-                    size = 8,
+                    labelSize = 3,
+                    size = 9,
                     items = ResourceUsage.entries,
                     itemLabel = { used -> texts.taskResourcesUsageValue(usage = used.usage) },
                 ) {
@@ -438,8 +438,8 @@ class DeveloperTaskView(
                 }
                 differences = checkbox(
                     texts.taskResourcesDifferences(),
-                    labelSize = 4,
-                    size = 8,
+                    labelSize = 3,
+                    size = 9,
                 ) {
                     isEnabled = isComparisonAvailable
                 }
@@ -517,7 +517,7 @@ class DeveloperTaskView(
         val committing = dialog(title = texts.taskCommitTitle()) {
             row { text(texts.taskCommitText()) }
             row {
-                regrade = checkbox(texts.taskCommitRegrade(), labelSize = 18, size = 6) {
+                regrade = checkbox(texts.taskCommitRegrade(), labelSize = 8, size = 16) {
                     value = false
                 }
             }
@@ -684,7 +684,7 @@ class DeveloperTaskView(
             }
         }
         row {
-            score = integerInput(texts.expectedScore(), labelSize = 6, size = 18, min = 0) {
+            score = integerInput(texts.expectedScore(), labelSize = 6, size = 6, min = 0) {
                 isVisible = false
                 draft.forField(this)
                     .asRequired(texts.scoreRequired())

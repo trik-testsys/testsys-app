@@ -105,20 +105,25 @@ class ActionHandle internal constructor(
 }
 
 /**
- * Makes the button inert on the client for [seconds], showing the seconds left, so a hasty click cannot act. The server
- * state is untouched; a repeated start replaces the running countdown instead of ending it early.
+ * Makes the button inert on the client for [seconds], showing the seconds left and a bar draining over the whole
+ * cooldown, so a hasty click cannot act and the wait does not look frozen. The server state is untouched; a repeated
+ * start replaces the running countdown and restarts the bar instead of ending it early.
  */
 private fun Element.startCooldown(seconds: Int): PendingJavaScriptResult = executeJs(
     """
     let left = $0;
     clearInterval(this.tsCooldown);
     this.inert = true;
+    this.removeAttribute('data-ts-cooldown');
+    this.style.setProperty('--ts-cooldown-duration', left + 's');
+    void this.offsetWidth;
     this.setAttribute('data-ts-cooldown', left);
     this.tsCooldown = setInterval(() => {
       left -= 1;
       if (left > 0) { this.setAttribute('data-ts-cooldown', left); return; }
       clearInterval(this.tsCooldown);
       this.removeAttribute('data-ts-cooldown');
+      this.style.removeProperty('--ts-cooldown-duration');
       this.inert = false;
     }, 1000);
     """.trimIndent(),

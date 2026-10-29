@@ -99,7 +99,7 @@ class ServiceGradingView(
             head("Состояние проверки")
             row {
                 block(title = "Очередь", subtitle = "Незавершённые проверки этого экземпляра по этапам") {
-                    QUEUE_LABELS.forEach { (label, value) -> row { field(label, labelSize = 8, size = 16) { text(value(counters)) } } }
+                    QUEUE_LABELS.forEach { (label, value) -> row { field(label, labelSize = 3, size = 21) { text(value(counters)) } } }
                 }
             }
             row {

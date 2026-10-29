@@ -125,20 +125,20 @@ abstract class CommunityDetailsView(
                 onCancel = { draft.readBean(CommunityDraft(community.name, community.description)) },
             )
             row {
-                codeInput(texts.id(), labelSize = 6, size = 18) {
+                codeInput(texts.id(), labelSize = 4, size = 7) {
                     value = community.id.value.toString()
                     isEditable = false
                 }
             }
             row {
-                textInput(texts.name(), labelSize = 6, size = 18) {
+                textInput(texts.name(), labelSize = 4, size = 20) {
                     draft.forField(this)
                         .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
+                textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -150,8 +150,7 @@ abstract class CommunityDetailsView(
 
     /** Shows the access code of the just [created] observer once: it cannot be read back later. */
     private fun createdObserverDialog(created: IssuedObserverVo) {
-        val localization = currentLocalization()
-        val texts = localization.pageAdministrator
+        val texts = currentLocalization().pageAdministrator
         val observer = created.observer
         dialog(title = texts.communityObserverCreatedTitle(name = observer.name), subtitle = texts.communityObserverCreatedGuide()) {
             row {
@@ -169,7 +168,7 @@ abstract class CommunityDetailsView(
                 }
             }
             footer { dialog ->
-                action(localization.uiOverlay.dialogClose()) { onClick { dialog.close() } }
+                secretDialogClose(dialog)
             }
         }.open()
     }

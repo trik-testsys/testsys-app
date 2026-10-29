@@ -98,29 +98,29 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                     onCancel = { draft.readBean(DetailsDraft(entity.name, entity.description)) },
                 )
                 row {
-                    codeInput(texts.id(), labelSize = 6, size = 18) {
+                    codeInput(texts.id(), labelSize = 2, size = 4) {
                         value = entity.id.value.toString()
                         isEditable = false
                     }
                 }
                 row {
-                    textInput(texts.name(), labelSize = 6, size = 18) {
+                    textInput(texts.name(), labelSize = 2, size = 22) {
                         draft.forField(this).nameRules(texts.nameRequired())
                             .bind({ values -> values.name }, { values, name -> values.name = name })
                     }
                 }
                 row {
-                    textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
+                    textArea(texts.description(), labelSize = 2, size = 22, maxLines = 4) {
                         draft.forField(this)
                             .bind({ values -> values.description }, { values, description -> values.description = description })
                     }
                 }
                 row {
-                    codeInput(texts.participantCount(), labelSize = 6, size = 6) {
+                    codeInput(texts.participantCount(), labelSize = 2, size = 2) {
                         value = details.participants.size.toString()
                         isEditable = false
                     }
-                    codeInput(texts.contestCount(), labelSize = 6, size = 6) {
+                    codeInput(texts.contestCount(), labelSize = 2, size = 2) {
                         value = details.contests.size.toString()
                         isEditable = false
                     }
@@ -133,8 +133,7 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
 
     /** Shows the just [created] participants once with their CSV: their access codes cannot be read back later. */
     private fun issuedParticipantsDialog(competitionId: CompetitionId, created: List<IssuedParticipantVo>) {
-        val localization = currentLocalization()
-        val texts = localization.pageManager
+        val texts = currentLocalization().pageManager
         val ui = UI.getCurrent()
         dialog(title = texts.competitionParticipantsIssuedTitle(), subtitle = texts.competitionParticipantsIssuedGuide()) {
             row {
@@ -145,7 +144,7 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                 )
             }
             footer { dialog ->
-                action(localization.uiOverlay.dialogClose()) { onClick { dialog.close() } }
+                secretDialogClose(dialog)
                 downloadAction(texts.downloadCsv(), produce = { context ->
                     val csv = inUiOf(ui) { participantsCsv(created, currentLocalization().pageManager) }
                     val bytes = csv.toByteArray(Charsets.UTF_8)
@@ -231,7 +230,7 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
         val title = texts.competitionParticipantsDialogTitle()
         val creation = dialog(title = title, subtitle = texts.competitionParticipantsDialogSubtitle()) {
             row {
-                integerInput(texts.competitionParticipantsCount(), labelSize = 6, size = 18, min = 1) {
+                integerInput(texts.competitionParticipantsCount(), labelSize = 6, size = 6, min = 1) {
                     draft.forField(this)
                         .asRequired(texts.competitionParticipantsCountRequired())
                         .bind({ values -> values.count }, { values, count -> values.count = count })

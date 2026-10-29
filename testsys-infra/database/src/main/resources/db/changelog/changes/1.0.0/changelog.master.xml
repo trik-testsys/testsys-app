@@ -26,4 +26,5 @@
     <include file="db/changelog/changes/1.0.0/changelog.20-init-grading-node.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.21-init-access-restoration-request.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.22-init-regrade.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.23-init-cabinet-sign-in.xml"/>
 </databaseChangeLog>

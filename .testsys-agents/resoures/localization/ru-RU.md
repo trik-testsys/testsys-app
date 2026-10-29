@@ -352,6 +352,21 @@ glossary and owner documents stay authoritative.
   and «Кабинет» also stay literal. This is a project choice, not a language finding.
 - Quoted names follow a generic word («Класс «{name}»», «Скачать Упражнение «{name}»»), so they stay undeclined
   (see «Quoted names and declension» above).
+- 2026-10-29: the Exercise download button no longer quotes the name. `page_student.task.download_exercise` and
+  `page_participant.task.download_exercise` became «Скачать Упражнение · {language}» (user-approved form), where
+  `language` is the label from `task.send.language_name` («Python», «JavaScript», «Визуальный язык TRIK Studio»).
+  The label stands after the « · » separator, not as an object of «Скачать», so it stays in the nominative and
+  needs no case forms; the separator follows the project's existing lines («Сведения · …»,
+  `page_manager.contest.results.task`). Project observation, no language source. Unverified: whether Russian
+  punctuation references describe the interpunct; a search on 2026-10-29 returned only a snippet of a Russian
+  Wikipedia typography list naming it a word separator (not opened).
+- 2026-10-29, independent review of the same change: «упражнение» is an inanimate neuter noun, Zaliznyak 7a, so the
+  accusative equals the nominative and «Скачать Упражнение» is correct. Meanings: the action of «упражнять(ся)» and
+  «специально созданное учебное задание…»; no stylistic labels. Next to «Скачать Условие» in the «Файлы» field the
+  learning-task sense does not mislead (inference). Source: https://ru.wiktionary.org/wiki/упражнение (read
+  2026-10-29). The article https://ru.wikipedia.org/wiki/Интерпункт (read 2026-10-29) gives U+00B7 and its use in
+  Japanese and French, not in modern Russian interfaces; the project rule for the separator is ui-design.md
+  («мета-факты — средней точкой»). One Exercise per language in a revision (features.md) keeps the labels unique.
 - Unverified: «Визуальный язык TRIK Studio» was kept verbatim; the TRIK Studio documentation name of its visual
   language was not checked.
 

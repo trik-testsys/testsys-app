@@ -52,7 +52,7 @@ internal interface StudyTexts {
     fun taskFiles(): String
     fun taskFilesEmpty(): String
     fun taskDownloadStatement(): String
-    fun taskDownloadExercise(name: String): String
+    fun taskDownloadExercise(language: String): String
     fun taskBest(): String
     fun taskBestNone(): String
     fun taskSendTitle(): String
@@ -118,7 +118,7 @@ internal object StudentStudyTexts : StudyTexts {
     override fun taskFiles() = texts.taskFiles()
     override fun taskFilesEmpty() = texts.taskFilesEmpty()
     override fun taskDownloadStatement() = texts.taskDownloadStatement()
-    override fun taskDownloadExercise(name: String) = texts.taskDownloadExercise(name = name)
+    override fun taskDownloadExercise(language: String) = texts.taskDownloadExercise(language = language)
     override fun taskBest() = texts.taskBest()
     override fun taskBestNone() = texts.taskBestNone()
     override fun taskSendTitle() = texts.taskSendTitle()
@@ -184,7 +184,7 @@ internal object ParticipantStudyTexts : StudyTexts {
     override fun taskFiles() = texts.taskFiles()
     override fun taskFilesEmpty() = texts.taskFilesEmpty()
     override fun taskDownloadStatement() = texts.taskDownloadStatement()
-    override fun taskDownloadExercise(name: String) = texts.taskDownloadExercise(name = name)
+    override fun taskDownloadExercise(language: String) = texts.taskDownloadExercise(language = language)
     override fun taskBest() = texts.taskBest()
     override fun taskBestNone() = texts.taskBestNone()
     override fun taskSendTitle() = texts.taskSendTitle()

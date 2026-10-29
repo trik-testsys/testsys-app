@@ -70,8 +70,8 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
                             action(texts.passwordOpen()) { onClick { changingPassword() } }
                         }
                     }
-                    row { textInput(texts.nickname(), labelSize = 6, size = 18) { value = profile.name } }
-                    row { textInput(texts.email(), labelSize = 6, size = 18) { value = profile.email } }
+                    row { textInput(texts.nickname(), labelSize = 4, size = 20) { value = profile.name } }
+                    row { textInput(texts.email(), labelSize = 4, size = 20) { value = profile.email } }
                 }.isEditable = false
             }
         }
@@ -101,8 +101,8 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
         }
 
         val changing = dialog(title = texts.changeTitle(), subtitle = texts.changeBlockGuide()) {
-            row { email = textInput(texts.changeNewEmail(), labelSize = 8, size = 16) }
-            row { code = codeInput(confirmation.code(), labelSize = 8, size = 16) }
+            row { email = textInput(texts.changeNewEmail(), labelSize = 6, size = 18) }
+            row { code = codeInput(confirmation.code(), labelSize = 6, size = 18) }
             footer { dialog ->
                 action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 sendCode = mainAction(confirmation.sendCode()) {
@@ -138,9 +138,9 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
         lateinit var currentPassword: ValueInput<String>
         lateinit var newPassword: ValueInput<String>
         val changing = dialog(title = texts.passwordTitle(), subtitle = texts.passwordBlockGuide()) {
-            row { currentPassword = passwordInput(texts.passwordCurrent(), labelSize = 8, size = 16) }
+            row { currentPassword = passwordInput(texts.passwordCurrent(), labelSize = 6, size = 18) }
             row {
-                newPassword = passwordInput(texts.passwordNew(), labelSize = 8, size = 16, hint = localization.pagePassword.guide())
+                newPassword = passwordInput(texts.passwordNew(), labelSize = 6, size = 18, hint = localization.pagePassword.guide())
             }
             footer { dialog ->
                 action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }

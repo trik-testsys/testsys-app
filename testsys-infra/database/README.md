@@ -612,7 +612,9 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 
 Интеграционные тесты модуля работают с PostgreSQL 17 в контейнере Testcontainers, поэтому для них нужен
 запущенный Docker. `PostgresTestContainer` в тестовых исходниках запускает один контейнер на тестовую JVM,
-а Testcontainers останавливает его при выходе из JVM. `PostgresTestConfiguration` подключает к контейнеру
+а Testcontainers останавливает его при выходе из JVM. Данные контейнера лежат в tmpfs, а `fsync`,
+`synchronous_commit` и `full_page_writes` выключены: тестовой базе надёжность записи не нужна, а коммиты без неё
+быстрее. `PostgresTestConfiguration` подключает к контейнеру
 Spring-контекст через `@ServiceConnection`.
 
 Тесты на основе `DatabaseIntegrationTests` используют общий кэшированный Spring-контекст. После каждого теста

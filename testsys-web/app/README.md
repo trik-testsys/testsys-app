@@ -477,7 +477,8 @@ database/README.md. Тесты используют
 каталоги `build/test-file-storage/<вид>` модуля и фиксированный ключ хеширования из
 `src/test/resources/config/application.properties`, а также PostgreSQL
 в контейнере Testcontainers, поэтому для них нужен запущенный Docker. Тесты основного интерфейса с `@SpringBootTest`
-подключают `PostgresTestConfiguration`: все проверки с БД в одной JVM используют общий контейнер. Конфигурация явно подключает
+подключают `PostgresTestConfiguration`: все проверки с БД в одной JVM используют общий контейнер, настроенный
+так же, как в [database/README.md](../../testsys-infra/database/README.md#тесты). Конфигурация явно подключает
 `ServiceConnectionAutoConfiguration` и общую инфраструктуру для существующих тестов основного интерфейса.
 Тесты модуля запускаются с поясом JVM `UTC`, отличным от `testsys.web.localization.default-time-zone`, поэтому
 чтение дат в поясе JVM вместо пояса Пользователя заметно в тестах.

@@ -156,12 +156,12 @@ class RememberedSignIns(
         onRestored: (HttpSession, Authentication) -> Unit = { _, _ -> },
     ): OncePerRequestFilter = RestoreFilter(this, authenticate, onRestored)
 
-    private fun cookie(request: HttpServletRequest, value: String, isSet: Boolean): Cookie = Cookie(cookieName, value).apply {
-        isHttpOnly = true
-        secure = request.isSecure
-        path = request.contextPath.ifEmpty { "/" }
-        setAttribute("SameSite", "Lax")
-        if (!isSet) maxAge = 0
+    private fun cookie(request: HttpServletRequest, value: String, isSet: Boolean): Cookie = Cookie(cookieName, value).also { cookie ->
+        cookie.isHttpOnly = true
+        cookie.secure = request.isSecure
+        cookie.path = request.contextPath.ifEmpty { "/" }
+        cookie.setAttribute("SameSite", "Lax")
+        if (!isSet) cookie.maxAge = 0
     }
 }
 

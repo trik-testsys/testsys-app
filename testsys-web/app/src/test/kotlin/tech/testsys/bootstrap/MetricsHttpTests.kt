@@ -79,7 +79,7 @@ class MetricsHttpTests {
         get(runtime.mainWeb, "/developer/tasks/918273645")
 
         assertTrue(awaitSeries("interface" to "main", "uri" to "/developer/tasks/:taskId"))
-        assertFalse("918273645" in scrape().body())
+        assertFalse(isExposed("918273645"))
     }
 
     @Test
@@ -87,7 +87,7 @@ class MetricsHttpTests {
         get(runtime.mainWeb, "/admin/users/736251/judge")
 
         assertTrue(awaitSeries("interface" to "main", "uri" to "/admin/users/:userId/:section?"))
-        assertFalse("736251" in scrape().body())
+        assertFalse(isExposed("736251"))
     }
 
     @Test
@@ -96,7 +96,7 @@ class MetricsHttpTests {
 
         assertEquals(404, response.statusCode())
         assertTrue(awaitSeries("interface" to "main", "uri" to "NOT_FOUND", "status" to "404", "outcome" to "CLIENT_ERROR"))
-        assertFalse("564738291" in scrape().body())
+        assertFalse(isExposed("564738291"))
     }
 
     @ParameterizedTest
@@ -109,7 +109,7 @@ class MetricsHttpTests {
         post(runtime.mainWeb, path)
 
         assertTrue(awaitSeries("interface" to "main", "uri" to endpoint))
-        assertFalse("82736" in scrape().body())
+        assertFalse(isExposed("82736"))
     }
 
     @ParameterizedTest
@@ -123,7 +123,7 @@ class MetricsHttpTests {
         get(runtime.mainWeb, path)
 
         assertTrue(awaitSeries("interface" to "main", "uri" to endpoint))
-        assertFalse(token in scrape().body())
+        assertFalse(isExposed(token))
     }
 
     @Test
@@ -131,7 +131,7 @@ class MetricsHttpTests {
         get(runtime.serviceWeb, "/users/4242")
 
         assertTrue(awaitSeries("interface" to "service", "uri" to "/users/:userId"))
-        assertFalse("4242" in scrape().body())
+        assertFalse(isExposed("4242"))
     }
 
     @Test
@@ -140,7 +140,7 @@ class MetricsHttpTests {
 
         assertEquals(302, response.statusCode())
         assertTrue(awaitSeries("interface" to "service", "uri" to "REDIRECTION", "status" to "302"))
-        assertFalse("unknown-endpoint" in scrape().body())
+        assertFalse(isExposed("unknown-endpoint"))
     }
 
     @Test
@@ -228,6 +228,10 @@ class MetricsHttpTests {
         HttpRequest.newBuilder(uri(runtime.metricsWeb, "/actuator/prometheus")).GET().build(),
         HttpResponse.BodyHandlers.ofString(),
     )
+
+    /** Sample values are numbers that may contain the checked digits, so only metric names and labels are searched. */
+    private fun isExposed(value: String): Boolean =
+        scrape().body().lines().any { line -> !line.startsWith("#") && value in line.substringBeforeLast(' ') }
 
     private fun scrapeOpenMetrics(): HttpResponse<String> = client.send(
         HttpRequest.newBuilder(uri(runtime.metricsWeb, "/actuator/prometheus"))

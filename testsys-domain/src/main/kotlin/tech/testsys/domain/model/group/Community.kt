@@ -2,22 +2,47 @@ package tech.testsys.domain.model.group
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.LazyEntityList
+import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.user.MultipleRoleUser
-import tech.testsys.domain.model.user.User
-import tech.testsys.domain.model.user.UserId
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import java.time.Instant
 
+/**
+ * Identifier of a [Community].
+ *
+ * @since 1.0.0-beta.1
+ */
 @JvmInline
 value class CommunityId(
-    override val value: Long
+    override val value: Long,
 ) : DomainId
 
+/**
+ * Data of a [Community]. Membership is stored on the members' side, not here.
+ *
+ * @property owner the administrator who owns the community; fixed on creation and ignored on update.
+ * @property name the name of the community.
+ * @property description the description of the community.
+ * @property managerInvite the invite code for the manager role; fixed on creation and ignored on update.
+ * @property developerInvite the invite code for the developer role; fixed on creation and ignored on update.
+ * @since 1.0.0-beta.1
+ */
 data class CommunityData(
-    val owner: MultipleRoleUser,
-    val members: LazyEntityList<UserId, User>
+    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
+    val name: String,
+    val description: String,
+    val managerInvite: LazyEntity<CommunityInviteId, CommunityInvite.Manager>,
+    val developerInvite: LazyEntity<CommunityInviteId, CommunityInvite.Developer>,
 )
 
+/**
+ * A named set of users: the unit of role membership and the target that tasks and contests are shared to.
+ *
+ * @property data the data of the community.
+ * @since 1.0.0-beta.1
+ */
 class Community(
     id: CommunityId,
-    val data: CommunityData
-) : DomainEntity<CommunityId>(id)
+    createdAt: Instant,
+    val data: CommunityData,
+) : DomainEntity<CommunityId>(id, createdAt)

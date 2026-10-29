@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1.0.0-03-1" author="roman.shishkin">
+        <createTable tableName="ts_user">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_user" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="access_token" type="VARCHAR(255)">
+                <constraints unique="true" uniqueConstraintName="uk_ts_user_access_token"/>
+            </column>
+            <column name="access_token_hash_algorithm" type="VARCHAR(64)"/>
+            <column name="password_hash" type="VARCHAR(255)"/>
+            <column name="email" type="VARCHAR(255)">
+                <constraints unique="true" uniqueConstraintName="uk_ts_user_email"/>
+            </column>
+            <column name="last_login_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="type" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-3" author="roman.shishkin">
+        <createTable tableName="ts_single_role_to_user">
+            <column name="single_role" type="VARCHAR(64)">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_single_role_to_user" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             primaryKey="true" primaryKeyName="pk_ts_single_role_to_user"
+                             foreignKeyName="fk_single_role_to_user_user" references="ts_user(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-4" author="roman.shishkin">
+        <createTable tableName="ts_participant_data">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_participant_data" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_participant_data_user" references="ts_user(id)"/>
+            </column>
+            <column name="competition_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-5" author="roman.shishkin">
+        <createTable tableName="ts_observer_data">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_observer_data" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_observer_data_user" references="ts_user(id)"/>
+            </column>
+            <column name="community_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-6" author="roman.shishkin">
+        <createTable tableName="ts_supervisor_data">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_supervisor_data" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_supervisor_data_user" references="ts_user(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-7" author="roman.shishkin">
+        <createTable tableName="ts_administrator_data">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_administrator_data" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_administrator_data_user" references="ts_user(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-8" author="roman.shishkin">
+        <createTable tableName="ts_developer_data">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_developer_data" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_developer_data_user" references="ts_user(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-9" author="roman.shishkin">
+        <createTable tableName="ts_judge_data">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_judge_data" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_judge_data_user" references="ts_user(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-10" author="roman.shishkin">
+        <createTable tableName="ts_manager_data">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_manager_data" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_manager_data_user" references="ts_user(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-11" author="roman.shishkin">
+        <createTable tableName="ts_student_data">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_student_data" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_student_data_user" references="ts_user(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-03-init-user-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_access_token_hash_algorithm CHECK (
+                access_token_hash_algorithm IN ('HMAC_SHA256')
+            );
+            ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_type_email CHECK (
+                (type = 'MULTIPLE_ROLE' AND email IS NOT NULL) OR (type = 'SINGLE_ROLE' AND email IS NULL)
+            );
+            ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_type_credentials CHECK (
+                (type <> 'MULTIPLE_ROLE'
+                    OR (password_hash IS NOT NULL AND access_token IS NULL AND access_token_hash_algorithm IS NULL))
+                AND (type <> 'SINGLE_ROLE'
+                    OR (password_hash IS NULL AND access_token IS NOT NULL AND access_token_hash_algorithm IS NOT NULL))
+            );
+            ALTER TABLE ts_single_role_to_user ADD CONSTRAINT ck_ts_single_role_to_user_single_role CHECK (
+                single_role IN ('PARTICIPANT', 'OBSERVER', 'SUPERVISOR')
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_single_role_to_user DROP CONSTRAINT ck_ts_single_role_to_user_single_role;
+                ALTER TABLE ts_user DROP CONSTRAINT ck_ts_user_type_credentials;
+                ALTER TABLE ts_user DROP CONSTRAINT ck_ts_user_type_email;
+                ALTER TABLE ts_user DROP CONSTRAINT ck_ts_user_access_token_hash_algorithm;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

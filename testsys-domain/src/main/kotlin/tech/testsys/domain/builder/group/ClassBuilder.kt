@@ -1,0 +1,113 @@
+package tech.testsys.domain.builder.group
+
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
+import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.group.Class
+import tech.testsys.domain.model.group.ClassData
+import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.ClassInviteId
+import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.MultipleRoleUserId
+
+/**
+ * Builder of [ClassData]. Required: [owner], [name], [description], [invite].
+ *
+ * @property owner the id of the owning manager, or `null` if not set yet.
+ * @property name the name of the class, or `null` if not set yet.
+ * @property description the description of the class, or `null` if not set yet.
+ * @property students the ids of the enrolled students.
+ * @property contests the ids of the assigned contests.
+ * @property invite the id of the invite code of the class, or `null` if not set yet.
+ * @since 1.0.0-beta.1
+ */
+class ClassDataBuilder : Builder<ClassData> {
+
+    var owner: MultipleRoleUserId? = null
+
+    var name: String? = null
+
+    var description: String? = null
+
+    var students = mutableListOf<MultipleRoleUserId>()
+
+    var contests = mutableListOf<ContestId>()
+
+    var invite: ClassInviteId? = null
+
+    /**
+     * Sets [invite] from a raw id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun invite(invite: Long) {
+        this.invite = ClassInviteId(invite)
+    }
+
+    /**
+     * Sets [owner] from a raw id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun owner(owner: Long) {
+        this.owner = MultipleRoleUserId(owner)
+    }
+
+    /**
+     * Sets [students] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun students(students: Iterable<Long>) {
+        this.students = students.map { MultipleRoleUserId(it) }.toMutableList()
+    }
+
+    /**
+     * Sets [contests] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun contests(contests: Iterable<Long>) {
+        this.contests = contests.map { ContestId(it) }.toMutableList()
+    }
+
+    override fun build(): ClassData {
+        val owner = requireField(owner) { ::owner }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+        val invite = requireField(invite) { ::invite }
+
+        return ClassData(
+            owner = owner.lazify(),
+            name = name,
+            description = description,
+            students = students.lazify(),
+            contests = contests.lazify(),
+            invite = invite.lazify(),
+        )
+    }
+}
+
+/**
+ * Builder of [Class] entities. Required: [id], [createdAt], [data].
+ *
+ * @since 1.0.0-beta.1
+ */
+class ClassBuilder : DomainEntityWithDataBuilder<Class, ClassData, ClassDataBuilder>() {
+
+    override fun dataBuilder() = ClassDataBuilder()
+
+    override fun build(): Class {
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
+
+        return Class(
+            id = ClassId(id),
+            createdAt = createdAt,
+            data = data,
+        ).applyVersion(version)
+    }
+}

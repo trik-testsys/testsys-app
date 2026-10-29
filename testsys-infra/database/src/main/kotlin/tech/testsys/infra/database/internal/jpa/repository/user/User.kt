@@ -1,0 +1,58 @@
+package tech.testsys.infra.database.internal.jpa.repository.user
+
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+import org.springframework.stereotype.Repository
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
+import java.time.Instant
+
+/**
+ * Spring Data repository for [UserJpaEntity].
+ *
+ * @since 1.0.0-beta.1
+ */
+@Repository
+@InternalDatabaseApi
+interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> {
+
+    /**
+     * Finds the user row whose stored access code equals [accessToken] and was produced by [accessTokenHashAlgorithm].
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findByAccessTokenAndAccessTokenHashAlgorithm(accessToken: String, accessTokenHashAlgorithm: HashAlgorithmJpaEnum): UserJpaEntity?
+
+    /**
+     * Finds the user row whose e-mail address equals [email].
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findByEmail(email: String): UserJpaEntity?
+
+    /**
+     * Whether a user row with [id] of the [type] kind exists, checked without loading the row.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun existsByIdAndType(id: Long, type: UserTypeJpaEnum): Boolean
+
+    /**
+     * Increments the versions of the user rows [ids] in one statement and returns the number of updated rows; the
+     * caller synchronizes the managed rows through `touchRoots`.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Modifying
+    @Query("update UserJpaEntity u set u.version = u.version + 1 where u.id in :ids")
+    fun incrementVersions(@Param("ids") ids: Collection<Long>): Int
+
+    /** Sets the last login after the caller has protected the user aggregate root. */
+    @Modifying
+    @Query("update UserJpaEntity u set u.lastLoginAt = :lastLoginAt where u.id = :id and u.type = :type")
+    fun updateLastLoginAt(@Param("id") id: Long, @Param("type") type: UserTypeJpaEnum, @Param("lastLoginAt") lastLoginAt: Instant): Int
+}

@@ -1,0 +1,75 @@
+package tech.testsys.domain.builder.task
+
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
+import tech.testsys.domain.builder.util.chooser.LanguageChooser
+import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.Solution
+import tech.testsys.domain.model.task.SolutionData
+import tech.testsys.domain.model.task.SolutionId
+
+/**
+ * Builder of [SolutionData]. Required: [file], a choice in [language].
+ *
+ * @property language the chooser of the programming language.
+ * @since 1.0.0-beta.1
+ */
+class SolutionDataBuilder : Builder<SolutionData> {
+
+    private var _file: FileData? = null
+
+    val language = LanguageChooser()
+
+    /**
+     * Sets the file.
+     *
+     * @param uploadedFilename the original name of the uploaded file.
+     * @param content the raw binary content of the file.
+     * @since 1.0.0-beta.1
+     */
+    fun file(uploadedFilename: String, content: ByteArray) {
+        _file = FileData(uploadedFilename, content)
+    }
+
+    /**
+     * Sets [file] without reading its contents.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun file(file: FileData) {
+        _file = file
+    }
+
+    override fun build(): SolutionData {
+        val file = requireField(_file) { ::_file }
+
+        return SolutionData(
+            file = file,
+            language = language.build(),
+        )
+    }
+}
+
+/**
+ * Builder of [Solution] entities. Required: [id], [createdAt], [data].
+ *
+ * @since 1.0.0-beta.1
+ */
+class SolutionBuilder : DomainEntityWithDataBuilder<Solution, SolutionData, SolutionDataBuilder>() {
+
+    override fun dataBuilder() = SolutionDataBuilder()
+
+    override fun build(): Solution {
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
+
+        return Solution(
+            id = SolutionId(id),
+            createdAt = createdAt,
+            data = data,
+        ).applyVersion(version)
+    }
+}

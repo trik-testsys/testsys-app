@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <include file="db/changelog/changes/1.0.0/changelog.02-init-common.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.03-init-user.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.04-init-group.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.05-init-resource.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.06-init-task.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.07-init-contest.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.08-init-submission.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.09-init-judgment-order.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.10-init-recording-logs.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.11-init-test-verdict.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.12-init-uploaded-resources.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.13-init-task-validation-request.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.14-init-study-entry.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.15-init-invite.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.16-init-registration-request.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.17-init-email-change-request.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.18-add-indexes.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.19-init-runtime-settings.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.20-init-grading-node.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.21-init-access-restoration-request.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.22-init-regrade.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.23-init-cabinet-sign-in.xml"/>
+</databaseChangeLog>

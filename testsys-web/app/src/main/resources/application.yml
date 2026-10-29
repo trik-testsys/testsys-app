@@ -1,0 +1,51 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        name: TESTSYS_APP_SESSION
+spring:
+  boot:
+    # Keep auto-configuration limited to explicit imports in each context.
+    enableautoconfiguration: false
+  application:
+    name: testsys-web-app
+  datasource:
+    password: ${TESTSYS_DB_PASSWORD}
+logging:
+  pattern:
+    # Every line shows the signed-in user id, the open page of the main interface request and the id of the supervisor
+    # signed in as the user, or `-` for each value that is absent.
+    correlation: "[%X{user:--} %X{route:--} %X{impersonatedBy:--}] "
+management:
+  prometheus:
+    metrics:
+      export:
+        properties:
+          "[io.prometheus.exporter.include_created_timestamps]": "true"
+vaadin:
+  launch-browser: false
+  # Resolve the initial route before sending HTML, preserving the error handler HTTP status.
+  eagerServerLoad: true
+  # Dev mode writes its files into the build folder; without a token file from the Gradle plugin it defaults to
+  # Maven's target/.
+  build:
+    folder: build
+# Every environment variable the application reads is declared once here, under the name Compose passes. The defaults
+# of the modules are in their *-defaults.properties files; web-defaults.properties holds those of this module.
+testsys:
+  access-token:
+    # Required HMAC-SHA-256 key of access codes, at least 64 characters; changing it invalidates every stored code.
+    secret: ${TESTSYS_ACCESS_TOKEN_SECRET}
+  service:
+    secret: ${TESTSYS_SERVICE_SECRET}
+    grafana-url: ${TESTSYS_GRAFANA_URL}
+  operation:
+    supervisor:
+      access-token: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN}
+  mail:
+    # Empty for an SMTP server without authorization.
+    password: ${TESTSYS_MAIL_PASSWORD:}
+  grading:
+    nodes: ${TESTSYS_GRADING_NODES:}
+    import-nodes: ${TESTSYS_GRADING_IMPORT_NODES:false}

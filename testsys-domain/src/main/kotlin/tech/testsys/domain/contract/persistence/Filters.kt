@@ -1,0 +1,164 @@
+package tech.testsys.domain.contract.persistence
+
+import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.UserId
+import java.time.Instant
+
+/**
+ * Optional task selection criteria, combined with AND after access is checked.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property ownerId the required owner, or `null` for any authorized owner.
+ * @property state the required lifecycle state, or `null` for any state.
+ * @property communityId the community granted access to the task, or null for any sharing; never expands access.
+ * @property excludeOwnerId the owner whose tasks are excluded before pagination and counting, or `null` for no exclusion.
+ * @since 1.0.0-beta.1
+ */
+data class TaskFilter(
+    val name: String? = null,
+    val ownerId: MultipleRoleUserId? = null,
+    val state: State? = null,
+    val communityId: CommunityId? = null,
+    val excludeOwnerId: MultipleRoleUserId? = null,
+) {
+
+    /**
+     * Lifecycle state to select.
+     *
+     * @since 1.0.0-beta.1
+     */
+    enum class State {
+        NEW,
+        UNCOMMITTED,
+        COMMITTED,
+    }
+}
+
+/**
+ * Optional contest selection criteria, combined with AND after access is checked.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property ownerId the required owner, or `null` for any authorized owner.
+ * @property communityId the community granted access to the contest, or null for any sharing; never expands access.
+ * @since 1.0.0-beta.1
+ */
+data class ContestFilter(
+    val name: String? = null,
+    val ownerId: MultipleRoleUserId? = null,
+    val communityId: CommunityId? = null,
+)
+
+/**
+ * Optional observer pair criteria, combined with AND within current competition and assigned contest pairs.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property contestId the exact contest identifier, or `null` for every accessible contest; never expands access.
+ * @property competitionName a literal case-insensitive competition-name substring, or `null` for any name.
+ * @property competitionId the exact competition identifier, or `null` for every accessible competition.
+ * @since 1.0.0-beta.1
+ */
+data class ObserverContestFilter(
+    val name: String? = null,
+    val contestId: ContestId? = null,
+    val competitionName: String? = null,
+    val competitionId: CompetitionId? = null,
+)
+
+/**
+ * Optional verdict selection criteria, combined with AND before paging and counting authorized verdicts.
+ *
+ * @property authorId the required submission author, or `null` for every eligible author.
+ * @property submissionId the submission whose current successful verdict is selected, or null for any submission.
+ * @property classId the class containing both the current student author and the contest, or null for any class.
+ * @property competitionId the competition containing both the current participant author and the contest, or null for any competition.
+ * @since 1.0.0-beta.1
+ */
+data class VerdictFilter(
+    val authorId: UserId? = null,
+    val submissionId: SubmissionId? = null,
+    val classId: ClassId? = null,
+    val competitionId: CompetitionId? = null,
+)
+
+/**
+ * Optional user selection criteria, combined with AND before paging and counting users available to an administrator.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property roles roles of which the user must hold any in an administrator's community, or null for any role.
+ * @property communityId the only administrator's community whose membership counts, or null for all; never expands access.
+ * @throws IllegalArgumentException if [roles] is empty.
+ * @since 1.0.0-beta.1
+ */
+data class UserFilter(
+    val name: String? = null,
+    val roles: Set<Role>? = null,
+    val communityId: CommunityId? = null,
+) {
+
+    init {
+        require(roles == null || roles.isNotEmpty()) { "User role filter must be null or non-empty, but was $roles" }
+    }
+
+    /**
+     * Community role to select.
+     *
+     * @since 1.0.0-beta.1
+     */
+    enum class Role {
+        ADMINISTRATOR,
+        DEVELOPER,
+        JUDGE,
+        MANAGER,
+        STUDENT,
+        OBSERVER,
+    }
+}
+
+/**
+ * Optional class selection criteria, combined with AND before paging and counting owned classes.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property createdFrom the inclusive lower creation-time bound, or null for no lower bound.
+ * @property createdTo the inclusive upper creation-time bound, or null for no upper bound.
+ * @throws IllegalArgumentException if [createdFrom] is later than [createdTo].
+ * @since 1.0.0-beta.1
+ */
+data class ClassFilter(
+    val name: String? = null,
+    val createdFrom: Instant? = null,
+    val createdTo: Instant? = null,
+) {
+
+    init {
+        require(createdFrom == null || createdTo == null || createdFrom <= createdTo) {
+            "Class creation lower bound $createdFrom must not be later than upper bound $createdTo"
+        }
+    }
+}
+
+/**
+ * Optional competition selection criteria, combined with AND before paging and counting owned competitions.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property createdFrom the inclusive lower creation-time bound, or null for no lower bound.
+ * @property createdTo the inclusive upper creation-time bound, or null for no upper bound.
+ * @throws IllegalArgumentException if [createdFrom] is later than [createdTo].
+ * @since 1.0.0-beta.1
+ */
+data class CompetitionFilter(
+    val name: String? = null,
+    val createdFrom: Instant? = null,
+    val createdTo: Instant? = null,
+) {
+
+    init {
+        require(createdFrom == null || createdTo == null || createdFrom <= createdTo) {
+            "Competition creation lower bound $createdFrom must not be later than upper bound $createdTo"
+        }
+    }
+}

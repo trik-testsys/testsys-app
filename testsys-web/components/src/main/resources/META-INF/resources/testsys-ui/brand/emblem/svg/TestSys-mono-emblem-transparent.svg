@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="768" viewBox="0 0 768 768" role="img" aria-labelledby="logo-title logo-description">
+  <title id="logo-title">TestSys Mono — emblem</title>
+  <desc id="logo-description">Geometric TestSys emblem built on a 4-unit grid. Brand colors #243B8F and #FFF0C9. Square canvas; native vector shapes and outlined text.</desc>
+  <g id="emblem-placement" fill="#243B8F" color="#243B8F" transform="matrix(1.3978676 0 0 1.3978676 -598.03818793 -16.52526817)">
+    <g id="emblem" data-construction-grid="4" data-ink-bounds="505.05179609 69.05179609 900 504">
+      <path id="gear-and-left-base" d="M696 69.05179609 L675.93053505 69.05179609 L668.21629157 102.43075952 A160 160 0 0 0 641.27677707 109.64918067 L617.90656453 84.59927213 L583.14523156 104.66873708 L593.15398245 137.4328891 A160 160 0 0 0 573.4328891 157.15398245 L540.66873708 147.14523156 L520.59927213 181.90656453 L545.64918067 205.27677707 A160 160 0 0 0 538.43075952 232.21629157 L505.05179609 239.93053505 L505.05179609 280.06946495 L538.43075952 287.78370843 A160 160 0 0 0 545.64918067 314.72322293 L520.59927213 338.09343547 L540.66873708 372.85476844 L573.4328891 362.84601755 A160 160 0 0 0 593.15398245 382.5671109 L583.14523156 415.33126292 L617.90656453 435.40072787 L641.27677707 410.35081933 A160 160 0 0 0 668.21629157 417.56924048 L672.60225204 442.44325831 A32 32 0 0 1 641.08840394 480 A8 8 0 0 0 633.08840394 488 V504 H696 V388 A128 128 0 0 1 696 132 Z" />
+      <path id="letter-T-in-emblem" d="M632 164 H696 V364 H672 V196 H632 Z" />
+      <g id="circuit-traces" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="butt" stroke-linejoin="miter">
+        <path id="trace-left-top" d="M608 196 V252" />
+        <path id="trace-left-and-branch" d="M608 276 V320 L632 344" />
+        <path id="trace-bottom" d="M632 316 V376" />
+        <path id="trace-upper" d="M644 240 V268 L660 284 V360" />
+      </g>
+      <g id="circuit-nodes" fill="none" stroke="currentColor" stroke-width="8">
+        <circle id="node-left" cx="608" cy="264" r="12" />
+        <circle id="node-upper" cx="644" cy="228" r="12" />
+        <circle id="node-bottom" cx="632" cy="304" r="12" />
+      </g>
+      <g id="shield-and-right-base">
+        <path id="shield-top-band" d="M712 104 A320 320 0 0 1 832 127.35206052 V216 H800 V149.77381598 A288 288 0 0 0 712 136 Z" />
+        <path id="trophy-handle" d="M848 144 H899.4278407 A224 224 0 0 1 794.70191519 349.96277354 L781.98385285 329.60961923 A200 200 0 0 0 875.83993595 168 H848 Z" />
+        <path id="letter-S-in-emblem" d="M712 164 H780 V196 H744 V244 H831.96363336 A220 220 0 0 1 712 435.95917942 V308 H744 V373.86560425 A188 188 0 0 0 796.52100151 276 H712 Z" />
+        <path id="right-base" d="M712 452 L734.91159606 440 V448 A32 32 0 0 0 766.91159606 480 A8 8 0 0 1 774.91159606 488 V504 H712 Z" />
+      </g>
+    </g>
+  </g>
+</svg>

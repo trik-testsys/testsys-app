@@ -1,0 +1,212 @@
+package tech.testsys.domain.builder.task
+
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
+import tech.testsys.domain.builder.util.chooser.TaskContentChooser
+import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.CommittedTaskContent
+import tech.testsys.domain.model.task.DeveloperSolutionId
+import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskData
+import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.task.WipTaskContent
+import tech.testsys.domain.model.user.MultipleRoleUserId
+
+/**
+ * Base class of task content revision builders; holds the resource collections of a revision.
+ *
+ * @param T the type of the built revision.
+ * @property tests the ids of the tests (polygons) of the revision.
+ * @property exercises the ids of the exercises of the revision.
+ * @property statement the id of the statement, or `null` if not set yet.
+ * @property developerSolutions the ids of the developer solutions of the revision.
+ * @property supportedTrikStudioVersions the TRIK Studio versions supported by the revision.
+ * @since 1.0.0-beta.1
+ */
+abstract class TaskContentBuilder<T> : Builder<T> {
+
+    var tests = mutableListOf<TestId>()
+
+    var exercises = mutableListOf<ExerciseId>()
+
+    var statement: StatementId? = null
+
+    var developerSolutions = mutableListOf<DeveloperSolutionId>()
+
+    var supportedTrikStudioVersions = mutableListOf<TrikStudioVersion>()
+
+    /**
+     * Sets [tests] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun tests(tests: Iterable<Long>) {
+        this.tests = tests.map { TestId(it) }.toMutableList()
+    }
+
+    /**
+     * Sets [exercises] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun exercises(exercises: Iterable<Long>) {
+        this.exercises = exercises.map { ExerciseId(it) }.toMutableList()
+    }
+
+    /**
+     * Sets [statement] from a raw id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun statement(statement: Long) {
+        this.statement = StatementId(statement)
+    }
+
+    /**
+     * Sets [developerSolutions] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun developerSolutions(developerSolutions: Iterable<Long>) {
+        this.developerSolutions = developerSolutions.map { DeveloperSolutionId(it) }.toMutableList()
+    }
+
+    /**
+     * Sets [supportedTrikStudioVersions] from pairs of a raw Docker image tag and a version number.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun supportedTrikStudioVersions(supportedTrikStudioVersions: Iterable<Pair<String, String>>) {
+        this.supportedTrikStudioVersions = supportedTrikStudioVersions
+            .map { (tag, version) -> TrikStudioVersion(tag = tag, version = version) }
+            .toMutableList()
+    }
+}
+
+/**
+ * Builder of [CommittedTaskContent]. Required: nonempty [exercises], [statement].
+ *
+ * @since 1.0.0-beta.1
+ */
+class CommittedTaskContentBuilder : TaskContentBuilder<CommittedTaskContent>() {
+
+    override fun build(): CommittedTaskContent {
+        require(exercises.isNotEmpty()) { "Committed task content requires at least one exercise" }
+        val statement = requireField(statement) { ::statement }
+
+        return CommittedTaskContent(
+            tests = tests.lazify(),
+            exercises = exercises.lazify(),
+            statement = statement.lazify(),
+            developerSolutions = developerSolutions.lazify(),
+            supportedTrikStudioVersions = supportedTrikStudioVersions,
+        )
+    }
+}
+
+/**
+ * Builder of [WipTaskContent]; [exercises] may be empty and [statement] is optional.
+ *
+ * @since 1.0.0-beta.1
+ */
+class WipTaskContentBuilder : TaskContentBuilder<WipTaskContent>() {
+
+    override fun build(): WipTaskContent {
+        return WipTaskContent(
+            tests = tests.lazify(),
+            exercises = exercises.lazify(),
+            statement = statement?.lazify(),
+            developerSolutions = developerSolutions.lazify(),
+            supportedTrikStudioVersions = supportedTrikStudioVersions,
+        )
+    }
+}
+
+/**
+ * Builder of [TaskData]. Required: [owner], [name], [description], a choice in [content].
+ *
+ * @property owner the id of the owning developer, or `null` if not set yet.
+ * @property name the name of the task, or `null` if not set yet.
+ * @property description the description of the task, or `null` if not set yet.
+ * @property sharedTo the ids of the communities the task is shared to.
+ * @property content the chooser of the task content variant.
+ * @property uploadedResources the version chains uploaded to the task, including unattached resources.
+ * @since 1.0.0-beta.1
+ */
+class TaskDataBuilder : Builder<TaskData> {
+
+    var owner: MultipleRoleUserId? = null
+
+    var name: String? = null
+
+    var description: String? = null
+
+    var sharedTo = mutableListOf<CommunityId>()
+
+    val content = TaskContentChooser()
+
+    var uploadedResources = mutableSetOf<VersionBucket>()
+
+    /**
+     * Sets [owner] from a raw id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun owner(owner: Long) {
+        this.owner = MultipleRoleUserId(owner)
+    }
+
+    /**
+     * Sets [sharedTo] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun sharedTo(sharedTo: Iterable<Long>) {
+        this.sharedTo = sharedTo.map { CommunityId(it) }.toMutableList()
+    }
+
+    override fun build(): TaskData {
+        val owner = requireField(owner) { ::owner }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+
+        return TaskData(
+            owner = owner.lazify(),
+            name = name,
+            description = description,
+            sharedTo = sharedTo.lazify(),
+            content = content.build(),
+            uploadedResources = uploadedResources.toSet(),
+        )
+    }
+}
+
+/**
+ * Builder of [Task] entities. Required: [id], [createdAt], [data].
+ *
+ * @since 1.0.0-beta.1
+ */
+class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataBuilder>() {
+
+    override fun dataBuilder() = TaskDataBuilder()
+
+    override fun build(): Task {
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
+
+        return Task(
+            id = TaskId(id),
+            createdAt = createdAt,
+            data = data,
+        ).applyVersion(version)
+    }
+}

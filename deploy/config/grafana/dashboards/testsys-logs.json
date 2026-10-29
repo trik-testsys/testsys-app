@@ -1,0 +1,454 @@
+{
+  "uid": "testsys-logs",
+  "title": "TestSys — логи",
+  "description": "Записи лога приложения TestSys из Loki: число ошибок и предупреждений, записи по уровням, частые источники ошибок и сами записи. Фильтры применяются ко всем панелям.",
+  "tags": [
+    "testsys"
+  ],
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "30s",
+      "1m",
+      "5m",
+      "15m"
+    ]
+  },
+  "timezone": "browser",
+  "links": [
+    {
+      "type": "dashboards",
+      "title": "TestSys",
+      "tags": [
+        "testsys"
+      ],
+      "asDropdown": true,
+      "keepTime": true,
+      "includeVars": false
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "level",
+        "label": "Уровень",
+        "type": "custom",
+        "query": "ERROR,WARN,INFO,DEBUG,TRACE",
+        "multi": true,
+        "includeAll": false,
+        "current": {
+          "selected": true,
+          "text": [
+            "ERROR",
+            "WARN",
+            "INFO"
+          ],
+          "value": [
+            "ERROR",
+            "WARN",
+            "INFO"
+          ]
+        },
+        "options": [],
+        "description": "Уровни записей в графике и списке записей"
+      },
+      {
+        "name": "search",
+        "label": "Текст",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "options": [],
+        "description": "Подстрока записи без учёта регистра, в том числе в стектрейсе"
+      },
+      {
+        "name": "user",
+        "label": "Пользователь",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "options": [],
+        "description": "ID Пользователя или его начало; пусто — все записи"
+      },
+      {
+        "name": "route",
+        "label": "Страница",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "options": [],
+        "description": "Адрес страницы или его начало, например /developer; пусто — все записи"
+      },
+      {
+        "name": "logger",
+        "label": "Источник",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "options": [],
+        "description": "Часть имени логгера, например GrpcNodeClient; пусто — все записи"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Ошибки за период",
+      "description": "Записи уровня ERROR за выбранный период с учётом фильтров, кроме уровня.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "testsys-loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "testsys-loki"
+          },
+          "queryType": "instant",
+          "expr": "sum(count_over_time({service=\"app\", level=\"ERROR\"} |~ `(?i)${search:regex}` | json | user=~`${user:regex}.*` | route=~`${route:regex}.*` | logger_name=~`.*${logger:regex}.*` [$__range])) or vector(0)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Предупреждения за период",
+      "description": "Записи уровня WARN за выбранный период с учётом фильтров, кроме уровня.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 4
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "testsys-loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "testsys-loki"
+          },
+          "queryType": "instant",
+          "expr": "sum(count_over_time({service=\"app\", level=\"WARN\"} |~ `(?i)${search:regex}` | json | user=~`${user:regex}.*` | route=~`${route:regex}.*` | logger_name=~`.*${logger:regex}.*` [$__range])) or vector(0)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Записи по уровням",
+      "description": "Число записей выбранных уровней за интервал графика.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 4,
+        "y": 0
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "testsys-loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "min": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ERROR"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "WARN"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "INFO"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "DEBUG"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TRACE"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "testsys-loki"
+          },
+          "queryType": "range",
+          "legendFormat": "{{level}}",
+          "expr": "sum by (level) (count_over_time({service=\"app\", level=~`${level:regex}`} |~ `(?i)${search:regex}` | json | user=~`${user:regex}.*` | route=~`${route:regex}.*` | logger_name=~`.*${logger:regex}.*` [$__auto]))"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Частые ошибки и предупреждения",
+      "description": "Десять источников с наибольшим числом записей ERROR и WARN за выбранный период.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "testsys-loki"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Записей",
+            "desc": true
+          }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "testsys-loki"
+          },
+          "queryType": "instant",
+          "expr": "topk(10, sum by (level, logger_name) (count_over_time({service=\"app\", level=~`ERROR|WARN`} |~ `(?i)${search:regex}` | json | user=~`${user:regex}.*` | route=~`${route:regex}.*` | logger_name=~`.*${logger:regex}.*` [$__range])))"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "level": 0,
+              "logger_name": 1,
+              "Value": 2
+            },
+            "renameByName": {
+              "level": "Уровень",
+              "logger_name": "Источник",
+              "Value": "Записей",
+              "Value #A": "Записей"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "logs",
+      "title": "Записи",
+      "description": "Записи выбранных уровней, новые сверху. Щелчок по записи показывает все её поля, в том числе stack_trace.",
+      "gridPos": {
+        "h": 20,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "testsys-loki"
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "prettifyLogMessage": false,
+        "showLabels": false,
+        "showCommonLabels": false
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "testsys-loki"
+          },
+          "queryType": "range",
+          "expr": "{service=\"app\", level=~`${level:regex}`} |~ `(?i)${search:regex}` | json | user=~`${user:regex}.*` | route=~`${route:regex}.*` | logger_name=~`.*${logger:regex}.*` | line_format `{{ printf \"%-5s\" .level }} {{ regexReplaceAll \"^.*\\\\.\" .logger_name \"\" }}  {{ .message }}{{ if .user }}  [user {{ .user }}]{{ end }}{{ if .route }}  [{{ .route }}]{{ end }}`"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+package tech.testsys.web.app.view
+
+import com.vaadin.flow.component.UI
+import com.vaadin.flow.data.binder.Binder
+import com.vaadin.flow.router.BeforeEnterEvent
+import com.vaadin.flow.router.BeforeEnterObserver
+import com.vaadin.flow.router.HasDynamicTitle
+import com.vaadin.flow.router.Route
+import com.vaadin.flow.router.RouteParameters
+import jakarta.annotation.security.RolesAllowed
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.VerdictFilter
+import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.web.app.service.judge.JudgeResultVo
+import tech.testsys.web.app.service.judge.JudgeService
+import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.data.Page
+import tech.testsys.web.components.data.filters
+import tech.testsys.web.components.data.table
+import tech.testsys.web.components.forms.ValueInput
+import tech.testsys.web.components.forms.codeInput
+import tech.testsys.web.components.layout.BlockScope
+import tech.testsys.web.components.texts.currentLocalization
+import tech.testsys.domain.contract.persistence.Sort as DomainSort
+
+/** Route parameter of [JudgeView] with the open section. */
+internal const val JUDGE_SECTION_PARAMETER = "section"
+
+/** Route parameter of [JudgeSolutionView] with the submission id. */
+internal const val SUBMISSION_ID_PARAMETER = "submissionId"
+
+private const val SUBMISSIONS_SECTION = "submissions"
+
+/** Verdicts of the table, the latest first. */
+private val LATEST_FIRST = DomainSort(
+    listOf(DomainSort.Order("createdAt", DomainSort.Direction.DESC), DomainSort.Order("id", DomainSort.Direction.DESC)),
+)
+
+/** Returns the route parameters of the submissions section of [JudgeView]. */
+internal fun judgeSubmissionsParameters(): RouteParameters = RouteParameters(JUDGE_SECTION_PARAMETER, SUBMISSIONS_SECTION)
+
+/** Opens the page of the submission [submissionId] for a judge. */
+internal fun openJudgeSolution(submissionId: SubmissionId) {
+    UI.getCurrent().navigate(JudgeSolutionView::class.java, RouteParameters(SUBMISSION_ID_PARAMETER, submissionId.value.toString()))
+}
+
+/**
+ * Cabinet of a Judge (testsys.web.page.judge): the verdicts of the submissions of students and participants, paged
+ * and filtered by author, submission, class and competition; a row opens the submission. Without a section the page
+ * opens «Посылки».
+ *
+ * @since 1.0.0-beta.1
+ */
+@Route("judge/:section?(submissions)")
+@RolesAllowed("MULTIPLE_ROLE")
+class JudgeView(private val headers: CabinetHeaders, private val judgeService: JudgeService) :
+    TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageJudge.title()
+
+    override fun beforeEnter(event: BeforeEnterEvent) {
+        if (event.routeParameters.get(JUDGE_SECTION_PARAMETER).isEmpty) {
+            event.forwardTo(JudgeView::class.java, judgeSubmissionsParameters())
+            return
+        }
+
+        // Checks the judge role before the table loads, so that its absence opens the forbidden screen.
+        judgeService.viewResults(Pagination(page = 0, size = 1))
+        val localization = currentLocalization()
+        val texts = localization.pageJudge
+        page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
+            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            guide(texts.guide())
+            row {
+                block(title = localization.pageCabinet.sectionSubmissions()) {
+                    guide(texts.submissionsGuide())
+                    submissionsTable()
+                }
+            }
+        }
+    }
+
+    private fun BlockScope.submissionsTable() {
+        val texts = currentLocalization().pageJudge
+        var applied = VerdictFilter()
+        val rows = table(
+            key = { result: JudgeResultVo -> result.verdict.id },
+            fetch = { request ->
+                val pageNumber = request.offset / request.limit
+                val results = judgeService.viewResults(Pagination(page = pageNumber, size = request.limit, sort = LATEST_FIRST), applied)
+                Page(results.content, results.totalElements.toInt())
+            },
+        ) {
+            codeColumn(texts.submission(), size = 4) { result -> result.submission.id.value.toString() }
+            textColumn(texts.author(), size = 5) { result -> result.author.name }
+            dateTimeColumn(texts.submissionsSent(), size = 4) { result -> result.submission.createdAt.toUserDateTime() }
+            numberColumn(texts.submissionsAutoScore(), size = 4) { result ->
+                result.verdict.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() }
+            }
+            numberColumn(texts.submissionsJudgeScore(), size = 3) { result -> result.lastJudgment?.score?.value }
+            numberColumn(texts.finalScore()) { result -> result.finalScore }
+            empty(texts.submissionsEmpty(), texts.submissionsEmptyHint())
+            onRowClick(isNavigation = true) { result -> openJudgeSolution(result.submission.id) }
+        }
+
+        val draft = Binder<VerdictFilterDraft>()
+        filters(
+            onApply = {
+                val values = VerdictFilterDraft()
+                val isValid = draft.writeBeanIfValid(values)
+                if (isValid) applied = values.toFilter()
+                isValid
+            },
+            onReset = {
+                draft.readBean(VerdictFilterDraft())
+                applied = VerdictFilter()
+            },
+            onRefresh = { rows.refresh(toFirstPage = true) },
+        ) {
+            row {
+                codeInput(texts.authorId(), labelSize = 3, size = 9) {
+                    bindId(draft, { values -> values.author }, { values, id -> values.author = id })
+                }
+                codeInput(texts.filterSubmissionId(), labelSize = 3, size = 9) {
+                    bindId(draft, { values -> values.submission }, { values, id -> values.submission = id })
+                }
+            }
+            row {
+                codeInput(texts.filterClassId(), labelSize = 3, size = 9) {
+                    bindId(draft, { values -> values.group }, { values, id -> values.group = id })
+                }
+                codeInput(texts.filterCompetitionId(), labelSize = 3, size = 9) {
+                    bindId(draft, { values -> values.competition }, { values, id -> values.competition = id })
+                }
+            }
+        }
+        draft.readBean(VerdictFilterDraft())
+    }
+
+    /** Binds this identifier field to [draft], accepting an empty value or a positive integer. */
+    private fun ValueInput<String>.bindId(
+        draft: Binder<VerdictFilterDraft>,
+        getter: (VerdictFilterDraft) -> String,
+        setter: (VerdictFilterDraft, String) -> Unit,
+    ) {
+        draft.forField(this)
+            .withValidator({ value -> value.isBlank() || idOf(value) != null }, currentLocalization().pageJudge.filterIdInvalid())
+            .bind(getter, setter)
+    }
+
+    /** Values of the filter form of the verdicts table. */
+    private class VerdictFilterDraft(
+        var author: String = "",
+        var submission: String = "",
+        var group: String = "",
+        var competition: String = "",
+    ) {
+        fun toFilter(): VerdictFilter = VerdictFilter(
+            // Users of every kind share one id sequence and the filter compares raw values, so the kind of the id is irrelevant.
+            authorId = idOf(author)?.let(::MultipleRoleUserId),
+            submissionId = idOf(submission)?.let(::SubmissionId),
+            classId = idOf(group)?.let(::ClassId),
+            competitionId = idOf(competition)?.let(::CompetitionId),
+        )
+    }
+}
+
+/** Returns the positive identifier written in [value], or `null` if it is empty or not a positive integer. */
+private fun idOf(value: String): Long? = value.trim().toLongOrNull()?.takeIf { id -> id > 0 }

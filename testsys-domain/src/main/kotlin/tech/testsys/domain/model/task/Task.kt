@@ -4,109 +4,127 @@ import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
+import tech.testsys.domain.model.group.Community
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import java.time.Instant
 
-sealed interface TrikSupportedLanguage {
-    object Python: TrikSupportedLanguage
-    object JavaScript: TrikSupportedLanguage
-    object VisualLanguage: TrikSupportedLanguage
-}
-
-@JvmInline
-value class DeveloperSolutionId(
-    override val value: Long,
-) : DomainId
-
-data class DeveloperSolutionData(
-    val solution: LazyEntity<SolutionId, Solution>,
-    val expectedVerdict: LazyEntity<VerdictId, Verdict>,
-)
-
-class DeveloperSolution(
-    id: DeveloperSolutionId,
-    val data: DeveloperSolutionData,
-) : DomainEntity<DeveloperSolutionId>(id)
-
+/**
+ * Identifier of a [Task].
+ *
+ * @since 1.0.0-beta.1
+ */
 @JvmInline
 value class TaskId(
     override val value: Long,
 ) : DomainId
 
-data class TrikStudioVersion(
-    val image: String,
-    val tag: String,
+/**
+ * Versioned content of a [Task]. A task keeps at most two revisions: the last committed one, which is complete
+ * and usable in contests, and the work-in-progress one being edited by the developer.
+ *
+ * @since 1.0.0-beta.1
+ */
+sealed interface TaskContent {
+
+    /**
+     * Content that has never been committed: only a work-in-progress revision exists.
+     *
+     * @property wip the work-in-progress revision.
+     * @since 1.0.0-beta.1
+     */
+    data class New(
+        val wip: WipTaskContent,
+    ) : TaskContent
+
+    /**
+     * Content with a committed revision and pending work-in-progress changes on top of it.
+     *
+     * @property wip the work-in-progress revision.
+     * @property lastCommitted the last committed revision.
+     * @since 1.0.0-beta.1
+     */
+    data class Uncommitted(
+        val wip: WipTaskContent,
+        val lastCommitted: CommittedTaskContent,
+    ) : TaskContent
+
+    /**
+     * Content whose latest changes are committed: no work-in-progress revision exists.
+     *
+     * @property lastCommitted the last committed revision.
+     * @since 1.0.0-beta.1
+     */
+    data class Committed(
+        val lastCommitted: CommittedTaskContent,
+    ) : TaskContent
+}
+
+/**
+ * A committed revision of [Task] content; at least one exercise and the statement are present.
+ *
+ * @property tests the tests (TRIK Studio world models) solutions are graded against.
+ * @property exercises the exercises (TRIK Studio programs with locked world models) given to solvers.
+ * @property statement the statement (PDF/TXT document) describing the task.
+ * @property developerSolutions the developer's reference solutions.
+ * @property supportedTrikStudioVersions the TRIK Studio versions the task can be run with.
+ * @since 1.0.0-beta.1
+ */
+data class CommittedTaskContent(
+    val tests: LazyEntityList<TestId, Test>,
+    val exercises: LazyEntityList<ExerciseId, Exercise>,
+    val statement: LazyEntity<StatementId, Statement>,
+    val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
+    val supportedTrikStudioVersions: List<TrikStudioVersion>,
 )
 
+/**
+ * A work-in-progress revision of [Task] content; exercises and the statement may not be attached yet.
+ *
+ * @property tests the tests (TRIK Studio world models) solutions are graded against.
+ * @property exercises the exercises given to solvers, empty if none are attached yet.
+ * @property statement the statement describing the task, or `null` if not attached yet.
+ * @property developerSolutions the developer's reference solutions.
+ * @property supportedTrikStudioVersions the TRIK Studio versions the task can be run with.
+ * @since 1.0.0-beta.1
+ */
+data class WipTaskContent(
+    val tests: LazyEntityList<TestId, Test>,
+    val exercises: LazyEntityList<ExerciseId, Exercise>,
+    val statement: LazyEntity<StatementId, Statement>?,
+    val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
+    val supportedTrikStudioVersions: List<TrikStudioVersion>,
+)
+
+/**
+ * Data of a [Task].
+ *
+ * @property owner the developer who owns the task; fixed on creation and ignored on update.
+ * @property name the name of the task.
+ * @property description the description of the task.
+ * @property sharedTo the communities the task is shared to.
+ * @property content the versioned content of the task.
+ * @property uploadedResources the version chains uploaded to the task, including unattached resources.
+ * @since 1.0.0-beta.1
+ */
 data class TaskData(
-    val owner: MultipleRoleUser,
+    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val name: String,
     val description: String,
-    val tests: LazyEntityList<TestId, Test>,
-    val exercise: LazyEntity<ExerciseId, Exercise>,
-    val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
-    val trikStudioVersion: TrikStudioVersion, // TODO: here?
+    val sharedTo: LazyEntityList<CommunityId, Community>,
+    val content: TaskContent,
+    val uploadedResources: Set<VersionBucket>,
 )
 
+/**
+ * A problem to be solved in TRIK Studio, authored by a developer and graded against its tests.
+ *
+ * @property data the data of the task.
+ * @since 1.0.0-beta.1
+ */
 class Task(
     id: TaskId,
+    createdAt: Instant,
     val data: TaskData,
-) : DomainEntity<TaskId>(id)
-
-@JvmInline
-value class TestId(
-    override val value: Long,
-) : DomainId
-
-class FileData(
-    val uploadedFilename: String,
-    val content: ByteArray,
-)
-
-data class VersionData<Id: DomainId, Entity: DomainEntity<Id>>(
-    val root: LazyEntity<Id, Entity>,
-    val index: Long,
-)
-
-class TestData(
-    val file: FileData,
-    val versionData: VersionData<TestId, Test>,
-    val language: TrikSupportedLanguage,
-)
-
-// TODO: add data like timelimit, analysis data
-class Test(
-    id: TestId,
-    val data: TestData,
-) : DomainEntity<TestId>(id)
-
-@JvmInline
-value class SolutionId(
-    override val value: Long,
-) : DomainId
-
-class SolutionData(
-    val file: FileData,
-    val language: TrikSupportedLanguage,
-)
-
-class Solution(
-    id: SolutionId,
-    val data: SolutionData,
-) : DomainEntity<SolutionId>(id)
-
-@JvmInline
-value class ExerciseId(
-    override val value: Long,
-) : DomainId
-
-class ExerciseData(
-    val file: FileData,
-    val language: TrikSupportedLanguage,
-)
-
-class Exercise(
-    id: ExerciseId,
-    val versionData: VersionData<ExerciseId, Exercise>,
-    val data: ExerciseData
-) : DomainEntity<ExerciseId>(id)
-
+) : DomainEntity<TaskId>(id, createdAt)

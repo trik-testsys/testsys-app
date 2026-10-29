@@ -1,0 +1,48 @@
+package tech.testsys.infra.database.api.persistence.adapter.task
+
+import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import tech.testsys.domain.contract.persistence.repository.SolutionRepository
+import tech.testsys.domain.model.task.FileStorageKind
+import tech.testsys.domain.model.task.Solution
+import tech.testsys.domain.model.task.SolutionData
+import tech.testsys.domain.model.task.SolutionId
+import tech.testsys.infra.database.api.persistence.FileDataStorage
+import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.SolutionJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.task.SolutionJpaEntityRepository
+import tech.testsys.infra.database.internal.mapping.task.SolutionMapping
+
+/**
+ * Persistence adapter of [Solution] entities backed by [SolutionJpaEntity].
+ * The solution file is stored through [FileDataStorage] in [FileStorageKind.Solution];
+ * a solution is fixed on creation, so [update] always fails.
+ *
+ * @since 1.0.0-beta.1
+ */
+@Component
+@OptIn(InternalDatabaseApi::class)
+class SolutionPersistenceAdapter(
+    jpaEntityRepository: SolutionJpaEntityRepository,
+    private val fileDataStorage: FileDataStorage,
+) : AbstractPersistenceAdapter<SolutionData, SolutionId, Solution, SolutionJpaEntity>(jpaEntityRepository),
+    SolutionRepository {
+
+    @Transactional
+    override fun save(data: SolutionData): Solution {
+        val fileDataId = fileDataStorage.store(data.file, FileStorageKind.Solution)
+        val savedJpaEntity = jpaEntityRepository.save(SolutionMapping.toJpaEntity(data, fileDataId))
+
+        return assemble(savedJpaEntity)
+    }
+
+    override fun update(entity: Solution): Solution = throw UnsupportedOperationException(
+        "solution ${entity.id.value} cannot be updated: every field of a solution is fixed on creation",
+    )
+
+    override fun assembleAll(rows: List<SolutionJpaEntity>): List<Solution> {
+        val files = fileDataStorage.loadAll(rows.map { row -> row.fileDataId }, FileStorageKind.Solution)
+        return rows.map { row -> SolutionMapping.toDomain(row, files.getValue(row.fileDataId)) }
+    }
+}

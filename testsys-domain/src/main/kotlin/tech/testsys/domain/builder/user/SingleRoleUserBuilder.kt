@@ -1,0 +1,197 @@
+package tech.testsys.domain.builder.user
+
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.util.applyVersion
+import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.Observer
+import tech.testsys.domain.model.user.ObserverData
+import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.ParticipantData
+import tech.testsys.domain.model.user.SingleRoleUser
+import tech.testsys.domain.model.user.SingleRoleUserId
+import tech.testsys.domain.model.user.Supervisor
+import tech.testsys.domain.model.user.SupervisorData
+import java.time.Instant
+
+/**
+ * Base class of [SingleRoleUser] builders.
+ *
+ * @param U the type of the built user.
+ * @param Data the type of the user data.
+ * @param DataBuilder the builder type of [Data].
+ * @since 1.0.0-beta.1
+ */
+abstract class SingleRoleUserBuilder<U : SingleRoleUser, Data, DataBuilder : Builder<Data>> :
+    UserBuilder<SingleRoleUserId, U, Data, DataBuilder>() {
+
+    override var id: Long? = null
+    override var createdAt: Instant? = null
+}
+
+/**
+ * Builder of [ParticipantData]. Required: [competition], [accessToken] or [storedAccessToken], [name].
+ *
+ * @property competition the id of the competition the participant belongs to, or `null` if not set yet.
+ * @property name the name of the participant, or `null` if not set yet.
+ * @since 1.0.0-beta.1
+ */
+class ParticipantDataBuilder : UserDataBuilder<ParticipantData>() {
+
+    var competition: CompetitionId? = null
+
+    var name: String? = null
+
+    /**
+     * Sets [competition] from a raw id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun competition(competitionId: Long) {
+        this.competition = CompetitionId(competitionId)
+    }
+
+    override fun build(): ParticipantData {
+        val competition = requireField(competition) { ::competition }
+
+        return ParticipantData(
+            competition = competition.lazify(),
+            accessTokenHash = requireAccessTokenHash(),
+            name = requireField(name) { ::name },
+        )
+    }
+}
+
+/**
+ * Builder of [Participant] entities. Required: [id], [createdAt], [data].
+ *
+ * @since 1.0.0-beta.1
+ */
+class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, ParticipantDataBuilder>() {
+
+    override var data: ParticipantData? = null
+    override fun dataBuilder() = ParticipantDataBuilder()
+
+    override fun build(): Participant {
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
+
+        return Participant(
+            id = SingleRoleUserId(id),
+            createdAt = createdAt,
+            data = data,
+        ).applyVersion(version)
+    }
+}
+
+/**
+ * Builder of [ObserverData]. Required: [community], [accessToken] or [storedAccessToken], [name].
+ *
+ * @property community the id of the community the observer is a member of, or `null` if not set yet.
+ * @property contests the ids of the contests assigned to the observer.
+ * @property name the name of the observer, or `null` if not set yet.
+ * @since 1.0.0-beta.1
+ */
+class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
+
+    var community: CommunityId? = null
+
+    var contests = mutableListOf<ContestId>()
+
+    var name: String? = null
+
+    /**
+     * Sets [community] from a raw id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun community(communityId: Long) {
+        this.community = CommunityId(communityId)
+    }
+
+    /**
+     * Sets [contests] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun contests(contests: Iterable<Long>) {
+        this.contests = contests.map { ContestId(it) }.toMutableList()
+    }
+
+    override fun build(): ObserverData {
+        val community = requireField(community) { ::community }
+
+        return ObserverData(
+            community = community.lazify(),
+            contests = contests.lazify(),
+            accessTokenHash = requireAccessTokenHash(),
+            name = requireField(name) { ::name },
+        )
+    }
+}
+
+/**
+ * Builder of [Observer] entities. Required: [id], [createdAt], [data].
+ *
+ * @since 1.0.0-beta.1
+ */
+class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDataBuilder>() {
+
+    override var data: ObserverData? = null
+    override fun dataBuilder() = ObserverDataBuilder()
+
+    override fun build(): Observer {
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
+
+        return Observer(
+            id = SingleRoleUserId(id),
+            createdAt = createdAt,
+            data = data,
+        ).applyVersion(version)
+    }
+}
+
+/**
+ * Builder of [SupervisorData]. Required: [accessToken] or [storedAccessToken], [name].
+ *
+ * @property name the name of the supervisor, or `null` if not set yet.
+ * @since 1.0.0-beta.1
+ */
+class SupervisorDataBuilder : UserDataBuilder<SupervisorData>() {
+
+    var name: String? = null
+
+    override fun build() = SupervisorData(
+        accessTokenHash = requireAccessTokenHash(),
+        name = requireField(name) { ::name },
+    )
+}
+
+/**
+ * Builder of [Supervisor] entities. Required: [id], [createdAt], [data].
+ *
+ * @since 1.0.0-beta.1
+ */
+class SupervisorBuilder : SingleRoleUserBuilder<Supervisor, SupervisorData, SupervisorDataBuilder>() {
+
+    override var data: SupervisorData? = null
+    override fun dataBuilder() = SupervisorDataBuilder()
+
+    override fun build(): Supervisor {
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
+
+        return Supervisor(
+            id = SingleRoleUserId(id),
+            createdAt = createdAt,
+            data = data,
+        ).applyVersion(version)
+    }
+}

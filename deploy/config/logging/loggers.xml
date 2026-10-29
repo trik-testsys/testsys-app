@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Loggers appended to the logging of the application in all Compose environments; deploy/compose.yml mounts this
+directory. The application rereads this file within 10 seconds after a change, without restarting.
+Uncomment a logger to apply it. Only <logger> elements belong here: the console and the file output are already
+configured, so appenders and <root> would duplicate lines. Levels: TRACE, DEBUG, INFO, WARN, ERROR, OFF.
+-->
+<included>
+    <!-- Writing of calls and opened pages; the loggers are listed in testsys-web/app/README.md. -->
+    <!-- <logger name="tech.testsys" level="DEBUG"/> -->
+
+    <!-- TestSys at DEBUG, by part -->
+    <!-- Calls of the proxy services and opened pages: the actions of users. -->
+    <!-- <logger name="tech.testsys.web.app" level="DEBUG"/> -->
+    <!-- Only opened pages. -->
+    <!-- <logger name="tech.testsys.web.app.config.RequestLogContext" level="DEBUG"/> -->
+    <!-- Calls of the storage adapters. -->
+    <!-- <logger name="tech.testsys.infra.database" level="DEBUG"/> -->
+    <!-- Grader: sending submissions and their results. -->
+    <!-- <logger name="tech.testsys.infra.grpc" level="DEBUG"/> -->
+    <!-- Mail and runtime settings. -->
+    <!-- <logger name="tech.testsys.infra.mail" level="DEBUG"/> -->
+    <!-- <logger name="tech.testsys.infra.settings" level="DEBUG"/> -->
+
+    <!-- Noise -->
+    <!-- Polling of the grading nodes every few seconds; keep it at INFO when tech.testsys is at DEBUG. -->
+    <!-- <logger name="tech.testsys.infra.grpc.internal.GradingNodeRegistryCoordinator" level="INFO"/> -->
+    <!-- <logger name="tech.testsys.infra.grpc.internal.GrpcNodeClient" level="INFO"/> -->
+    <!-- Repeated warnings of gRPC channels about an unreachable grading node. -->
+    <!-- <logger name="io.grpc.internal.ManagedChannelImpl" level="ERROR"/> -->
+    <!-- Warnings about clients over the request rate limit. -->
+    <!-- <logger name="org.apache.catalina.filters.RateLimitFilter" level="ERROR"/> -->
+
+    <!-- Libraries, for a short investigation -->
+    <!-- SQL statements of Hibernate. -->
+    <!-- <logger name="org.hibernate.SQL" level="DEBUG"/> -->
+    <!-- Parameter values of SQL statements: written unmasked, including code hashes and emails. -->
+    <!-- <logger name="org.hibernate.orm.jdbc.bind" level="TRACE"/> -->
+    <!-- Transactions: start, commit and rollback. -->
+    <!-- <logger name="org.springframework.transaction" level="DEBUG"/> -->
+    <!-- Decisions of Spring Security: sign-in and access to pages. -->
+    <!-- <logger name="org.springframework.security" level="DEBUG"/> -->
+    <!-- Connection pool of the database. -->
+    <!-- <logger name="com.zaxxer.hikari" level="DEBUG"/> -->
+</included>

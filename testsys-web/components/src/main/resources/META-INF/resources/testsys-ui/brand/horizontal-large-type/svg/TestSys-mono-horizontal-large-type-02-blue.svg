@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="965.7214403766" height="280" viewBox="0 0 965.7214403766 280" role="img" aria-labelledby="logo-title logo-description" data-layout="horizontal-large-type" data-revision="v8" data-outer-padding="48" data-padding-reference="foreground-ink-including-badge-and-descender">
+  <title id="logo-title">TestSys — horizontal large type 02, v8</title>
+  <desc id="logo-description">Horizontal lockup, revision 8. Wordmark body height is 65% of the 184-unit emblem height (119.6 units), reduced uniformly from 85% in revision 7. Original DejaVu Sans Mono Bold outlines, emblem geometry, and colors are preserved. The emblem and the main letter body share an optical center; the y descender is excluded from alignment but included in visible-bounds checks. Canvas resized to give exactly 48 vector units of padding on all four sides of the foreground composition, including a rounded-square badge where present. Full-bleed color panels are backgrounds and excluded from foreground padding. No glyph distortion. Vector artwork only.</desc>
+  <rect id="background" width="965.7214403766" height="280" fill="#243B8F"/>
+  <g id="horizontal-lockup" data-letter-body-height="119.6" data-emblem-height="184" data-optical-center-y="140" data-letter-body-to-emblem-ratio="0.65" data-type-scale-relative-to-v6="0.65" data-type-scale-relative-to-v7="0.7647058824" data-outer-padding="48" data-icon-to-type-gap="56">
+    <g id="emblem-placement" fill="#FFF0C9" color="#FFF0C9" transform="matrix(0.4230388776 0 0 0.4230388776 -165.6565449522 18.7884056852)">
+      <g id="emblem" data-construction-grid="4" data-ink-bounds="505.05179609 69.05179609 900 504">
+        <path id="gear-and-left-base" d="M696 69.05179609 L675.93053505 69.05179609 L668.21629157 102.43075952 A160 160 0 0 0 641.27677707 109.64918067 L617.90656453 84.59927213 L583.14523156 104.66873708 L593.15398245 137.4328891 A160 160 0 0 0 573.4328891 157.15398245 L540.66873708 147.14523156 L520.59927213 181.90656453 L545.64918067 205.27677707 A160 160 0 0 0 538.43075952 232.21629157 L505.05179609 239.93053505 L505.05179609 280.06946495 L538.43075952 287.78370843 A160 160 0 0 0 545.64918067 314.72322293 L520.59927213 338.09343547 L540.66873708 372.85476844 L573.4328891 362.84601755 A160 160 0 0 0 593.15398245 382.5671109 L583.14523156 415.33126292 L617.90656453 435.40072787 L641.27677707 410.35081933 A160 160 0 0 0 668.21629157 417.56924048 L672.60225204 442.44325831 A32 32 0 0 1 641.08840394 480 A8 8 0 0 0 633.08840394 488 V504 H696 V388 A128 128 0 0 1 696 132 Z"/>
+        <path id="letter-T-in-emblem" d="M632 164 H696 V364 H672 V196 H632 Z"/>
+        <g id="circuit-traces" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="butt" stroke-linejoin="miter">
+          <path id="trace-left-top" d="M608 196 V252"/>
+          <path id="trace-left-and-branch" d="M608 276 V320 L632 344"/>
+          <path id="trace-bottom" d="M632 316 V376"/>
+          <path id="trace-upper" d="M644 240 V268 L660 284 V360"/>
+        </g>
+        <g id="circuit-nodes" fill="none" stroke="currentColor" stroke-width="8">
+          <circle id="node-left" cx="608" cy="264" r="12"/>
+          <circle id="node-upper" cx="644" cy="228" r="12"/>
+          <circle id="node-bottom" cx="632" cy="304" r="12"/>
+        </g>
+        <g id="shield-and-right-base">
+          <path id="shield-top-band" d="M712 104 A320 320 0 0 1 832 127.35206052 V216 H800 V149.77381598 A288 288 0 0 0 712 136 Z"/>
+          <path id="trophy-handle" d="M848 144 H899.4278407 A224 224 0 0 1 794.70191519 349.96277354 L781.98385285 329.60961923 A200 200 0 0 0 875.83993595 168 H848 Z"/>
+          <path id="letter-S-in-emblem" d="M712 164 H780 V196 H744 V244 H831.96363336 A220 220 0 0 1 712 435.95917942 V308 H744 V373.86560425 A188 188 0 0 0 796.52100151 276 H712 Z"/>
+          <path id="right-base" d="M712 452 L734.91159606 440 V448 A32 32 0 0 0 766.91159606 480 A8 8 0 0 1 774.91159606 488 V504 H712 Z"/>
+        </g>
+      </g>
+    </g>
+    <g id="wordmark-placement" fill="#FFF0C9" color="#FFF0C9" transform="matrix(0.0772111039 0 0 0.0772111039 264.1294455412 80.2)">
+      <g id="wordmark" data-font-family="DejaVu Sans Mono Bold" data-kerning="none" data-font-weight="700" data-glyph-advance="1233" data-units-per-em="2048" data-vertical-alignment="letter-body-without-y-descender" data-optical-center-y="774.5" data-ink-bounds="90 0 8465 1944">
+        <path id="dejavu-sans-mono-bold-glyph-1" d="M764 1520H469V285H90V27H1143V285H764Z"/>
+        <path id="dejavu-sans-mono-bold-glyph-2" d="M2335 1465Q2233 1507 2127.0 1528.0Q2021 1549 1903 1549Q1622 1549 1473.5 1398.5Q1325 1248 1325 965Q1325 691 1468.0 532.0Q1611 373 1858 373Q2107 373 2244.5 520.5Q2382 668 2382 936V1055H1623Q1624 1187 1701.0 1252.0Q1778 1317 1931 1317Q2032 1317 2130.0 1288.0Q2228 1259 2335 1196ZM2087 835Q2085 719 2027.5 659.5Q1970 600 1858 600Q1757 600 1697.0 661.5Q1637 723 1626 836Z"/>
+        <path id="dejavu-sans-mono-bold-glyph-3" d="M3457 435V691Q3376 639 3288.5 612.5Q3201 586 3113 586Q3015 586 2965.0 614.5Q2915 643 2915 699Q2915 779 3129 829L3140 832L3224 852Q3384 890 3458.5 974.5Q3533 1059 3533 1203Q3533 1376 3419.5 1462.5Q3306 1549 3078 1549Q2977 1549 2871.0 1531.5Q2765 1514 2656 1479V1223Q2753 1278 2853.5 1307.0Q2954 1336 3048 1336Q3151 1336 3204.0 1306.0Q3257 1276 3257 1219Q3257 1163 3219.5 1133.0Q3182 1103 3041 1069L2960 1051Q2792 1013 2715.0 932.0Q2638 851 2638 715Q2638 553 2755.0 463.0Q2872 373 3084 373Q3179 373 3273.5 388.5Q3368 404 3457 435Z"/>
+        <path id="dejavu-sans-mono-bold-glyph-4" d="M4389 82V400H4772V625H4389V1155Q4389 1230 4425.5 1262.5Q4462 1295 4547 1295H4772V1520H4526Q4274 1520 4185.0 1439.5Q4096 1359 4096 1141V625H3810V400H4096V82Z"/>
+        <path id="dejavu-sans-mono-bold-glyph-5" d="M5442 865Q5219 780 5140.0 686.5Q5061 593 5061 435Q5061 232 5191.0 116.0Q5321 0 5548 0Q5651 0 5754.0 23.5Q5857 47 5958 93V381Q5863 314 5765.0 279.0Q5667 244 5571 244Q5464 244 5407.0 287.0Q5350 330 5350 410Q5350 472 5391.5 512.5Q5433 553 5565 602L5692 650Q5872 716 5957.0 825.0Q6042 934 6042 1100Q6042 1326 5908.5 1437.5Q5775 1549 5505 1549Q5394 1549 5282.5 1522.5Q5171 1496 5067 1444V1139Q5185 1223 5295.5 1264.0Q5406 1305 5514 1305Q5623 1305 5683.0 1255.5Q5743 1206 5743 1117Q5743 1050 5703.0 999.5Q5663 949 5587 920Z"/>
+        <path id="dejavu-sans-mono-bold-glyph-6" d="M6876 1641Q6817 1799 6734.5 1871.5Q6652 1944 6534 1944H6292V1721H6411Q6501 1721 6543.0 1690.5Q6585 1660 6628 1549L6650 1489L6224 400H6532L6788 1127L7033 400H7341Z"/>
+        <path id="dejavu-sans-mono-bold-glyph-7" d="M8389 435V691Q8308 639 8220.5 612.5Q8133 586 8045 586Q7947 586 7897.0 614.5Q7847 643 7847 699Q7847 779 8061 829L8072 832L8156 852Q8316 890 8390.5 974.5Q8465 1059 8465 1203Q8465 1376 8351.5 1462.5Q8238 1549 8010 1549Q7909 1549 7803.0 1531.5Q7697 1514 7588 1479V1223Q7685 1278 7785.5 1307.0Q7886 1336 7980 1336Q8083 1336 8136.0 1306.0Q8189 1276 8189 1219Q8189 1163 8151.5 1133.0Q8114 1103 7973 1069L7892 1051Q7724 1013 7647.0 932.0Q7570 851 7570 715Q7570 553 7687.0 463.0Q7804 373 8016 373Q8111 373 8205.5 388.5Q8300 404 8389 435Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

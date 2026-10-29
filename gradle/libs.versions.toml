@@ -1,0 +1,119 @@
+[versions]
+driver-js = "1.8.0"
+junit = "6.0.3"
+kotlin = "2.4.20"
+detekt = "2.0.0-alpha.6"
+spring-boot = "4.1.1"
+ksp = "2.3.12"
+kotlinpoet = "2.4.0"
+kctfork = "0.14.0"
+icu = "78.1"
+mockk = "1.14.9"
+vaadin = "25.3.0"
+karibu-testing = "2.7.3"
+protos = "1.2.0.RELEASE"
+grpc = "1.66.0"
+jackson = "2.19.4"
+ksoup = "0.2.5"
+angus-mail = "2.0.3"
+
+[libraries]
+grading-protos = { module = "trik.testsys.grading:protos", version.ref = "protos" }
+grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
+grpc-inprocess = { module = "io.grpc:grpc-inprocess", version.ref = "grpc" }
+spring-context = { module = "org.springframework:spring-context" }
+spring-tx = { module = "org.springframework:spring-tx" }
+spring-context-support = { module = "org.springframework:spring-context-support" }
+angus-mail = { module = "org.eclipse.angus:angus-mail", version.ref = "angus-mail" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
+kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+spring-boot-core = { module = "org.springframework.boot:spring-boot" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-liquibase = { module = "org.springframework.boot:spring-boot-starter-liquibase" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-security-crypto = { module = "org.springframework.security:spring-security-crypto" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
+
+micrometer-core = { module = "io.micrometer:micrometer-core" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+
+slf4j-api = { module = "org.slf4j:slf4j-api" }
+
+postgresql = { module = "org.postgresql:postgresql" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
+
+detekt-gradle-plugin = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+detekt-rules-ktlint-wrapper = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
+
+ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+kotlinpoet-core = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
+kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
+
+icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu" }
+
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+vaadin-bom = { module = "com.vaadin:vaadin-bom", version.ref = "vaadin" }
+vaadin-core = { module = "com.vaadin:vaadin-core" }
+vaadin-spring-boot-starter = { module = "com.vaadin:vaadin-spring-boot-starter" }
+vaadin-dev = { module = "com.vaadin:vaadin-dev" }
+
+karibu-testing = { module = "com.github.mvysny.kaributesting:karibu-testing-v24", version.ref = "karibu-testing" }
+karibu-testing-spring = { module = "com.github.mvysny.kaributesting:karibu-testing-v10-spring", version.ref = "karibu-testing" }
+
+[bundles]
+test-implementation = [
+    "junit-jupiter-api",
+    "junit-jupiter-params",
+    "mockk",
+]
+test-runtime = [
+    "junit-jupiter-engine",
+    "junit-platform-launcher",
+    # MockK alone would pull an older kotlin-reflect than the compiler; keep reflection on the compiler version.
+    "kotlin-reflect",
+]
+kotlin-implementation = [
+    "kotlin-gradle-plugin",
+]
+kotlin-spring-plugins = [
+    "kotlin-allopen",
+]
+kotlin-jpa-plugins = [
+    "kotlin-noarg",
+]
+database-implementation = [
+    "spring-boot-starter-data-jpa",
+    "spring-boot-starter-liquibase",
+    "kotlin-reflect",
+]
+database-test-implementation = [
+    "spring-boot-starter-test",
+    "spring-boot-testcontainers",
+    "testcontainers-postgresql",
+]
+detekt-implementation = [
+    "detekt-gradle-plugin",
+]
+icu-implementation = [
+    "icu4j",
+]
+
+[plugins]
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+vaadin = { id = "com.vaadin", version.ref = "vaadin" }

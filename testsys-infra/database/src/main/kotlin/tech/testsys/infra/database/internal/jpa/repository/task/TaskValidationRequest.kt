@@ -1,0 +1,168 @@
+package tech.testsys.infra.database.internal.jpa.repository.task
+
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
+import org.springframework.stereotype.Repository
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.*
+import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
+
+/**
+ * Spring Data repository of [TaskValidationRequestJpaEntity].
+ *
+ * @since 1.0.0-beta.1
+ */
+@Repository
+@InternalDatabaseApi
+interface TaskValidationRequestJpaEntityRepository : SnowflakeJpaEntityRepository<TaskValidationRequestJpaEntity> {
+    /**
+     * Finds the saved history of a task.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByTaskIdOrderByCreatedAtAscIdAsc(taskId: Long): List<TaskValidationRequestJpaEntity>
+
+    /**
+     * Finds the requests of the task [taskId] in any of the [executions] stages, in the order of the history.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByTaskIdAndExecutionInOrderByCreatedAtAscIdAsc(
+        taskId: Long,
+        executions: Collection<TaskValidationExecutionJpaEnum>,
+    ): List<TaskValidationRequestJpaEntity>
+
+    /**
+     * Finds requests in any of the given execution stages.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByExecutionInOrderByIdAsc(executions: Collection<TaskValidationExecutionJpaEnum>): List<TaskValidationRequestJpaEntity>
+}
+
+/**
+ * Spring Data repository of [TestToTaskValidationRequestJpaEntity].
+ *
+ * @since 1.0.0-beta.1
+ */
+@Repository
+@InternalDatabaseApi
+interface TestToTaskValidationRequestJpaEntityRepository :
+    CompositeJpaEntityRepository<TestToTaskValidationRequestJpaEntity, TestToTaskValidationRequestId> {
+    /**
+     * Finds the pinned inputs or references of a request.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByIdRequestId(requestId: Long): List<TestToTaskValidationRequestJpaEntity>
+
+    /**
+     * Finds the pinned polygons of any of the requests [requestIds] in one query.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByIdRequestIdIn(requestIds: Collection<Long>): List<TestToTaskValidationRequestJpaEntity>
+
+    /**
+     * Deletes the pinned polygons of the request [requestId] in one statement.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("delete from TestToTaskValidationRequestJpaEntity e where e.id.requestId = :requestId")
+    fun deleteAllByRequestId(@Param("requestId") requestId: Long)
+}
+
+/**
+ * Spring Data repository of [DeveloperSolutionToTaskValidationRequestJpaEntity].
+ *
+ * @since 1.0.0-beta.1
+ */
+@Repository
+@InternalDatabaseApi
+interface DeveloperSolutionToTaskValidationRequestJpaEntityRepository :
+    CompositeJpaEntityRepository<DeveloperSolutionToTaskValidationRequestJpaEntity, DeveloperSolutionToTaskValidationRequestId> {
+    /**
+     * Finds the pinned developer solutions of any of the requests [requestIds] in one query.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByIdRequestIdIn(requestIds: Collection<Long>): List<DeveloperSolutionToTaskValidationRequestJpaEntity>
+
+    /**
+     * Deletes the pinned developer solutions of the request [requestId] in one statement.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("delete from DeveloperSolutionToTaskValidationRequestJpaEntity e where e.id.requestId = :requestId")
+    fun deleteAllByRequestId(@Param("requestId") requestId: Long)
+}
+
+/**
+ * Spring Data repository of [TrikStudioVersionToTaskValidationRequestJpaEntity].
+ *
+ * @since 1.0.0-beta.1
+ */
+@Repository
+@InternalDatabaseApi
+interface TrikStudioVersionToTaskValidationRequestJpaEntityRepository :
+    CompositeJpaEntityRepository<TrikStudioVersionToTaskValidationRequestJpaEntity, TrikStudioVersionToTaskValidationRequestId> {
+    /**
+     * Finds the pinned TRIK Studio versions of any of the requests [requestIds] in one query.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByIdRequestIdIn(requestIds: Collection<Long>): List<TrikStudioVersionToTaskValidationRequestJpaEntity>
+
+    /**
+     * Deletes the pinned TRIK Studio versions of the request [requestId] in one statement.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("delete from TrikStudioVersionToTaskValidationRequestJpaEntity e where e.id.requestId = :requestId")
+    fun deleteAllByRequestId(@Param("requestId") requestId: Long)
+}
+
+/**
+ * Spring Data repository of [SubmissionToTaskValidationRequestJpaEntity].
+ *
+ * @since 1.0.0-beta.1
+ */
+@Repository
+@InternalDatabaseApi
+interface SubmissionToTaskValidationRequestJpaEntityRepository :
+    CompositeJpaEntityRepository<SubmissionToTaskValidationRequestJpaEntity, SubmissionToTaskValidationRequestId> {
+    /**
+     * Finds links in their stored author solution and version order.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByIdRequestIdOrderByPositionAsc(requestId: Long): List<SubmissionToTaskValidationRequestJpaEntity>
+
+    /**
+     * Finds the links of any of the requests [requestIds] in one query, in their stored order within each request.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByIdRequestIdInOrderByPositionAsc(requestIds: Collection<Long>): List<SubmissionToTaskValidationRequestJpaEntity>
+
+    /**
+     * Finds validation requests referencing a submission.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun findAllByIdSubmissionId(submissionId: Long): List<SubmissionToTaskValidationRequestJpaEntity>
+
+    /**
+     * Deletes the submission links of the request [requestId] in one statement.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("delete from SubmissionToTaskValidationRequestJpaEntity e where e.id.requestId = :requestId")
+    fun deleteAllByRequestId(@Param("requestId") requestId: Long)
+}

@@ -1,0 +1,54 @@
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-18: 72px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-pill: 999px;
+
+  --control-sm: 26px;
+  --control-md: 32px;
+  --control-lg: 38px;
+  --field-value-blur: 4px;
+
+  --shadow-block: 0 1px 3px rgba(22, 24, 29, 0.025), 0 6px 20px -12px rgba(22, 24, 29, 0.07);
+  --shadow-popover: 0 2px 8px rgba(22, 24, 29, 0.04), 0 16px 40px -16px rgba(22, 24, 29, 0.18);
+  --shadow-toast: 0 2px 8px rgba(22, 24, 29, 0.04), 0 20px 48px -20px rgba(22, 24, 29, 0.24);
+  --shadow-dialog: 0 4px 16px rgba(22, 24, 29, 0.05), 0 32px 72px -24px rgba(22, 24, 29, 0.30);
+  --shadow-drawer: -2px 0 8px rgba(22, 24, 29, 0.03), -32px 0 64px -24px rgba(22, 24, 29, 0.22);
+  --shadow-segment: 0 1px 3px rgba(22, 24, 29, 0.08);
+
+  /* Layout */
+  --container: 1280px;
+  --page-min: 1440px;
+  --header-height: 48px;
+  --grid-columns: 24;
+  --grid-gap: 12px;
+  --grid-gap-tight: 8px;
+  --row-gap: 12px;
+
+  /* Table columns: width by what a column holds (IDs and dates / names and statuses / titles). */
+  --col-narrow: 80px;
+  --col-medium: 160px;
+  --col-wide: 280px;
+
+  /* Motion: short, ease-out, opacity + ≤8px travel. No bounce, no scale on press. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 120ms;   /* hover, colour, checkbox */
+  --dur-base: 180ms;   /* popovers, tabs, overlay */
+  --dur-slow: 240ms;   /* dialogs, drawers, toasts */
+  --dur-flash: 1200ms; /* new-row highlight */
+}

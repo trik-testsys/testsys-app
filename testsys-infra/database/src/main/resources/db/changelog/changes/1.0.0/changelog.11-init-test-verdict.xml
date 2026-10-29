@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1.0.0-11-1" author="roman.shishkin">
+        <createTable tableName="ts_test_verdict">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_test_verdict" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="verdict_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_test_verdict_verdict" references="ts_verdict(id)"/>
+            </column>
+            <column name="test_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_test_verdict_test" references="ts_test(id)"/>
+            </column>
+            <column name="score" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="logs_id" type="BIGINT">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_ts_test_verdict_logs_id"
+                             foreignKeyName="fk_test_verdict_logs" references="ts_logs(id)"/>
+            </column>
+            <column name="recording_id" type="BIGINT">
+                <constraints unique="true" uniqueConstraintName="uk_ts_test_verdict_recording_id"
+                             foreignKeyName="fk_test_verdict_recording" references="ts_recording(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-11-2" author="roman.shishkin">
+        <comment>A verdict holds at most one outcome per test.</comment>
+
+        <addUniqueConstraint constraintName="uk_ts_test_verdict_verdict_id_test_id"
+                             tableName="ts_test_verdict" columnNames="verdict_id, test_id"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1.0.0-13-1" author="testsys">
+        <createTable tableName="ts_task_validation_request">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_task_validation_request"/>
+            </column>
+            <column name="task_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ts_task_validation_request_task_id" references="ts_task(id)"/>
+            </column>
+            <column name="requested_by_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ts_task_validation_request_requested_by_id" references="ts_user(id)"/>
+            </column>
+            <column name="execution" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="are_diagnostics_complete" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="are_submissions_created" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="failure_description" type="TEXT"/>
+            <column name="failure_occurred_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="completed_at" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-13-2" author="testsys">
+        <createTable tableName="ts_test_to_task_validation_request">
+            <column name="test_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_test_to_task_validation_request" foreignKeyName="fk_ts_test_to_task_validation_request_test_id" references="ts_test(id)"/>
+            </column>
+            <column name="request_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_test_to_task_validation_request" foreignKeyName="fk_ts_test_to_task_validation_request_request_id" references="ts_task_validation_request(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-13-3" author="testsys">
+        <createTable tableName="ts_developer_solution_to_task_validation_request">
+            <column name="developer_solution_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_developer_solution_to_task_validation_request" foreignKeyName="fk_ts_developer_solution_to_task_validation_request_developer_solution_id" references="ts_developer_solution(id)"/>
+            </column>
+            <column name="request_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_developer_solution_to_task_validation_request" foreignKeyName="fk_ts_developer_solution_to_task_validation_request_request_id" references="ts_task_validation_request(id)"/>
+            </column>
+            <column name="solution_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ts_developer_solution_to_task_validation_request_solution_id" references="ts_solution(id)"/>
+            </column>
+            <column name="expected_score" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-13-4" author="testsys">
+        <createTable tableName="ts_trik_studio_version_to_task_validation_request">
+            <column name="trik_studio_version_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_trik_studio_version_to_task_validation_request" foreignKeyName="fk_ts_trik_studio_version_to_task_validation_request_trik_studio_version_id" references="ts_trik_studio_version(id)"/>
+            </column>
+            <column name="request_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_trik_studio_version_to_task_validation_request" foreignKeyName="fk_ts_trik_studio_version_to_task_validation_request_request_id" references="ts_task_validation_request(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-13-5" author="testsys">
+        <createTable tableName="ts_submission_to_task_validation_request">
+            <column name="submission_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_submission_to_task_validation_request" foreignKeyName="fk_ts_submission_to_task_validation_request_submission_id" references="ts_submission(id)"/>
+            </column>
+            <column name="request_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_submission_to_task_validation_request" foreignKeyName="fk_ts_submission_to_task_validation_request_request_id" references="ts_task_validation_request(id)"/>
+            </column>
+            <column name="position" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="failure" type="VARCHAR(255)"/>
+            <column name="actual_score" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-13-6" author="testsys">
+        <createTable tableName="ts_test_diagnostic_result">
+            <column name="request_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_test_diagnostic_result" foreignKeyName="fk_ts_test_diagnostic_result_request_id" references="ts_task_validation_request(id)"/>
+            </column>
+            <column name="test_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_test_diagnostic_result" foreignKeyName="fk_ts_test_diagnostic_result_test_id" references="ts_test(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-13-7" author="testsys">
+        <createTable tableName="ts_diagnostic_report">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_diagnostic_report"/>
+            </column>
+            <column name="request_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="test_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="position" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="severity" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reason" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parameters" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="location" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-13-8" author="testsys">
+        <addUniqueConstraint tableName="ts_submission_to_task_validation_request" columnNames="request_id,position"
+                             constraintName="uk_ts_submission_to_task_validation_request_position"/>
+        <addForeignKeyConstraint baseTableName="ts_diagnostic_report" baseColumnNames="request_id,test_id"
+                                 referencedTableName="ts_test_diagnostic_result" referencedColumnNames="request_id,test_id"
+                                 constraintName="fk_ts_diagnostic_report_result"/>
+        <addUniqueConstraint tableName="ts_diagnostic_report" columnNames="request_id,test_id,position"
+                             constraintName="uk_ts_diagnostic_report_position"/>
+        <createIndex tableName="ts_task_validation_request" indexName="ix_ts_task_validation_request_task">
+            <column name="task_id"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+    <changeSet id="1.0.0-13-init-task-validation-request-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_task_validation_request ADD CONSTRAINT ck_ts_task_validation_request_execution_state CHECK (
+                (failure_description IS NULL AND failure_occurred_at IS NULL AND (
+                    (execution = 'PENDING_DIAGNOSTICS' AND NOT are_diagnostics_complete
+                        AND NOT are_submissions_created AND completed_at IS NULL)
+                    OR (execution = 'AWAITING_SUBMISSIONS' AND are_diagnostics_complete
+                        AND NOT are_submissions_created AND completed_at IS NULL)
+                    OR (execution = 'STOPPED_BY_DIAGNOSTICS' AND are_diagnostics_complete
+                        AND NOT are_submissions_created AND completed_at IS NOT NULL)
+                    OR (execution = 'SUBMISSIONS_CREATED' AND are_diagnostics_complete
+                        AND are_submissions_created AND completed_at IS NULL)
+                    OR (execution = 'COMPLETED' AND are_diagnostics_complete
+                        AND are_submissions_created AND completed_at IS NOT NULL)))
+                OR (execution = 'TECHNICAL_FAILURE' AND failure_description IS NOT NULL
+                    AND failure_occurred_at IS NOT NULL AND completed_at IS NOT NULL
+                    AND completed_at = failure_occurred_at AND (are_diagnostics_complete OR NOT are_submissions_created))
+            );
+            ALTER TABLE ts_submission_to_task_validation_request ADD CONSTRAINT ck_ts_submission_to_task_validation_request_position CHECK (
+                position >= 0
+            );
+            ALTER TABLE ts_submission_to_task_validation_request ADD CONSTRAINT ck_ts_submission_to_task_validation_request_failure_score CHECK (
+                (failure IS NULL AND actual_score IS NULL)
+                OR (failure IS NOT NULL AND (
+                    (failure = 'SCORE_MISMATCH' AND actual_score IS NOT NULL)
+                    OR (failure = 'GRADING_FAILED' AND actual_score IS NULL)))
+            );
+            ALTER TABLE ts_diagnostic_report ADD CONSTRAINT ck_ts_diagnostic_report_position CHECK (
+                position >= 0
+            );
+            ALTER TABLE ts_diagnostic_report ADD CONSTRAINT ck_ts_diagnostic_report_severity CHECK (
+                severity IN ('INFO', 'WARNING', 'ERROR')
+            );
+            ALTER TABLE ts_diagnostic_report ADD CONSTRAINT ck_ts_diagnostic_report_reason CHECK (
+                reason IN ('UnknownElement', 'MalformedXml', 'MissingChild', 'MissingAttribute', 'InvalidAttributeValue', 'InvalidChildCount', 'MissingTimeLimit', 'MultipleTimeLimits', 'NegativeTimeLimit', 'ExcessiveTimeLimit', 'InvalidEventId', 'MissingScoreOutput')
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_diagnostic_report DROP CONSTRAINT ck_ts_diagnostic_report_reason;
+                ALTER TABLE ts_diagnostic_report DROP CONSTRAINT ck_ts_diagnostic_report_severity;
+                ALTER TABLE ts_diagnostic_report DROP CONSTRAINT ck_ts_diagnostic_report_position;
+                ALTER TABLE ts_submission_to_task_validation_request DROP CONSTRAINT ck_ts_submission_to_task_validation_request_failure_score;
+                ALTER TABLE ts_submission_to_task_validation_request DROP CONSTRAINT ck_ts_submission_to_task_validation_request_position;
+                ALTER TABLE ts_task_validation_request DROP CONSTRAINT ck_ts_task_validation_request_execution_state;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
+

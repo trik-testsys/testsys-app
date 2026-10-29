@@ -1,0 +1,65 @@
+package tech.testsys.web.service.security
+
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.web.servlet.ServletRegistrationBean
+import org.springframework.context.annotation.Bean
+import tech.testsys.web.service.ServiceMetricsTestConfiguration
+import tech.testsys.web.service.ServiceTestConfiguration
+import tech.testsys.web.service.ServiceWebConfiguration
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+
+@SpringBootTest(
+    classes = [
+        ServiceWebConfiguration::class,
+        ServiceTestConfiguration::class,
+        ServiceMetricsTestConfiguration::class,
+        ForwardedHeadersProbeConfiguration::class,
+    ],
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = [
+        "vaadin.productionMode=true",
+        "server.address=127.0.0.1",
+        "server.forward-headers-strategy=none",
+    ],
+)
+class ServiceForwardedHeadersHttpTests {
+    @Value("\${local.server.port}")
+    private var port = 0
+
+    @Test
+    fun `should ignore forwarding headers and use the connection address`() {
+        assertEquals("127.0.0.1|false", probe("198.51.100.5"))
+    }
+
+    private fun probe(forwardedFor: String): String = HttpClient.newHttpClient().use { client ->
+        client.send(
+            HttpRequest.newBuilder(URI("http://127.0.0.1:$port/testsys-ui/proxy-probe"))
+                .header("X-Forwarded-For", forwardedFor).header("X-Forwarded-Proto", "https")
+                .header("Forwarded", "for=192.0.2.77;proto=https").GET().build(),
+            HttpResponse.BodyHandlers.ofString(),
+        ).body()
+    }
+}
+
+@TestConfiguration(proxyBeanMethods = false)
+class ForwardedHeadersProbeConfiguration {
+    @Bean
+    fun proxyProbe(): ServletRegistrationBean<HttpServlet> = ServletRegistrationBean(
+        object : HttpServlet() {
+            override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+                response.writer.print("${request.remoteAddr}|${request.isSecure}")
+            }
+        },
+        "/testsys-ui/proxy-probe",
+    )
+}

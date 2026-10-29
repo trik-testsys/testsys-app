@@ -1,0 +1,84 @@
+package tech.testsys.infra.database.internal.utils
+
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.chooser.LanguageChooser
+import tech.testsys.domain.model.DomainEntity
+import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.group.CommunityInvite
+import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.group.CommunityInviteRoleJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.task.TrikSupportedLanguageEnum
+import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
+
+@InternalDatabaseApi
+internal fun <Entity : SnowflakeJpaEntity> Entity.requireId() = requireNotNull(id) { "${this::class.simpleName} has null id" }
+
+@InternalDatabaseApi
+internal fun <Entity : JpaEntity> Entity?.requireById(id: Any) = requireNotNull(this) { "Entity not found by id=$id" }
+
+@InternalDatabaseApi
+internal fun <Entity : DomainEntity<Id>, Id : DomainId> Entity?.requireById(id: Id) = requireNotNull(
+    this,
+) { "Domain entity not found by id=$id" }
+
+@InternalDatabaseApi
+internal fun DomainEntity<*>.requireVersion(): Long = requireNotNull(version) {
+    "${this::class.simpleName} id=${id.value} has no version: entity was not obtained from persistence"
+}.value
+
+@InternalDatabaseApi
+internal fun <Entity, Data, DataBuilder : Builder<Data>> DomainEntityWithDataBuilder<Entity, Data, DataBuilder>.populateFields(
+    jpaEntity: SnowflakeJpaEntity,
+) {
+    id = jpaEntity.requireId()
+    createdAt = jpaEntity.createdAt
+    version = EntityVersion(jpaEntity.version)
+}
+
+@InternalDatabaseApi
+internal fun LanguageChooser.chose(language: TrikSupportedLanguageEnum) = when (language) {
+    TrikSupportedLanguageEnum.PYTHON -> python()
+    TrikSupportedLanguageEnum.JAVA_SCRIPT -> javaScript()
+    TrikSupportedLanguageEnum.VISUAL_LANGUAGE -> visualLanguage()
+}
+
+@InternalDatabaseApi
+internal fun TrikSupportedLanguage.toJpaEnum() = when (this) {
+    TrikSupportedLanguage.Python -> TrikSupportedLanguageEnum.PYTHON
+    TrikSupportedLanguage.JavaScript -> TrikSupportedLanguageEnum.JAVA_SCRIPT
+    TrikSupportedLanguage.VisualLanguage -> TrikSupportedLanguageEnum.VISUAL_LANGUAGE
+}
+
+@InternalDatabaseApi
+internal fun HashAlgorithmJpaEnum.toDomain(): HashAlgorithm = when (this) {
+    HashAlgorithmJpaEnum.IDENTITY -> HashAlgorithm.Identity
+    HashAlgorithmJpaEnum.HMAC_SHA256 -> HashAlgorithm.HmacSha256
+}
+
+/** Reads the stored access code of a single-role row; fails when the row has no access code. */
+@InternalDatabaseApi
+internal fun UserJpaEntity.requireAccessTokenHash() = AccessTokenHash(
+    value = requireNotNull(accessToken) { "User $id is SINGLE_ROLE but access_token is null" },
+    algorithm = requireNotNull(accessTokenHashAlgorithm) { "User $id is SINGLE_ROLE but access_token_hash_algorithm is null" }
+        .toDomain(),
+)
+
+@InternalDatabaseApi
+internal fun HashAlgorithm.toJpaEnum() = when (this) {
+    HashAlgorithm.Identity -> HashAlgorithmJpaEnum.IDENTITY
+    HashAlgorithm.HmacSha256 -> HashAlgorithmJpaEnum.HMAC_SHA256
+}
+
+@InternalDatabaseApi
+internal fun CommunityInvite.Kind.toJpaEnum() = when (this) {
+    CommunityInvite.Kind.Manager -> CommunityInviteRoleJpaEnum.MANAGER
+    CommunityInvite.Kind.Developer -> CommunityInviteRoleJpaEnum.DEVELOPER
+}

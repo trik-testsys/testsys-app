@@ -2,24 +2,52 @@ package tech.testsys.domain.model.group
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.MultipleRoleUser
-import tech.testsys.domain.model.user.UserId
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import java.time.Instant
 
+/**
+ * Identifier of a [Class].
+ *
+ * @since 1.0.0-beta.1
+ */
 @JvmInline
 value class ClassId(
-    override val value: Long
+    override val value: Long,
 ) : DomainId
 
+/**
+ * Data of a [Class].
+ *
+ * @property owner the manager who owns the class; fixed on creation and ignored on update.
+ * @property name the name of the class.
+ * @property description the description of the class.
+ * @property students the students enrolled in the class.
+ * @property contests the contests assigned to the class.
+ * @property invite the invite code of the class; fixed on creation and ignored on update.
+ * @since 1.0.0-beta.1
+ */
 data class ClassData(
-    val owner: MultipleRoleUser,
-    val students: LazyEntityList<UserId, MultipleRoleUser>,
-    val contests: LazyEntityList<ContestId, Contest>
+    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
+    val name: String,
+    val description: String,
+    val students: LazyEntityList<MultipleRoleUserId, MultipleRoleUser>,
+    val contests: LazyEntityList<ContestId, Contest>,
+    val invite: LazyEntity<ClassInviteId, ClassInvite>,
 )
 
+/**
+ * A study group of students that takes part in contests, owned by a manager.
+ *
+ * @property data the data of the class.
+ * @since 1.0.0-beta.1
+ */
 class Class(
     id: ClassId,
-    val data: ClassData
-) : DomainEntity<ClassId>(id)
+    createdAt: Instant,
+    val data: ClassData,
+) : DomainEntity<ClassId>(id, createdAt)

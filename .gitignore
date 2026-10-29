@@ -53,3 +53,16 @@ replay_pid*
 .idea
 
 *.iml
+
+**/.kotlin
+
+# Local LLM client setup; shared sources are in .testsys-agents/
+/.claude/
+/.codex/
+/.agents/
+
+# Local and server variable files of the Compose environments; the templates *.example stay in Git
+/deploy/env/*.local.env
+/deploy/env/prod.env
+/deploy/env/grading-node.env
+/deploy/logs/

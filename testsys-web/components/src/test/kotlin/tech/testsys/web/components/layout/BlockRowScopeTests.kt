@@ -1,0 +1,86 @@
+package tech.testsys.web.components.layout
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import tech.testsys.web.components.MockVaadinTests
+import tech.testsys.web.components.buildTestPage
+import tech.testsys.web.components.buildTestRow
+import tech.testsys.web.components.child
+import tech.testsys.web.components.classes
+import tech.testsys.web.components.display.text
+import tech.testsys.web.components.find
+
+class BlockRowScopeTests : MockVaadinTests() {
+    @Test
+    fun `should span an element over its size`() {
+        val row = buildTestRow {
+            text("a", size = 8)
+            text("b", size = 16)
+        }
+
+        assertEquals("span 8", row.child(0).element.style.get("grid-column"))
+        assertEquals("span 16", row.child(1).element.style.get("grid-column"))
+    }
+
+    @Test
+    fun `should give an element without a size the rest of the row`() {
+        val row = buildTestRow {
+            text("a", size = 8)
+            text("b")
+        }
+
+        assertEquals("span 16", row.child(1).element.style.get("grid-column"))
+    }
+
+    @Test
+    fun `should reject an element after the one that took the rest`() {
+        val error = assertThrows<IllegalStateException> {
+            buildTestRow {
+                text("a")
+                text("b", size = 1)
+            }
+        }
+
+        assertTrue(requireNotNull(error.message).startsWith("Block row is full"))
+    }
+
+    @Test
+    fun `should give rows of a narrow block its own 24 columns`() {
+        val page = buildTestPage { row { block(size = 12) { row { text("x") } } } }
+
+        assertEquals("span 24", page.find("ts-block__row").child(0).element.style.get("grid-column"))
+    }
+
+    @Test
+    fun `should reject elements that overflow the block`() {
+        val error = assertThrows<IllegalStateException> {
+            buildTestPage {
+                row {
+                    block(size = 8) {
+                        row {
+                            text("a", size = 18)
+                            text("b", size = 12)
+                        }
+                    }
+                }
+            }
+        }
+
+        assertTrue(requireNotNull(error.message).contains("18+12 = 30 exceed 24"))
+    }
+
+    @Test
+    fun `should lay groups over their size`() {
+        val row = buildTestRow {
+            horizontal(size = 12) { text("a") }
+            vertical { text("b") }
+        }
+
+        assertTrue("ts-hstack" in row.child(0).classes())
+        assertEquals("span 12", row.child(0).element.style.get("grid-column"))
+        assertTrue("ts-vstack" in row.child(1).classes())
+        assertEquals("span 12", row.child(1).element.style.get("grid-column"))
+    }
+}

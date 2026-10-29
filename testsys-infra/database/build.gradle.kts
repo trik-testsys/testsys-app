@@ -1,14 +1,25 @@
 plugins {
     id("testsys.conventions")
+    alias(libs.plugins.ksp)
     kotlin("plugin.spring")
     kotlin("plugin.jpa")
 }
 
 group = "tech.testsys.infra"
 
-val springBootVersion = "3.4.3"
-
 dependencies {
+    implementation(platform(libs.spring.boot.bom))
     implementation(project(":testsys-domain"))
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion")
+    implementation(project(":testsys-infra:settings"))
+    implementation(project(":testsys-infra:monitoring"))
+    implementation(project(":testsys-infra:database:codegen-api"))
+    implementation(libs.bundles.database.implementation)
+    implementation(libs.jackson.databind)
+    runtimeOnly(libs.postgresql)
+
+    ksp(project(":testsys-infra:database:codegen"))
+
+    testImplementation(libs.bundles.test.implementation)
+    testImplementation(libs.bundles.database.test.implementation)
+    testRuntimeOnly(libs.bundles.test.runtime)
 }

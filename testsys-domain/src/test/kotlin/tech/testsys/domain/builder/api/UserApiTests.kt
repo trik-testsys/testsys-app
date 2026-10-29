@@ -1,0 +1,310 @@
+package tech.testsys.domain.builder.api
+
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.PasswordHash
+import tech.testsys.domain.model.user.testAccessTokenHasher
+import java.time.Instant
+
+class UserApiTests {
+
+    @Nested
+    inner class ParticipantTests {
+
+        private val origin = participant {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = participantData {
+                competition(10)
+                accessToken("participant-token", testAccessTokenHasher)
+                name = "Participant"
+            }
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.competition.id, copy.data.competition.id)
+            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+        }
+
+        @Test
+        fun `should change competition if withData sets competition`() {
+            val copy = origin.withData { competition(99) }
+
+            Assertions.assertEquals(99L, copy.data.competition.id.value)
+        }
+    }
+
+    @Nested
+    inner class ObserverTests {
+
+        private val origin = observer {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = observerData {
+                community(7)
+                contests(listOf(10L, 20L))
+                accessToken("observer-token", testAccessTokenHasher)
+                name = "Observer"
+            }
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.community.id, copy.data.community.id)
+            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+            Assertions.assertEquals(origin.data.contests.ids, copy.data.contests.ids)
+        }
+
+        @Test
+        fun `should change assigned contests without losing other fields or version`() {
+            val copy = origin.withData { contests(listOf(30L)) }
+
+            Assertions.assertEquals(listOf(30L), copy.data.contests.ids.map { it.value })
+            Assertions.assertEquals(listOf(10L, 20L), origin.data.contests.ids.map { it.value })
+            Assertions.assertEquals(origin.data.community.id, copy.data.community.id)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+            Assertions.assertEquals(origin.data.accessTokenHash, copy.data.accessTokenHash)
+            Assertions.assertEquals(origin.version, copy.version)
+        }
+
+        @Test
+        fun `should change accessToken if withData sets accessToken`() {
+            val copy = origin.withData { accessToken("new-token", testAccessTokenHasher) }
+
+            Assertions.assertEquals(testAccessTokenHasher.hash("new-token").value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
+        }
+    }
+
+    @Nested
+    inner class MultipleRoleUserTests {
+
+        private val origin = multipleRoleUser {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = multipleRoleUserData {
+                passwordHash = PasswordHash("user-hash")
+                name = "Alice"
+                email = "alice@example.com"
+                roles {
+                    developer {
+                        memberOf(listOf(10))
+                        data = developerData {
+                            tasks(listOf(1))
+                        }
+                    }
+                    administrator {}
+                }
+            }
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.passwordHash, copy.data.passwordHash)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+            Assertions.assertEquals(origin.data.email, copy.data.email)
+            Assertions.assertEquals(origin.data.roles, copy.data.roles)
+        }
+
+        @Test
+        fun `should change passwordHash if withData sets passwordHash`() {
+            val copy = origin.withData { passwordHash = PasswordHash("new-hash") }
+
+            Assertions.assertEquals(PasswordHash("new-hash"), copy.data.passwordHash)
+        }
+    }
+
+    @Nested
+    inner class SupervisorTests {
+
+        private val origin = supervisor {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = supervisorData {
+                accessToken("supervisor-token", testAccessTokenHasher)
+                name = "Supervisor"
+            }
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+        }
+
+        @Test
+        fun `should change accessToken if withData sets accessToken`() {
+            val copy = origin.withData { accessToken("new-token", testAccessTokenHasher) }
+
+            Assertions.assertEquals(testAccessTokenHasher.hash("new-token").value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
+        }
+    }
+
+    @Nested
+    inner class RegistrationRequestTests {
+
+        private val origin = registrationRequest {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = registrationRequestData {
+                email = "user@example.com"
+                confirmationCode = "123456"
+                expiresAt = Instant.ofEpochSecond(100)
+                attemptsLeft = 5
+            }
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data, copy.data)
+        }
+
+        @Test
+        fun `should change every field if withData sets them`() {
+            val copy = origin.withData {
+                email = "other@example.com"
+                confirmationCode = "654321"
+                expiresAt = Instant.ofEpochSecond(200)
+                attemptsLeft = 4
+            }
+
+            Assertions.assertEquals("other@example.com", copy.data.email)
+            Assertions.assertEquals("654321", copy.data.confirmationCode)
+            Assertions.assertEquals(Instant.ofEpochSecond(200), copy.data.expiresAt)
+            Assertions.assertEquals(4, copy.data.attemptsLeft)
+        }
+    }
+
+    @Nested
+    inner class EmailChangeRequestTests {
+
+        private val origin = emailChangeRequest {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = emailChangeRequestData {
+                user(10)
+                email = "new@example.com"
+                confirmationCode = "123456"
+                expiresAt = Instant.ofEpochSecond(100)
+                attemptsLeft = 5
+            }
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.user.id, copy.data.user.id)
+            Assertions.assertEquals(origin.data.email, copy.data.email)
+            Assertions.assertEquals(origin.data.confirmationCode, copy.data.confirmationCode)
+            Assertions.assertEquals(origin.data.expiresAt, copy.data.expiresAt)
+            Assertions.assertEquals(origin.data.attemptsLeft, copy.data.attemptsLeft)
+        }
+
+        @Test
+        fun `should change every field if withData sets them`() {
+            val copy = origin.withData {
+                user(11)
+                email = "other@example.com"
+                confirmationCode = "654321"
+                expiresAt = Instant.ofEpochSecond(200)
+                attemptsLeft = 4
+            }
+
+            Assertions.assertEquals(MultipleRoleUserId(11), copy.data.user.id)
+            Assertions.assertEquals("other@example.com", copy.data.email)
+            Assertions.assertEquals("654321", copy.data.confirmationCode)
+            Assertions.assertEquals(Instant.ofEpochSecond(200), copy.data.expiresAt)
+            Assertions.assertEquals(4, copy.data.attemptsLeft)
+        }
+    }
+
+    @Nested
+    inner class AccessRestorationRequestTests {
+
+        private val origin = accessRestorationRequest {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = accessRestorationRequestData {
+                user(10)
+                confirmationCode = "12345678"
+                expiresAt = Instant.ofEpochSecond(100)
+                attemptsLeft = 5
+            }
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.user.id, copy.data.user.id)
+            Assertions.assertEquals(origin.data.confirmationCode, copy.data.confirmationCode)
+            Assertions.assertEquals(origin.data.expiresAt, copy.data.expiresAt)
+            Assertions.assertEquals(origin.data.attemptsLeft, copy.data.attemptsLeft)
+        }
+
+        @Test
+        fun `should change every field if withData sets them`() {
+            val copy = origin.withData {
+                user(11)
+                confirmationCode = "87654321"
+                expiresAt = Instant.ofEpochSecond(200)
+                attemptsLeft = 4
+            }
+
+            Assertions.assertEquals(MultipleRoleUserId(11), copy.data.user.id)
+            Assertions.assertEquals("87654321", copy.data.confirmationCode)
+            Assertions.assertEquals(Instant.ofEpochSecond(200), copy.data.expiresAt)
+            Assertions.assertEquals(4, copy.data.attemptsLeft)
+        }
+    }
+}

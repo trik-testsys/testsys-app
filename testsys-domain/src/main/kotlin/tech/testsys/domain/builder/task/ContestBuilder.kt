@@ -1,0 +1,131 @@
+package tech.testsys.domain.builder.task
+
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
+import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.ContestData
+import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import java.time.Duration
+import java.time.Instant
+
+/**
+ * Builder of [ContestData]. Required: [owner], [name], [description], [trikStudioVersion].
+ *
+ * @property owner the id of the owning developer, or `null` if not set yet.
+ * @property name the name of the contest, or `null` if not set yet.
+ * @property description the description of the contest, or `null` if not set yet.
+ * @property tasks the ids of the included tasks.
+ * @property startsAt the start moment of the contest, or `null` if not scheduled.
+ * @property contestDuration the total duration of the contest, or `null` if there is no end limit.
+ * @property attemptDuration the time limit of a single attempt, or `null` if there is no individual limit.
+ * @property trikStudioVersion the TRIK Studio version of the contest, or `null` if not set yet.
+ * @property sharedTo the ids of the communities the contest is shared to.
+ * @since 1.0.0-beta.1
+ */
+class ContestDataBuilder : Builder<ContestData> {
+
+    var owner: MultipleRoleUserId? = null
+
+    var name: String? = null
+
+    var description: String? = null
+
+    var tasks = mutableListOf<TaskId>()
+
+    var startsAt: Instant? = null
+
+    var contestDuration: Duration? = null
+
+    var attemptDuration: Duration? = null
+
+    var trikStudioVersion: TrikStudioVersion? = null
+
+    var sharedTo = mutableListOf<CommunityId>()
+
+    /**
+     * Sets [owner] from a raw id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun owner(owner: Long) {
+        this.owner = MultipleRoleUserId(owner)
+    }
+
+    /**
+     * Sets [tasks] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun tasks(tasks: Iterable<Long>) {
+        this.tasks = tasks.map { TaskId(it) }.toMutableList()
+    }
+
+    /**
+     * Sets [trikStudioVersion] from a raw Docker image [tag] and a version number [version].
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun trikStudioVersion(tag: String, version: String) {
+        trikStudioVersion = TrikStudioVersion(
+            tag = tag,
+            version = version,
+        )
+    }
+
+    /**
+     * Sets [sharedTo] from raw ids.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun sharedTo(sharedTo: Iterable<Long>) {
+        this.sharedTo = sharedTo.map { CommunityId(it) }.toMutableList()
+    }
+
+    override fun build(): ContestData {
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+        val owner = requireField(owner) { ::owner }
+        val trikStudioVersion = requireField(trikStudioVersion) { ::trikStudioVersion }
+
+        return ContestData(
+            owner = owner.lazify(),
+            name = name,
+            description = description,
+            tasks = tasks.lazify(),
+            startsAt = startsAt,
+            contestDuration = contestDuration,
+            attemptDuration = attemptDuration,
+            trikStudioVersion = trikStudioVersion,
+            sharedTo = sharedTo.lazify(),
+        )
+    }
+}
+
+/**
+ * Builder of [Contest] entities. Required: [id], [createdAt], [data].
+ *
+ * @since 1.0.0-beta.1
+ */
+class ContestBuilder : DomainEntityWithDataBuilder<Contest, ContestData, ContestDataBuilder>() {
+
+    override fun dataBuilder() = ContestDataBuilder()
+
+    override fun build(): Contest {
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
+
+        return Contest(
+            id = ContestId(id),
+            createdAt = createdAt,
+            data = data,
+        ).applyVersion(version)
+    }
+}

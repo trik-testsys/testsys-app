@@ -1,0 +1,23 @@
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--surface-page); color: var(--text-primary); font-family: var(--font-sans); font-size: var(--fs-sm); line-height: var(--lh-sm); -webkit-font-smoothing: antialiased; }
+button, input, textarea, select { font-family: inherit; }
+a { color: var(--text-link); text-decoration: none; }
+a:hover { color: var(--accent-hover); text-decoration: underline; }
+@keyframes ts-spin { to { transform: rotate(360deg); } }
+@keyframes ts-indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+@keyframes ts-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@keyframes ts-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ts-pop-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes ts-rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ts-dialog-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes ts-drawer-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes ts-mark-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes ts-underline-in { from { opacity: 0; transform: scaleX(0.4); } to { opacity: 1; transform: none; } }
+@keyframes ts-flash { from { background-color: var(--accent-soft); } to { background-color: transparent; } }
+@keyframes ts-live-ring { 0% { box-shadow: 0 0 0 0 rgba(30,138,76,.35); } 70%, 100% { box-shadow: 0 0 0 5px rgba(30,138,76,0); } }
+
+@keyframes ts-lift { from { transform:none; box-shadow:none; } to { transform:scale(1.01); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}

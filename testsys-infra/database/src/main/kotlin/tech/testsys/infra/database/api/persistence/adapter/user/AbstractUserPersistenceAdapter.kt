@@ -1,0 +1,67 @@
+package tech.testsys.infra.database.api.persistence.adapter.user
+
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.transaction.annotation.Transactional
+import tech.testsys.domain.contract.persistence.repository.UserAccessTokenFinder
+import tech.testsys.domain.model.user.AccessTokenHasher
+import tech.testsys.domain.model.user.User
+import tech.testsys.domain.model.user.UserId
+import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
+import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.toJpaEnum
+
+/**
+ * Base of adapters storing several user kinds in the shared [UserJpaEntity] table: [findById], [findByIds] and
+ * [findByAccessToken] keep only rows assembled by [assembleSupported], so a row of another kind is reported as absent.
+ * Only single-role rows hold an access code, found by its HMAC-SHA-256 hash; multiple-role rows store a password hash.
+ *
+ * @param Data the data type a new entity is created from.
+ * @param Id the id type of the entity.
+ * @param Entity the domain entity type.
+ * @since 1.0.0-beta.1
+ */
+@InternalDatabaseApi
+abstract class AbstractUserPersistenceAdapter<Data, Id : UserId, Entity : User<Id>>(
+    jpaEntityRepository: UserJpaEntityRepository,
+    private val accessTokenHasher: AccessTokenHasher,
+) : AbstractPersistenceAdapter<Data, Id, Entity, UserJpaEntity>(jpaEntityRepository),
+    UserAccessTokenFinder<Id, Entity> {
+
+    private val userJpaEntityRepository: UserJpaEntityRepository = jpaEntityRepository
+
+    @Transactional(readOnly = true)
+    override fun findById(id: Id) =
+        jpaEntityRepository.findByIdOrNull(id.value)?.let { row -> assembleSupported(listOf(row)).singleOrNull() }
+
+    @Transactional(readOnly = true)
+    override fun findByIds(ids: List<Id>) = assembleSupported(jpaEntityRepository.findAllById(ids.map { it.value }))
+
+    @Transactional(readOnly = true)
+    override fun findByAccessToken(rawAccessToken: String): Entity? {
+        val accessTokenHash = accessTokenHasher.hash(rawAccessToken)
+        return userJpaEntityRepository
+            .findByAccessTokenAndAccessTokenHashAlgorithm(
+                accessToken = accessTokenHash.value,
+                accessTokenHashAlgorithm = accessTokenHash.algorithm.toJpaEnum(),
+            )
+            ?.let { row -> assembleSupported(listOf(row)).singleOrNull() }
+    }
+
+    final override fun assembleAll(rows: List<UserJpaEntity>): List<Entity> {
+        val entities = assembleSupported(rows)
+        check(entities.size == rows.size) {
+            val assembledIds = entities.map { entity -> entity.id.value }.toSet()
+            "User rows ids=${rows.map { row -> row.requireId() }.filter { id -> id !in assembledIds }} do not hold users of this kind"
+        }
+        return entities
+    }
+
+    /**
+     * Assembles the [rows] holding users of this adapter's kind in the order of [rows] and skips the other rows,
+     * reading the role data of the whole list at once.
+     */
+    protected abstract fun assembleSupported(rows: List<UserJpaEntity>): List<Entity>
+}

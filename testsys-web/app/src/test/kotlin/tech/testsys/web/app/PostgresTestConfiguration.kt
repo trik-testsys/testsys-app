@@ -1,0 +1,39 @@
+package tech.testsys.web.app
+
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.boot.testcontainers.service.connection.ServiceConnectionAutoConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
+import org.testcontainers.postgresql.PostgreSQLContainer
+import org.testcontainers.utility.DockerImageName
+import tech.testsys.bootstrap.SharedInfrastructureConfiguration
+
+/**
+ * PostgreSQL container shared by every test of the JVM: started on first use and stopped by Testcontainers' Ryuk
+ * when the JVM exits, so all cached Spring contexts of the tests reuse one database.
+ */
+object PostgresTestContainer {
+
+    val instance: PostgreSQLContainer by lazy {
+        PostgreSQLContainer(DockerImageName.parse("postgres:17-alpine"))
+            // Durability is useless for a throwaway database and slows every commit down.
+            .withCommand("postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off")
+            .withTmpFs(mapOf("/var/lib/postgresql/data" to "rw"))
+            .apply { start() }
+    }
+}
+
+/**
+ * Connects the Spring context to [PostgresTestContainer]; closing a context does not stop the shared container.
+ */
+@TestConfiguration(proxyBeanMethods = false)
+@Import(SharedInfrastructureConfiguration::class)
+@ImportAutoConfiguration(ServiceConnectionAutoConfiguration::class)
+class PostgresTestConfiguration {
+
+    @Bean(destroyMethod = "")
+    @ServiceConnection
+    fun postgresContainer(): PostgreSQLContainer = PostgresTestContainer.instance
+}

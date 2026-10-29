@@ -1,0 +1,7 @@
+# Differences of the e2e environment from deploy/config/application-dev.yml. deploy/compose.e2e.yml mounts both
+# files and imports this one last, so its values take precedence.
+testsys:
+  web:
+    # The e2e test process sends every request from one address, so the rate limit only logs.
+    rate-limit:
+      enforce: false

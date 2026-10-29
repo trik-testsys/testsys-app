@@ -1,0 +1,122 @@
+package tech.testsys.infra.database.internal.mapping.task
+
+import tech.testsys.domain.builder.api.contest
+import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.ContestData
+import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToContestJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.TaskToContestJpaEntity
+import tech.testsys.infra.database.internal.mapping.EntityMapping
+import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
+import java.time.Duration
+
+/**
+ * Mapping between [Contest] and [ContestJpaEntity].
+ *
+ * @since 1.0.0-beta.1
+ */
+@InternalDatabaseApi
+object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
+
+    private const val NANOS_PER_MILLISECOND = 1_000_000
+
+    /**
+     * Assembles a [Contest] from [jpaEntity], its resolved [trikStudioVersion] and the ids of its tasks and shared-to communities.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun toDomain(
+        jpaEntity: ContestJpaEntity,
+        trikStudioVersion: TrikStudioVersion,
+        taskIds: List<TaskId>,
+        sharedToIds: List<CommunityId>,
+    ) = contest {
+        populateFields(jpaEntity)
+        data {
+            owner(jpaEntity.ownerId)
+
+            name = jpaEntity.name
+            description = jpaEntity.description
+            tasks = taskIds.toMutableList()
+            startsAt = jpaEntity.startsAt
+            contestDuration = jpaEntity.contestDurationMillis?.let(Duration::ofMillis)
+            attemptDuration = jpaEntity.attemptDurationMillis?.let(Duration::ofMillis)
+            this.trikStudioVersion = trikStudioVersion
+            sharedTo = sharedToIds.toMutableList()
+        }
+    }
+
+    /**
+     * Creates a new [ContestJpaEntity] row from [data] referencing the version row [trikStudioVersionId].
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun toJpaEntity(data: ContestData, trikStudioVersionId: Long) = ContestJpaEntity(
+        name = data.name,
+        description = data.description,
+        ownerId = data.owner.id.value,
+        startsAt = data.startsAt,
+        contestDurationMillis = data.contestDuration?.toExactMillis("contestDuration"),
+        attemptDurationMillis = data.attemptDuration?.toExactMillis("attemptDuration"),
+        trikStudioVersionId = trikStudioVersionId,
+    )
+
+    /**
+     * Creates the [ContestJpaEntity] row replacing [current] from [entity] and [trikStudioVersionId],
+     * keeping `ownerId`, `createdAt` and `version`.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun toJpaEntity(entity: Contest, current: ContestJpaEntity, trikStudioVersionId: Long) = ContestJpaEntity(
+        name = entity.data.name,
+        description = entity.data.description,
+        ownerId = current.ownerId,
+        startsAt = entity.data.startsAt,
+        contestDurationMillis = entity.data.contestDuration?.toExactMillis("contestDuration"),
+        attemptDurationMillis = entity.data.attemptDuration?.toExactMillis("attemptDuration"),
+        trikStudioVersionId = trikStudioVersionId,
+        id = entity.id.value,
+    ).also {
+        it.createdAt = current.createdAt
+        it.version = entity.requireVersion()
+    }
+
+    /**
+     * Creates the [TaskToContestJpaEntity] rows linking the contest [contestId] with [taskIds], one row per distinct id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun toTaskAssociations(contestId: Long, taskIds: List<TaskId>) = taskIds.distinct().map {
+        TaskToContestJpaEntity(
+            taskId = it.value,
+            contestId = contestId,
+        )
+    }
+
+    /**
+     * Creates the [CommunityToContestJpaEntity] rows linking the contest [contestId] with [communityIds], one row per distinct id.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun toCommunityAssociations(contestId: Long, communityIds: List<CommunityId>) = communityIds.distinct().map {
+        CommunityToContestJpaEntity(
+            communityId = it.value,
+            contestId = contestId,
+        )
+    }
+
+    private fun Duration.toExactMillis(field: String): Long {
+        require(nano % NANOS_PER_MILLISECOND == 0) { "Contest $field=$this must be exactly representable in milliseconds" }
+        return try {
+            toMillis()
+        } catch (exception: ArithmeticException) {
+            throw IllegalArgumentException("Contest $field=$this exceeds the Long millisecond range", exception)
+        }
+    }
+}

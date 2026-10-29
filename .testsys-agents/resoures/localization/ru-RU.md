@@ -1,0 +1,1148 @@
+# ru-RU language research notes
+
+Research notes for Russian (`ru-RU`) source messages. They are data for the localization roles; the project
+glossary and owner documents stay authoritative.
+
+## Polite address: «Вы» / «вы»
+
+- Capital «Вы», «Ваш» marks politeness towards one specific addressee in letters and official documents.
+  For official messages to one person the capital form is expected; in personal letters it is the writer's choice.
+  Lowercase «вы» is used in mass texts: newspaper publications, advertising and messages to users on web pages.
+- Applicability to TestSys: a transactional e-mail sent to one recipient's mailbox (registration letters, whether
+  or not they greet by nickname) fits the "one specific addressee" case, so «Вы» is appropriate. Interface text on web pages addressed to any
+  visitor follows the lowercase mass-text usage unless the project decides otherwise. Lowercase «вы» is not an error
+  and is not perceived as rude.
+- Uncertainty: the dictionary wording (Лопатин, Нечаева, Чельцова, «Прописная или строчная?», 2011: «Вы, Ваш как
+  форма выражения вежливости при обращении к одному конкретному лицу в письмах, официальных документах») was seen
+  only as a secondary quotation, not in the dictionary itself.
+- Sources: https://rg.ru/2009/06/25/vy.html (read 2026-10-08); https://mel.fm/gramotnost/3856279-you (search
+  snippet only, 2026-10-08). gramota.ru returned HTTP 403 on 2026-10-08.
+
+## «Код-доступа» (domain term) versus «код доступа»
+
+- The domain term in `docs/domain/definitions.md` is spelled «Код-доступа». In general Russian the phrase is
+  «код доступа»: a noun with a dependent noun in the genitive, written separately, like «пароль доступа».
+- The hyphen rule for compound nouns (Правила русской орфографии и пунктуации, § 79, п. 1) covers words with the
+  meaning of one word made of two independently used nouns without a connecting vowel (жар-птица,
+  изба-читальня); a noun plus a genitive noun is not such a compound. Conclusion that the hyphenated spelling is
+  non-standard is an inference from this rule; no dictionary entry for «код доступа» was found.
+- Applicability: registration e-mails use the domain spelling through `glossary.access_code`; future interface
+  messages, such as the sign-in page, should reference the same term. A change of spelling needs one edit in the
+  glossary term.
+- Source: https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/18 (read
+  2026-10-08). The academic dictionary search at orfo.ruslang.ru returned no usable result on 2026-10-08.
+- Independent review (2026-10-08) re-read § 79: point 14, note 3 also excludes a hyphen when a general concept is
+  followed by a specific one («птица зяблик»); nothing in § 79 supports «Код-доступа». Still an inference from the
+  rules, not a dictionary entry.
+- Usage evidence (reported by the independent review, 2026-10-08; usage, not the norm, Russian-language text from
+  Kazakhstan): https://guide.kaspi.kz/client/ru/bank/security/q921 writes two lowercase words — «Код доступа может
+  состоять из 4 или 6 цифр.», «Никому не сообщайте код доступа…». It also shows «Никому не сообщайте код» as an
+  established phrase in security warnings.
+- Unavailable on 2026-10-08: gramota.ru (HTTP 403), dict.leo.org (HTTP 403), ru.wiktionary.org/wiki/код_доступа
+  (HTTP 404, no entry).
+- Project decision (2026-10-08): user-facing text keeps the domain spelling «Код-доступа».
+
+## Case sensitivity: «Большие и маленькие буквы различаются» instead of «регистр»
+
+- Case sensitivity is explained as «Большие и маленькие буквы различаются» rather than with the jargon word
+  «регистр», which also has unrelated everyday meanings (official register, voice or organ register). This is a
+  project wording choice, not a dictionary finding.
+
+## Greeting without a name: «Здравствуйте!»
+
+- «Здравствуйте!» on its own is a neutral, polite opening for a letter whose addressee's name is not used.
+  Контур.Толк lists «Здравствуйте» and «добрый день» as equally appropriate in messengers and in official letters
+  to partners or state bodies, and calls «Доброго времени суток» a cliché to avoid. «Мел» calls «добрый день» or
+  «здравствуйте» the universal greeting when the reader may be in another time zone; the time-zone claim comes
+  from «Мел» only.
+- Applicability to TestSys: the registration confirmation-code e-mail goes to a not-yet-confirmed address and must
+  not contain user-controlled text such as the nickname, so it opens with «Здравствуйте!». Avoiding «Добрый день!» is
+  a project wording choice (the letter may be read at any time), not a source requirement: «Мел» also treats it as
+  universal. A greeting without a name is not an error and is not perceived as cold in a transactional letter.
+- Sources: https://kontur.ru/talk/spravka/47867-pochemu_ne_stoit_pisat_dobrogo_vremeni_sutok (Контур.Толк,
+  21.02.2024, read 2026-10-08); https://mel.fm/pravopisaniye/8350471-hello («Мел», 28.12.2016, read 2026-10-08).
+  These are style guides, not dictionaries; no normative source specific to name-less greetings was found.
+
+## Comma before «и» after an «если» clause
+
+- Rule: «Запятая перед союзами и, да (в значении „и“), или, либо не ставится, если соединяемые ими предложения
+  имеют общий второстепенный член или общее придаточное предложение» (Правила русской орфографии и пунктуации,
+  1956, note to § 137).
+- Applicability (reviewer's inference): in «Если код больше не действует, начните регистрацию заново, и Вам придёт
+  новый код» the second part is the result of restarting registration, not a second consequence of the
+  condition, so the comma is defensible.
+- Source: https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/29 (read
+  2026-10-08). Unverified: gramota.ru snippets cite Lopatin (2006) § 112 (same exception) and § 114 (a dash for
+  result or consequence); the pages returned HTTP 403 on 2026-10-08.
+
+## «Код больше не действует» covers expiry and exhausted attempts
+
+- «Действовать» means «Быть в исправности, работать» and «Применяться, иметь действие» (Ушаков); «Быть в
+  исправности, исправно работать; функционировать» (МАС). «Больше не действует» is therefore not limited to an
+  expired lifetime.
+- Applicability (inference): the confirmation-code e-mail uses «Если код больше не действует…» for both an expired
+  code and exhausted attempts; both make the request inactive, and the next request gets a new code.
+- Project decision (2026-10-08): the confirmation-code e-mail does not mention the limit on input attempts; do not
+  reintroduce attempt wording.
+- Source: https://kartaslov.ru/значение-слова/действовать (Ушаков and МАС as reproduced there, read 2026-10-08).
+  No usage example of the exact phrase was found.
+- Applicability to e-mail change (2026-10-08): the confirmation-code letter for an e-mail change reuses «Если код
+  больше не действует…» with the same meaning; the change request also becomes inactive on expiry or exhausted
+  attempts (features.md, testsys.user.multi.changeMail).
+
+## «Адрес электронной почты» instead of bare «почта»
+
+- In the dictionaries reproduced on kartaslov.ru, the main sense of «почта» is the postal service: «Учреждение
+  связи, ведающее пересылкой писем, периодических изданий, посылок, денег и т. п.» (МАС, sense 1); Ушаков has no
+  e-mail sense. Викисловарь sense 4 (comp.) defines e-mail as a means of communication («средства электронной
+  коммуникации, позволяющие получать и отправлять цифровые послания»), not as an address. No dictionary on that
+  page defines «почта» as an e-mail address; that use is colloquial metonymy.
+- Applicability: the project documents say «почта» for the address, but user-facing e-mails use the full «адрес
+  электронной почты», as the registration confirmation letter already does. The e-mail change letters follow it;
+  a repeated mention in the same paragraph may shorten to «адрес» when the referent is unambiguous («запросите
+  смену адреса заново»).
+- Source: https://kartaslov.ru/значение-слова/почта (МАС, Ушаков, Викисловарь as reproduced there, read
+  2026-10-08). A web search for a Russian UX style guide on «почта» versus «адрес электронной почты» found no
+  normative source; Yandex Forms help uses the full form, but that is one product's usage
+  (https://yandex.ru/support/forms/ru/blocks-ref/email, search result only, not opened).
+
+## Accusative of «Код-доступа»
+
+- «Код» is an inanimate masculine noun, so its accusative singular equals the nominative: «знает Ваш
+  Код-доступа». The glossary term has an explicit `acc sg` variant with the same text as `nom sg` because the
+  codegen requires every referenced case explicitly.
+- Source: https://ru.wiktionary.org/wiki/код (read 2026-10-08 by the independent reviewer): «код» is
+  «неодушевлённое, мужской род, 2-е склонение (тип 1a по Зализняку)», Им. ед. = Вин. ед. «код».
+
+## «Смена адреса … на этот адрес»
+
+- МАС, as reproduced on kartaslov.ru, defines «смена» as «действие по значению гл. менять; изменение или
+  замещение», which supports «смена X на Y» for one address replacing another. «Смена»/«сменить» in the
+  confirmation-code letter and «изменён»/«изменить» in the notice are both standard and not a terminology conflict.
+- Source: https://kartaslov.ru/значение-слова/смена (read 2026-10-08 by the independent reviewer).
+- Applicability: in the e-mail change, the code also stops working when a later request to another address
+  overwrites the request; «запросите смену адреса заново» stays correct (features.md, testsys.user.multi.changeMail,
+  step 4 of the request). This is an inference from the feature, not a language source. A search for the exact
+  wording «Вы запросили смену адреса электронной почты … Если вы не запрашивали» found no usage evidence either way.
+
+## E-mail change letters: content limits
+
+- Project constraints (from the coordinator, 2026-10-08): the notice to the previous address must not show the
+  new address and must not suggest actions TestSys does not offer (contacting support, restoring access,
+  cancelling the change). It states the fact, that further letters go to the new address, and that only someone
+  who knows the Код-доступа can change the address. This is a project decision, not a language finding.
+- The confirmation-code letter to the new address uses «Вы запросили … Если Вы не запрашивали …», mirroring the
+  registration letter's «Вы начали … Если Вы не начинали …»: the recipient may not be the account owner, and the
+  closing paragraph covers that case. It names no page («введите в TestSys этот код»), because the page that
+  accepts the code is not implemented yet.
+
+## «Футер», not «футтер»
+
+- The borrowing from English "footer" is spelled with one «т»: Викисловарь has the entry «футер» (фу́тер), sense 2
+  marked as computing jargon, «нижний колонтитул; подвал». The page does not mention «футтер». «Футер» is also a
+  textile term (a knitted fabric), so a reader can resolve the jargon sense only from context.
+- Usage evidence: a blog post on spark.ru says its editors did not know whether to write «футтер» or «футер»,
+  so the double «т» is a common slip, not an accepted variant. No orthographic dictionary entry was opened.
+- Applicability: `ui_page.footer.links` keeps «Ссылки футтера» verbatim because the 2026-10-11 migration requires the
+  rendered output to stay unchanged. It is an accessible name read by screen readers. If the coordinator allows
+  a wording change, «Ссылки футера» fixes the spelling. Non-jargon alternatives for a general audience, such as
+  «Ссылки в подвале сайта» or «Нижняя навигация», are suggestions only and were not checked against a source.
+- Sources: https://ru.wiktionary.org/wiki/футер (read 2026-10-11);
+  https://spark.ru/startup/522832472692b/blog/1835/novij-futer (search snippet only, 2026-10-11).
+- Independent review re-read the Викисловарь entry on 2026-10-11 with the same result. The project documentation
+  (components README, ui-design.md) also writes «футтер», so a fix of the message may need the same docs change.
+- Project decision (2026-10-12): the user approved «Ссылки футера»; `ui_page.footer.links` now uses one «т». The same
+  change replaced «футтер» with «футер» in the project documentation (components README, ui-design.md), so the
+  note above about the docs is historical.
+- Independent review re-read the Викисловарь entry on 2026-10-12: «фу́тер», «Существительное, неодушевлённое,
+  мужской род, 2-е склонение», genitive singular «фу́тера»; sense 2 «комп. жарг.», «в вёрстке»: «нижний колонтитул;
+  подвал». No «футтер» on the page. This supports «Ссылки футера».
+
+## Free text after a transitive verb: «Убрать {$value}»
+
+- «Убрать» is transitive (Викисловарь: «Глагол, совершенный вид, переходный»), so its object takes the accusative.
+  A nominative placeholder after it renders a wrong case for feminine nouns in -а/-я and animate masculine names
+  («Убрать Маша», «Убрать Задача про лабиринт»); it reads correctly only for inanimate masculine or neuter values.
+- Patterns that keep free nominative text grammatical, already used in the `ui_*` bundles: a colon
+  («Меню пользователя: {$name}») or guillemets («Введите «{$name}», чтобы подтвердить»). This is the reviewer's
+  inference, not a dictionary statement.
+- Applicability: `ui_form.lookup.remove` keeps «Убрать {$value}» verbatim in the 2026-10-11 migration; a change such as
+  «Убрать: {$value}» needs explicit approval.
+- Source: https://ru.wiktionary.org/wiki/убрать (read 2026-10-11).
+- Project decision (2026-10-12): the user approved guillemets, «Убрать «{$value}»» («Убрать «Маша»»).
+- Quoted names and declension: «Мел» (08.09.2022, a popular outlet citing no handbook) states «если рядом есть
+  родовое слово, то название в кавычках не склоняется»; without a generic word the name declines like an ordinary
+  noun («работать в «Газпроме»» / «в компании «Газпром»»). Independent review (2026-10-12) reads the guillemets in
+  `ui_form.lookup.remove` as a verbatim quote of arbitrary data, like «нажмите «Войти»», and does not call it a defect;
+  the strictly normative form would add a generic word («Убрать значение «{$value}»»). A `$value` that already
+  contains guillemets gives nested «». Rosental's own text was not found.
+- Source: https://mel.fm/gramotnost/kak-pisat/8935620-gramotnost-na-mele-ili-gramotnost-na-mel-nuzhno-li-sklonyat-slova-v-kavychkakh
+  (read 2026-10-12). The Microsoft Russian Localization Style Guide PDF returned no readable text on 2026-10-12.
+
+## «Код-приглашение»: both parts decline
+
+- The domain term (definitions.md, item 30) is a hyphenated compound of two independent nouns, the § 79 п. 1
+  pattern, unlike «Код-доступа» (noun plus fixed genitive, only the first part declines: «по Коду-доступа»).
+  Both parts of such compounds decline: Викисловарь gives «дом-музей», «дома-музея», «дому-музею», Вин. =
+  Им. «дом-музей», «неодушевлённое, мужской род». By analogy: «Кода-приглашения», «Коду-приглашению», accusative
+  equal to nominative; agreement follows the masculine first part («Код-приглашение недействителен»,
+  «Код-приглашение, полученный …»). The analogy is an inference; no dictionary entry for the term itself exists.
+- Applicability: `glossary.invite_code` holds nom/gen/dat/acc sg; page messages reference it.
+- Source: https://ru.wiktionary.org/wiki/дом-музей (read 2026-10-12);
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/18 (§ 79, read 2026-10-08).
+  A search for Розенталь's declension rule returned no readable primary text on 2026-10-12.
+- Independent review (2026-10-12): Викисловарь «код» gives Им. «код», Р. «ко́да», Д. «ко́ду», В. «код»
+  (inanimate masculine, type 1a), supporting «Коду-доступа», «Кода-приглашения», «Коду-приглашению». A closer
+  analogue of a masculine plus neuter compound, «город-государство», declines both parts: Р. «го́рода-госуда́рства»,
+  Д. «го́роду-госуда́рству», В. = Им. «го́род-госуда́рство». «Диван-кровать» is listed as masculine (Р. «дивана-кровати»), which supports
+  masculine agreement after the first part; this remains an inference without a primary rule text.
+- Sources: https://ru.wiktionary.org/wiki/код, https://ru.wiktionary.org/wiki/город-государство,
+  https://ru.wiktionary.org/wiki/диван-кровать (all read 2026-10-12).
+- Instrumental singular and nominative plural (independent review, 2026-10-12): Викисловарь gives Тв. ед.
+  «до́мом-музе́ем» and Им. мн. «дома́-музе́и» (В. мн. = Им. мн.), and «го́родом-госуда́рством» /
+  «города́-госуда́рства» for the masculine plus neuter analogue. By analogy `glossary.invite_code` `ins sg`
+  «Кодом-приглашением» and `nom pl` «Коды-приглашения» (`page_administrator`); an inference, no entry for the term itself.
+- Sources: https://ru.wiktionary.org/wiki/дом-музей, https://ru.wiktionary.org/wiki/город-государство (read
+  2026-10-12).
+- Lowercase «к сообществу» in `page_home.join_hint`, `page_home.join.title` and `page_home.joined` reproduces the
+  page literals verbatim; definitions.md capitalizes terms («Сообщество»). Changing it needs user approval.
+
+## Grouping separator of `:integer` in `ru`
+
+- ICU4J 78.1 `:integer` renders `ru` digit groups with U+00A0 NO-BREAK SPACE («1 412»), the same as JDK 21
+  `java.text.NumberFormat.getIntegerInstance(ru-RU)` (checked locally 2026-10-12 with Corretto 21.0.10). Golden tests
+  pin it with the `NBSP` constant. Not a language finding; recorded for UI counters (`ui_data.pagination.counter`,
+  `ui_form.lookup.more_chip`).
+
+## Percent sign spacing: «45%» or «45 %»
+
+- Russian references disagree: Шульмейстер (1967) and Гиленсон (1988) attach the sign to the number; ГОСТ 8.417
+  requires a space before unit symbols; Мильчин и Чельцова (1998) require a space. Runet usage mostly attaches it.
+- Applicability: `ui_transfer.percent` «45%» is an accepted traditional variant, not an error; keep one style.
+- Source: https://dic.academic.ru/dic.nsf/ruwiki/57875 (Wikipedia mirror, read 2026-10-11); the handbooks
+  themselves and the CLDR ru percent pattern were not checked.
+
+## «Гайд»
+
+- Викисловарь gives one sense, «справочник; справочное руководство», without a stylistic label, borrowed from
+  English *guide*. TestSys uses «гайд» for an interactive step-by-step page tour (`ui_page.guide.*`), slightly broader
+  than the dictionary sense; not a defect. No normative orthographic dictionary entry was opened.
+- Source: https://ru.wiktionary.org/wiki/гайд (read 2026-10-11).
+
+## «Посылка» as the domain term
+
+- Викисловарь gives two homonyms: «посылка I» (the act of sending; a parcel sent by mail) and «посылка II»
+  (филос., логич.: a premise). No computing sense is listed. In TestSys the word is the domain term (definitions.md,
+  item 29: a sending of a Solution for checking a Task); the capitalized term form, the table/filter context and
+  «ID Посылки» rule out the parcel and premise senses on the Judge pages. No undesirable connotation was found.
+- Declension (Викисловарь): Им. «посылка» / «посылки», Р. «посылки» / «посылок», Д. «посылке» / «посылкам»,
+  В. «посылку» / «посылки», П. «посылке» / «посылках». `glossary.submission` holds the forms used by `page_judge`.
+- Source: https://ru.wiktionary.org/wiki/посылка (read 2026-10-12).
+
+## Space after the number sign: «№ 7»
+
+- Normacs experts state that the space between «№» and the first digit follows ordinary Russian rules, as in
+  «номер 7», i.e. «№ 7»; their cited ГОСТ Р 2.105-2019 example is «Изм. № 1, 2». A Habr commenter reports that
+  Мильчин's handbook separates «№» from the number in all editions since 1974; this is a secondary retelling, the
+  handbook itself was not read. A no-break space keeps the sign and the number on one line (inference).
+- Applicability: `page_judge.solution.title` renders «Посылка №{id}» without a space because the caller required
+  the current text verbatim («Посылка №9223372036854775807»); «Посылка № 42» with a no-break space would be the
+  normative variant and needs an explicit decision.
+- Sources: https://www.normacs.info/answers/5654 (read 2026-10-12); https://habr.com/en/articles/870856/comments
+  (search snippet only, 2026-10-12).
+
+## «Вердикт» as the domain term
+
+- Викисловарь: «вердикт» — inanimate masculine noun, Zaliznyak type 1a; Им. «вердикт» / «вердикты», Р. «вердикта» /
+  «вердиктов». Meanings: 1. «юр. решение (обычно — вынесенное в судебном процессе присяжными заседателями),
+  приговор»; 2. «перен. решение, суждение».
+- Applicability: TestSys uses the figurative sense for the automatic checking result (definitions.md item 19) and,
+  as «Судейский вердикт», for the Judge's result (item 26). No undesirable connotation found.
+- Project decision, not a language source: on the Judge pages lowercase «вердикт» in «Выставить вердикт» and
+  «История выставленных Судьями вердиктов.» is a shortened reference to «Судейский вердикт»; capitalized «Вердикт»
+  means the automatic one. The surrounding «Судьями», «Судейские вердикты» and «Новый Судейский вердикт» disambiguate.
+- Source: https://ru.wiktionary.org/wiki/вердикт (read 2026-10-12).
+
+## «Полигон» as the domain term
+
+- Викисловарь: inanimate masculine, type 1a; Им. «полигон» / «полигоны», Р. «полигона» / «полигонов», Д. «полигону» /
+  «полигонам». Meanings: 1. воен. testing ground for weapons; 2. «место или сфера, область, где производится
+  испытание, обработка, хранение или проверка чего-либо»; 3. матем., информ. «то же, что многоугольник»; 4. a
+  polygon-shaped area.
+- Applicability: the TestSys term (definitions.md item 15, a TRIK Studio world model used for checking) fits
+  sense 2; scores and logs «по Полигонам» rule out the geometric sense. No undesirable connotation found.
+- In «Скачать логи Полигона «{name}»» the generic word precedes the quoted name, so the name stays undeclined
+  (see the «Quoted names and declension» note above).
+- Source: https://ru.wiktionary.org/wiki/полигон (read 2026-10-12).
+
+## Student and Participant Cabinets (page_student, page_participant)
+
+### «Тур»: the round sense is inanimate
+
+- Викисловарь separates «тур I» (inanimate, masculine, type 1a: a circle or turn; «этап поэтапного мероприятия»;
+  a stage of a competition; a dance circle; a cairn) from «тур II» (animate: the aurochs). The TestSys term
+  (definitions.md item 21, a set of Tasks with time limits) is «тур I», sense 2, so the accusative equals the
+  nominative: «Начать Тур», «открыть Тур». The animal reading would need «Тура» and does not arise with the
+  capitalized term in a cabinet. Forms used by `glossary.contest`: Им. «Тур» / «Туры», Р. «Тура» / «Туров», В. «Тур»,
+  П. «Туре».
+- Source: https://ru.wiktionary.org/wiki/тур (read 2026-10-12, first 100 000 characters of the page).
+
+### «Класс»: the school group sense
+
+- Викисловарь: inanimate masculine, type 1a; senses 3 and 4 are a school group of pupils («группа учеников,
+  занимающихся вместе»), sense 6 the classroom, sense 8 a programming class. The TestSys term (definitions.md
+  item 23: Students, Tours and an Organizer) fits sense 4; «присоединиться к Классу» excludes the room sense. Forms
+  in `glossary.class`: Им./В. «Класс», Р. «Класса», Д. «Классу», Р. мн. «Классов».
+- Source: https://ru.wiktionary.org/wiki/класс (read 2026-10-12).
+
+### «Задача»: forms
+
+- Викисловарь: inanimate feminine, type 4a; Тв. «задачей» / «задачею», the page uses the neutral «Задачей». Forms
+  in `glossary.task`: Им. «Задача» / «Задачи», Р. «Задачи» / «Задач», Д. «Задаче» / «Задачам», Тв. «Задачей».
+  Sense 2 (an exercise that requires logical methods or calculation) matches the domain term.
+- Source: https://ru.wiktionary.org/wiki/задача (read 2026-10-12, first 100 000 characters of the page).
+
+### «Решение»: decision versus solution
+
+- Викисловарь: inanimate neuter, type 7a. Senses include the act of solving, an official ruling, an answer to a
+  problem and a decision made. In TestSys it is a TRIK Studio program (definitions.md item 18); next to
+  «отправьте», «Файл Решения» and «Язык Решения» the decision sense does not fit. Neuter agreement: «Решение
+  отправлено»; the tag «Лучшее» and the badge «Проверено» agree with an implied «Решение» (inference).
+- Source: https://ru.wiktionary.org/wiki/решение (read 2026-10-12).
+
+### Subject of «показаны» takes the nominative
+
+- In «…показаны его сведения и доступные Туры» and «Здесь показаны условия Тура, оставшееся время и доступные
+  Задачи» the plural terms are subjects of the short passive participle «показаны», so they are nominative
+  (`case=nom number=pl`), not accusative. For these inanimate plurals Им. мн. = В. мн. («Туры», «Задачи»), so the
+  rendered text is the same; the case label matters for other languages and for future term forms. Verified by the
+  independent localization review (2026-10-12) against https://ru.wiktionary.org/wiki/тур (тур I) and
+  https://ru.wiktionary.org/wiki/задача.
+
+### «Проверено» outside the Submission list
+
+- The `submission_status` value «Проверено» (neuter) also appears in the Tour page column «Последняя Посылка»,
+  where it does not agree with the feminine «Посылка» and reads as an impersonal status («проверено»). Inference
+  from usage, no source.
+
+### «условия Тура» versus the domain term «Условие»
+
+- Викисловарь «условие» sense 4: «правило, существующее, установленное в той или иной области» («на условиях
+  конкурса»); sense 7 is the given of a problem. The domain term «Условие» (definitions.md item 16) is a Resource,
+  the Task statement. `page_student.contest.guide` and `page_participant.contest.guide` use lowercase plural «условия Тура» in sense 4 (the Tour's rules
+  and time limits), while «Скачать Условие» on the Task page means the Resource. The capital letter and «Тура»
+  separate them; a reader may still briefly connect the two (inference). A less ambiguous wording, such as
+  «параметры Тура», would need an explicit change request.
+- Source: https://ru.wiktionary.org/wiki/условие (read 2026-10-12).
+
+### «Время на прохождение»
+
+- Викисловарь «прохождение»: sense 1 «действие по значению гл. проходить/пройти»; senses 4–5 relate to finishing
+  a game. There is no explicit sense for completing a course or a test; sense 1 covers «пройти Тур» (complete it),
+  so the phrase reads as the time allowed to complete the Tour (inference). No undesirable connotation found.
+- Source: https://ru.wiktionary.org/wiki/прохождение (read 2026-10-12).
+
+### Glossary decisions for page_student and page_participant
+
+- Project decision D2 (coordinator, 2026-10-12): declined or repeated domain terms become glossary terms.
+  `glossary.contest`, `glossary.class`, `glossary.task` and `glossary.solution` were added; the existing
+  `glossary.invite_code` and `glossary.submission` already had every form used.
+- Role names («Организатор», «Ученик», «Участник») stay literal, following earlier bundles (`page_guest`,
+  `page_registration`, `page_judge`). Single-occurrence terms «Соревнование», «Ресурсы», «Условие», «Упражнение»
+  and «Кабинет» also stay literal. This is a project choice, not a language finding.
+- Quoted names follow a generic word («Класс «{name}»», «Скачать Упражнение «{name}»»), so they stay undeclined
+  (see «Quoted names and declension» above).
+- 2026-10-29: the Exercise download button no longer quotes the name. `page_student.task.download_exercise` and
+  `page_participant.task.download_exercise` became «Скачать Упражнение · {language}» (user-approved form), where
+  `language` is the label from `task.send.language_name` («Python», «JavaScript», «Визуальный язык TRIK Studio»).
+  The label stands after the « · » separator, not as an object of «Скачать», so it stays in the nominative and
+  needs no case forms; the separator follows the project's existing lines («Сведения · …»,
+  `page_manager.contest.results.task`). Project observation, no language source. Unverified: whether Russian
+  punctuation references describe the interpunct; a search on 2026-10-29 returned only a snippet of a Russian
+  Wikipedia typography list naming it a word separator (not opened).
+- 2026-10-29, independent review of the same change: «упражнение» is an inanimate neuter noun, Zaliznyak 7a, so the
+  accusative equals the nominative and «Скачать Упражнение» is correct. Meanings: the action of «упражнять(ся)» and
+  «специально созданное учебное задание…»; no stylistic labels. Next to «Скачать Условие» in the «Файлы» field the
+  learning-task sense does not mislead (inference). Source: https://ru.wiktionary.org/wiki/упражнение (read
+  2026-10-29). The article https://ru.wikipedia.org/wiki/Интерпункт (read 2026-10-29) gives U+00B7 and its use in
+  Japanese and French, not in modern Russian interfaces; the project rule for the separator is ui-design.md
+  («мета-факты — средней точкой»). One Exercise per language in a revision (features.md) keeps the labels unique.
+- Unverified: «Визуальный язык TRIK Studio» was kept verbatim; the TRIK Studio documentation name of its visual
+  language was not checked.
+
+### «Визуальный язык TRIK Studio»: no official name found
+
+- The independent review fetched https://help.trikset.com/ (2026-10-12): it describes TRIK Studio only as
+  «бесплатной средой программирования роботов» and names no visual language. Web searches found only SPbU theses and
+  slides speaking of a «визуальный язык программирования», «графические программы» and «диаграммы» (search snippets
+  only, not opened: https://dspace.spbu.ru/bitstream/11701/10976/1/Diploma_-_diploma.pdf,
+  https://oops.math.spbu.ru/SE/diploma/2017/bmo/444-Shigarov-presentation.pdf/at_download/file). The wording stays
+  verbatim until an official name is confirmed.
+- Project observation (2026-10-12, no source): the role bundles name this language differently.
+  `page_student.task.send.language_name` and `page_participant.task.send.language_name` use «Визуальный язык
+  TRIK Studio»; `page_judge.solution.language`, `page_developer.language_name` and the `visual_language` variant of
+  `page_developer.refusal.no_exercise` use «Визуальный язык». A confirmed official name affects all of them.
+
+### Wording kept verbatim with possible misreadings
+
+- «Отсчёт начнётся с началом Тура» (`page_student.remaining.not_started`, `page_participant.remaining.not_started`) is shown before the user's first entry. The
+  same page shows the scheduled «Начало» and the «Начать Тур» button, while the countdown starts only when the user
+  presses that button; «начало Тура» can be read as the scheduled start. A wording such as «Отсчёт начнётся, когда
+  вы начнёте Тур» would need an explicit change request. Inference from page context by the independent review
+  (2026-10-12), no language source.
+- The Task page block that lists the user's sendings is titled «Решения» with the empty state «Решений пока нет»,
+  while its guide and closed hint speak of «Посылки». definitions.md separates Решение (item 18) from Посылка
+  (item 29); capitalization makes the mix visible. Not a grammar defect; «Посылки» / «Посылок пока нет» would need
+  an explicit change request. Inference by the independent review (2026-10-12).
+## Manager Cabinet (page_manager)
+
+### Declension of the Manager domain terms
+
+- Викисловарь tables (read 2026-10-12), used for the new `glossary.class`, `glossary.competition`,
+  `glossary.contest`, `glossary.student`, `glossary.participant` and `glossary.community`:
+  - «класс»: inanimate masculine, type 1a; Р. «класса» / «классов», Д. «классу», В. = Им. «класс» / «классы».
+  - «соревнование»: inanimate neuter, type 7a; Р. «соревнования» / «соревнований», Д. «соревнованию»,
+    В. = Им. «соревнование» / «соревнования», Тв. «соревнованием».
+  - «тур» I: inanimate masculine, type 1a; Им. мн. «туры», Р. «тура» / «туров», В. = Им. «тур», Тв. мн. «турами».
+  - «ученик»: animate masculine, type 3b; Им. мн. «ученики», Р. мн. «учеников», Д. мн. «ученикам», Тв. мн.
+    «учениками».
+  - «участник»: animate masculine, type 3a; Р. «участника» / «участников», В. = Р. «участника» / «участников»,
+    Тв. «участником» / «участниками».
+  - «сообщество»: inanimate neuter, type 1a; Д. мн. «сообществам».
+- Animacy matters in the accusative: «Удалить Участника «…»?», «Участника с Посылками удалить нельзя», «Создайте
+  Участников», «добавьте в него Участников» use the accusative equal to the genitive; inanimate «Класс», «Тур»,
+  «Соревнование» keep the nominative form («Создать Класс», «Добавить Тур», «в Соревнование»).
+- Sources: https://ru.wiktionary.org/wiki/класс, https://ru.wiktionary.org/wiki/соревнование,
+  https://ru.wiktionary.org/wiki/тур, https://ru.wiktionary.org/wiki/ученик, https://ru.wiktionary.org/wiki/участник,
+  https://ru.wiktionary.org/wiki/сообщество (all read 2026-10-12).
+
+### Other meanings of «Тур», «Класс», «Ученик»
+
+- «Тур» has a homonym «тур» II, an animate noun for the extinct aurochs (В. «тура»); «тур» I also means a tourist
+  trip, a dance circuit or a summit cairn. The relevant sense is «тур» I, 2–3: a stage of a multi-stage event or
+  competition. Capitalization, the Manager context and «Тур «{name}»» next to «Соревнование» rule out the other
+  senses; the inanimate accusative «Добавить Тур» is the correct form for sense I.
+- «Класс» also means a category, a social class, an OOP class (sense 8) and, as predicative slang, «очень хорошо»
+  («Класс!»). The relevant sense is 4: «группа учеников, занимающихся совместно». In «Класс создан» or «Класс «7 Б»»
+  the slang reading is not plausible (inference); no undesirable connotation found.
+- «Ученик» also means an apprentice and a follower of a teaching; the relevant sense is 1, a school pupil, here the
+  domain Role (definitions.md item 7). No undesirable connotation found.
+- Sources: the Викисловарь pages above (read 2026-10-12).
+
+### Plural and instrumental forms of existing terms
+
+- «Коды-доступа»: Викисловарь «код» gives Им./В. мн. «ко́ды», Тв. мн. «ко́дами»; in «Код-доступа» only the first
+  part declines (see «Код-приглашение»: both parts decline above), so the plural is «Коды-доступа» in both the
+  nominative («Участники Соревнования, их Коды-доступа …») and the accusative («раздать им Коды-доступа»).
+- «Посылками»: Викисловарь «посылка» I gives Тв. мн. «посы́лками» («Участника с Посылками удалить нельзя»).
+- Sources: https://ru.wiktionary.org/wiki/код, https://ru.wiktionary.org/wiki/посылка (read 2026-10-12).
+
+### Count labels in the genitive plural
+
+- Column and field labels «Учеников», «Участников», «Туров» are elliptical counts («(число) учеников»); the number is
+  in the cell, not in the message. They reproduce the existing interface text with the genitive plural term forms.
+  This is a reading of the existing text, not a dictionary finding.
+
+### Quoted user names after a generic word
+
+- «Класс «{name}»», «Соревнование «{name}»», «Тур «{name}»», «Действия с Участником «{name}»» and «Удалить Участника
+  «{name}»?» put the generic word before the quoted name, so the name stays undeclined (see «Quoted names and
+  declension» above). A name that itself contains guillemets renders nested «ёлочки»: «Класс «7 «Б»»» (pinned by
+  the golden test). Russian typography usually puts „лапки“ inside «ёлочки»; the output is kept verbatim, as on the
+  other pages. Not verified against a typography handbook.
+
+### Lowercase anaphoric «этот код»
+
+- «Передайте этот код Ученикам …» keeps lowercase «код» because it refers back to the Код-приглашение shown in the
+  block rather than naming the domain term; the caller required it verbatim. Project decision, not a language
+  source.
+
+### Ungrouped numbers in results and toasts
+
+- `:integer` / `:number` with `useGrouping=never` keep the previous Kotlin `toString` output: «Всего: 1000.»,
+  «1000 · 1000», «Движение · 9223372036854775807». A negative score renders with an ASCII hyphen-minus («-5 · 2»)
+  in ICU4J 78.1 `ru`, the same as Kotlin; checked by the golden test on 2026-10-12. Not a language finding.
+
+### «Участник»: general sense versus the domain Role
+
+- Викисловарь «участник», sense 1: «тот, кто участвует в чём-либо, то есть занимается чем-либо совместно с другими».
+  In this general sense the word also covers Ученики taking part in a Тур, while the domain term (definitions.md
+  item 6) is a specific Role distinct from Ученик (item 7).
+- Applicability: `page_manager.contest.results.empty` («Участников нет») is shown for a Тур in a Class and in a
+  Competition, so it is a plain literal in the general sense and does not reference `glossary.participant`; a term
+  reference would narrow it to the Role, and translations would follow that binding. The capitalized ru-RU output
+  is the same either way because the word starts the sentence.
+- Project source, not a language source: definitions.md items 6 and 7 give both Roles the right «принимать участие
+  в доступных Турах», so Ученики are «участники» of a Тур in the general sense; the hint «… будут Ученики или
+  Участники» resolves the reading on the page.
+- Source: https://ru.wiktionary.org/wiki/участник (read 2026-10-12, re-read 2026-10-12 by an independent review).
+
+### «Без учёта регистра» in the name filter hint
+
+- Викисловарь «регистр», sense 6 (техн., комп.): «группа знаков на клавишах пишущей машинки или на клавиатуре
+  компьютера»; no sense names прописные/строчные буквы explicitly, so «без учёта регистра» relies on this technical
+  keyboard sense.
+- Applicability: `page_manager.filter.name_hint` keeps «Часть названия, без учёта регистра» verbatim. It is
+  established software-UI usage for Organizers and not an error; the e-mail wording «Большие и маленькие буквы
+  различаются» (see «Case sensitivity» above) stays a choice for general-audience text. Changing the hint needs an
+  explicit decision. No normative dictionary or style guide was opened.
+- Source: https://ru.wiktionary.org/wiki/регистр (read 2026-10-12).
+## Administrator Cabinet (page_administrator)
+
+### Glossary terms added for the cabinet
+
+- New terms (2026-10-12), each a self-contained block in `glossary.properties`: `administrator`, `cabinet`, `class`
+  (entity `Class`; a term name does not become a Kotlin identifier, so the keyword is valid), `community`,
+  `competition`, `contest` (Тур), `judge`, `nickname` (Псевдоним, definitions.md item 31; the code field is
+  `UserData.name`), `observer`, `participant`, `role`, `solution`, `student`, `system`, `task`, `user`.
+  `invite_code` gained `nom pl` «Коды-приглашения» and `ins sg` «Кодом-приглашением». Only referenced forms exist;
+  the `* *` variant is the nominative singular. Other cabinets may need more forms of the same terms.
+- Animate masculine nouns take the genitive form in the accusative: «Создать Наблюдателя», «пригласите
+  Пользователей». Inanimate plurals keep the nominative form in the accusative: «Выберите Туры». Grammar facts, no
+  source opened.
+- Independent review (2026-10-12): «его Роли» in `page_administrator.user.guide` (a subject of «показаны» with «сведения»
+  and «статистика») and «связанные Соревнования» in `page_administrator.user.assigned.guide` (an ungoverned list item) are
+  nominative, not accusative; reference them with `case=nom`, so the glossary needs no unused `acc pl` forms.
+  Grammar analysis, no source opened.
+
+### «Псевдоним»
+
+- Викисловарь gives one sense, a fictitious name an author uses, with no computing sense. «Ник» and «никнейм»
+  appear only as synonyms. Genitive singular «псевдонима». In TestSys the word is the domain term for the name a
+  User is shown under (definitions.md item 31). In the cabinet tables and filters the domain sense is clear; nothing
+  undesirable was found.
+- Source: https://ru.wiktionary.org/wiki/псевдоним (read 2026-10-12).
+
+### «Неуспех» as a status badge
+
+- Викисловарь: «неуспех» is a masculine noun with no stylistic label, meaning «отсутствие успеха; неудача»
+  (Грибоедов: «по службе неуспех?»). It is a standard word, not a coinage, and it pairs naturally with «Успех» on
+  badges. No undesirable connotation was found.
+- Source: https://ru.wiktionary.org/wiki/неуспех (read 2026-10-12).
+
+### «Техническая остановка»
+
+- In general usage (production, transport, aviation) the phrase means stopping equipment or a vehicle for
+  maintenance or a fault, for example a train or aircraft «техническая остановка». No dictionary entry was found;
+  a web search returned only related terms such as «технический перерыв».
+- Applicability (inference): `page_cabinet.validation_status` `stopped` is a badge in the Статус проверки column.
+  The column context makes it read as «the check stopped for technical reasons», and the transport sense does not
+  apply. It differs from `failure` «Неуспех», which is a check that ran and failed.
+- Source: web search on 2026-10-12, no primary source read.
+
+### Numerals with «символ» in `page_cabinet.name_too_long`
+
+- The comparative «длиннее» governs the genitive, so the noun follows the genitive of the numeral: «не длиннее
+  1 / 21 символа» (одного, двадцати одного символа); «3 / 5 / 255 символов». So `one` → «символа», and `few` and
+  `many` → «символов». This is a grammar inference; a search found no handbook page for the exact phrase.
+- Source: web search on 2026-10-12, secondary summaries only.
+- Independent review (2026-10-12) confirms the forms by standard grammar (a compound numeral ending in «один» takes
+  the singular noun: «двадцати одного символа»); under `:integer` in `ru` the `*` variant is unreachable and equals
+  `many`. Still no primary handbook text: https://mel.fm/gramotnost/kak-govorit/6417539-numerals («Мел»,
+  16.09.2018, read 2026-10-12) does not cover the rule; other search results were snippets only.
+
+### Role names in apposition: «в Роли Разработчик»
+
+- `page_administrator.user.roles.remove`, `remove_title` and `community.invites.actions` insert the nominative role name
+  from `page_cabinet.role_name` after a declined «Роль»: «Исключить в Роли Разработчик», «для Роли Разработчик».
+  Ordinary Russian puts a common noun in the genitive («в роли разработчика»). The nominative reads as a name of an
+  item in a list, a label after a generic word. A generic word before a quoted name keeps the name undeclined (see
+  «Quoted names and declension» above), but these names are not quoted. The coordinator kept the text verbatim. A
+  normative-looking alternative would quote the name («в Роли «Разработчик»») or use a colon. Either change needs
+  approval. A web search found no source specific to role labels.
+- «Исключить» (Викисловарь, sense 1: «устранить, удалить откуда-либо, из состава чего-либо») fits removing
+  membership. No stylistic label. The punitive colouring of «исключить из школы» comes from that context, not from
+  the word. «Исключить в Роли X» without «из» is elliptical: the menu sits in a row of one Community, which
+  supplies the missing «из Сообщества».
+- Sources: https://ru.wiktionary.org/wiki/исключить (read 2026-10-12); the «Мел» article cited above.
+
+### Other notes
+
+- `page_administrator.users.nickname_hint` «без учёта регистра» uses «регистр». The note «Case sensitivity: …» above
+  records a project preference for describing letter case without that word. The text is verbatim by coordinator
+  decision; it is not a grammar error.
+- `page_administrator.communities.users` «Пользователей» (genitive plural) is a numeric column header, read as an
+  elliptical «(число) Пользователей». It is verbatim; «Пользователи» would be the usual header form.
+- Independent review (2026-10-12): the Observer creation dialog labels the name field «Имя» / «Укажите имя»
+  (`page_administrator.community.observer.name*`), while the same value is «Псевдоним» elsewhere on the pages. The meaning
+  survives (definitions.md item 31 defines Псевдоним as a name); aligning the label needs user approval.
+
+### «Роль» and «Соревнование»: declension and the user page guides
+
+- Викисловарь: «роль» — inanimate feminine, 3rd declension (Zaliznyak 8e); Им. роль / роли, Р. роли / ролей,
+  В. роль / роли, Тв. ролью / ролями, Пр. роли / ролях. Sense 5 (информ., a set of functions assigned to a server)
+  is close to the domain term; theatre senses do not fit the capitalized term. «Соревнование» — inanimate neuter,
+  type 7a; Им. мн. «соревнования», Р. мн. «соревнований». They confirm `glossary.role` and `glossary.competition`.
+- In `page_administrator.user.guide` the singular locative «Роли» coincides with the plural nominative, so «о Пользователе,
+  его Роли и …» could be read as «(о) его Роли»; the nominative «доступная вам статистика» makes the three-subject
+  list the natural reading, and «показаны» agrees under either pattern (reviewer's inference; no primary
+  agreement rule text read).
+- «Туры, назначенные Пользователю, и связанные Соревнования»: Правила 1956 § 151 п. 1 sets off a postpositive
+  participial phrase with commas; the comma before «и» closes it (inference for this exact combination).
+  «Связанные» without a complement (Викисловарь «связанный», «находящийся во взаимосвязи с кем-либо, чем-либо»)
+  is clear from «Туры» and the table.
+- Sources: https://ru.wiktionary.org/wiki/роль, https://ru.wiktionary.org/wiki/соревнование,
+  https://ru.wiktionary.org/wiki/связанный,
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/34 (all read 2026-10-12).
+## Developer Cabinet (`page_developer`)
+
+Notes collected while localizing the Developer Cabinet pages (stage 2f, 2026-10-12).
+
+### «Тур» as the domain term
+
+- Викисловарь has three entries: «тур I» (inanimate masculine; senses include 2. «этап поэтапного мероприятия» and
+  3. спорт. «отдельный этап соревнования…»; sense 1 is a trip/tour), «тур II» (animate masculine, the extinct wild
+  ox) and «тур III» (genitive plural of «тура»). Declension of «тур I»: Им. «тур» / «туры», Р. «тура» / «туров»,
+  Д. «туру» / «турам», В. «тур» / «туры», Т. «туром» / «турами», П. «туре» / «турах».
+- Applicability: the TestSys term (definitions.md item 21, a set of Задачи with time limits) fits senses 2–3. The
+  capitalized term, the Developer Cabinet context (Задачи, начало, конец, длительность) and the inanimate
+  accusative «Тур» rule out the trip and animal senses. No undesirable connotation found.
+- Source: https://ru.wiktionary.org/wiki/тур (read 2026-10-12; the last ~11 % of the page was not read).
+
+### «Условие» as the domain term
+
+- Викисловарь lists seven senses (agreement, contract clause, circumstance, rule, setting, premise, and 7.
+  «положение, сведение, лежащее в основе чего-либо, то, из чего надо исходить» with the gloss «при решении задачи»);
+  it has no separate sense «текст задачи». Inanimate neuter, type 7a: Им. «условие» / «условия», Р. «условия» /
+  «условий», В. = Им.
+- Applicability: the TestSys term is a resource type, the problem statement document (definitions.md item 16).
+  As a bare label («Тип: Условие», «Прикрепите Условие.») it could in principle be read as "condition"; the
+  neighbouring Упражнение, Полигон, Авторское Решение and the capital letter resolve it. This is an inference, no
+  usage source for «Условие» alone as a file type was read.
+- Source: https://ru.wiktionary.org/wiki/условие (read 2026-10-12).
+
+### «Диагностика» in the plural
+
+- Викисловарь: senses 1. мед., техн. «исследование с целью определить причину болезни организма, неисправности
+  механизма и т. п.»; 2. a branch of medicine. The article gives a full plural paradigm: Им. «диагностики»,
+  Р. «диагностик», Д. «диагностикам», В. «диагностики». No note restricts the plural.
+- Applicability: the TestSys term (definitions.md item 28) is one check of a Полигон XML, so the countable plural
+  «Диагностики», «Диагностик пока нет» fits sense 1. No undesirable connotation found.
+- Source: https://ru.wiktionary.org/wiki/диагностика (read 2026-10-12).
+
+### «Откатить»: technical jargon with a bribery sense
+
+- Викисловарь gives three senses: 1. «переместить дальше от чего-либо»; 2. техн. жарг. «вернуть систему в одно из
+  предыдущих состояний»; 3. жарг. «дать откат, т. е. взятку должностному лицу…» (the entry is in the category of
+  bribery verbs).
+- Applicability: the Developer Cabinet keeps «Откатить» and «Откатить изменения Задачи?» verbatim (2026-10-12
+  migration). With the object «изменения Задачи» and in the confirmation dialog sense 2 is the only plausible
+  reading; the bare button label relies on that dialog context. The toast already uses the neutral «Изменения
+  Задачи отменены»; «Отменить изменения» would be a jargon-free alternative and needs an explicit decision.
+- Source: https://ru.wiktionary.org/wiki/откатить (read 2026-10-12).
+
+### «МиБ» (mebibyte)
+
+- Викисловарь defines «мебибайт» as «единица измерения количества информации, равная 2^20 (1024^2) байт»,
+  masculine, genitive plural «мебибайтов» (also «мебибайт»); it gives no abbreviation. The abbreviation «МиБ» in
+  `page_developer.task.upload.subtitle` is kept verbatim; its normative status (ГОСТ IEC 80000-13) was not checked.
+- Source: https://ru.wiktionary.org/wiki/мебибайт (read 2026-10-12).
+
+### «Сведения» as both a block title and a severity
+
+- Project observation, not a language source: on the testing page «Сведения» is the details block title
+  (`page_developer.details`) and the Info severity prefix of a Диагностика line («Сведения · …»). The line format
+  «Сведения · место · замечание» keeps them apart; a different Info label would need an explicit decision.
+
+### Date and time «12.10.2026 14:05» in `ru`
+
+- Tooling fact, not a language finding: ICU4J 78.1 `:date fields=year-month-day length=short` renders `ru` as
+  «12.10.2026» (day and month padded) and `:time precision=minute hour12=false` as «14:05» / «09:07»; two
+  expressions separated by a space reproduce the former `dd.MM.yyyy HH:mm`; a single `:datetime` would use the
+  locale's date-time glue instead (its exact `ru` output was not checked).
+  Pinned by `PageDeveloperTests` (checked locally 2026-10-12).
+
+### «Зафиксировать» as "commit"
+
+- Викисловарь lists five senses of «зафиксировать», none stylistically labelled and none about computing; among
+  them 1. «закрепить, запечатлеть с помощью рисунка, фотографии и т.п.» and 3. «умертвить, хлороформировать мелких
+  животных, насекомых для целей научного исследования».
+- Usage evidence: the Russian Pro Git uses the word for `git commit` («Простейший способ зафиксировать изменения —
+  это набрать `git commit`», «фиксировать «снимки» состояния»). The page does not contain «зафиксированный»,
+  «незафиксированные» or «фиксация».
+- Applicability (independent review's inference): «Зафиксировать Задачу?», «Зафиксирована» and «незафиксированные
+  изменения» follow established version-control usage; the objects Задача, версия, изменения rule out sense 3.
+  No undesirable connotation found.
+- Sources: https://ru.wiktionary.org/wiki/зафиксировать, https://git-scm.com/book/ru/v2/Основы-Git-Запись-изменений-в-репозиторий
+  (both read 2026-10-12 by the independent review).
+
+### «Провалить»
+
+- Викисловарь gives one sense, «не справиться, потерпеть неудачу», without a stylistic label; perfective,
+  transitive, synonym «завалить». «Провалено Посылок: 2 из 5» has no register problem.
+- Not checked: whether a Посылка is a natural grammatical object of «провалить»; the page has no usage example.
+- Source: https://ru.wiktionary.org/wiki/провалить (read 2026-10-12 by the independent review).
+
+### «Замечание» as the fallback severity label
+
+- Викисловарь: neuter, inanimate, type 7a; 1. «краткое суждение, высказанное устно или письменно по поводу
+  чего-либо увиденного, услышанного, прочитанного» (no label); 3. a reprimand or admonition; 2 and 4 книжн., устар.
+- Applicability (inference): the column «Замечания» and the «· место · замечание» line format select sense 1 for
+  the `*` variant of `page_developer.diagnostic.line` / `line_at`; the reprimand reading is implausible there.
+- Source: https://ru.wiktionary.org/wiki/замечание (read 2026-10-12 by the independent review).
+
+### «До N файла/файлов» — unverified
+
+- Standard grammar as reported by the independent review: «до» takes the genitive and every part of a compound
+  numeral declines; a numeral ending in «один» keeps the noun in the singular («до (двадцати) одного файла»);
+  2–4 and 5+ in oblique cases take the plural of the same case («до двух файлов», «до пяти файлов»). So the CLDR
+  `one` category maps to «файла», `few`/`many` to «файлов», as in `page_developer.task.upload.subtitle`.
+- Unverified: confirmed only through search-engine summaries of teaching materials. Rosental, chapter XXXVIII
+  (https://evartist.narod.ru/text1/59.htm), does not state it; https://ru.wiktionary.org/wiki/двадцать_один has no
+  declension table; https://mel.fm/amp/gramotnost/kak-govorit/6417539-numerals only says that all parts of
+  compound numerals decline (all read 2026-10-12). rusgram.ru failed with a certificate error.
+
+### English technical data inside Russian diagnostic lines
+
+- Project observation: `$expected` of `page_developer.diagnostic.finding.invalid_attribute_value` (and the free
+  text of `malformed_xml` and `summary.technical`) comes from the diagnostics module as English technical text
+  («finite double», «long integer», «integer», `a|b`), so a line reads «атрибут «value» равен «abc», ожидается
+  finite double». The message reproduces the former hardcoded text; a fully Russian line needs a separate
+  decision, e.g. a selector over the expected kinds.
+
+## Observer and Supervisor Cabinets (`page_observer`, `page_supervisor`)
+
+Notes collected while moving the Observer and Supervisor pages onto localization (2026-10-12).
+
+### «Супервайзер»: declension and the glossary term
+
+- Викисловарь: «суперва́йзер» — animate masculine, Zaliznyak type 1a; Им. «супервайзер» / «супервайзеры»,
+  Р. «супервайзера» / «супервайзеров», Д. «супервайзеру» / «супервайзерам», В. = Р. «супервайзера» / «супервайзеров»,
+  Тв. «супервайзером», П. «супервайзере». One sense, labelled «торг.»: «сотрудник, контролирующий чью-либо
+  деятельность, работу»; partial synonyms «инспектор», «контролёр»; «см. также: супервизор». The page gives no
+  spelling variant, so «супервизор» is a related entry, not a confirmed variant.
+- Applicability: the TestSys Role (features.md, testsys.entity.supervisor) extends the commercial sense to the one
+  User who controls all Users and Communities; the capitalized form follows features.md. No undesirable connotation
+  found. definitions.md defines it as a Fixed Role (items 3 and 12: «Супервайзер — Роль, наделяющая Пользователя
+  правом создавать других Пользователей и управлять ими. В Системе один Супервайзер.»; project-source fact verified
+  by the independent reviewer on 2026-10-12). `glossary.supervisor` was added because three `page_supervisor` messages
+  decline it («Кабинета Супервайзера», «кроме Супервайзеров», «доступные Супервайзеру»). `page_supervisor.title`
+  stays a literal «Кабинет Супервайзера» because existing text was not to be changed; a term reference there would
+  render the same output.
+- Source: https://ru.wiktionary.org/wiki/супервайзер (read 2026-10-12).
+
+### «Снять Роль Администратора нельзя»
+
+- Викисловарь «снять», sense 3 (перен.): «убрать, отменить что-либо» («снять вопрос с голосования», «снять
+  ограничения в торговле»); sense 9 (разг.) is «снять с должности»; sense 8 (перен., вульг.) is a vulgar sexual
+  sense that needs an animate object.
+- Applicability (inference): with the inanimate object «Роль Администратора» only sense 3 fits: the Role cannot be
+  withdrawn. The vulgar sense does not arise. No register problem.
+- Source: https://ru.wiktionary.org/wiki/снять (read 2026-10-12).
+
+### «Назначить «{name}» Администратором»
+
+- «Назначить» governs the person in the accusative and the position in the instrumental («назначить его
+  директором»). The quoted Псевдоним follows the verb directly, without a generic word, so it is a quote of data
+  as in «Исключить «{user}» из Сообщества …» (see «Quoted names and declension» above). Grammar fact and project
+  usage; no dictionary page opened for the government of «назначить». `glossary.administrator` gained `ins sg`
+  «Администратором».
+- Independent review: Викисловарь «назначить» — «Глагол, совершенный вид, переходный»; sense 5 «определить,
+  поставить на какую-либо работу», example fragment «кого бы назначить главнокомандующим» (person in the accusative,
+  position in the instrumental); sense 4 «определить, объявить, назвать». The page has no explicit government note.
+  A stricter optional form would put a generic word before the name («Назначить Пользователя «{name}»
+  Администратором?»); it was not adopted, the pattern stays parallel to the accepted removal title.
+  Source: https://ru.wiktionary.org/wiki/назначить (read 2026-10-12).
+
+### «Текущий» in UI text
+
+- Викисловарь «текущий», adjective sense 2: «имеющийся, существующий, происходящий сейчас, в настоящее время»;
+  sense 3: «совершаемый ежедневно»; sense 1 is the participle of «течь».
+- Applicability: «текущие Соревнования» joins "existing" and "ongoing", so in a page guide a reader may take it as a
+  time filter. Competitions have no dates, and future and finished Contests are shown (features.md,
+  testsys.user.single.observer.viewContests). The first revision of `page_observer.guide` («… Туры текущих
+  Соревнований …») was flagged by the independent review; the word was removed. features.md keeps «текущие
+  Соревнования» in operation steps, meaning the existing composition; that is documentation, not UI text.
+- Source: https://ru.wiktionary.org/wiki/текущий (read 2026-10-12).
+
+### «Просматривать», «одним файлом»
+
+- Викисловарь «просматривать» — imperfective transitive, type 1a; senses: 1 «внимательно смотреть, рассматривать»;
+  2 «наскоро, бегло прочитывать»; 3 «… упускать, пропускать по оплошности». In imperative guides with a concrete
+  object («Просматривайте назначенные вам Туры Соревнований …») sense 1 applies (reviewer inference); no undesirable
+  connotation. Source: https://ru.wiktionary.org/wiki/просматривать (read 2026-10-12).
+- Викисловарь «файл» — inanimate masculine, 1a, Тв. ед. «файлом»; senses: 1 комп. named digital record; 2 комп. its
+  storage place; 3 канц. transparent plastic sleeve. In «скачивайте все результаты одним файлом» the download context
+  rules out the stationery sense; «одним файлом» is an instrumental of manner (grammar inference; no normative source
+  for the collocation was found on 2026-10-12). Source: https://ru.wiktionary.org/wiki/файл (read 2026-10-12).
+- In «назначенные вам Туры Соревнований» the participle (acc pl) agrees only with «Туры», so it cannot mean
+  "assigned Competitions" (grammar analysis, no source).
+
+### «Относиться к», new glossary forms
+
+- Викисловарь «относиться», sense 4: «Быть частью какого-либо множества или класса» («К хищным жукам относятся и
+  плавунцы»). A Competition is a set including Участники (definitions.md item 22), so «Соревнование, к которому
+  относится Участник» is correct; the government «к + дат.» is inferred from the examples.
+  Source: https://ru.wiktionary.org/wiki/относиться (read 2026-10-12).
+- Forms of the new glossary variants confirmed by the independent review (all read 2026-10-12): Тв. мн.
+  «соревнованиями» (https://ru.wiktionary.org/wiki/соревнование); Им. «система», Р. «системы»
+  (https://ru.wiktionary.org/wiki/система); Тв. «администратором» (https://ru.wiktionary.org/wiki/администратор).
+- Style observation, not a defect: «кроме Супервайзеров» uses a generic plural although the System has one
+  Супервайзер; the wording is verbatim from features.md (testsys.web.page.supervisor).
+
+### CSV header «ID участника»
+
+- `page_observer.csv.participant_id` keeps lowercase «участника» because features.md
+  (testsys.user.single.observer.downloadResult, step 2) names the column verbatim and the caller fixed it as the
+  contract. It differs from the capitalized term elsewhere («Участник»); changing it needs a features.md change and
+  user approval. Project decision, not a language finding. The task column `{$contest} - {$task}` uses an ASCII
+  hyphen-minus with spaces, also verbatim from features.md. Running Russian text would normally use a dash
+  («Финал — Робот»; inference, no handbook opened), but the value is a CSV header contract, not running text.
+
+## Access restoration (`page_guest.restore_access.*`, `user.access_restoration.*`)
+
+- «Запрос принят» (toast after the request and the resend): МАС lists «принять» both as «Взять для исполнения»
+  («Принять заказ», «по принятой … заявке») and as «Согласиться с чем-л., отнестись к чему-л. положительно»
+  («Принять предложение»). For a request the first sense is the usual reading («заявка принята»), so the title
+  means "taken for processing", not "approved". The description states the condition («Если почта … привязана
+  к Пользователю, на неё придёт письмо с кодом»), so the toast claims neither restored access nor a sent letter.
+  The usual-reading claim is an inference from the dictionary examples, not a corpus check. Alternative without
+  the second reading: «Код запрошен».
+- Source: https://kartaslov.ru/значение-слова/принять (МАС, Ушаков as reproduced there, read 2026-10-13).
+- Usage (search result only, not opened, 2026-10-13): Russian Roblox help speaks of a letter that comes «на
+  привязанную почту»; the UI phrase «привязанная почта» matches `page_profile` («изменить привязанную почту»).
+  The letter itself names no address.
+- The confirmation-code letter mirrors the registration and e-mail change letters: «Если код больше не действует…»
+  covers expiry and exhausted attempts; «Если Вам пришло несколько таких писем, введите код из последнего» stays
+  correct because an active request resends the same code and an inactive one is overwritten with a new code
+  (features.md, testsys.user.multi.restoreAccess). It names the tab «Восстановление доступа» of the sign-in page,
+  where the code is entered. Project inference, not a language finding.
+- Colon or dash when the second clause states a result: «Мел», «8 предложений, в которых вы путаете двоеточие
+  и тире» (14.01.2018): a result or consequence («так что», «поэтому») takes a dash; a colon marks explanation
+  («а именно», «то есть») or cause. Applies to instructions like «нажмите «X» — придёт письмо»; a colon remains
+  possible when the clause explains what the action does. Popular outlet, not a handbook; the primary Правила 1956
+  text was not readable on 2026-10-13. Source: https://mel.fm/russky_yazyk/5841376-colon_and_dash.
+- «Принять» with a request noun also allows a "granted" reading (Ушаков sense 7, «П. просьбу об отставке»); the
+  conditional description of the toast rules it out. Source: https://kartaslov.ru/значение-слова/принять
+  (read 2026-10-13).
+- «Привязать»: Викисловарь has no sense for linking an e-mail to an account (closest: 5, перен., «связать с кем-,
+  чем-либо»; 7, проф., «соотнести с чем-либо»). «Привязанная почта» is established UI usage and already used in
+  the project. Source: https://ru.wiktionary.org/wiki/привязать (read 2026-10-13).
+- A guide that says «этот блок исчезнет» is accurate only for a separate block; the restore-access result is shown
+  inside the guest block with the tabs, so the guide speaks of the shown Код-доступа instead. Project usage note.
+- «Вкладка»: Викисловарь sense 2 is a browser tab; a tab of a page component is a natural extension, and a quoted
+  label («Вход») names it (inference). Prepositional singular «вкла́дке». No primary source on «на вкладке» vs
+  «во вкладке» was found on 2026-10-13; the project uses «на вкладке» (`user.properties`, `page_guest`) and
+  `page_supervisor` uses «во вкладках» — unverified usage, not a rule. Source: https://ru.wiktionary.org/wiki/вкладка
+  (read 2026-10-13).
+
+## Warning in confirmation-code letters: «Никому не сообщайте этот код.»
+
+- The three confirmation-code letters (`user.registration.confirmation_code.body`,
+  `user.email_change.confirmation_code.body`, `user.access_restoration.confirmation_code.body`) carry the same
+  separate paragraph «Никому не сообщайте этот код.» right after the code line. Identical wording in all three is
+  a coordinator requirement; the sentence gives no reason, unlike the Код-доступа letter («Никому его не сообщайте:
+  тот, кто знает код, может войти…»), because the consequence differs per letter (binding an address versus
+  obtaining a new Код-доступа). Project decision, not a language finding.
+- «Сообщить»: МАС sense 1 «Довести до чьего-л. сведения, уведомить, известить», «Рассказать о чем-л.»; Ушаков
+  «Довести до чьего-н. сведения, передать словами». With a dative recipient and «код» as the object only the
+  "convey information" sense applies. Source: https://kartaslov.ru/значение-слова/сообщить (read 2026-10-13).
+- «Этот код» right after the code line is unambiguous; appending the warning to the validity paragraph would follow
+  «…придёт новый код», where «этот» could be read as the new code. Placement reasoning, not a source finding.
+- Usage: a search on 2026-10-13 found no page with the exact phrase «Никому не сообщайте этот код»; close security
+  wording («никому не сообщайте код подтверждения») appears in service help pages (search snippets only, not
+  opened). The Kaspi usage noted under «Код-доступа» above also shows «Никому не сообщайте код». No undesirable
+  or offensive reading was found.
+- Object case (independent review, 2026-10-13): Rosental, «Литературное редактирование текста», §201 «Падеж
+  дополнения при переходных глаголах с отрицанием» (https://evartist.narod.ru/text1/66.htm, read as a paraphrase
+  with short quotes): a word starting with «ни» favours the genitive («До вас никто еще этого браслета не надевал»),
+  while a concrete object and an imperative favour the accusative («Гляди под ноги, не смеши народ»); where both
+  fit, the genitive is bookish and the accusative colloquial. Inference: «Никому не сообщайте этот код» is
+  acceptable; «этого кода» is only a more bookish alternative, not a correction.
+- Usage (independent review, 2026-10-13): Т—Ж, «Внимательно читайте текст уведомлений и смс» (03.12.2024,
+  https://t-j.ru/advice-notification/) quotes a bank SMS «Никому не говорите этот код» and a Gosuslugi SMS
+  «Никому не сообщайте!». Usage evidence, not a norm.
+
+## Supervisor impersonation: «Войти под Пользователем», «вход Супервайзера»
+
+- «Войти под {:term user ins}» uses «под» + instrumental for acting under another account, the usual IT phrasing
+  («войти под пользователем», «авторизоваться под другим администратором»). Usage evidence only, no dictionary
+  entry: a GetCourse help question titled «Как один администратор может авторизоваться под другим
+  администратором?» and an infostart.ru 1C tool that lets an administrator «войти в программу под нужным
+  пользователем» (search results, not opened, 2026-10-27). The glossary term `glossary.user` gained `ins sg`
+  «Пользователем» for this message.
+- «вход»: Викисловарь lists only two senses, the action of entering and the place of entry («Вход в дом»); there
+  is no separate log-in sense, so «вход Супервайзера» meaning "the Supervisor has signed in" extends the action
+  sense by context. Applicability (inference): next to a nickname in the Cabinet header, after a middle dot
+  (ui-design.md: meta facts are separated by «·»), the place reading is implausible. The noun avoids a gendered
+  past tense («вошёл/вошла Супервайзер»), since the Supervisor's gender is unknown. Lowercase after «·» marks it
+  as an annotation of the nickname; no project rule or source fixes the case after a middle dot. No offensive or
+  undesirable reading was found.
+- Source: https://ru.wiktionary.org/wiki/вход (read 2026-10-27): «неодушевлённое, мужской род, 2-е склонение
+  (тип 1a по Зализняку)».
+- Independent review (2026-10-27):
+  - «пользователь»: Тв. ед. «по́льзователем», sense 2 «комп.» — «тот, кто использует вычислительную систему или
+    программное средство»; confirms `glossary.user` `ins sg`. Source: https://ru.wiktionary.org/wiki/пользователь.
+  - «под» + instrumental for the name one acts under: Викисловарь «под» has no such sense, but dictionary examples
+    reproduced by kartaslov.ru include «Писать под псевдонимом» (МАС), «Статья под моим именем» (Ушаков); sense
+    definitions there were not verified verbatim. «Войти под Пользователем» extends this sense to an account
+    (inference). Source: https://kartaslov.ru/значение-слова/под.
+  - Usage, now opened: GetCourse question «Как один администратор может авторизоваться под другим
+    администратором?» (https://getcourse.ru/chtm/q/kak-odin-administrator-mozhet-avtorizovatsya-pod-drugim-administratorom).
+    Usage, not a norm. infostart.ru (https://infostart.ru/public/152797) returned HTTP 429 and remains unread.
+  - Project precedent for lowercase after «·»: `page_developer.diagnostic.line` renders «Ошибка · некорректный
+    XML: …».
+  - «супервайзер»: Р. ед. «суперва́йзера», Д. ед. «суперва́йзеру». Source:
+    https://ru.wiktionary.org/wiki/супервайзер.
+
+## Access codes shown once and batch deletion of Participants (`page_manager`, `page_administrator`)
+
+### Animate accusative after a count: «Удалить 2 Участников?», «Удалить 22 Участника?»
+
+- `page_manager.competition.participants.delete_selected_title` puts a digit count before the animate term in the
+  accusative. For «два», «три», «четыре» the animate accusative equals the genitive: Викисловарь «два» gives Вн.
+  одуш. «дву́х», неодуш. «два́»/«две́» (https://ru.wiktionary.org/wiki/два, read 2026-10-27). So «Удалить 2
+  Участников?» («двух участников»), not «2 Участника».
+- For compound numerals ending in два/три/четыре (22, 33, 104) the accusative keeps the nominative form even with
+  animate nouns. Verified by the independent review on 2026-10-27:
+  - Розенталь, «Справочник по правописанию и стилистике», section «Формы винительного падежа одушевленных
+    и неодушевленных существительных» (https://pravopisanie_i_stilistika.academic.ru/152/): point 4 —
+    «доставить двадцать два пассажира», «двадцать двух пассажиров» is colloquial; point 3 — «купить двух коров»
+    is literary, «две коровы» colloquial; point 5 — «нескольких товарищей» and «несколько товарищей» are both
+    acceptable.
+  - Грамота.ру № 296810 (https://gramota.ru/poisk?mode=spravka&query=296810): «винительный падеж сохраняет форму
+    именительного независимо от категории одушевленности»; № 301355
+    (https://gramota.ru/poisk?mode=spravka&query=301355), with digits: «Корректно: освободить 24 моряка»;
+    № 210165 (https://gramota.ru/poisk?mode=spravka&query=210165): «вижу двадцать одного мальчика» is correct.
+  - rusgram.ru still fails with a self-signed certificate; search-engine summaries contradicted each other and are
+    not citable.
+- Applied: exact keys `2`, `3`, `4` render the genitive plural «Участников»; CLDR `few` (22–24, 32–34, …) renders
+  the genitive singular «Участника»; `one` (1, 21, …) renders the animate accusative «Участника» («один» agrees in
+  animacy: «двадцать одного участника»); `many` renders «Участников».
+
+### Predicate agreement in the batch toast: «3 Участника удалены», «5 Участников удалены»
+
+- `page_manager.competition.participants.deleted_selected` keeps the subject-first order of
+  `…participants.deleted` («Участник удалён»): `one` takes the singular («21 Участник удалён»), `few` and `many`
+  the plural. With a numeral subject both a singular («удалено») and a plural predicate are accepted; the plural
+  stresses definite, individually counted people. General grammar knowledge, not checked against a source on
+  2026-10-27; «Удалено N Участников» is the alternative word order. The review found no defect; Розенталь's section
+  «Сказуемое при подлежащем – количественно-именном сочетании» (https://pravopisanie_i_stilistika.academic.ru/185/)
+  returned HTTP 502, so this stays unverified.
+
+### Term forms and other wording
+
+- `glossary.access_code` gained `ins pl` «Кодами-доступа» (Викисловарь «код», Тв. мн. «ко́дами», see «Plural and
+  instrumental forms of existing terms» above; only the first part declines). `glossary.participant` gained `dat pl`
+  «Участникам» (Викисловарь «участник», type 3a, see «Declension of the Manager domain terms» above).
+- «раздайте коды Участникам»: lowercase anaphoric «коды» after the term in the same sentence, like «этот код» above.
+- «Отметьте строки, чтобы удалить нескольких Участников сразу»: «отметьте» for row checkboxes keeps it apart from
+  «Выберите строку, чтобы открыть …», which other guides use for opening a row. Project wording choice.
+- «Удалить выбранных» (button) is an elliptical animate accusative plural («выбранных Участников»); the table
+  context resolves it. No undesirable reading found.
+- «узнать его будет нельзя» is used instead of the colloquial «его не узнать» from features.md: «не узнать» also
+  means "not to recognise" («его не узнать» — changed beyond recognition). Inference from common usage; no
+  dictionary opened.
+
+## Sign-in by e-mail and Пароль (`page_guest`, `page_registration`, `page_profile`, `page_password`, `user`)
+
+- «Пароль»: Викисловарь gives one sense, «секретное слово или набор символов, предназначенный для подтверждения
+  личности или полномочий»; inanimate masculine, type 2a: Р. «пароля», Д. «паролю», В. «пароль», Тв. «паролем».
+  No second sense or undesirable reading found. `glossary.password` holds the forms `nom/gen/dat/acc/ins sg`.
+  Source: https://ru.wiktionary.org/wiki/пароль (read 2026-10-27).
+- «Почта или Пароль неверны»: Розенталь, «Справочник по правописанию и стилистике», «Согласование сказуемого
+  с однородными подлежащими», п. 2: with disjunctive conjunctions the predicate is singular «если не возникает
+  необходимость согласования в роде», plural when the subjects differ in gender («Статья в целом или отрывок из неё
+  представили бы интерес…»). «Почта» (f.) and «Пароль» (m.) differ, so the short adjective is plural. The usual UI
+  pattern «Неверный логин или пароль» was not used: the attribute would agree only with the nearest noun.
+  Source: https://pravopisanie_i_stilistika.academic.ru/191/ (read 2026-10-27).
+- «Сменить пароль» (button) stays lower-case: features.md (testsys.web.page.multi.profile) fixes the label; elsewhere
+  the domain term is capitalized. Project decision, not a language finding. «Сменить» on the button and «изменён»
+  in the toast repeat the accepted e-mail pair («Сменить почту» / «Почта изменена»); see «Смена адреса … на этот
+  адрес» above. The block title «Смена Пароля» parallels «Смена почты».
+- «Текущий Пароль»: sense 2 of «текущий» («имеющийся, существующий… сейчас») applies; unlike «текущие Соревнования»
+  (see «Текущий» in UI text above) a Пароль has no time span, so no "ongoing" misreading. Inference.
+- (Superseded 2026-10-29, see below.) Length rule of a new Пароль (8–64 code points, at most 72 bytes in UTF-8) is told without naming the encoding:
+  «латинская буква или цифра занимает 1 байт, русская буква — 2». These are UTF-8 facts for ASCII and Cyrillic;
+  other symbols (for example «№», 3 bytes, or emoji, 4) are not listed. Project wording choice; the coordinator's
+  example «a purely Cyrillic Пароль may have at most 36 letters» follows from it.
+- Superseded (2026-10-29): the byte-based rule above and the 36-letter Cyrillic limit no longer apply. A Пароль
+  now has 8–64 characters, only Latin letters a–z and A–Z, digits 0–9 and the symbols `!@#$%^&*()-_=+.,?`, at
+  least one of each kind, no spaces. «Большие и маленькие буквы различаются, пробелы учитываются.» was dropped at
+  the user's request (not a requirement).
+- Current `page_password.guide` / `page_password.invalid.description` wording: «… от 8 до 64 символов только из
+  латинских букв a–z и A–Z, цифр 0–9 и знаков ! @ # $ % ^ & * ( ) . , ? - _ = + без пробелов. В нём должны быть
+  хотя бы одна маленькая буква, одна большая, одна цифра и один знак.» Project wording choices:
+  - The symbols are separated by spaces, not commas, because «.» and «,» are themselves allowed.
+  - The list sits mid-sentence and ends with «+» (keyboard order, with «. , ?» moved before «- _ = +»), so neither
+    the sentence period nor «?» can be misread as the list's end or as a question mark.
+  - «знаков» names the symbols so that «символов» keeps only the length sense.
+  - «маленькая / большая буква» follows «Case sensitivity» above instead of «строчная / заглавная» or «регистр».
+  - None of the symbols need MF2 escaping (only `{`, `}`, `|`, `\` do); continuation lines do not start with `!` or
+    `#`, and `=` after the key separator is plain text in `.properties`.
+- «Знаки» next to «буквы, цифры» means written signs (punctuation, symbols); no other sense is plausible in this
+  list. Inference.
+- «Вход временно закрыт» follows features.md («закрывает вход по этой почте»). The description does not promise
+  a wait of exactly 5 minutes («Попробуйте позже»), since the remaining lock time can be shorter. Inference.
+- `page_guest.sign_in.blocked.description` was changed (2026-10-28) to «Слишком много неудачных попыток входа.
+  Попробуйте позже.»: the limit and lock time became configurable and the message is shared by sign-in by e-mail
+  and by Код-доступа (counted per client address), so it names neither numbers nor «по этой почте». Викисловарь
+  gives «слишком» one sense, «с избытком, чересчур», without a stylistic label (the entry is marked incomplete);
+  no second reading of «неудачных попыток входа» found. Source: https://ru.wiktionary.org/wiki/слишком
+  (read 2026-10-28).
+- «неудачный» in «неудачных попыток входа» has Викисловарь sense 1 «сопровождающийся неудачами, заканчивающийся
+  неудачей», without a label; sense 2 («не такой, какой ожидали») does not fit. Source:
+  https://ru.wiktionary.org/wiki/неудачный (read 2026-10-28). Usage, not a norm: the Russian ArcGIS Server help
+  says «число неудачных попыток входа в систему»
+  (https://enterprise.arcgis.com/ru/server/11.3/administer/windows/user-account-lockout-policy.htm, read
+  2026-10-28). The impersonal wording fits both counters: failures by e-mail may come from someone else, and
+  several people may share one client address. No normative style guide for lockout messages was found.
+- «72 байт»: after a numeral the counting form «байт» (zero ending) is used; «байтов» only without a numeral.
+  Грамота.ру answers № 265242, № 310954 («равен 536 байт… 1220 байт»; «вне сочетания с количественным
+  числительным … байтов»), № 237033 («длину 6 байт (4 байта)»); Викисловарь lists the counting form «байт» next
+  to Р. мн. «байтов». So «не больше 72 байт» and «1 байт» are correct; «русская буква — 2» is an elliptical
+  «2 байта» (inference). Sources: https://gramota.ru/poisk?mode=spravka&query=байт,
+  https://ru.wiktionary.org/wiki/байт (read 2026-10-27, independent review).
+- «Войдите или зарегистрируйтесь как Ученик» (`page_guest.start.text`): a reviewer noted that «как Ученик» after
+  two coordinated verbs may be read as applying to both. Grammatical inference without a source; the earlier text
+  had the same structure and was kept.
+- «Используйте код, который вам выдали.» (`page_guest.sign_in.access_code_guide`): Викисловарь sense 1 of «выдать»
+  (issue or hand out officially, transfer to someone's control) applies; sense 3 (reveal a secret) is not plausible
+  on a sign-in field, and the neighbouring `page_guest.access_code.block_guide` already uses «Если вам выдали
+  Код-доступа». The indefinite-personal «выдали» covers every issuer (Организатор, Администратор, deployment
+  configuration) without naming one. Lowercase anaphoric «код» after the field label, like «этот код» above.
+  Source: https://ru.wiktionary.org/wiki/выдать (read 2026-10-27).
+
+- Password rules (`page_password.*`, independent review 2026-10-29):
+  - «маленькая / большая буква» is a standard synonym pair, not only a project choice: Викисловарь «прописная
+    буква» lists «заглавная буква», «большая буква» as synonyms and «строчная буква», «маленькая буква» as
+    antonyms, without labels. Source: https://ru.wiktionary.org/wiki/прописная_буква (read 2026-10-29).
+  - «знак» for the listed symbols: Викисловарь «знак», sense 1 (a graphic mark conveying a meaning); set phrases
+    «знак препинания», «вопросительный знак». Source: https://ru.wiktionary.org/wiki/знак (read 2026-10-29,
+    fetch summary).
+  - «В нём должны быть хотя бы одна …, одна … и один …»: with the predicate before homogeneous subjects the singular
+    is usual, the plural is acceptable and preferred in business writing (Розенталь, «Согласование сказуемого
+    с однородными подлежащими», п. 1). Source: https://pravopisanie_i_stilistika.academic.ru/191/ (read 2026-10-29,
+    fetch summary, quotes not checked character by character).
+  - «Пароль не подходит» also means "not accepted at sign-in" in everyday use (Яндекс ID help: «пароль может
+    не подходить по нескольким причинам»); Викисловарь «подходить», sense 3, gives the intended "does not meet the
+    requirements". The description and the separate «Текущий Пароль неверен» resolve it in the profile dialog
+    (inference); the unambiguous alternative is «Пароль не отвечает требованиям». Sources:
+    https://ru.wiktionary.org/wiki/подходить, https://yandex.ru/support/id/troubleshooting/other-login-problems.html
+    (read 2026-10-29).
+  - Usage, not a norm: Elsevier Scopus Russian help writes «Длина от 8 до 20 символов» and lists special symbols
+    separated by spaces. Source: https://www.elsevier.support/ru-ru/scopus/answer/Каковы-требования-к-надежности-пароля
+    (read 2026-10-29). The JAL Russian password page returned HTTP 403.
+## Guest page layout (`page_guest`, `page_registration`, `page_confirmation.send_again`)
+
+Notes from the 2026-10-28 rework of the sign-in, registration and access restoration pages (one card per page, no
+tabs and no step guides). `page_guest.start.*`, the field and block guides and `page_guest.tab.*` were deleted; the
+notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide` and «вкладка» are historical.
+
+- «Онлайн-соревнования»: the first part «онлайн-» is joined with a hyphen. «Мел» (03.09.2016) states that the first
+  parts «онлайн» and «офлайн» are written in Cyrillic and «присоединяются дефисом», citing the РАН dictionary; the
+  dictionary itself was not opened. The user's source phrase «онлайн соревнований» lacked the hyphen. Lowercase
+  «соревнования» in the tagline is the general sense (any online robotics competitions), not the domain term
+  «Соревнование» (definitions.md); the capital letter only starts the phrase. Source:
+  https://mel.fm/pravopisaniye/184592-online (read 2026-10-28).
+- «Аккаунт»: Викисловарь gives an inanimate masculine noun; sense 1 «идентификационный номер, код какой-либо учётной
+  записи», senses 2–5 labelled computing slang (a user account, a personal cabinet, the person who controls it);
+  synonyms «учётная запись», «учётка». In «Нет аккаунта?» / «Уже есть аккаунт?» it is a user-approved informal
+  word next to the links «Зарегистрироваться» / «Войти»; messages that state facts about binding keep the domain
+  term «Пользователь» («…если почта привязана к Пользователю»). No undesirable connotation found. Source:
+  https://ru.wiktionary.org/wiki/аккаунт (read 2026-10-28).
+- «Вернуться ко входу»: МАС (via kartaslov.ru) says «ко» «употребляется вместо „к“ … перед словами, начинающимися
+  с некоторых групп согласных» and quotes «он повернулся ко входу» (Лэмб, 1951). Both «к входу» and «ко входу»
+  occur; no normative source settling the choice was opened. «Вход» here is the sign-in page (the action sense
+  extended by context, see «вход» above). Source: https://kartaslov.ru/как-правильно-пишется-слово/ко (read
+  2026-10-28).
+- «Рады видеть снова.» omits «вас» (usual full form «Рады видеть вас снова»); an elliptical friendly greeting
+  approved by the user for guest pages. A web search found no usage page with the exact phrase; not verified
+  against a style guide.
+- «…пришлём на неё код для смены Пароля» instead of «…код, чтобы задать новый Пароль»: an infinitive after «чтобы»
+  normally shares the subject of the main clause, and here «пришлём» (мы) and «задать» (вы) differ. Grammar
+  inference, no handbook page opened. «Смена Пароля» repeats `page_profile.password_title`. A comma closes the
+  participial phrase «привязанную к Пользователю» before the dash («…Пользователю, — пришлём…»).
+- Review update for «Вернуться ко входу» (2026-10-28): Грамота.ру answers № 228513 (2007), № 261315 (2010) and
+  № 275490 (2014) prescribe «к входу». № 228513 lists where «ко» is used: before the dative of лев, лёд, лён, лоб,
+  ложь, мох, ров, рожь, рот, before «мне», and before the dative of весь, всякий, всяческий, вторник, второе,
+  второй, многие, многое; «вход» is not among them. МАС only gives the general rule and the usage «повернулся ко
+  входу» (1951), which is attested usage, not a norm. Decision (2026-10-28): the user chose «Вернуться к входу»
+  for `page_guest.back_to_sign_in`, following Грамота.ру; «Вернуться на страницу входа» was not taken. Sources:
+  https://gramota.ru/poisk?query=ко%20входу&mode=spravka, https://gramota.ru/poisk?query=228513&mode=spravka
+  (read 2026-10-28). The earlier «Вернуться ко входу» bullet above is superseded by this decision.
+- Independent review of «Вернуться к входу» (2026-10-28): verdict clear. gramota.ru returned HTTP 502 during this
+  review, so answers № 228513, 261315 and 275490 were not re-read. «Мел» (non-normative, no handbook cited) gives
+  «к» by default and «ко» before monosyllables starting with a consonant cluster («ко дну», «ко лбу», «ко льду»,
+  «ко лжи»), before весь/всякий/второй/вторник/многие and in set phrases; all its cluster examples have a fleeting
+  vowel, which «вход» lacks (reviewer's inference, consistent with Грамота.ру). A close analogue: «презентация к
+  встрече». Sources: https://mel.fm/gramotnost/kak-pisat/6540928-prepositions_problem,
+  https://mel.fm/gramotnost/kak-govorit/7192506-prezentatsiya-ko-vstreche-ili-prezentatsiya-k-vstreche--kak-pravilno-
+  (read 2026-10-28).
+- Review update for «онлайн-» (2026-10-28): Русский орфографический словарь (Лопатин, Иванова) via gramota.ru:
+  «онла́йн-… – первая часть сложных слов, пишется через дефис»; Большой универсальный словарь gives
+  «онлайн-конференция». Source: https://gramota.ru/poisk?query=онлайн-&mode=slovari (read 2026-10-28).
+- Comma and dash (Правила 1956): § 198 — a comma comes before a dash when they meet; § 171 — a dash in a
+  бессоюзное предложение when the second part states a result. Applying them to «…Пользователю, — пришлём…» and
+  «Укажите почту — пришлём…» is an inference. Sources:
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/49,
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/42 (read 2026-10-28).
+- «Псевдоним» is inanimate, masculine, type 1a; В. ед. «псевдони́м», which confirms `glossary.nickname` `acc sg`.
+  Source: https://ru.wiktionary.org/wiki/псевдоним (read 2026-10-28).
+- A subjectless past plural («Отправили код…») also reads as a неопределённо-личное предложение («Мне принесли эту
+  книгу»); both readings convey that the code was sent. The source article carries a 2019 missing-sources tag.
+  Source: https://ru.wikipedia.org/wiki/Неопределённо-личное_предложение (read 2026-10-28).
+- Dash in «Укажите почту — пришлём на неё код подтверждения.»: the second part is the result of the action, see
+  «Colon or dash when the second clause states a result» above.
+- «Отправили код на {$email}. Введите его, придумайте Псевдоним и Пароль.» speaks for the System with an omitted
+  «мы», like «пришлём». «Его» refers to «код». «Придумайте Пароль» repeats `page_password.guide`. `glossary.nickname`
+  gained `acc sg` «Псевдоним» (inanimate, Вин. = Им.; see «Псевдоним» above).
+
+## Regrades and the commit dialog (`page_developer.task.regrades.*`, `task.commit_regrade_*`)
+
+- «Перепроверка» (domain term, definitions.md item 34): Викисловарь gives one sense, «повторная проверка с целью
+  выявления ошибок, погрешностей, недочётов», no stylistic label; feminine, inanimate, type 3*a: Им. «перепроверка» /
+  «перепроверки», Р. «перепроверки» / «перепроверок», В. «перепроверку» / «перепроверки». `glossary.regrade` holds
+  `nom sg`, `nom pl`, `gen pl`. The general sense (re-verifying for errors) is close to the TestSys sense (re-sending
+  Посылки for checking after a commit); the capitalized term, the table context and the guide resolve it. The
+  verb in the checkbox «Перепроверить Посылки» and «повторная проверка» in running text are the ordinary words, not
+  the term. Source: https://ru.wiktionary.org/wiki/перепроверка (read 2026-10-28).
+- «Тайм-аут» is written with a hyphen: Русский орфографический словарь via gramota.ru «тайм-а́ут, -а»; the
+  form «таймаут» is not listed. The dictionaries give a sports sense and a general one, «перерыв, временное
+  прекращение работы»; no computing sense ("time limit exceeded"). In «проверок с ошибкой или тайм-аутом» the
+  checking context makes the computing reading the only plausible one (inference). features.md spells «таймаутом»;
+  the user-facing text follows the dictionary. Source: https://gramota.ru/poisk?query=тайм-аут&mode=slovari
+  (read 2026-10-28).
+- «Прогресс» as the column header and in the progress bar label: Викисловарь lists only 1. «поступательное движение,
+  улучшение в процессе развития» and 2. разг. «переход на более высокую ступень развития»; no "degree of completion"
+  sense. That sense is established UI usage: the Russian Android documentation names the component «Индикаторы
+  прогресса» and says «`progress` – текущий прогресс, который показывает индикатор». «Индикатор выполнения» is
+  a common alternative for "progress bar" (search results only, not opened). Kept as the coordinator's wording; the
+  cell «3 из 10» makes the meaning concrete. Sources: https://ru.wiktionary.org/wiki/прогресс,
+  https://developer.android.com/develop/ui/compose/components/progress?hl=ru (both read 2026-10-28).
+- Count after a transitive verb: «отправят 1 Посылку / 2 Посылки / 5 Посылок» uses the accusative governed by
+  «отправят» (inanimate: «две Посылки» = Им.), with CLDR `one` → «Посылку», `few` → «Посылки», `many` → «Посылок»;
+  `glossary.submission` gained `acc one/few/many`. The indefinite-personal «отправят» avoids predicate agreement
+  with a numeral subject (see «Predicate agreement in the batch toast» above). Grammar knowledge, not checked
+  against a handbook on 2026-10-28.
+- «Это первая фиксация Задачи — повторно проверять пока нечего.» and «…не изменился — повторной проверки не будет.»:
+  the second part states a consequence, so a dash (see «Colon or dash when the second clause states a result»).
+- «Указать другую почту» (profile dialog, step 2) differs from the header action «Изменить почту», so the two
+  actions on one page are not confused; `page_profile.another_email` «Укажите другую почту.» is a refusal hint with
+  the same verb. Project wording choice.
+- Independent review, «сколько» with a plural predicate («сколько её Посылок получили Вердикт»): Розенталь,
+  «Справочник по правописанию и стилистике», § 12 — with «много, мало, сколько, столько» the singular predicate
+  prevails, the plural «находит все более широкое распространение». Both are acceptable; «получило» is the more
+  traditional choice. Source: https://pravopisanie_i_stilistika.academic.ru/185/ (read 2026-10-28 by the reviewer).
+- Independent review, «фиксация»: Викисловарь lists «закрепление или удерживание чего-либо в определённом
+  положении» and «регистрация или запоминание чего-либо; запись, отметка», no computing sense and no undesirable
+  meaning; «первая фиксация Задачи» names the action of «зафиксировать» (commit). Source:
+  https://ru.wiktionary.org/wiki/фиксация (read 2026-10-28 by the reviewer).
+- Rewritten guide (2026-10-28), «сколько Посылок Перепроверки получило Вердикт по новому набору Полигонов»: the
+  possessive «её» was replaced by the genitive term «Перепроверки» because «её Посылок» could be read as referring to
+  «повторная проверка» or «фиксация» in the first sentence; `glossary.regrade` gained `gen sg` «Перепроверки»
+  (Викисловарь, see above). Gen sg coincides with nom pl, but after «Посылок» only the genitive reading is possible.
+  The singular «получило» follows the Розенталь note above. «По новому набору Полигонов» refers back to «набор
+  Полигонов изменился» and expresses "results exactly on the Regrade's Polygons" without the technical «ровно».
+  «Прогресс может не дойти до конца» is used instead of «ниже 100 %» because the cell shows «3 из 10», not a
+  percentage. Project wording choices, no separate source.
+- Project observation: Student, Participant and Judge pages call the timeout outcome «Превышено время проверки»;
+  the Developer guide uses «тайм-аут», which the dictionaries list only in the sports and "pause" senses. Context
+  makes it clear; not a defect.
+- Independent review, «не считая проверок»: Грамота.ру answers № 326917 (20.10.2025) and № 313731 (27.05.2024)
+  treat «не считая» as a preposition meaning 'кроме', № 272902 (26.01.2014) glosses it «исключая, не считая
+  кого-либо, чего-либо»; the genitive «проверок» follows from that formula (inference, no explicit case rule found).
+  Source: https://gramota.ru/poisk?query=не считая&mode=spravka (read 2026-10-28 by the reviewer).
+- Independent review, «по новому набору Полигонов»: in a table of several Regrades a reader of an older row could
+  take «новый» as the latest set; «по набору Полигонов, с которым запущена Перепроверка» is a longer alternative.
+  Kept: the natural reading refers back to the first sentence. Inference from the table context, no language source.

@@ -1,0 +1,39 @@
+# Settings shared by all Compose environments, imported through SPRING_CONFIG_IMPORT in deploy/compose.yml.
+# The environment file application-environment.yml holds the remaining application parameters.
+spring:
+  datasource:
+    # Database testsys of the postgres service and its user; the password comes from TESTSYS_DB_PASSWORD.
+    url: jdbc:postgresql://postgres:5432/testsys
+    username: testsys
+testsys:
+  # The ports of the three HTTP servers are fixed here: deploy/compose.yml publishes them and checks them in the
+  # healthcheck, and deploy/config/prometheus.yml reads the metrics port. The service interface listens on the
+  # loopback interface by default; inside the container it must accept connections forwarded from the published
+  # port.
+  service:
+    address: 0.0.0.0
+    port: 8081
+  metrics:
+    port: 8082
+  file-storage:
+    # Subdirectories of the files volume mounted at /var/lib/testsys/files.
+    paths:
+      statement: /var/lib/testsys/files/statement
+      exercise: /var/lib/testsys/files/exercise
+      test: /var/lib/testsys/files/test
+      solution: /var/lib/testsys/files/solution
+      recording: /var/lib/testsys/files/recording
+      logs: /var/lib/testsys/files/logs
+# The console gets one logstash JSON object per line for Loki; the application log files in the directory that the
+# override of the environment mounts at /var/log/testsys keep the text format.
+logging:
+  structured:
+    format:
+      console: logstash
+  file:
+    name: /var/log/testsys/testsys.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 14
+      total-size-cap: 1GB

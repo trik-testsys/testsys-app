@@ -1,0 +1,207 @@
+package tech.testsys.infra.database.api.persistence.adapter.group
+
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.competition
+import tech.testsys.domain.builder.api.competitionData
+import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.ObserverContestFilter
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
+import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
+import tech.testsys.domain.model.group.Competition
+import tech.testsys.domain.model.group.CompetitionData
+import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+
+class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<CompetitionData, CompetitionId, Competition>() {
+
+    @Autowired
+    override lateinit var repository: CompetitionRepository
+
+    @Autowired
+    private lateinit var participants: ParticipantRepository
+
+    @Test
+    fun `should page competition contest pairs before counting and retain a shared contest twice`() {
+        val assigned = fixtures.contest()
+        val other = fixtures.contest()
+        val first = repository.update(fixtures.competition().withData { contests(listOf(assigned.id.value, other.id.value)) })
+        val second = repository.update(fixtures.competition().withData { contests(listOf(assigned.id.value)) })
+        val sorted = Sort(listOf(Sort.Order("competitionId", Sort.Direction.DESC)))
+        val filter = ObserverContestFilter(contestId = assigned.id)
+
+        val firstPage = repository.findAvailableToObserver(setOf(assigned.id), Pagination(0, 1, sorted), filter)
+        val secondPage = repository.findAvailableToObserver(setOf(assigned.id), Pagination(1, 1, sorted), filter)
+        val beyond = repository.findAvailableToObserver(setOf(assigned.id), Pagination(2, 1, sorted), filter)
+
+        assertEquals(listOf(second.id to assigned.id), firstPage.content.map { it.competition.id to it.contest.id })
+        assertEquals(listOf(first.id to assigned.id), secondPage.content.map { it.competition.id to it.contest.id })
+        assertEquals(emptyList<Any>(), beyond.content)
+        assertEquals(2L, beyond.totalElements)
+    }
+
+    override fun newData(): CompetitionData {
+        val ownerId = fixtures.manager().id.value
+        val contestIds = listOf(fixtures.contest().id.value, fixtures.contest().id.value)
+        return competitionData {
+            owner(ownerId)
+            name = fixtures.unique("Competition")
+            description = "Competition description"
+            contests(contestIds)
+        }
+    }
+
+    override fun modified(entity: Competition): Competition {
+        val keptContest = entity.data.contests.ids.first()
+        val newContest = fixtures.contest().id
+        return entity.withData {
+            name = fixtures.unique("Renamed competition")
+            description = "Updated description"
+            contests = mutableListOf(keptContest, newContest)
+        }
+    }
+
+    override fun detached(entity: Competition) = competition {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
+    override fun idOf(value: Long) = CompetitionId(value)
+
+    override fun assertSameData(expected: Competition, actual: Competition) {
+        assertEquals(expected.data.owner.id, actual.data.owner.id)
+        assertEquals(expected.data.name, actual.data.name)
+        assertEquals(expected.data.description, actual.data.description)
+        assertEquals(expected.data.participants.ids.toSet(), actual.data.participants.ids.toSet())
+        assertEquals(expected.data.contests.ids.toSet(), actual.data.contests.ids.toSet())
+    }
+
+    @Test
+    fun `should project participants from the participant rows pointing at the competition`() {
+        val saved = repository.save(newData())
+        val first = fixtures.participant(saved)
+        val second = fixtures.participant(saved)
+        fixtures.participant()
+
+        val found = assertNotNull(repository.findById(saved.id))
+
+        assertEquals(setOf(first.id, second.id), found.data.participants.ids.toSet())
+    }
+
+    @Test
+    fun `should ignore participants given on save and update`() {
+        val ownerId = fixtures.manager().id.value
+        val unrelated = fixtures.participant()
+
+        val saved = repository.save(
+            competitionData {
+                owner(ownerId)
+                name = fixtures.unique("Competition")
+                description = "Competition description"
+                participants = mutableListOf(unrelated.id)
+            },
+        )
+        val updated = repository.update(saved.withData { participants = mutableListOf(unrelated.id) })
+
+        assertEquals(emptyList(), saved.data.participants.ids)
+        assertEquals(emptyList(), updated.data.participants.ids)
+        assertEquals(emptyList(), assertNotNull(repository.findById(saved.id)).data.participants.ids)
+    }
+
+    @Test
+    fun `should save one contest link per id when ids repeat`() {
+        val ownerId = fixtures.manager().id.value
+        val contestId = fixtures.contest().id
+
+        val saved = repository.save(
+            competitionData {
+                owner(ownerId)
+                name = fixtures.unique("Competition")
+                description = "Competition description"
+                contests = mutableListOf(contestId, contestId)
+            },
+        )
+
+        assertEquals(listOf(contestId), assertNotNull(repository.findById(saved.id)).data.contests.ids)
+    }
+
+    @Test
+    fun `should increment the competition version on an update of the contests only`() {
+        val saved = repository.save(newData())
+        val contest = fixtures.contest().id
+
+        val updated = repository.update(saved.withData { contests = mutableListOf(contest) })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
+    fun `should increment the competition version when participants are saved to it`() {
+        val saved = repository.save(newData())
+        val hash = AccessTokenHash(value = fixtures.unique("token"), algorithm = HashAlgorithm.HmacSha256)
+
+        participants.saveToCompetition(saved.id, listOf(hash)) { participantId -> "named-${participantId.value}" }
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(assertNotNull(repository.findById(saved.id)).version).value)
+    }
+
+    @Test
+    fun `should keep the owner if another owner is passed on update`() {
+        val saved = repository.save(newData())
+        val otherOwner = fixtures.manager().id
+
+        val updated = repository.update(saved.withData { owner = otherOwner })
+
+        assertEquals(saved.data.owner.id, updated.data.owner.id)
+        assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
+    }
+
+    @Test
+    fun `should find competitions by ids with the same statement count for one and twenty ids`() {
+        val data = newData()
+        val saved = List(20) { repository.save(data) }
+        val participantIds = saved.map { competition -> fixtures.participant(competition).id }
+        val ids = saved.map { competition -> competition.id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { competition -> competition.id })
+        assertEquals(ids.toSet(), twenty.map { competition -> competition.id }.toSet())
+        assertEquals(
+            ids.zip(participantIds).toMap(),
+            twenty.associate { competition -> competition.id to competition.data.participants.ids.single() },
+        )
+        assertEquals(List(20) { data.contests.ids.toSet() }, twenty.map { competition -> competition.data.contests.ids.toSet() })
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
+    fun `should find each competition containing any of the contests once in id order`() {
+        val first = repository.save(newData())
+        val second = repository.save(newData())
+        repository.save(newData())
+        val shared = first.data.contests.ids.first()
+        repository.update(second.withData { contests = mutableListOf(shared) })
+
+        val found = repository.findByContestIds(setOf(shared, first.data.contests.ids.last()))
+
+        assertEquals(listOf(first.id, second.id).sortedBy { id -> id.value }, found.map { competition -> competition.id })
+        assertEquals(listOf(shared), found.single { competition -> competition.id == second.id }.data.contests.ids)
+    }
+
+    @Test
+    fun `should find no competitions for an empty set of contests`() {
+        repository.save(newData())
+
+        assertEquals(emptyList(), repository.findByContestIds(emptySet()))
+    }
+}

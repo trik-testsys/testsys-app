@@ -1,0 +1,86 @@
+package tech.testsys.domain.builder.task
+
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
+import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.Statement
+import tech.testsys.domain.model.task.StatementData
+import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.VersionBucket
+
+/**
+ * Builder of [StatementData]. Required: [file], [name], [description], [versionBucket].
+ *
+ * @property name the name of the statement, or `null` if not set yet.
+ * @property description the description of the statement, or `null` if not set yet.
+ * @property versionBucket the version chain shared by all versions of the statement, or `null` if not set yet.
+ * @since 1.0.0-beta.1
+ */
+class StatementDataBuilder : Builder<StatementData> {
+
+    private var _file: FileData? = null
+
+    var name: String? = null
+
+    var description: String? = null
+
+    var versionBucket: VersionBucket? = null
+
+    /**
+     * Sets the file.
+     *
+     * @param uploadedFilename the original name of the uploaded file.
+     * @param content the raw binary content of the file.
+     * @since 1.0.0-beta.1
+     */
+    fun file(uploadedFilename: String, content: ByteArray) {
+        _file = FileData(uploadedFilename, content)
+    }
+
+    /**
+     * Sets [file] without reading its contents.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun file(file: FileData) {
+        _file = file
+    }
+
+    override fun build(): StatementData {
+        val file = requireField(_file) { ::_file }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+        val versionBucket = requireField(versionBucket) { ::versionBucket }
+
+        return StatementData(
+            file = file,
+            name = name,
+            description = description,
+            versionBucket = versionBucket,
+        )
+    }
+}
+
+/**
+ * Builder of [Statement] entities. Required: [id], [createdAt], [data].
+ *
+ * @since 1.0.0-beta.1
+ */
+class StatementBuilder : DomainEntityWithDataBuilder<Statement, StatementData, StatementDataBuilder>() {
+
+    override fun dataBuilder() = StatementDataBuilder()
+
+    override fun build(): Statement {
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
+
+        return Statement(
+            id = StatementId(id),
+            createdAt = createdAt,
+            data = data,
+        ).applyVersion(version)
+    }
+}

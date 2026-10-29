@@ -1,0 +1,56 @@
+# E2E environment over deploy/compose.yml for an external test process: application, PostgreSQL and Mailpit.
+# Start it with deploy/testsys.sh, which reads deploy/env/e2e.env and deploy/env/e2e.local.env:
+#   sh deploy/testsys.sh e2e up [--node]
+# --node adds deploy/compose.grading-node.yml as the last file to run a grading node in this project.
+# Runs alongside the dev environment: project name, volumes and published ports differ.
+name: testsys-e2e
+
+services:
+  app:
+    # The same block in every environment override: the variables of the application under their own names, with
+    # the values from the variable files of the environment. Only SPRING_CONFIG_IMPORT of deploy/compose.yml is
+    # replaced: e2e also imports its differences from dev, last, so they take precedence.
+    environment:
+      SPRING_CONFIG_IMPORT: file:/etc/testsys/application.yml,file:/etc/testsys/application-environment.yml,file:/etc/testsys/application-e2e.yml
+      TESTSYS_DB_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+      TESTSYS_MAIL_PASSWORD: ${TESTSYS_MAIL_PASSWORD?set TESTSYS_MAIL_PASSWORD to the SMTP password or to an empty value}
+      TESTSYS_SUPERVISOR_ACCESS_TOKEN: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN:?set TESTSYS_SUPERVISOR_ACCESS_TOKEN}
+      TESTSYS_SERVICE_SECRET: ${TESTSYS_SERVICE_SECRET:?set TESTSYS_SERVICE_SECRET}
+      TESTSYS_ACCESS_TOKEN_SECRET: ${TESTSYS_ACCESS_TOKEN_SECRET:?set TESTSYS_ACCESS_TOKEN_SECRET}
+      TESTSYS_GRAFANA_URL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL}
+      TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES:-}
+      TESTSYS_GRADING_IMPORT_NODES: ${TESTSYS_GRADING_IMPORT_NODES:-false}
+    volumes:
+      # The parameters of dev, shared by e2e.
+      - type: bind
+        source: ./config/application-dev.yml
+        target: /etc/testsys/application-environment.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./config/application-e2e.yml
+        target: /etc/testsys/application-e2e.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      # Application log files; deploy/testsys.sh creates the directory before starting.
+      - type: bind
+        source: ./logs/e2e
+        target: /var/log/testsys
+        bind:
+          create_host_path: false
+
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:${TESTSYS_DB_PORT:-5434}:5432"
+
+  # Accepts all mail on the internal SMTP port 1025 without relaying it; messages are shown in the web UI.
+  mailpit:
+    image: axllent/mailpit:v1.31.5
+    logging:
+      driver: local
+    ports:
+      - "127.0.0.1:${TESTSYS_MAIL_UI_PORT:-8026}:8025"

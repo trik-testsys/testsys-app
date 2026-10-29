@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- PostgreSQL creates no indexes for foreign keys, and a composite primary key serves lookups by its first column only. -->
+    <changeSet id="1.0.0-18-1" author="testsys">
+        <createIndex tableName="ts_exercise_to_task_content" indexName="ix_ts_exercise_to_task_content_task_content_id">
+            <column name="task_content_id"/>
+        </createIndex>
+        <createIndex tableName="ts_test_to_task_content" indexName="ix_ts_test_to_task_content_task_content_id">
+            <column name="task_content_id"/>
+        </createIndex>
+        <createIndex tableName="ts_developer_solution_to_task_content"
+                     indexName="ix_ts_developer_solution_to_task_content_task_content_id">
+            <column name="task_content_id"/>
+        </createIndex>
+        <createIndex tableName="ts_trik_studio_version_to_task_content"
+                     indexName="ix_ts_trik_studio_version_to_task_content_task_content_id">
+            <column name="task_content_id"/>
+        </createIndex>
+        <createIndex tableName="ts_community_to_task" indexName="ix_ts_community_to_task_task_id">
+            <column name="task_id"/>
+        </createIndex>
+        <createIndex tableName="ts_task_to_contest" indexName="ix_ts_task_to_contest_contest_id">
+            <column name="contest_id"/>
+        </createIndex>
+        <createIndex tableName="ts_community_to_contest" indexName="ix_ts_community_to_contest_contest_id">
+            <column name="contest_id"/>
+        </createIndex>
+        <createIndex tableName="ts_contest_to_class" indexName="ix_ts_contest_to_class_class_id">
+            <column name="class_id"/>
+        </createIndex>
+        <createIndex tableName="ts_student_to_class" indexName="ix_ts_student_to_class_class_id">
+            <column name="class_id"/>
+        </createIndex>
+        <createIndex tableName="ts_contest_to_competition" indexName="ix_ts_contest_to_competition_competition_id">
+            <column name="competition_id"/>
+        </createIndex>
+        <createIndex tableName="ts_contest_to_observer" indexName="ix_ts_contest_to_observer_observer_id">
+            <column name="observer_id"/>
+        </createIndex>
+        <createIndex tableName="ts_test_to_task_validation_request"
+                     indexName="ix_ts_test_to_task_validation_request_request_id">
+            <column name="request_id"/>
+        </createIndex>
+        <createIndex tableName="ts_developer_solution_to_task_validation_request"
+                     indexName="ix_ts_developer_solution_to_task_validation_request_request_id">
+            <column name="request_id"/>
+        </createIndex>
+        <createIndex tableName="ts_trik_studio_version_to_task_validation_request"
+                     indexName="ix_ts_trik_studio_version_to_task_validation_request_request_id">
+            <column name="request_id"/>
+        </createIndex>
+        <createIndex tableName="ts_multiple_role_to_user" indexName="ix_ts_multiple_role_to_user_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="ts_multiple_role_to_user" indexName="ix_ts_multiple_role_to_user_community_id">
+            <column name="community_id"/>
+        </createIndex>
+
+        <createIndex tableName="ts_submission" indexName="ix_ts_submission_grading_context">
+            <column name="author_id"/>
+            <column name="task_id"/>
+            <column name="grading_contest_id"/>
+            <column name="created_at"/>
+        </createIndex>
+        <createIndex tableName="ts_submission" indexName="ix_ts_submission_task_id_kind">
+            <column name="task_id"/>
+            <column name="kind"/>
+        </createIndex>
+        <createIndex tableName="ts_submission" indexName="ix_ts_submission_grading_contest_id_kind">
+            <column name="grading_contest_id"/>
+            <column name="kind"/>
+        </createIndex>
+        <createIndex tableName="ts_judgment_order" indexName="ix_ts_judgment_order_submission_id">
+            <column name="submission_id"/>
+        </createIndex>
+        <createIndex tableName="ts_judgment_order" indexName="ix_ts_judgment_order_judge_id">
+            <column name="judge_id"/>
+        </createIndex>
+        <createIndex tableName="ts_verdict" indexName="ix_ts_verdict_submission_id">
+            <column name="submission_id"/>
+        </createIndex>
+        <createIndex tableName="ts_verdict" indexName="ix_ts_verdict_task_id">
+            <column name="task_id"/>
+        </createIndex>
+
+        <!-- Descending reads of the latest version scan these ascending indexes backwards. -->
+        <createIndex tableName="ts_test" indexName="ix_ts_test_version_bucket_created_at_id">
+            <column name="version_bucket"/>
+            <column name="created_at"/>
+            <column name="id"/>
+        </createIndex>
+        <createIndex tableName="ts_exercise" indexName="ix_ts_exercise_version_bucket_created_at_id">
+            <column name="version_bucket"/>
+            <column name="created_at"/>
+            <column name="id"/>
+        </createIndex>
+        <createIndex tableName="ts_statement" indexName="ix_ts_statement_version_bucket_created_at_id">
+            <column name="version_bucket"/>
+            <column name="created_at"/>
+            <column name="id"/>
+        </createIndex>
+        <createIndex tableName="ts_developer_solution" indexName="ix_ts_developer_solution_version_bucket_created_at_id">
+            <column name="version_bucket"/>
+            <column name="created_at"/>
+            <column name="id"/>
+        </createIndex>
+
+        <createIndex tableName="ts_task" indexName="ix_ts_task_owner_id">
+            <column name="owner_id"/>
+        </createIndex>
+        <createIndex tableName="ts_contest" indexName="ix_ts_contest_owner_id">
+            <column name="owner_id"/>
+        </createIndex>
+        <createIndex tableName="ts_class" indexName="ix_ts_class_owner_id">
+            <column name="owner_id"/>
+        </createIndex>
+        <createIndex tableName="ts_competition" indexName="ix_ts_competition_owner_id">
+            <column name="owner_id"/>
+        </createIndex>
+        <createIndex tableName="ts_community" indexName="ix_ts_community_owner_id">
+            <column name="owner_id"/>
+        </createIndex>
+
+        <!-- Cascading deletes of competitions, classes and contests look up entries by these columns. -->
+        <createIndex tableName="ts_participant_contest_entry" indexName="ix_ts_participant_contest_entry_competition_id">
+            <column name="competition_id"/>
+        </createIndex>
+        <createIndex tableName="ts_participant_contest_entry" indexName="ix_ts_participant_contest_entry_contest_id">
+            <column name="contest_id"/>
+        </createIndex>
+        <createIndex tableName="ts_student_contest_entry" indexName="ix_ts_student_contest_entry_class_id">
+            <column name="class_id"/>
+        </createIndex>
+        <createIndex tableName="ts_student_contest_entry" indexName="ix_ts_student_contest_entry_contest_id">
+            <column name="contest_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- H2 does not support partial indexes, so the judge queue index exists only on PostgreSQL. -->
+    <changeSet id="1.0.0-18-2" author="testsys" dbms="postgresql">
+        <sql>
+            CREATE INDEX ix_ts_submission_judge_queue ON ts_submission (author_id, grading_contest_id)
+            WHERE kind = 'GRADING' AND status = 'GRADED' AND grading_result = 'SUCCESS'
+        </sql>
+        <rollback>
+            <sql>DROP INDEX ix_ts_submission_judge_queue</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -23,6 +23,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       sha: ${{ steps.commit.outputs.sha }}
+      dev: ${{ steps.commit.outputs.dev }}
 
     steps:
       # GITHUB_TOKEN cannot push to protected branches; RELEASE_TOKEN is a token allowed to push to `master` and `dev`.
@@ -59,6 +60,7 @@ jobs:
           git commit -m "Release $VERSION"
           git push --force origin "HEAD:refs/heads/release/$VERSION"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "dev=$(git rev-parse origin/dev)" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build
@@ -106,6 +108,7 @@ jobs:
       TAG: ${{ github.event.release.tag_name }}
       VERSION: ${{ needs.prepare.outputs.version }}
       SHA: ${{ needs.prepare.outputs.sha }}
+      DEV: ${{ needs.prepare.outputs.dev }}
 
     steps:
       - name: Checkout repository
@@ -115,12 +118,26 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
-      # A plain push fails if master moved after the release commit was prepared.
-      - name: Push master and move the release tag
+      # The release commit already holds all of dev, so the merge commit takes its tree as is: a textual merge of the
+      # two histories can keep a line added on both sides twice. A re-run reuses the merge it already pushed.
+      - name: Merge the release commit into dev
         run: |
-          git push origin "$SHA:refs/heads/master"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          if git merge-base --is-ancestor "$SHA" origin/dev; then
+            merge=$(git rev-parse origin/dev)
+          else
+            merge=$(git commit-tree "$SHA^{tree}" -p "$DEV" -p "$SHA" -m "Merge release $VERSION into dev")
+          fi
+          echo "DEV_MERGE=$merge" >> "$GITHUB_ENV"
           git tag -f "$TAG" "$SHA"
-          git push --force origin "refs/tags/$TAG"
+
+      # One atomic push updates master, dev and the tag together or rejects all of them. Neither branch is forced, so
+      # the push fails if master or dev moved after the release commit was prepared.
+      - name: Push master, dev and the release tag
+        run: >-
+          git push --atomic origin "${SHA}:refs/heads/master" "${DEV_MERGE}:refs/heads/dev"
+          "+refs/tags/${TAG}:refs/tags/${TAG}"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
@@ -154,15 +171,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      # Lines added in dev differ from master only by the substituted version, so conflicts take the master side.
-      - name: Merge master into dev
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
-          git checkout -B dev origin/dev
-          git merge --no-ff -X theirs "$SHA" -m "Merge release $VERSION into dev"
-          git push origin dev
 
   cleanup:
     name: Delete temporary branch

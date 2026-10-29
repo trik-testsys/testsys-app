@@ -13,8 +13,6 @@ version = "1.0.0-beta.1"
 
 val libs = versionCatalogs.named("libs")
 
-val libs = versionCatalogs.named("libs")
-
 repositories {
     mavenCentral()
 }

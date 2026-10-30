@@ -2,8 +2,8 @@ package tech.testsys.web.service.view
 
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.NotFoundException
-import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -29,6 +29,7 @@ import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -41,14 +42,17 @@ import java.time.ZoneId
  * @since 1.0.0-beta.1
  */
 @Route("users/:$SERVICE_USER_ID_PARAMETER")
-@PageTitle("Пользователь")
 @RolesAllowed("SERVICE")
 class ServiceUserView(
     private val headers: ServiceHeaders,
     private val search: ServiceUserSearch,
     private val supervisorRole: ServiceSupervisorRole,
     private val runtime: RuntimeSettings,
-) : TestSysView(), BeforeEnterObserver {
+) : TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageService.userTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val user = event.routeParameters.get(SERVICE_USER_ID_PARAMETER).orElse(null)
             ?.toLongOrNull()
@@ -62,36 +66,38 @@ class ServiceUserView(
     }
 
     private fun show(user: User<*>) {
-        page(headers.header(active = ServiceHeaders.USERS_SECTION)) {
-            head("Пользователь «${dataOf(user).name}»") { crumb("Пользователи", ServiceUsersView::class.java) }
+        val texts = currentLocalization().pageService
+        page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
+            head(texts.userHead(name = dataOf(user).name)) { crumb(texts.usersTitle(), ServiceUsersView::class.java) }
             detailsBlock(user)
         }
     }
 
     private fun PageScope.detailsBlock(user: User<*>) {
+        val texts = currentLocalization().pageService
         row {
-            block(title = "Сведения") {
+            block(title = texts.userDetails()) {
                 if (user is MultipleRoleUser && user.data.email != PublicCommunityOwner.EMAIL) {
                     actions { supervisorRoleAction(user) }
                 }
                 row {
-                    codeInput("ID", labelSize = 3, size = 9) { value = user.id.value.toString() }
-                    textInput("Псевдоним", labelSize = 3, size = 9) { value = dataOf(user).name }
+                    codeInput(texts.id(), labelSize = 3, size = 9) { value = user.id.value.toString() }
+                    textInput(texts.nickname(), labelSize = 3, size = 9) { value = dataOf(user).name }
                 }
-                row { field("Роли", labelSize = 3, size = 21) { roleLabelsOf(user).forEach { role -> tag(role) } } }
+                row { field(texts.roles(), labelSize = 3, size = 21) { roleLabelsOf(user).forEach { role -> tag(role) } } }
                 row {
-                    dateTimeInput("Создан", labelSize = 3, size = 9) { value = user.createdAt.toServerDateTime() }
-                    emailOf(user)?.let { email -> textInput("Почта", labelSize = 3, size = 9) { value = email } }
+                    dateTimeInput(texts.userCreated(), labelSize = 3, size = 9) { value = user.createdAt.toServerDateTime() }
+                    emailOf(user)?.let { email -> textInput(texts.email(), labelSize = 3, size = 9) { value = email } }
                 }
 
                 when (user) {
                     is MultipleRoleUser -> Unit
                     is Participant -> row {
-                        codeInput("Соревнование (ID)", labelSize = 3, size = 9) { value = user.data.competition.id.value.toString() }
+                        codeInput(texts.competitionId(), labelSize = 3, size = 9) { value = user.data.competition.id.value.toString() }
                     }
                     is Observer -> row {
-                        codeInput("Сообщество (ID)", labelSize = 3, size = 9) { value = user.data.community.id.value.toString() }
-                        codeInput("Туры (ID)", labelSize = 3, size = 9) {
+                        codeInput(texts.communityId(), labelSize = 3, size = 9) { value = user.data.community.id.value.toString() }
+                        codeInput(texts.contestIds(), labelSize = 3, size = 9) {
                             value = user.data.contests.ids.joinToString(", ") { contestId -> contestId.value.toString() }
                         }
                     }

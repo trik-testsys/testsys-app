@@ -6,6 +6,7 @@ import tech.testsys.infra.grpc.api.GradingNodeChangeResult
 import tech.testsys.infra.grpc.api.GradingNodeImportPreview
 import tech.testsys.infra.grpc.api.GradingNodeImportReport
 import tech.testsys.infra.grpc.api.GradingNodeRejection
+import tech.testsys.infra.localization.PageService
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
@@ -17,6 +18,10 @@ import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.overlay.DialogHandle
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentLocalization
+
+/** Texts of the service cabinet in the language of the current `UI`. */
+private val texts: PageService get() = currentLocalization().pageService
 
 /** Reply of the add dialog to a submitted address: close it, or keep it open with an optional field error. */
 internal sealed interface AddNodeReply {
@@ -29,16 +34,16 @@ internal sealed interface AddNodeReply {
 
 /** Builds a new add dialog with default values; [submit] receives the entered address and participation. */
 internal fun addNodeDialog(submit: (address: String, isActive: Boolean) -> AddNodeReply): DialogHandle = dialog(
-    title = "Новый Проверяющий узел",
-    subtitle = "Доступность узла при добавлении не проверяется",
+    title = texts.gradingAddTitle(),
+    subtitle = texts.gradingAddSubtitle(),
 ) {
     lateinit var address: ValueInput<String>
     lateinit var participation: ValueInput<Boolean>
-    row { address = textInput("Адрес", labelSize = 8, size = 16, hint = "IP:port") }
-    row { participation = checkbox("Участвует в проверке", labelSize = 8, size = 16) { value = true } }
+    row { address = textInput(texts.gradingAddAddress(), labelSize = 8, size = 16, hint = texts.gradingAddAddressHint()) }
+    row { participation = checkbox(texts.gradingParticipates(), labelSize = 8, size = 16) { value = true } }
     footer { dialog ->
-        action("Отменить") { onClick { dialog.close() } }
-        mainAction("Добавить") {
+        action(texts.cancel()) { onClick { dialog.close() } }
+        mainAction(texts.add()) {
             onClick {
                 when (val reply = submit(address.value, participation.value)) {
                     AddNodeReply.Close -> dialog.close()
@@ -57,8 +62,8 @@ internal fun importNodesDialog(preview: GradingNodeImportPreview, submit: (Map<G
     val choices = linkedMapOf<GradingNodeAddress, ValueInput<Boolean>>()
     val toggle = SelectionToggle(choices.values)
     return dialog(
-        title = "Импорт из конфигурации",
-        subtitle = "Адреса testsys.grading.nodes, прочитанные при запуске. Доступность узлов не проверяется",
+        title = texts.gradingImportTitle(),
+        subtitle = texts.gradingImportSubtitle(),
         size = DialogSize.L,
     ) {
         preview.candidates.forEach { candidate ->
@@ -66,24 +71,26 @@ internal fun importNodesDialog(preview: GradingNodeImportPreview, submit: (Map<G
                 text(candidate.address.target, size = 10)
                 val existing = candidate.existing
                 if (existing == null) {
-                    text("новый — будет добавлен", size = 6)
-                    choices[candidate.address] = checkbox("Участвует в проверке", labelSize = 6, size = 2) {
+                    text(texts.gradingImportNew(), size = 6)
+                    choices[candidate.address] = checkbox(texts.gradingParticipates(), labelSize = 6, size = 2) {
                         value = true
                         addValueChangeListener { toggle.sync() }
                     }
                 } else {
-                    text(if (existing.isActive) "уже в реестре · участвует" else "уже в реестре · отключён", size = 14)
+                    text(if (existing.isActive) texts.gradingImportExistingActive() else texts.gradingImportExistingInactive(), size = 14)
                 }
             }
         }
         footer { dialog ->
-            toggle.selectAll = action("Выбрать все") {
+            toggle.selectAll = action(texts.gradingImportSelectAll()) {
                 isVisible = false
                 onClick { choices.values.forEach { choice -> choice.value = true } }
             }
-            toggle.clearAll = action("Убрать все") { onClick { choices.values.forEach { choice -> choice.value = false } } }
-            action("Отменить") { onClick { dialog.close() } }
-            mainAction("Импортировать") {
+            toggle.clearAll = action(texts.gradingImportClearAll()) {
+                onClick { choices.values.forEach { choice -> choice.value = false } }
+            }
+            action(texts.cancel()) { onClick { dialog.close() } }
+            mainAction(texts.gradingImportSubmit()) {
                 onClick {
                     val selection = choices.mapValues { (_, choice) -> choice.value }
                     dialog.close()
@@ -96,7 +103,7 @@ internal fun importNodesDialog(preview: GradingNodeImportPreview, submit: (Map<G
 
 /** Opens the outcome of every attempted and skipped address of an import. */
 internal fun showImportReport(report: GradingNodeImportReport, selection: Map<GradingNodeAddress, Boolean>) {
-    dialog(title = "Результат импорта", size = DialogSize.L) {
+    dialog(title = texts.gradingImportReport(), size = DialogSize.L) {
         report.outcomes.forEach { outcome ->
             row {
                 text(outcome.address.target, size = 10)
@@ -106,10 +113,10 @@ internal fun showImportReport(report: GradingNodeImportReport, selection: Map<Gr
         report.notAttempted.forEach { address ->
             row {
                 text(address.target, size = 10)
-                text("не добавлен: импорт остановлен", size = 14)
+                text(texts.gradingImportStopped(), size = 14)
             }
         }
-        footer { dialog -> mainAction("Закрыть") { onClick { dialog.close() } } }
+        footer { dialog -> mainAction(texts.close()) { onClick { dialog.close() } } }
     }.open()
 }
 
@@ -118,11 +125,11 @@ internal data class NodeBadge(val text: String, val tone: Tone)
 
 /** Badges of the latest known availability of a node and, for an available node, of its queue load. */
 internal fun nodeBadges(status: GradingNodeStatus): List<NodeBadge> = when (status) {
-    GradingNodeStatus.Unknown -> listOf(NodeBadge("Неизвестно", Tone.Warning))
-    is GradingNodeStatus.Unreachable -> listOf(NodeBadge("Недоступен", Tone.Danger))
+    GradingNodeStatus.Unknown -> listOf(NodeBadge(texts.gradingStatusUnknown(), Tone.Warning))
+    is GradingNodeStatus.Unreachable -> listOf(NodeBadge(texts.gradingStatusUnreachable(), Tone.Danger))
     is GradingNodeStatus.Available -> listOf(
-        NodeBadge("Доступен", Tone.Success),
-        NodeBadge("В очереди: ${status.queued}/${status.capacity}", queueTone(status.queued, status.capacity)),
+        NodeBadge(texts.gradingStatusAvailable(), Tone.Success),
+        NodeBadge(texts.gradingStatusQueue(queued = status.queued, capacity = status.capacity), queueTone(status.queued, status.capacity)),
     )
 }
 
@@ -137,21 +144,21 @@ private fun queueTone(queued: Int, capacity: Int): Tone = when {
 
 /** Explains why a registry change was refused. */
 internal fun rejectionText(reason: GradingNodeRejection): String = when (reason) {
-    GradingNodeRejection.Blank -> "Укажите адрес"
-    GradingNodeRejection.TooLong -> "Адрес длиннее 255 символов"
-    GradingNodeRejection.AlreadyRegistered -> "Узел с этим адресом уже есть в реестре"
-    GradingNodeRejection.NotRegistered -> "Узла с этим адресом нет в реестре"
+    GradingNodeRejection.Blank -> texts.gradingRejectionBlank()
+    GradingNodeRejection.TooLong -> texts.gradingRejectionTooLong()
+    GradingNodeRejection.AlreadyRegistered -> texts.gradingRejectionAlreadyRegistered()
+    GradingNodeRejection.NotRegistered -> texts.gradingRejectionNotRegistered()
 }
 
 private fun importOutcomeText(result: GradingNodeChangeResult, isActive: Boolean): String = when (result) {
-    GradingNodeChangeResult.Applied -> if (isActive) "добавлен · участвует" else "добавлен · отключён"
+    GradingNodeChangeResult.Applied -> if (isActive) texts.gradingImportAddedActive() else texts.gradingImportAddedInactive()
     is GradingNodeChangeResult.Rejected -> when (result.reason) {
-        GradingNodeRejection.AlreadyRegistered -> "уже в реестре — пропущен"
-        GradingNodeRejection.NotRegistered -> "нет в конфигурации — пропущен"
-        GradingNodeRejection.Blank, GradingNodeRejection.TooLong -> "неверный адрес — пропущен"
+        GradingNodeRejection.AlreadyRegistered -> texts.gradingImportAlreadyRegistered()
+        GradingNodeRejection.NotRegistered -> texts.gradingImportNotConfigured()
+        GradingNodeRejection.Blank, GradingNodeRejection.TooLong -> texts.gradingImportInvalidAddress()
     }
-    GradingNodeChangeResult.Failed -> "не добавлен: не удалось применить изменение"
-    GradingNodeChangeResult.Uncertain -> "исход неопределён; импорт остановлен"
+    GradingNodeChangeResult.Failed -> texts.gradingImportFailed()
+    GradingNodeChangeResult.Uncertain -> texts.gradingImportUncertain()
 }
 
 /** Shows «Выбрать все» while some new address is unchecked and «Убрать все» otherwise. */

@@ -1302,3 +1302,62 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
   (https://ru.wiktionary.org/wiki/пользователь, read 2026-11-13).
 - «Заметные Пользователям» means user-visible. If invisible but relevant changes (security or reliability fixes)
   are listed, «изменения, касающиеся Пользователей» covers them without evaluation (reviewer suggestion, no source).
+
+## Service cabinet (`page_service`)
+
+- «Служебный кабинет», «служебный интерфейс» keep lowercase «кабинет»: the domain Кабинет (definitions.md item 13) is
+  the page through which a Пользователь reaches the System, while the service identity has no Пользователь behind
+  it. Project reading, no language source.
+- «байт» after numerals: Викисловарь gives Р. ед. «байта», Р. мн. «байтов» and the counting form (Сч.) «байт».
+  The counting form fits CLDR `many` («400000000 байт»), but `few` needs «байта» («1024 байта», «два байта»).
+  Fixed on 2026-10-30 at the human's explicit request: `page_service.settings.restart_pending` and
+  `settings.help.max_message_bytes` now select on each `:integer useGrouping=never` number (`one`/`many` «байт»,
+  `few` «байта»; `restart_pending` matches `$active $saved` over all nine pairs), so «1024 байта», «4194304 байта»,
+  «400000000 байт», «1048571 байт» are pinned by golden checks. The earlier invariant «1024 байт» was ungrammatical.
+  Source:
+  https://ru.wiktionary.org/wiki/байт (read 2026-10-30). Independent review confirmed the `few` rule with Грамота.ру:
+  № 237033 (20.02.2008) «6 байт (4 байта)»; № 306541 (08.09.2020) «33 петабайта» after numerals ending in два, три,
+  четыре; № 265242 (22.12.2010) zero ending «байт» after numerals; № 310954 (05.09.2023) «536 байт… 1220 байт».
+  Source: https://gramota.ru/poisk?query=байт&mode=spravka (read 2026-10-30). Whether ICU4J 78.1 `:unit unit=byte
+  unitDisplay=long` renders «1024 байта» in `ru` is unverified; the fix does not use `:unit`. Review of the fix added
+  Грамота.ру № 216796 (05.03.2007): «Правильно: 460 килобайт, так как в этом случае используется счетная форма»
+  (https://gramota.ru/poisk?query=байт&mode=spravka, read 2026-10-30).
+- «Дешифровка ID»: Викисловарь «дешифровать» — «раскрывать (раскрыть) шифр, код; разбирать … текст с таким шифром,
+  кодом …», synonyms «расшифровать», «декодировать»; «дешифровка» — the action of that verb, no stylistic label. An ID
+  that packs time, node and counter is a code in this sense, so the page head «Дешифровка ID» and the button
+  «Расшифровать» are consistent. Sources: https://ru.wiktionary.org/wiki/дешифровать,
+  https://ru.wiktionary.org/wiki/дешифровка (read 2026-10-30). Independent review confirmed: «дешифровка» — feminine,
+  type 3*a, synonyms «дешифрование», «дешифрирование».
+- «неопределённый» short forms: the neuter «неопределённо» («Сохранённое состояние неопределённо») is correct, but
+  the one-word masculine «неопределён» («Исход сохранения неопределён») is non-standard. The adjective's masculine short
+  form is «неопределёнен»: Русский орфографический словарь (Лопатин, Иванова) «неопределённый; кр. ф. -ёнен, -ённа»;
+  Словарь трудностей «-ёнен, -ённа, -ённо, -ённы»; Викисловарь «неопределёнен, неопределённа, неопределённо,
+  неопределённы», type 1*a, senses «точно не установленный», «неясный», «уклончивый». The participle reading is
+  «не определён», written separately (Правила 1956, § 89, п. 2 а: «долг не уплачен, дом не достроен»). Fixed on
+  2026-10-30 at the human's explicit request: `page_service.settings.uncertain_result`, `grading.uncertain` and
+  `grading.import.uncertain` now read «не определён»; the neuter «неопределённо» in `settings.uncertain` and
+  `grading.uncertain_registry` stays. Sources:
+  https://gramota.ru/poisk?query=неопределённый&mode=slovari, https://ru.wiktionary.org/wiki/неопределённый,
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/23 (read 2026-10-30).
+  Independent review of the fix (2026-10-30) confirmed «не определён» as the short participle of «определить» and found
+  the same short forms «-ёнен, -ённа» in Зарва, «Русское словесное ударение», and Кузнецов, «Большой толковый
+  словарь» (sense «Точно не установленный»); the one-word «неопределён» matches no listed form. A справка search for
+  «не определен» found no Q&A on separate versus joined spelling (https://gramota.ru/poisk?query=не определен&mode=spravka,
+  read 2026-10-30).
+- «Часть псевдонима, без учёта регистра» keeps lowercase «псевдонима» verbatim, unlike
+  `page_administrator.users.nickname_hint` («Часть Псевдонима»), so it is a plain literal, not a `glossary.nickname`
+  reference. «Регистр» in this sense: see «Без учёта регистра» above.
+- «Адресов в конфигурации грейдера: 1. Импортируйте их …» keeps the plural «их» for any count, including 1; it reads
+  as the addresses in general. Kept verbatim; inference only.
+- «Служба» (header user name): Викисловарь sense 5 «учреждение, заведение, отдел предприятия, выполняющий
+  определённый вид работы», sense 6 (комп.) «программа, постоянно находящаяся в памяти и выполняющая серверные функции
+  без прямого общения с пользователем», sense 4 (религ.) a church service. Sense 6 fits the service identity; no
+  vulgar or offensive senses. Source: https://ru.wiktionary.org/wiki/служба (read 2026-10-30).
+- «грейдер» (`page_service.grading.empty_configured`): Викисловарь lists only a road-building machine (спец.) and
+  a road built with it (разг.), from English *grader*; no computing sense. The project uses it as jargon for the grading
+  component (features.md, testsys.dev.grading.balancing); fine for operators, a general reader may misread it. Source:
+  https://ru.wiktionary.org/wiki/грейдер (read 2026-10-30).
+- Glossary forms added for `page_service`, confirmed in Викисловарь (read 2026-10-30): «соревнование» type 7a,
+  П. ед. «соревновании» (https://ru.wiktionary.org/wiki/соревнование); «диагностика» type 3a, Им. «диагностика»,
+  Р. «диагностики», П. «диагностике» (https://ru.wiktionary.org/wiki/диагностика); «полигон» type 1a, П. ед.
+  «полигоне», no separate locative (https://ru.wiktionary.org/wiki/полигон).

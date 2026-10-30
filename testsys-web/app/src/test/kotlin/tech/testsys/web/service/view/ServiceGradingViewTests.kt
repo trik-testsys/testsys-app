@@ -14,7 +14,6 @@ import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.textfield.TextField
-import com.vaadin.flow.router.RouterLink
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.verify
@@ -100,10 +99,10 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the grading page from the service header`() {
+    fun `should open the grading page from the service menu`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<RouterLink> { text = "Проверка" }._click()
+        clickMenuLink("Проверка")
 
         assertEquals(ServiceGradingView::class.java, currentView)
     }
@@ -285,7 +284,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
             openDialog()._get<Button> { text = "Добавить" }._click()
 
             assertTrue(UI.getCurrent()._find<Dialog>().none { dialog -> dialog.isOpened })
-            assertEquals("Исход сохранения неопределён", lastToastTitle())
+            assertEquals("Исход сохранения не определён", lastToastTitle())
             assertFalse(UI.getCurrent()._get<Button> { text = "Добавить" }.isEnabled)
         }
 
@@ -372,7 +371,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
 
             nodeRow(inactive)._get<Button> { text = "Применить" }._click()
 
-            assertEquals("Исход сохранения неопределён", lastToastTitle())
+            assertEquals("Исход сохранения не определён", lastToastTitle())
             assertFalse(participation(inactive).isEnabled)
             assertFalse(UI.getCurrent()._get<Button> { text = "Добавить" }.isEnabled)
         }
@@ -468,7 +467,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
             openDialog()._get<Button> { text = "Импортировать" }._click()
 
             val report = openDialog().element.textRecursively
-            assertTrue(report.contains("исход неопределён; импорт остановлен"))
+            assertTrue(report.contains("исход не определён; импорт остановлен"))
             assertTrue(report.contains("не добавлен: импорт остановлен"))
             assertTrue(UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.isEmpty())
         }

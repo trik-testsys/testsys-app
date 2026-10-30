@@ -3,9 +3,14 @@ package tech.testsys.web.service
 import com.github.mvysny.fakeservlet.FakeHttpEnvironment
 import com.github.mvysny.kaributesting.v10.MockVaadin
 import com.github.mvysny.kaributesting.v10.Routes
+import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._find
+import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.spring.MockSpringSecurity
 import com.github.mvysny.kaributesting.v10.spring.MockSpringServlet
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,6 +36,11 @@ abstract class ServiceMockVaadinTests {
         MockVaadin.tearDown()
         SecurityContextHolder.clearContext()
         FakeHttpEnvironment.remoteAddr = "127.0.0.1"
+    }
+
+    /** Clicks the link named [label] in the menu of the service header. */
+    protected fun clickMenuLink(label: String) {
+        UI.getCurrent()._find<RouterLink> { classes = "ts-mega__link" }.single { link -> link._get<Span>().text == label }._click()
     }
 
     private companion object {

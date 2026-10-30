@@ -4,7 +4,7 @@ import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.BeforeLeaveEvent
 import com.vaadin.flow.router.BeforeLeaveObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.shared.Registration
 import com.vaadin.flow.signals.local.ValueSignal
@@ -17,6 +17,7 @@ import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
 import tech.testsys.infra.grpc.api.GradingQueueMonitor
 import tech.testsys.infra.grpc.api.GradingQueueSnapshot
+import tech.testsys.infra.localization.PageService
 import tech.testsys.infra.settings.api.registry.StoredGradingNode
 import tech.testsys.infra.settings.api.service.SettingsPersistence
 import tech.testsys.web.components.TestSysView
@@ -33,6 +34,7 @@ import tech.testsys.web.components.feedback.emptyState
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.overlay.confirm
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Service snapshot of grading: unfinished runs by state and the checking node registry with the latest known
@@ -41,13 +43,17 @@ import tech.testsys.web.components.overlay.confirm
  * @since 1.0.0-beta.1
  */
 @Route("grading")
-@PageTitle("Состояние проверки")
 @RolesAllowed("SERVICE")
 class ServiceGradingView(
     private val headers: ServiceHeaders,
     private val registry: GradingNodeRegistry,
     private val queue: GradingQueueMonitor,
-) : TestSysView(), BeforeEnterObserver, BeforeLeaveObserver {
+) : TestSysView(),
+    BeforeEnterObserver,
+    BeforeLeaveObserver,
+    HasDynamicTitle {
+    private val texts: PageService get() = currentLocalization().pageService
+
     private val counters = QueueCounters()
 
     // Participation changed but not applied yet; a poll may rebuild the page, and the change must survive it.
@@ -55,6 +61,8 @@ class ServiceGradingView(
     private var reasons = emptyMap<GradingNodeAddress, ValueSignal<String>>()
     private var shown: RegistryShape? = null
     private var polling: Registration? = null
+
+    override fun getPageTitle(): String = texts.gradingTitle()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         show()
@@ -95,21 +103,21 @@ class ServiceGradingView(
             .mapNotNull { entry -> unreachableReason(entry.status)?.let { reason -> entry.node.address to ValueSignal(reason) } }
             .toMap()
         shown = shapeOf(overview, preview)
-        page(headers.header(active = ServiceHeaders.GRADING_SECTION)) {
-            head("Состояние проверки")
+        page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
+            head(texts.gradingTitle())
             row {
-                block(title = "Очередь", subtitle = "Незавершённые проверки этого экземпляра по этапам") {
-                    QUEUE_LABELS.forEach { (label, value) -> row { field(label, labelSize = 3, size = 21) { text(value(counters)) } } }
+                block(title = texts.gradingQueue(), subtitle = texts.gradingQueueSubtitle()) {
+                    queueRows().forEach { (label, value) -> row { field(label, labelSize = 3, size = 21) { text(value) } } }
                 }
             }
             row {
-                block(title = "Проверяющие узлы") {
+                block(title = texts.gradingNodes()) {
                     actions {
-                        action("Добавить", icon = IconName.Plus) {
+                        action(texts.add(), icon = IconName.Plus) {
                             isEnabled = isKnown
                             onClick { openAddDialog() }
                         }
-                        action("Импортировать из конфигурации") {
+                        action(texts.gradingImport()) {
                             isEnabled = isKnown && newAddresses > 0
                             onClick { openImportDialog() }
                         }
@@ -132,16 +140,16 @@ class ServiceGradingView(
 
     private fun BlockScope.nodes(nodes: List<GradingNodeEntry>, isKnown: Boolean, configured: Int, newAddresses: Int) {
         if (!isKnown) {
-            row { text("Сохранённое состояние реестра неопределённо. Изменения заблокированы до перезапуска") }
-            if (nodes.isEmpty()) row { text("Проверяющих узлов нет") }
+            row { text(texts.gradingUncertainRegistry()) }
+            if (nodes.isEmpty()) row { text(texts.gradingEmpty()) }
         } else if (nodes.isEmpty()) {
             val description = if (configured > 0) {
-                "Адресов в конфигурации грейдера: $configured. Импортируйте их или добавьте узел по адресу."
+                texts.gradingEmptyConfigured(configured = configured)
             } else {
-                "Добавьте узел по его gRPC-адресу."
+                texts.gradingEmptyHint()
             }
-            emptyState("Проверяющих узлов нет", description, icon = IconName.Settings) {
-                if (newAddresses > 0) action("Импортировать из конфигурации") { onClick { openImportDialog() } }
+            emptyState(texts.gradingEmpty(), description, icon = IconName.Settings) {
+                if (newAddresses > 0) action(texts.gradingImport()) { onClick { openImportDialog() } }
             }
             return
         }
@@ -170,16 +178,16 @@ class ServiceGradingView(
                 reasons[node.address]?.let { reason -> text(reason) }
             }
             horizontal(size = 7) {
-                participation.on = mainAction("Вкл") {
+                participation.on = mainAction(texts.gradingOn()) {
                     isEnabled = canChange
                     onClick { participation.toggle() }
                 }
-                participation.off = destructiveAction("Выкл") {
+                participation.off = destructiveAction(texts.gradingOff()) {
                     isEnabled = canChange
                     onClick { participation.toggle() }
                 }
-                participation.apply = action("Применить") { onClick { applyParticipation(node.address, participation.isActive) } }
-                destructiveAction("Удалить") {
+                participation.apply = action(texts.gradingApply()) { onClick { applyParticipation(node.address, participation.isActive) } }
+                destructiveAction(texts.delete()) {
                     isEnabled = canChange
                     onClick { confirmRemoval(node.address) }
                 }
@@ -193,17 +201,17 @@ class ServiceGradingView(
         addNodeDialog { address, isActive ->
             when (val result = registry.add(address, isActive)) {
                 GradingNodeChangeResult.Applied -> {
-                    toast(FeedbackKind.Success, "Проверяющий узел добавлен")
+                    toast(FeedbackKind.Success, texts.gradingAdded())
                     show()
                     AddNodeReply.Close
                 }
                 is GradingNodeChangeResult.Rejected -> AddNodeReply.Keep(rejectionText(result.reason))
                 GradingNodeChangeResult.Failed -> {
-                    toast(FeedbackKind.Error, FAILED_TITLE, FAILED_DESCRIPTION)
+                    toast(FeedbackKind.Error, texts.gradingFailed(), texts.gradingFailedHint())
                     AddNodeReply.Keep(fieldError = null)
                 }
                 GradingNodeChangeResult.Uncertain -> {
-                    toast(FeedbackKind.Error, UNCERTAIN_TITLE, UNCERTAIN_DESCRIPTION)
+                    toast(FeedbackKind.Error, texts.gradingUncertain(), texts.gradingUncertainHint())
                     show()
                     AddNodeReply.Close
                 }
@@ -217,33 +225,40 @@ class ServiceGradingView(
             show()
             val isComplete = report.notAttempted.isEmpty() &&
                 report.outcomes.all { outcome -> outcome.result == GradingNodeChangeResult.Applied }
-            if (isComplete) toast(FeedbackKind.Success, "Проверяющие узлы импортированы")
+            if (isComplete) toast(FeedbackKind.Success, texts.gradingImported())
             showImportReport(report, selection)
         }.open()
     }
 
     private fun applyParticipation(address: GradingNodeAddress, isActive: Boolean) {
-        val success = if (isActive) "Проверяющий узел участвует в проверке" else "Проверяющий узел отключён от проверки"
+        val success = if (isActive) texts.gradingActivated() else texts.gradingDeactivated()
         pendingParticipation.remove(address)
         report(registry.setActive(address, isActive), success)
     }
 
     private fun confirmRemoval(address: GradingNodeAddress) {
         confirm(
-            title = "Удалить Проверяющий узел «${address.target}»?",
-            text = "Узел исчезнет из реестра, перестанет получать Посылки и опрашиваться. " +
-                "Незавершённые проверки будут отправлены повторно в пределах лимитов.",
-            action = "Удалить",
+            title = texts.gradingRemoveTitle(address = address.target),
+            text = texts.gradingRemoveText(),
+            action = texts.delete(),
             isDanger = true,
-        ) { report(registry.remove(address), "Проверяющий узел удалён") }
+        ) { report(registry.remove(address), texts.gradingRemoved()) }
     }
+
+    private fun queueRows(): List<Pair<String, ValueSignal<String>>> = listOf(
+        texts.gradingQueuePreparing() to counters.preparing,
+        texts.gradingQueueWaiting() to counters.waiting,
+        texts.gradingQueueGrading() to counters.grading,
+        texts.gradingQueueSaving() to counters.saving,
+        texts.gradingQueueTotal() to counters.total,
+    )
 
     private fun report(result: GradingNodeChangeResult, success: String) {
         when (result) {
             GradingNodeChangeResult.Applied -> toast(FeedbackKind.Success, success)
             is GradingNodeChangeResult.Rejected -> toast(FeedbackKind.Error, rejectionText(result.reason))
-            GradingNodeChangeResult.Failed -> toast(FeedbackKind.Error, FAILED_TITLE, FAILED_DESCRIPTION)
-            GradingNodeChangeResult.Uncertain -> toast(FeedbackKind.Error, UNCERTAIN_TITLE, UNCERTAIN_DESCRIPTION)
+            GradingNodeChangeResult.Failed -> toast(FeedbackKind.Error, texts.gradingFailed(), texts.gradingFailedHint())
+            GradingNodeChangeResult.Uncertain -> toast(FeedbackKind.Error, texts.gradingUncertain(), texts.gradingUncertainHint())
         }
         show()
     }
@@ -306,18 +321,6 @@ class ServiceGradingView(
     private companion object {
         const val POLL_INTERVAL_MILLIS = 5_000
         const val NO_POLLING = -1
-        const val FAILED_TITLE = "Не удалось применить изменение"
-        const val FAILED_DESCRIPTION = "Прежнее состояние реестра сохранено"
-        const val UNCERTAIN_TITLE = "Исход сохранения неопределён"
-        const val UNCERTAIN_DESCRIPTION = "Изменения реестра заблокированы до перезапуска"
-
-        val QUEUE_LABELS: List<Pair<String, (QueueCounters) -> ValueSignal<String>>> = listOf(
-            "Подготовка" to QueueCounters::preparing,
-            "Ожидание отправки" to QueueCounters::waiting,
-            "Проверка на узле" to QueueCounters::grading,
-            "Сохранение результата" to QueueCounters::saving,
-            "Всего незавершённых" to QueueCounters::total,
-        )
 
         fun shapeOf(overview: GradingNodeRegistryOverview, preview: GradingNodeImportPreview) = RegistryShape(
             nodes = overview.nodes.map { entry -> entry.node },

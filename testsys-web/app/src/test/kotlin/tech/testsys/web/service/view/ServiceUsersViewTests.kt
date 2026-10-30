@@ -14,7 +14,6 @@ import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
-import com.vaadin.flow.router.RouterLink
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.verify
@@ -80,10 +79,10 @@ class ServiceUsersViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the user search from the service header`() {
+    fun `should open the user search from the service menu`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<RouterLink> { text = "Пользователи" }._click()
+        clickMenuLink("Пользователи")
 
         assertEquals(ServiceUsersView::class.java, currentView)
     }

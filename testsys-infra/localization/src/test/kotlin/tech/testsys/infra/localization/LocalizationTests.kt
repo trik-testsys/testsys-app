@@ -5983,6 +5983,1094 @@ class LocalizationTests {
         }
     }
 
+    @Nested
+    inner class PageServiceTests {
+
+        @Test
+        fun `should name the identifier in id`() {
+            assertEquals("ID", l.pageService.id())
+        }
+
+        @Test
+        fun `should use the nickname term in nickname`() {
+            assertEquals("Псевдоним", l.pageService.nickname())
+        }
+
+        @Test
+        fun `should name the e-mail in email`() {
+            assertEquals("Почта", l.pageService.email())
+        }
+
+        @Test
+        fun `should use the plural role term in roles`() {
+            assertEquals("Роли", l.pageService.roles())
+        }
+
+        @Test
+        fun `should use the community term with the id mark in community id`() {
+            assertEquals("Сообщество (ID)", l.pageService.communityId())
+        }
+
+        @Test
+        fun `should use the class term with the id mark in class id`() {
+            assertEquals("Класс (ID)", l.pageService.classId())
+        }
+
+        @Test
+        fun `should use the competition term with the id mark in competition id`() {
+            assertEquals("Соревнование (ID)", l.pageService.competitionId())
+        }
+
+        @Test
+        fun `should use the plural contest term with the id mark in contest ids`() {
+            assertEquals("Туры (ID)", l.pageService.contestIds())
+        }
+
+        @Test
+        fun `should ask for a number in number required`() {
+            assertEquals("Введите число", l.pageService.numberRequired())
+        }
+
+        @Test
+        fun `should label the add action in add`() {
+            assertEquals("Добавить", l.pageService.add())
+        }
+
+        @Test
+        fun `should label the delete action in delete`() {
+            assertEquals("Удалить", l.pageService.delete())
+        }
+
+        @Test
+        fun `should label the cancel action in cancel`() {
+            assertEquals("Отменить", l.pageService.cancel())
+        }
+
+        @Test
+        fun `should label the save action in save`() {
+            assertEquals("Сохранить", l.pageService.save())
+        }
+
+        @Test
+        fun `should label the close action in close`() {
+            assertEquals("Закрыть", l.pageService.close())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "ADMINISTRATOR, Администратор",
+            "DEVELOPER,     Разработчик",
+            "JUDGE,         Судья",
+            "MANAGER,       Организатор",
+            "STUDENT,       Ученик",
+            "PARTICIPANT,   Участник",
+            "OBSERVER,      Наблюдатель",
+            "SUPERVISOR,    Супервайзер",
+            "OTHER,         Роль",
+        )
+        fun `should name the role in nominative in role name`(role: PageService.RoleNameRole, expected: String) {
+            assertEquals(expected, l.pageService.roleName(role = role))
+        }
+
+        @Test
+        fun `should name the home item in header home`() {
+            assertEquals("Главная", l.pageService.headerHome())
+        }
+
+        @Test
+        fun `should name the menu item in header menu`() {
+            assertEquals("Меню", l.pageService.headerMenu())
+        }
+
+        @Test
+        fun `should name the service identity in header user`() {
+            assertEquals("Служба", l.pageService.headerUser())
+        }
+
+        @Test
+        fun `should label the sign out item in header sign out`() {
+            assertEquals("Выйти", l.pageService.headerSignOut())
+        }
+
+        @Test
+        fun `should use the system term for the column in header system`() {
+            assertEquals("Система", l.pageService.headerSystem())
+        }
+
+        @Test
+        fun `should name the data column in header data`() {
+            assertEquals("Данные", l.pageService.headerData())
+        }
+
+        @Test
+        fun `should name the tools column in header tools`() {
+            assertEquals("Инструменты", l.pageService.headerTools())
+        }
+
+        @Test
+        fun `should name the settings link in header settings`() {
+            assertEquals("Настройки", l.pageService.headerSettings())
+        }
+
+        @Test
+        fun `should name the grading link in header grading`() {
+            assertEquals("Проверка", l.pageService.headerGrading())
+        }
+
+        @Test
+        fun `should name the versions link in header trik studio versions`() {
+            assertEquals("Версии TRIK Studio", l.pageService.headerTrikStudioVersions())
+        }
+
+        @Test
+        fun `should use the plural user term in header users`() {
+            assertEquals("Пользователи", l.pageService.headerUsers())
+        }
+
+        @Test
+        fun `should name the decoding link in header id decoding`() {
+            assertEquals("Дешифровка ID", l.pageService.headerIdDecoding())
+        }
+
+        @Test
+        fun `should name the service sign in in login title`() {
+            assertEquals("Служебный вход", l.pageService.loginTitle())
+        }
+
+        @Test
+        fun `should name the service interface in login interface`() {
+            assertEquals("Служебный интерфейс", l.pageService.loginInterface())
+        }
+
+        @Test
+        fun `should ask for the sign in code in login description`() {
+            assertEquals("Введите код входа в служебный интерфейс.", l.pageService.loginDescription())
+        }
+
+        @Test
+        fun `should label the code field in login code`() {
+            assertEquals("Код", l.pageService.loginCode())
+        }
+
+        @Test
+        fun `should label the sign in action in login submit`() {
+            assertEquals("Войти", l.pageService.loginSubmit())
+        }
+
+        @Test
+        fun `should report a wrong code in login invalid code`() {
+            assertEquals("Неверный код", l.pageService.loginInvalidCode())
+        }
+
+        @Test
+        fun `should report the blocked sign in in login blocked`() {
+            assertEquals("Вход временно заблокирован", l.pageService.loginBlocked())
+        }
+
+        @Test
+        fun `should name the waiting time in login blocked hint`() {
+            assertEquals("Повторите попытку через 5 минут.", l.pageService.loginBlockedHint())
+        }
+
+        @Test
+        fun `should name the service cabinet in home title`() {
+            assertEquals("Служебный кабинет", l.pageService.homeTitle())
+        }
+
+        @Test
+        fun `should name the monitoring block in home monitoring`() {
+            assertEquals("Мониторинг", l.pageService.homeMonitoring())
+        }
+
+        @Test
+        fun `should use the genitive system term in home monitoring text`() {
+            assertEquals(
+                "Метрики Системы открываются в Grafana. В Grafana входят её собственными учётными записями.",
+                l.pageService.homeMonitoringText(),
+            )
+        }
+
+        @Test
+        fun `should name the monitoring product in home grafana`() {
+            assertEquals("Grafana", l.pageService.homeGrafana())
+        }
+
+        @Test
+        fun `should use the genitive system term in settings title`() {
+            assertEquals("Настройки Системы", l.pageService.settingsTitle())
+        }
+
+        @Test
+        fun `should name the settings block in settings block`() {
+            assertEquals("Настройки", l.pageService.settingsBlock())
+        }
+
+        @Test
+        fun `should report blocked changes in settings uncertain`() {
+            assertEquals(
+                "Сохранённое состояние неопределённо. Изменения заблокированы до перезапуска.",
+                l.pageService.settingsUncertain(),
+            )
+        }
+
+        @Test
+        fun `should use the community term in settings public community`() {
+            assertEquals("Публичное Сообщество (ID)", l.pageService.settingsPublicCommunity())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1048571,   4194312, 1048571 байт,   4194312 байт",
+            "1024,      4194301, 1024 байта,     4194301 байт",
+            "400000000, 4194304, 400000000 байт, 4194304 байта",
+        )
+        fun `should agree bytes with each ungrouped limit in settings restart pending`(
+            active: Int,
+            saved: Int,
+            activeBytes: String,
+            savedBytes: String,
+        ) {
+            assertEquals(
+                "Размер входящего сообщения: действующий предел — $activeBytes, сохранённый — $savedBytes. " +
+                    "Для применения требуется перезапуск.",
+                l.pageService.settingsRestartPending(active = active, saved = saved),
+            )
+        }
+
+        @Test
+        fun `should report applied settings in settings applied`() {
+            assertEquals("Настройки применены", l.pageService.settingsApplied())
+        }
+
+        @Test
+        fun `should ask to reload the page in settings stale`() {
+            assertEquals(
+                "Настройки изменились. Обновите страницу браузера и повторите изменения",
+                l.pageService.settingsStale(),
+            )
+        }
+
+        @Test
+        fun `should keep the previous values in settings failed`() {
+            assertEquals(
+                "Не удалось применить настройки. Прежние значения сохранены; обновите страницу",
+                l.pageService.settingsFailed(),
+            )
+        }
+
+        @Test
+        fun `should report the unknown outcome in settings uncertain result`() {
+            assertEquals(
+                "Исход сохранения не определён. Изменения заблокированы до перезапуска",
+                l.pageService.settingsUncertainResult(),
+            )
+        }
+
+        @Test
+        fun `should ask for a value in settings value required`() {
+            assertEquals("Укажите значение", l.pageService.settingsValueRequired())
+        }
+
+        @Test
+        fun `should ask to check the value in settings value invalid`() {
+            assertEquals("Проверьте формат и допустимый диапазон значения", l.pageService.settingsValueInvalid())
+        }
+
+        @Test
+        fun `should use the plural competition term in settings group competitions`() {
+            assertEquals("Соревнования", l.pageService.settingsGroupCompetitions())
+        }
+
+        @Test
+        fun `should name the e-mail confirmation group in settings group email confirmation`() {
+            assertEquals("Подтверждение почты", l.pageService.settingsGroupEmailConfirmation())
+        }
+
+        @Test
+        fun `should name the invites group in settings group invites`() {
+            assertEquals("Приглашения", l.pageService.settingsGroupInvites())
+        }
+
+        @Test
+        fun `should name the grading group in settings group grading`() {
+            assertEquals("Проверка", l.pageService.settingsGroupGrading())
+        }
+
+        @Test
+        fun `should use the diagnostic term in settings group diagnostics`() {
+            assertEquals("Диагностика", l.pageService.settingsGroupDiagnostics())
+        }
+
+        @Test
+        fun `should name the file cleanup group in settings group file cleanup`() {
+            assertEquals("Очистка файлов", l.pageService.settingsGroupFileCleanup())
+        }
+
+        @Test
+        fun `should use the genitive plural participant term in settings label max participants`() {
+            assertEquals("Лимит Участников", l.pageService.settingsLabelMaxParticipants())
+        }
+
+        @Test
+        fun `should name the code lifetime in settings label confirmation code lifetime`() {
+            assertEquals("Срок кода подтверждения", l.pageService.settingsLabelConfirmationCodeLifetime())
+        }
+
+        @Test
+        fun `should name the attempts in settings label max confirmation attempts`() {
+            assertEquals("Попытки подтверждения", l.pageService.settingsLabelMaxConfirmationAttempts())
+        }
+
+        @Test
+        fun `should use the accusative community term in settings label community invite ttl`() {
+            assertEquals("Срок приглашения в Сообщество", l.pageService.settingsLabelCommunityInviteTtl())
+        }
+
+        @Test
+        fun `should use the accusative class term in settings label class invite ttl`() {
+            assertEquals("Срок приглашения в Класс", l.pageService.settingsLabelClassInviteTtl())
+        }
+
+        @Test
+        fun `should name the transport attempts in settings label grading max attempts`() {
+            assertEquals("Транспортные попытки", l.pageService.settingsLabelGradingMaxAttempts())
+        }
+
+        @Test
+        fun `should name the total deadline in settings label total timeout`() {
+            assertEquals("Общий срок проверки", l.pageService.settingsLabelTotalTimeout())
+        }
+
+        @Test
+        fun `should name the request deadline in settings label rpc timeout`() {
+            assertEquals("Предельный срок запроса проверки", l.pageService.settingsLabelRpcTimeout())
+        }
+
+        @Test
+        fun `should name the recording in settings label should record video`() {
+            assertEquals("Видеозапись", l.pageService.settingsLabelShouldRecordVideo())
+        }
+
+        @Test
+        fun `should name the interval in settings label poll interval`() {
+            assertEquals("Интервал опроса", l.pageService.settingsLabelPollInterval())
+        }
+
+        @Test
+        fun `should name the status deadline in settings label status timeout`() {
+            assertEquals("Предельный срок опроса", l.pageService.settingsLabelStatusTimeout())
+        }
+
+        @Test
+        fun `should name the message size in settings label max message bytes`() {
+            assertEquals("Размер входящего сообщения", l.pageService.settingsLabelMaxMessageBytes())
+        }
+
+        @Test
+        fun `should use the genitive diagnostic term in settings label max time limit millis`() {
+            assertEquals("Предел времени Диагностики, мс", l.pageService.settingsLabelMaxTimeLimitMillis())
+        }
+
+        @Test
+        fun `should name the prefix in settings label score prefix`() {
+            assertEquals("Префикс баллов", l.pageService.settingsLabelScorePrefix())
+        }
+
+        @Test
+        fun `should name the file age in settings label cleanup minimum age`() {
+            assertEquals("Возраст файла для очистки", l.pageService.settingsLabelCleanupMinimumAge())
+        }
+
+        @Test
+        fun `should name the batch size in settings label cleanup batch size`() {
+            assertEquals("Размер пакета очистки", l.pageService.settingsLabelCleanupBatchSize())
+        }
+
+        @Test
+        fun `should decline the participant and competition terms in settings help max participants`() {
+            assertEquals(
+                "Максимальное общее количество Участников в одном Соревновании.\n\n" +
+                    "Неотрицательное целое число типа Kotlin Int.\n\n" +
+                    "Изменения вступят в силу при последующих добавлениях Участников; существующие Участники " +
+                    "останутся в Соревновании.",
+                l.pageService.settingsHelpMaxParticipants(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help confirmation code lifetime`() {
+            assertEquals(
+                "Время, в течение которого можно подтвердить почту выданным кодом.\n\n" +
+                    "Положительная длительность ISO-8601, например PT5M.\n\n" +
+                    "Изменения вступят в силу при создании или перезаписи запроса подтверждения почты.",
+                l.pageService.settingsHelpConfirmationCodeLifetime(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help max confirmation attempts`() {
+            assertEquals(
+                "Количество попыток ввода кода подтверждения почты.\n\n" +
+                    "Положительное целое число типа Kotlin Int.\n\n" +
+                    "Изменения вступят в силу при создании или перезаписи запроса подтверждения почты.",
+                l.pageService.settingsHelpMaxConfirmationAttempts(),
+            )
+        }
+
+        @Test
+        fun `should decline the invite code and community terms in settings help community invite ttl`() {
+            assertEquals(
+                "Срок действия Кода-приглашения в Сообщество.\n\n" +
+                    "Положительная длительность ISO-8601, например PT5M.\n\n" +
+                    "Изменения вступят в силу при создании, замене или продлении Кода-приглашения.",
+                l.pageService.settingsHelpCommunityInviteTtl(),
+            )
+        }
+
+        @Test
+        fun `should decline the invite code and class terms in settings help class invite ttl`() {
+            assertEquals(
+                "Срок действия Кода-приглашения в Класс.\n\n" +
+                    "Положительная длительность ISO-8601, например PT5M.\n\n" +
+                    "Изменения вступят в силу при создании, замене или продлении Кода-приглашения.",
+                l.pageService.settingsHelpClassInviteTtl(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help grading max attempts`() {
+            assertEquals(
+                "Общее число транспортных попыток запуска проверки на Проверяющем узле.\n\n" +
+                    "Положительное целое число типа Kotlin Int.\n\n" +
+                    "Изменения вступят в силу при приёме новой проверки. Уже принятые проверки сохранят прежние " +
+                    "настройки до завершения.",
+                l.pageService.settingsHelpGradingMaxAttempts(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help total timeout`() {
+            assertEquals(
+                "Общее время на подготовку, ожидание Проверяющего узла и выполнение проверки.\n\n" +
+                    "Положительная длительность ISO-8601, например PT5M.\n\n" +
+                    "Изменения вступят в силу при приёме новой проверки. Уже принятые проверки сохранят прежние " +
+                    "настройки до завершения.",
+                l.pageService.settingsHelpTotalTimeout(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help rpc timeout`() {
+            assertEquals(
+                "Срок одного запроса проверки к узлу; ограничен оставшимся общим временем проверки.\n\n" +
+                    "Положительная длительность ISO-8601, например PT5M.\n\n" +
+                    "Изменения вступят в силу при приёме новой проверки. Уже принятые проверки сохранят прежние " +
+                    "настройки до завершения.",
+                l.pageService.settingsHelpRpcTimeout(),
+            )
+        }
+
+        @Test
+        fun `should name the boolean values in settings help should record video`() {
+            assertEquals(
+                "Запрашивать у Проверяющего узла видеозапись проверки.\n\n" +
+                    "true — включена, false — выключена.\n\n" +
+                    "Изменения вступят в силу при приёме новой проверки. Уже принятые проверки сохранят прежние " +
+                    "настройки до завершения.",
+                l.pageService.settingsHelpShouldRecordVideo(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help poll interval`() {
+            assertEquals(
+                "Промежуток между фоновыми опросами состояния Проверяющих узлов.\n\n" +
+                    "Положительная длительность ISO-8601, например PT5M.\n\n" +
+                    "Изменения вступят в силу после сохранения: расписание опроса будет перестроено с новым интервалом.",
+                l.pageService.settingsHelpPollInterval(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help status timeout`() {
+            assertEquals(
+                "Максимальное время ожидания ответа о состоянии Проверяющего узла.\n\n" +
+                    "Положительная длительность ISO-8601, например PT5M.\n\n" +
+                    "Изменения вступят в силу при следующем запросе статуса узла.",
+                l.pageService.settingsHelpStatusTimeout(),
+            )
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1048571,   1048571 байт",
+            "4194304,   4194304 байта",
+            "400000000, 400000000 байт",
+        )
+        fun `should agree bytes with the ungrouped active limit in settings help max message bytes`(active: Int, activeBytes: String) {
+            assertEquals(
+                "Максимальный размер входящего gRPC-сообщения от Проверяющего узла.\n\n" +
+                    "Положительное целое число типа Kotlin Int, в байтах.\n\n" +
+                    "Изменения вступят в силу после перезапуска приложения. Поле показывает сохранённое значение. " +
+                    "Действующий предел — $activeBytes.",
+                l.pageService.settingsHelpMaxMessageBytes(active = active),
+            )
+        }
+
+        @Test
+        fun `should decline the polygon and diagnostic terms in settings help max time limit millis`() {
+            assertEquals(
+                "Верхняя граница ограничения времени в Полигоне, которую проверяет Диагностика.\n\n" +
+                    "Неотрицательное целое число типа Kotlin Long, в миллисекундах.\n\n" +
+                    "Изменения вступят в силу при следующей Диагностике.",
+                l.pageService.settingsHelpMaxTimeLimitMillis(),
+            )
+        }
+
+        @Test
+        fun `should decline the diagnostic and polygon terms in settings help score prefix`() {
+            assertEquals(
+                "Текст, по которому Диагностика распознаёт вывод баллов в Полигоне. Регистр учитывается.\n\n" +
+                    "Текст не должен быть пустым или состоять только из пробелов; пробелы сохраняются.\n\n" +
+                    "Изменения вступят в силу при следующей Диагностике.",
+                l.pageService.settingsHelpScorePrefix(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help cleanup minimum age`() {
+            assertEquals(
+                "Минимальное время после изменения файла без записи в БД, позволяющее удалить его при очистке.\n\n" +
+                    "Положительная длительность ISO-8601, например PT5M.\n\n" +
+                    "Изменения вступят в силу при следующем явном проходе очистки. Сохранение настройки не " +
+                    "запускает очистку.",
+                l.pageService.settingsHelpCleanupMinimumAge(),
+            )
+        }
+
+        @Test
+        fun `should separate three paragraphs in settings help cleanup batch size`() {
+            assertEquals(
+                "Максимальное количество записей или файлов в одном пакете очистки.\n\n" +
+                    "Положительное целое число типа Kotlin Int.\n\n" +
+                    "Изменения вступят в силу при следующем явном проходе очистки. Сохранение настройки не " +
+                    "запускает очистку.",
+                l.pageService.settingsHelpCleanupBatchSize(),
+            )
+        }
+
+        @Test
+        fun `should name the grading state in grading title`() {
+            assertEquals("Состояние проверки", l.pageService.gradingTitle())
+        }
+
+        @Test
+        fun `should name the queue block in grading queue`() {
+            assertEquals("Очередь", l.pageService.gradingQueue())
+        }
+
+        @Test
+        fun `should explain the queue block in grading queue subtitle`() {
+            assertEquals("Незавершённые проверки этого экземпляра по этапам", l.pageService.gradingQueueSubtitle())
+        }
+
+        @Test
+        fun `should name the preparing stage in grading queue preparing`() {
+            assertEquals("Подготовка", l.pageService.gradingQueuePreparing())
+        }
+
+        @Test
+        fun `should name the waiting stage in grading queue waiting`() {
+            assertEquals("Ожидание отправки", l.pageService.gradingQueueWaiting())
+        }
+
+        @Test
+        fun `should name the grading stage in grading queue grading`() {
+            assertEquals("Проверка на узле", l.pageService.gradingQueueGrading())
+        }
+
+        @Test
+        fun `should name the saving stage in grading queue saving`() {
+            assertEquals("Сохранение результата", l.pageService.gradingQueueSaving())
+        }
+
+        @Test
+        fun `should name the total in grading queue total`() {
+            assertEquals("Всего незавершённых", l.pageService.gradingQueueTotal())
+        }
+
+        @Test
+        fun `should name the nodes block in grading nodes`() {
+            assertEquals("Проверяющие узлы", l.pageService.gradingNodes())
+        }
+
+        @Test
+        fun `should label the import action in grading import`() {
+            assertEquals("Импортировать из конфигурации", l.pageService.gradingImport())
+        }
+
+        @Test
+        fun `should report the blocked registry in grading uncertain registry`() {
+            assertEquals(
+                "Сохранённое состояние реестра неопределённо. Изменения заблокированы до перезапуска",
+                l.pageService.gradingUncertainRegistry(),
+            )
+        }
+
+        @Test
+        fun `should report no nodes in grading empty`() {
+            assertEquals("Проверяющих узлов нет", l.pageService.gradingEmpty())
+        }
+
+        @Test
+        fun `should show the ungrouped address count in grading empty configured`() {
+            assertEquals(
+                "Адресов в конфигурации грейдера: 1000. Импортируйте их или добавьте узел по адресу.",
+                l.pageService.gradingEmptyConfigured(configured = 1000),
+            )
+        }
+
+        @Test
+        fun `should suggest adding a node in grading empty hint`() {
+            assertEquals("Добавьте узел по его gRPC-адресу.", l.pageService.gradingEmptyHint())
+        }
+
+        @Test
+        fun `should label the enabled participation in grading on`() {
+            assertEquals("Вкл", l.pageService.gradingOn())
+        }
+
+        @Test
+        fun `should label the disabled participation in grading off`() {
+            assertEquals("Выкл", l.pageService.gradingOff())
+        }
+
+        @Test
+        fun `should label the apply action in grading apply`() {
+            assertEquals("Применить", l.pageService.gradingApply())
+        }
+
+        @Test
+        fun `should report the added node in grading added`() {
+            assertEquals("Проверяющий узел добавлен", l.pageService.gradingAdded())
+        }
+
+        @Test
+        fun `should report the imported nodes in grading imported`() {
+            assertEquals("Проверяющие узлы импортированы", l.pageService.gradingImported())
+        }
+
+        @Test
+        fun `should report the participating node in grading activated`() {
+            assertEquals("Проверяющий узел участвует в проверке", l.pageService.gradingActivated())
+        }
+
+        @Test
+        fun `should report the disabled node in grading deactivated`() {
+            assertEquals("Проверяющий узел отключён от проверки", l.pageService.gradingDeactivated())
+        }
+
+        @Test
+        fun `should report the removed node in grading removed`() {
+            assertEquals("Проверяющий узел удалён", l.pageService.gradingRemoved())
+        }
+
+        @Test
+        fun `should quote the address in guillemets in grading remove title`() {
+            assertEquals(
+                "Удалить Проверяющий узел «10.0.0.1:50051»?",
+                l.pageService.gradingRemoveTitle(address = "10.0.0.1:50051"),
+            )
+        }
+
+        @Test
+        fun `should use the accusative plural submission term in grading remove text`() {
+            assertEquals(
+                "Узел исчезнет из реестра, перестанет получать Посылки и опрашиваться. Незавершённые проверки " +
+                    "будут отправлены повторно в пределах лимитов.",
+                l.pageService.gradingRemoveText(),
+            )
+        }
+
+        @Test
+        fun `should report the failed change in grading failed`() {
+            assertEquals("Не удалось применить изменение", l.pageService.gradingFailed())
+        }
+
+        @Test
+        fun `should keep the previous registry in grading failed hint`() {
+            assertEquals("Прежнее состояние реестра сохранено", l.pageService.gradingFailedHint())
+        }
+
+        @Test
+        fun `should report the unknown outcome in grading uncertain`() {
+            assertEquals("Исход сохранения не определён", l.pageService.gradingUncertain())
+        }
+
+        @Test
+        fun `should report the blocked registry changes in grading uncertain hint`() {
+            assertEquals("Изменения реестра заблокированы до перезапуска", l.pageService.gradingUncertainHint())
+        }
+
+        @Test
+        fun `should name the unknown state in grading status unknown`() {
+            assertEquals("Неизвестно", l.pageService.gradingStatusUnknown())
+        }
+
+        @Test
+        fun `should name the unreachable state in grading status unreachable`() {
+            assertEquals("Недоступен", l.pageService.gradingStatusUnreachable())
+        }
+
+        @Test
+        fun `should name the available state in grading status available`() {
+            assertEquals("Доступен", l.pageService.gradingStatusAvailable())
+        }
+
+        @Test
+        fun `should join the ungrouped queue and capacity with a slash in grading status queue`() {
+            assertEquals("В очереди: 1000/2000", l.pageService.gradingStatusQueue(queued = 1000, capacity = 2000))
+        }
+
+        @Test
+        fun `should ask for the address in grading rejection blank`() {
+            assertEquals("Укажите адрес", l.pageService.gradingRejectionBlank())
+        }
+
+        @Test
+        fun `should name the length limit in grading rejection too long`() {
+            assertEquals("Адрес длиннее 255 символов", l.pageService.gradingRejectionTooLong())
+        }
+
+        @Test
+        fun `should report a registered address in grading rejection already registered`() {
+            assertEquals("Узел с этим адресом уже есть в реестре", l.pageService.gradingRejectionAlreadyRegistered())
+        }
+
+        @Test
+        fun `should report a missing address in grading rejection not registered`() {
+            assertEquals("Узла с этим адресом нет в реестре", l.pageService.gradingRejectionNotRegistered())
+        }
+
+        @Test
+        fun `should name the new node in grading add title`() {
+            assertEquals("Новый Проверяющий узел", l.pageService.gradingAddTitle())
+        }
+
+        @Test
+        fun `should warn about unchecked availability in grading add subtitle`() {
+            assertEquals("Доступность узла при добавлении не проверяется", l.pageService.gradingAddSubtitle())
+        }
+
+        @Test
+        fun `should label the address field in grading add address`() {
+            assertEquals("Адрес", l.pageService.gradingAddAddress())
+        }
+
+        @Test
+        fun `should show the address format in grading add address hint`() {
+            assertEquals("IP:port", l.pageService.gradingAddAddressHint())
+        }
+
+        @Test
+        fun `should label the participation checkbox in grading participates`() {
+            assertEquals("Участвует в проверке", l.pageService.gradingParticipates())
+        }
+
+        @Test
+        fun `should name the import dialog in grading import title`() {
+            assertEquals("Импорт из конфигурации", l.pageService.gradingImportTitle())
+        }
+
+        @Test
+        fun `should keep the property path as text in grading import subtitle`() {
+            assertEquals(
+                "Адреса testsys.grading.nodes, прочитанные при запуске. Доступность узлов не проверяется",
+                l.pageService.gradingImportSubtitle(),
+            )
+        }
+
+        @Test
+        fun `should mark a new address in grading import new`() {
+            assertEquals("новый — будет добавлен", l.pageService.gradingImportNew())
+        }
+
+        @Test
+        fun `should mark a registered participating node in grading import existing active`() {
+            assertEquals("уже в реестре · участвует", l.pageService.gradingImportExistingActive())
+        }
+
+        @Test
+        fun `should mark a registered disabled node in grading import existing inactive`() {
+            assertEquals("уже в реестре · отключён", l.pageService.gradingImportExistingInactive())
+        }
+
+        @Test
+        fun `should label the select all action in grading import select all`() {
+            assertEquals("Выбрать все", l.pageService.gradingImportSelectAll())
+        }
+
+        @Test
+        fun `should label the clear all action in grading import clear all`() {
+            assertEquals("Убрать все", l.pageService.gradingImportClearAll())
+        }
+
+        @Test
+        fun `should label the import action in grading import submit`() {
+            assertEquals("Импортировать", l.pageService.gradingImportSubmit())
+        }
+
+        @Test
+        fun `should name the report dialog in grading import report`() {
+            assertEquals("Результат импорта", l.pageService.gradingImportReport())
+        }
+
+        @Test
+        fun `should report a participating added node in grading import added active`() {
+            assertEquals("добавлен · участвует", l.pageService.gradingImportAddedActive())
+        }
+
+        @Test
+        fun `should report a disabled added node in grading import added inactive`() {
+            assertEquals("добавлен · отключён", l.pageService.gradingImportAddedInactive())
+        }
+
+        @Test
+        fun `should report a skipped registered address in grading import already registered`() {
+            assertEquals("уже в реестре — пропущен", l.pageService.gradingImportAlreadyRegistered())
+        }
+
+        @Test
+        fun `should report a skipped unconfigured address in grading import not configured`() {
+            assertEquals("нет в конфигурации — пропущен", l.pageService.gradingImportNotConfigured())
+        }
+
+        @Test
+        fun `should report a skipped invalid address in grading import invalid address`() {
+            assertEquals("неверный адрес — пропущен", l.pageService.gradingImportInvalidAddress())
+        }
+
+        @Test
+        fun `should report a failed address in grading import failed`() {
+            assertEquals("не добавлен: не удалось применить изменение", l.pageService.gradingImportFailed())
+        }
+
+        @Test
+        fun `should report the unknown outcome in grading import uncertain`() {
+            assertEquals("исход не определён; импорт остановлен", l.pageService.gradingImportUncertain())
+        }
+
+        @Test
+        fun `should report a not attempted address in grading import stopped`() {
+            assertEquals("не добавлен: импорт остановлен", l.pageService.gradingImportStopped())
+        }
+
+        @Test
+        fun `should use the plural user term in users title`() {
+            assertEquals("Пользователи", l.pageService.usersTitle())
+        }
+
+        @Test
+        fun `should use the plural user term in users empty`() {
+            assertEquals("Пользователи не найдены", l.pageService.usersEmpty())
+        }
+
+        @Test
+        fun `should suggest changing the search in users empty hint`() {
+            assertEquals("Измените условия поиска.", l.pageService.usersEmptyHint())
+        }
+
+        @Test
+        fun `should name the exact match in users id hint`() {
+            assertEquals("Точное совпадение", l.pageService.usersIdHint())
+        }
+
+        @Test
+        fun `should keep the lowercase nickname in users nickname hint`() {
+            assertEquals("Часть псевдонима, без учёта регистра", l.pageService.usersNicknameHint())
+        }
+
+        @Test
+        fun `should name the partial match in users email hint`() {
+            assertEquals("Часть почты, без учёта регистра", l.pageService.usersEmailHint())
+        }
+
+        @Test
+        fun `should use the user term in user title`() {
+            assertEquals("Пользователь", l.pageService.userTitle())
+        }
+
+        @Test
+        fun `should quote the nickname in guillemets in user head`() {
+            assertEquals("Пользователь «Маша»", l.pageService.userHead(name = "Маша"))
+        }
+
+        @Test
+        fun `should head the details in user details`() {
+            assertEquals("Сведения", l.pageService.userDetails())
+        }
+
+        @Test
+        fun `should label the creation moment in user created`() {
+            assertEquals("Создан", l.pageService.userCreated())
+        }
+
+        @Test
+        fun `should name the versions in versions title`() {
+            assertEquals("Версии TRIK Studio", l.pageService.versionsTitle())
+        }
+
+        @Test
+        fun `should label the version in versions version`() {
+            assertEquals("Версия", l.pageService.versionsVersion())
+        }
+
+        @Test
+        fun `should label the image tag in versions tag`() {
+            assertEquals("Тег образа", l.pageService.versionsTag())
+        }
+
+        @Test
+        fun `should show the tag format in versions tag hint`() {
+            assertEquals("<репозиторий>:<тег>", l.pageService.versionsTagHint())
+        }
+
+        @Test
+        fun `should name the version in versions actions`() {
+            assertEquals("Действия с версией 2026.2", l.pageService.versionsActions(version = "2026.2"))
+        }
+
+        @Test
+        fun `should label the tag change in versions change tag`() {
+            assertEquals("Изменить тег", l.pageService.versionsChangeTag())
+        }
+
+        @Test
+        fun `should report no versions in versions empty`() {
+            assertEquals("Версий TRIK Studio нет", l.pageService.versionsEmpty())
+        }
+
+        @Test
+        fun `should suggest adding a version in versions empty hint`() {
+            assertEquals("Добавьте версию: номер и тег Docker-образа.", l.pageService.versionsEmptyHint())
+        }
+
+        @Test
+        fun `should name the new version in versions add title`() {
+            assertEquals("Новая версия TRIK Studio", l.pageService.versionsAddTitle())
+        }
+
+        @Test
+        fun `should report the added version in versions added`() {
+            assertEquals("Версия TRIK Studio добавлена", l.pageService.versionsAdded())
+        }
+
+        @Test
+        fun `should name the version in versions tag title`() {
+            assertEquals("Тег версии 2026.2", l.pageService.versionsTagTitle(version = "2026.2"))
+        }
+
+        @Test
+        fun `should report the changed tag in versions tag changed`() {
+            assertEquals("Тег версии TRIK Studio изменён", l.pageService.versionsTagChanged())
+        }
+
+        @Test
+        fun `should name the version in versions delete title`() {
+            assertEquals("Удалить версию TRIK Studio 2026.2?", l.pageService.versionsDeleteTitle(version = "2026.2"))
+        }
+
+        @Test
+        fun `should use the genitive plural task and contest terms in versions delete text`() {
+            assertEquals("Версию нельзя будет выбрать для новых Задач и Туров.", l.pageService.versionsDeleteText())
+        }
+
+        @Test
+        fun `should report the deleted version in versions deleted`() {
+            assertEquals("Версия TRIK Studio удалена", l.pageService.versionsDeleted())
+        }
+
+        @Test
+        fun `should report the used version in versions in use`() {
+            assertEquals("Версия TRIK Studio уже используется", l.pageService.versionsInUse())
+        }
+
+        @Test
+        fun `should report the already deleted version in versions already deleted`() {
+            assertEquals("Версия TRIK Studio уже удалена", l.pageService.versionsAlreadyDeleted())
+        }
+
+        @Test
+        fun `should ask for the version in versions rejection blank version`() {
+            assertEquals("Укажите версию", l.pageService.versionsRejectionBlankVersion())
+        }
+
+        @Test
+        fun `should name the length limit in versions rejection version too long`() {
+            assertEquals("Версия длиннее 255 символов", l.pageService.versionsRejectionVersionTooLong())
+        }
+
+        @Test
+        fun `should report a registered version in versions rejection version registered`() {
+            assertEquals("Такая версия уже зарегистрирована", l.pageService.versionsRejectionVersionRegistered())
+        }
+
+        @Test
+        fun `should ask for the tag in versions rejection blank tag`() {
+            assertEquals("Укажите тег", l.pageService.versionsRejectionBlankTag())
+        }
+
+        @Test
+        fun `should name the length limit in versions rejection tag too long`() {
+            assertEquals("Тег длиннее 512 символов", l.pageService.versionsRejectionTagTooLong())
+        }
+
+        @Test
+        fun `should report a registered tag in versions rejection tag registered`() {
+            assertEquals("Такой тег уже зарегистрирован", l.pageService.versionsRejectionTagRegistered())
+        }
+
+        @Test
+        fun `should name the decoding in id decoding title`() {
+            assertEquals("Дешифровка ID", l.pageService.idDecodingTitle())
+        }
+
+        @Test
+        fun `should name the identifier block in id decoding block`() {
+            assertEquals("Идентификатор", l.pageService.idDecodingBlock())
+        }
+
+        @Test
+        fun `should use the genitive system term in id decoding id hint`() {
+            assertEquals("Идентификатор любой сущности Системы", l.pageService.idDecodingIdHint())
+        }
+
+        @Test
+        fun `should name the time zone in id decoding issued at`() {
+            assertEquals("Создан (UTC)", l.pageService.idDecodingIssuedAt())
+        }
+
+        @Test
+        fun `should label the node in id decoding node`() {
+            assertEquals("Узел", l.pageService.idDecodingNode())
+        }
+
+        @Test
+        fun `should label the counter in id decoding counter`() {
+            assertEquals("Счётчик", l.pageService.idDecodingCounter())
+        }
+
+        @Test
+        fun `should label the decode action in id decoding decode`() {
+            assertEquals("Расшифровать", l.pageService.idDecodingDecode())
+        }
+
+        @Test
+        fun `should use the system term in id decoding not issued`() {
+            assertEquals("Система не выдаёт такой ID", l.pageService.idDecodingNotIssued())
+        }
+    }
+
     private companion object {
         // ICU digit groups and some messages use a no-break space; the code point keeps the expectations visible.
         val NBSP = Char(0x00A0).toString()

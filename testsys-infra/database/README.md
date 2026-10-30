@@ -303,7 +303,9 @@ Hibernate отправляет строки пакетными INSERT и UPDATE.
 
 Идентификаторы сущностей выдаёт [SnowflakeIdGenerator.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/id/SnowflakeIdGenerator.kt),
 последовательностей в БД нет. Идентификатор состоит из 32 бит секунд с начала эпохи Unix, 10 бит node id и 16 бит
-счётчика в пределах секунды.
+счётчика в пределах секунды. Служебный кабинет раскладывает идентификатор на эти части через
+[ServiceIdParts.kt](src/main/kotlin/tech/testsys/infra/database/api/service/ServiceIdParts.kt): `decode` возвращает
+`null` для числа с установленным знаковым или зарезервированным битом.
 
 Node id задаётся свойством `spring.jpa.properties.testsys.id.node-id`:
 

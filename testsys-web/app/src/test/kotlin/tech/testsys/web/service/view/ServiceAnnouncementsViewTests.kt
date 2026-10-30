@@ -118,10 +118,14 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the announcements page from the service header`() {
+    fun `should open the announcements page from the service menu`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<ServiceHomeView>()._get<RouterLink> { text = "Объявления" }._click()
+        // The page under test stays in the UI beside the routed home page, so the menu link is looked up in the latter.
+        UI.getCurrent()._get<ServiceHomeView>()
+            ._find<RouterLink> { classes = "ts-mega__link" }
+            .single { link -> link._get<Span>().text == "Объявления" }
+            ._click()
 
         assertEquals(ServiceAnnouncementsView::class.java, currentView)
     }

@@ -18,7 +18,6 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableCell
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
-import com.vaadin.flow.router.RouterLink
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.verify
@@ -60,10 +59,10 @@ class ServiceTrikStudioVersionsViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the versions page from the service header`() {
+    fun `should open the versions page from the service menu`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<RouterLink> { text = "Версии TRIK Studio" }._click()
+        clickMenuLink("Версии TRIK Studio")
 
         assertEquals(ServiceTrikStudioVersionsView::class.java, currentView)
     }

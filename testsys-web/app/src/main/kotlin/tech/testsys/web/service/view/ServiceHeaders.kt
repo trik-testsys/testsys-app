@@ -1,11 +1,17 @@
 package tech.testsys.web.service.view
 
+import com.vaadin.flow.component.Component
 import com.vaadin.flow.spring.annotation.SpringComponent
 import com.vaadin.flow.spring.security.AuthenticationContext
 import tech.testsys.web.components.navigation.header.CabinetHeader
 import tech.testsys.web.components.navigation.header.HeaderDestination
+import tech.testsys.web.components.navigation.header.HeaderMegaColumn
+import tech.testsys.web.components.navigation.header.HeaderMegaLink
+import tech.testsys.web.components.navigation.header.HeaderMegaMenu
 import tech.testsys.web.components.navigation.header.HeaderUser
+import tech.testsys.web.components.navigation.header.MegaMenuItem
 import tech.testsys.web.components.navigation.header.NavItem
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Builds the service header without domain-user navigation or links into the main application.
@@ -16,41 +22,45 @@ import tech.testsys.web.components.navigation.header.NavItem
 @SpringComponent
 class ServiceHeaders(private val authentication: AuthenticationContext) {
     /**
-     * Returns the header of the signed-in service with the [active] section: the sections of the service cabinet and
-     * the menu with signing out.
+     * Returns the header of the signed-in service with the [active] section: the home page, the menu of the other
+     * service pages grouped into columns and the menu with signing out.
      *
      * @since 1.0.0-beta.1
      */
-    fun header(active: String? = null): CabinetHeader = CabinetHeader(
-        items = listOf(
-            NavItem(key = HOME_SECTION, label = "Главная", destination = HeaderDestination.Route(ServiceHomeView::class.java)),
-            NavItem(key = SETTINGS_SECTION, label = "Настройки", destination = HeaderDestination.Route(ServiceSettingsView::class.java)),
-            NavItem(key = GRADING_SECTION, label = "Проверка", destination = HeaderDestination.Route(ServiceGradingView::class.java)),
-            NavItem(key = USERS_SECTION, label = "Пользователи", destination = HeaderDestination.Route(ServiceUsersView::class.java)),
-            NavItem(
-                key = VERSIONS_SECTION,
-                label = "Версии TRIK Studio",
-                destination = HeaderDestination.Route(ServiceTrikStudioVersionsView::class.java),
+    fun header(active: String? = null): CabinetHeader {
+        val texts = currentLocalization().pageService
+        val columns = listOf(
+            menuColumn(
+                texts.headerSystem(),
+                texts.headerSettings() to ServiceSettingsView::class.java,
+                texts.headerGrading() to ServiceGradingView::class.java,
+                texts.headerTrikStudioVersions() to ServiceTrikStudioVersionsView::class.java,
             ),
-            NavItem(
-                key = ANNOUNCEMENTS_SECTION,
-                label = "Объявления",
-                destination = HeaderDestination.Route(ServiceAnnouncementsView::class.java),
+            menuColumn(
+                texts.headerData(),
+                texts.headerUsers() to ServiceUsersView::class.java,
+                "Объявления" to ServiceAnnouncementsView::class.java,
             ),
-        ),
-        active = active,
-        user = HeaderUser(name = USER_NAME) { destructiveItem("Выйти") { authentication.logout() } },
-    )
+            menuColumn(texts.headerTools(), texts.headerIdDecoding() to ServiceIdDecodingView::class.java),
+        )
+        return CabinetHeader(
+            items = listOf(
+                NavItem(key = HOME_SECTION, label = texts.headerHome(), destination = HeaderDestination.Route(ServiceHomeView::class.java)),
+                MegaMenuItem(key = MENU_SECTION, label = texts.headerMenu(), menu = HeaderMegaMenu(columns), isSearchable = true),
+            ),
+            active = active,
+            // The service identity has no person behind it, so the header names the service.
+            user = HeaderUser(name = texts.headerUser()) { destructiveItem(texts.headerSignOut()) { authentication.logout() } },
+        )
+    }
 
     companion object {
         const val HOME_SECTION: String = "home"
-        const val SETTINGS_SECTION: String = "settings"
-        const val GRADING_SECTION: String = "grading"
-        const val USERS_SECTION: String = "users"
-        const val VERSIONS_SECTION: String = "trik-studio-versions"
-        const val ANNOUNCEMENTS_SECTION: String = "announcements"
+        const val MENU_SECTION: String = "menu"
 
-        /** Name shown in the header: the service identity has no person behind it. */
-        private const val USER_NAME: String = "Служба"
+        private fun menuColumn(title: String, vararg links: Pair<String, Class<out Component>>): HeaderMegaColumn = HeaderMegaColumn(
+            title = title,
+            links = links.map { (label, page) -> HeaderMegaLink(label = label, destination = HeaderDestination.Route(page)) },
+        )
     }
 }

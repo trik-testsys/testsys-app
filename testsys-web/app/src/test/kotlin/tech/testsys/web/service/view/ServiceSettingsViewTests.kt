@@ -212,7 +212,7 @@ class ServiceSettingsViewTests : ServiceMockVaadinTests() {
         assertTrue(
             _find<Div>().any { text ->
                 text.text == "Размер входящего сообщения: действующий предел — 400000000 байт, " +
-                    "сохранённый — 1024 байт. Для применения требуется перезапуск."
+                    "сохранённый — 1024 байта. Для применения требуется перезапуск."
             },
         )
         val field = _find<TextField>().single { field -> field.helperText == SettingKey.MaxMessageBytes.property }

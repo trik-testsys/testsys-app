@@ -50,7 +50,7 @@ class ServiceAnnouncementsView(
     private lateinit var history: LoadedTable<Announcement>
 
     init {
-        page(headers.header(active = ServiceHeaders.ANNOUNCEMENTS_SECTION)) {
+        page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
             head("Объявления")
             row {
                 block(title = "Объявления страницы входа") {

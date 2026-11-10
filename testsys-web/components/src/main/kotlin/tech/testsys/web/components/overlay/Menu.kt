@@ -4,11 +4,11 @@ package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.ComponentUtil
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.contextmenu.ContextMenu
-import com.vaadin.flow.component.contextmenu.MenuItem
+import com.vaadin.flow.router.RouteParameters
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
@@ -20,16 +20,39 @@ import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAriaHasPopup
 import tech.testsys.web.components.layout.ContentScope
 
+/** Item collected by a [MenuScope]: an [Action] or a [Link]. */
+internal sealed interface MenuEntry {
+    val label: String
+    val isEnabled: Boolean
+    val isDestructive: Boolean
+
+    /** Item that runs [onSelect]. */
+    class Action(
+        override val label: String,
+        override val isEnabled: Boolean,
+        override val isDestructive: Boolean,
+        val onSelect: () -> Unit,
+    ) : MenuEntry
+
+    /** Item that opens the route [target] with [parameters]. */
+    class Link(override val label: String, val target: Class<out Component>, val parameters: RouteParameters) : MenuEntry {
+        override val isEnabled: Boolean get() = true
+        override val isDestructive: Boolean get() = false
+    }
+}
+
 /**
- * Scope of an action menu: its items in order. Destructive items come last, after a separator the menu adds itself.
+ * Scope of an action menu or a header user menu: its items in order. Destructive items come last; the menu separates
+ * them from ordinary items itself.
  *
  * @since %CURRENT_VERSION%
  */
 @TestSysDsl
-class MenuScope internal constructor(private val menu: ContextMenu) {
-    internal var itemCount: Int = 0
-        private set
-    private var hasDestructive = false
+class MenuScope internal constructor() {
+    private val collected = mutableListOf<MenuEntry>()
+
+    /** The items added so far, in order. */
+    internal val entries: List<MenuEntry> get() = collected
 
     /**
      * Adds an item named [label] that runs [onSelect]; an item that is not [isEnabled] is shown but cannot be chosen.
@@ -38,39 +61,56 @@ class MenuScope internal constructor(private val menu: ContextMenu) {
      * @since %CURRENT_VERSION%
      */
     fun item(label: String, isEnabled: Boolean = true, onSelect: () -> Unit) {
-        check(!hasDestructive) { "Menu item '$label' follows a destructive item; destructive items come last" }
-        add(label, onSelect).isEnabled = isEnabled
+        checkOrdinary(label)
+        collected += MenuEntry.Action(label, isEnabled, isDestructive = false, onSelect)
     }
 
     /**
-     * Adds an item named [label] that deletes or cancels something and runs [onSelect].
+     * Adds an item named [label] that opens the route [target] with [parameters].
+     *
+     * @throws IllegalStateException if a destructive item is already added.
+     * @since %CURRENT_VERSION%
+     */
+    fun link(label: String, target: Class<out Component>, parameters: RouteParameters = RouteParameters.empty()) {
+        checkOrdinary(label)
+        collected += MenuEntry.Link(label, target, parameters)
+    }
+
+    /**
+     * Adds an item named [label] that deletes or cancels something and runs [onSelect]; an item that is not
+     * [isEnabled] is shown but cannot be chosen.
      *
      * @since %CURRENT_VERSION%
      */
-    fun destructiveItem(label: String, onSelect: () -> Unit) {
-        if (!hasDestructive && itemCount > 0) menu.addSeparator()
-        hasDestructive = true
-        add(label, onSelect).addClassName(CssClass.MenuItemDanger)
+    fun destructiveItem(label: String, isEnabled: Boolean = true, onSelect: () -> Unit) {
+        collected += MenuEntry.Action(label, isEnabled, isDestructive = true, onSelect)
     }
 
-    private fun add(label: String, onSelect: () -> Unit): MenuItem {
-        itemCount++
-        return menu.addItem(label) { onSelect() }.apply { addClassName(CssClass.MenuItem) }
+    private fun checkOrdinary(label: String) {
+        check(collected.none { entry -> entry.isDestructive }) {
+            "Menu item '$label' follows a destructive item; destructive items come last"
+        }
     }
 }
 
+/** Collects the items of [content], which must add at least one. */
+internal fun menuEntries(content: MenuScope.() -> Unit): List<MenuEntry> {
+    val entries = MenuScope().apply(content).entries
+    check(entries.isNotEmpty()) { "Menu must have at least one item" }
+    return entries
+}
+
+/** Whether a separator precedes the item at [index]: only the first destructive item after ordinary ones has it. */
+internal fun List<MenuEntry>.hasSeparatorBefore(index: Int): Boolean =
+    index > 0 && this[index].isDestructive && !this[index - 1].isDestructive
+
 /**
- * Adds a button that opens an action menu: "⋯" named for screen readers if [label] is `null`, a text button otherwise.
+ * Adds a "⋯" button named for screen readers that opens an action menu filled by [content].
  *
  * @throws IllegalStateException if the menu has no items or an item follows a destructive one.
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.menu(label: String? = null, content: MenuScope.() -> Unit): ElementHandle {
-    if (label == null) return iconMenu(texts.messages.uiOverlay.menuActions(), content)
-    val trigger = action(label)
-    attachMenu(trigger.button, content)
-    return ElementHandle(trigger.button)
-}
+fun ContentScope.menu(content: MenuScope.() -> Unit): ElementHandle = iconMenu(texts.messages.uiOverlay.menuActions(), content)
 
 /** Adds the compact ellipsis trigger with the complete accessible name [ariaLabel]. */
 internal fun ContentScope.iconMenu(ariaLabel: String, content: MenuScope.() -> Unit): ElementHandle {
@@ -87,8 +127,20 @@ internal fun attachMenu(trigger: Component, content: MenuScope.() -> Unit): Cont
         element.themeList.add(CssTheme.Menu)
     }
 
-    val scope = MenuScope(menu).apply(content)
-    check(scope.itemCount > 0) { "Menu must have at least one item" }
+    val entries = menuEntries(content)
+    entries.forEachIndexed { index, entry ->
+        if (entries.hasSeparatorBefore(index)) menu.addSeparator()
+        menu.addItem(entry.label) {
+            when (entry) {
+                is MenuEntry.Action -> entry.onSelect()
+                is MenuEntry.Link -> UI.getCurrent().navigate(entry.target, entry.parameters)
+            }
+        }.apply {
+            isEnabled = entry.isEnabled
+            addClassName(CssClass.MenuItem)
+            if (entry.isDestructive) addClassName(CssClass.MenuItemDanger)
+        }
+    }
 
     trigger.element.setAriaHasPopup(AriaPopup.Menu)
     ComponentUtil.setData(trigger, ContextMenu::class.java, menu)

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.components.FirstTestView
 import tech.testsys.web.components.ItemTestView
 import tech.testsys.web.components.MockVaadinTests
@@ -23,9 +24,10 @@ import tech.testsys.web.components.testTexts
 
 class HeaderTests : MockVaadinTests() {
     private val items = listOf(
-        NavItem(key = "first", label = "Первый", target = FirstTestView::class.java),
-        NavItem(key = "second", label = "Второй", target = SecondTestView::class.java),
+        NavItem(key = "first", label = "Первый", destination = HeaderDestination.Route(FirstTestView::class.java)),
+        NavItem(key = "second", label = "Второй", destination = HeaderDestination.Route(SecondTestView::class.java)),
     )
+    private val notifications = HeaderNotifications(ValueSignal(emptyList()), onRead = {}, onReadAll = {})
 
     @Test
     fun `should keep the shared header sticky`() {
@@ -44,7 +46,7 @@ class HeaderTests : MockVaadinTests() {
     @Test
     fun `should route guest sign in using explicit parameters`() {
         val header = buildHeader(
-            CabinetHeader(signIn = ItemTestView::class.java, signInParameters = RouteParameters("id", "7")),
+            CabinetHeader(signIn = HeaderDestination.Route(ItemTestView::class.java, RouteParameters("id", "7"))),
             testTexts,
         )
         assertTrue(header.findAll("ts-header__action").single().element.getAttribute("href").endsWith("/7"))
@@ -84,7 +86,7 @@ class HeaderTests : MockVaadinTests() {
             CabinetHeader(
                 items = listOf(MegaMenuItem(key = "menu", label = "Menu", menu = HeaderMegaMenu(emptyList()))),
                 user = HeaderUser("Анна Петрова"),
-                notifications = HeaderNotifications(ValueSignal(emptyList()), onRead = {}, onReadAll = {}),
+                notifications = notifications,
             ),
             testTexts,
         )
@@ -123,19 +125,24 @@ class HeaderTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should show user initials instead of the sign-in link`() {
-        val header = buildHeader(
-            CabinetHeader(user = HeaderUser("Анна Петрова"), signIn = FirstTestView::class.java),
-            testTexts,
-        )
+    fun `should link a section to its route with parameters`() {
+        val destination = HeaderDestination.Route(ItemTestView::class.java, RouteParameters("id", "7"))
+        val item = NavItem(key = "item", label = "Посылка", destination = destination)
+        val header = buildHeader(CabinetHeader(items = listOf(item)), testTexts)
+
+        assertEquals("test/item/7", header.find("ts-nav__item").element.getAttribute("href"))
+    }
+
+    @Test
+    fun `should show user initials`() {
+        val header = buildHeader(CabinetHeader(user = HeaderUser("Анна Петрова")), testTexts)
 
         assertEquals("АП", header.find("ts-avatar").element.textRecursively)
-        assertTrue(header.findAll("ts-header__action").isEmpty())
     }
 
     @Test
     fun `should show the sign-in link to a guest`() {
-        val header = buildHeader(CabinetHeader(signIn = FirstTestView::class.java), testTexts)
+        val header = buildHeader(CabinetHeader(signIn = HeaderDestination.Route(FirstTestView::class.java)), testTexts)
 
         val signIn = header.find("ts-header__action")
         assertEquals("Войти", signIn.element.textRecursively)
@@ -147,5 +154,30 @@ class HeaderTests : MockVaadinTests() {
         val header = buildHeader(CabinetHeader(), testTexts)
 
         assertTrue(header.findAll("ts-header__action").isEmpty())
+    }
+
+    @Test
+    fun `should reject duplicate section keys`() {
+        assertThrows<IllegalArgumentException> { buildHeader(CabinetHeader(items = items + items.first()), testTexts) }
+    }
+
+    @Test
+    fun `should reject an active key that names no section`() {
+        assertThrows<IllegalArgumentException> { buildHeader(CabinetHeader(items = items, active = "missing"), testTexts) }
+    }
+
+    @Test
+    fun `should reject a user together with the sign-in link`() {
+        assertThrows<IllegalArgumentException> {
+            buildHeader(
+                CabinetHeader(user = HeaderUser("Анна Петрова"), signIn = HeaderDestination.Route(FirstTestView::class.java)),
+                testTexts,
+            )
+        }
+    }
+
+    @Test
+    fun `should reject notifications without a user`() {
+        assertThrows<IllegalArgumentException> { buildHeader(CabinetHeader(notifications = notifications), testTexts) }
     }
 }

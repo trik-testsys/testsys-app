@@ -32,8 +32,6 @@ import tech.testsys.web.components.navigation.header.HeaderMegaColumn
 import tech.testsys.web.components.navigation.header.HeaderMegaLink
 import tech.testsys.web.components.navigation.header.HeaderMegaMenu
 import tech.testsys.web.components.navigation.header.HeaderUser
-import tech.testsys.web.components.navigation.header.HeaderUserMenu
-import tech.testsys.web.components.navigation.header.HeaderUserMenuItem
 import tech.testsys.web.components.navigation.header.MegaMenuItem
 import tech.testsys.web.components.navigation.header.NavItem
 import tech.testsys.web.components.texts.currentLocalization
@@ -92,7 +90,8 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
      *
      * @since %CURRENT_VERSION%
      */
-    fun guest(hasSignIn: Boolean = true): CabinetHeader = CabinetHeader(signIn = AuthenticationView::class.java.takeIf { hasSignIn })
+    fun guest(hasSignIn: Boolean = true): CabinetHeader =
+        CabinetHeader(signIn = HeaderDestination.Route(AuthenticationView::class.java).takeIf { hasSignIn })
 
     /**
      * Returns the Cabinet header of the signed-in user with the [active] section: the start page, the menu of the roles
@@ -103,26 +102,18 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
     fun cabinet(active: String? = null): CabinetHeader {
         val user = currentUser.user()
         val texts = currentLocalization().pageCabinet
-        val signOut = HeaderUserMenuItem(
-            label = texts.signOut(),
-            destination = HeaderDestination.Action { authenticationContext.logout() },
-            isDestructive = true,
-        )
-
-        val userMenu = if (user is MultipleRoleUser) {
-            listOf(HeaderUserMenuItem(texts.profile(), HeaderDestination.Route(ProfileView::class.java)), signOut)
-        } else {
-            listOf(signOut)
-        }
+        val home = HeaderDestination.Route(startPageOf(CabinetPrincipal.of(user).kind))
 
         return CabinetHeader(
             items = listOf(
-                NavItem(key = MAIN_SECTION, label = texts.home(), target = startPageOf(CabinetPrincipal.of(user).kind)),
-                MegaMenuItem(key = MENU_SECTION, label = texts.menu(), menu = HeaderMegaMenu(columnsOf(user, texts))),
+                NavItem(key = MAIN_SECTION, label = texts.home(), destination = home),
+                MegaMenuItem(key = MENU_SECTION, label = texts.menu(), menu = HeaderMegaMenu(columnsOf(user, texts)), isSearchable = true),
             ),
             active = active,
-            user = HeaderUser(name = nameOf(user), menu = HeaderUserMenu(userMenu)),
-            menuSearchKey = MENU_SECTION,
+            user = HeaderUser(name = nameOf(user)) {
+                if (user is MultipleRoleUser) link(texts.profile(), ProfileView::class.java)
+                destructiveItem(texts.signOut()) { authenticationContext.logout() }
+            },
         )
     }
 

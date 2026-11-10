@@ -90,9 +90,9 @@ class HeaderMenuSearchTests : MockVaadinTests() {
 
     @Test
     fun `should place menu search beside navigation`() {
-        val item = MegaMenuItem(key = "menu", label = "Меню", menu = HeaderMegaMenu(columns))
+        val item = MegaMenuItem(key = "menu", label = "Меню", menu = HeaderMegaMenu(columns), isSearchable = true)
 
-        val header = buildHeader(CabinetHeader(items = listOf(item), menuSearchKey = "menu"), testTexts)
+        val header = buildHeader(CabinetHeader(items = listOf(item)), testTexts)
 
         assertEquals(listOf("ts-nav", "ts-header__search", "ts-header__spacer"), barParts(header))
     }
@@ -208,8 +208,12 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should reject a missing menu search key`() {
-        assertThrows(IllegalArgumentException::class.java) { buildHeader(CabinetHeader(menuSearchKey = "missing"), testTexts) }
+    fun `should reject more than one searchable mega-menu`() {
+        val items = listOf("first", "second").map { key ->
+            MegaMenuItem(key = key, label = key, menu = HeaderMegaMenu(columns), isSearchable = true)
+        }
+
+        assertThrows(IllegalArgumentException::class.java) { buildHeader(CabinetHeader(items = items), testTexts) }
     }
 
     @Test

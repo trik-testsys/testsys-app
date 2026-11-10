@@ -162,28 +162,20 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Adds the last column on [size] fractions with an action menu of each row filled by [content].
+     * Adds the last column on [size] fractions with an action menu of each row filled by [content]. The menu button
+     * of a row is named by [ariaLabel], or by the generic actions name if it is `null`.
      *
      * @throws IllegalStateException if the table already has a menu column.
      * @since %CURRENT_VERSION%
      */
-    fun menuColumn(size: Int = 1, content: MenuScope.(T) -> Unit) {
-        menuColumn(ariaLabel = { texts.messages.uiOverlay.menuActions() }, size = size, content = content)
-    }
-
-    /**
-     * Adds the last action menu column on [size] fractions with a complete accessible name from [ariaLabel].
-     *
-     * @throws IllegalStateException if the table already has a menu column.
-     * @since %CURRENT_VERSION%
-     */
-    fun menuColumn(ariaLabel: (T) -> String, size: Int = 1, content: MenuScope.(T) -> Unit) {
+    fun menuColumn(size: Int = 1, ariaLabel: ((T) -> String)? = null, content: MenuScope.(T) -> Unit) {
         check(!hasMenuColumn) { "Table already has a menu column" }
         require(size in 1..gridColumns) { "Table menu size must be in 1..$gridColumns, got $size" }
 
         hasMenuColumn = true
         columns += TableColumn(title = "", sortKey = null, size = size, kind = CellKind.Menu) { row, cell ->
-            ContentScope(cell, texts, Placement.Cell).iconMenu(ariaLabel(row)) { content(row) }
+            val label = ariaLabel?.invoke(row) ?: texts.messages.uiOverlay.menuActions()
+            ContentScope(cell, texts, Placement.Cell).iconMenu(label) { content(row) }
         }
     }
 

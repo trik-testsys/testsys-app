@@ -2,11 +2,9 @@
 
 package tech.testsys.web.components.navigation.header
 
-import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.Text
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Nav
-import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.buildBrand
 import tech.testsys.web.components.core.CssClass
@@ -21,19 +19,18 @@ import java.util.Locale
 
 /** Builds the `.ts-header` markup of [header]. */
 internal fun buildHeader(header: CabinetHeader, texts: UiLocalization): Div {
+    checkConfiguration(header)
+
     val interactions = HeaderInteractions()
     val menus = header.items.filterIsInstance<MegaMenuItem>().associate { it.key to MegaMenuHandle(it, interactions) }
-    require(header.menuSearchKey == null || header.menuSearchKey in menus) {
-        "Menu search key '${header.menuSearchKey}' must be one of the mega-menu keys ${menus.keys}"
-    }
+    val searchable = header.items.filterIsInstance<MegaMenuItem>().singleOrNull { item -> item.isSearchable }
+        ?.let { item -> menus.getValue(item.key) }
 
     val bar = Div().apply { addClassName(CssClass.HeaderBar) }
     bar.add(buildBrand(texts.messages.uiPage.brandName(), href = "."), navigation(header, texts, menus))
 
     // The search looks through the section items, so the field follows the navigation.
-    if (header.menuSearchKey != null) {
-        bar.add(HeaderMenuSearchController(menus.getValue(header.menuSearchKey), texts.messages.uiPage).component)
-    }
+    if (searchable != null) bar.add(HeaderMenuSearchController(searchable, texts.messages.uiPage).component)
 
     bar.add(Div().apply { addClassName(CssClass.HeaderSpacer) })
 
@@ -50,13 +47,25 @@ internal fun buildHeader(header: CabinetHeader, texts: UiLocalization): Div {
         }
         bar.add(userControl)
     } else if (signIn != null) {
-        bar.add(signInLink(texts.messages.uiPage.headerSignIn(), signIn, header.signInParameters))
+        bar.add(signInLink(texts.messages.uiPage.headerSignIn(), signIn))
     }
 
     return HeaderRoot().apply {
         add(bar)
-        header.menuSearchKey?.let { key -> menus.getValue(key).fullAnchor(this) }
+        searchable?.fullAnchor(this)
     }
+}
+
+private fun checkConfiguration(header: CabinetHeader) {
+    val keys = header.items.map { item -> item.key }
+    val duplicates = keys.groupingBy { key -> key }.eachCount().filterValues { count -> count > 1 }.keys
+    require(duplicates.isEmpty()) { "Header section keys must be unique, duplicated: $duplicates" }
+    require(header.active == null || header.active in keys) { "Active header section '${header.active}' must be one of $keys" }
+    require(header.user == null || header.signIn == null) { "Header cannot show both the user '${header.user?.name}' and the sign-in link" }
+    require(header.notifications == null || header.user != null) { "Header notifications require a signed-in user" }
+
+    val searchable = header.items.filter { item -> item is MegaMenuItem && item.isSearchable }.map { item -> item.key }
+    require(searchable.size <= 1) { "At most one header mega-menu can be searchable, got $searchable" }
 }
 
 private fun navigation(header: CabinetHeader, texts: UiLocalization, menus: Map<String, MegaMenuHandle>): Nav = Nav().apply {
@@ -74,17 +83,18 @@ private fun navigation(header: CabinetHeader, texts: UiLocalization, menus: Map<
     }
 }
 
-private fun navLink(item: NavItem, active: Boolean): RouterLink = RouterLink(item.label, item.target).apply {
-    addClassName(CssClass.NavItem)
-    if (active) addClassName(CssClass.NavItemActive)
-}
+private fun navLink(item: NavItem, active: Boolean): RouterLink =
+    RouterLink(item.label, item.destination.target, item.destination.parameters).apply {
+        addClassName(CssClass.NavItem)
+        if (active) addClassName(CssClass.NavItemActive)
+    }
 
 private fun userChip(user: HeaderUser, locale: Locale): Div {
     val avatar = userAvatar(user.name, locale)
     return Div(avatar, Text(user.name)).apply { addClassName(CssClass.HeaderUser) }
 }
 
-private fun signInLink(label: String, target: Class<out Component>, parameters: RouteParameters): RouterLink =
-    RouterLink(label, target, parameters).apply {
+private fun signInLink(label: String, signIn: HeaderDestination.Route): RouterLink =
+    RouterLink(label, signIn.target, signIn.parameters).apply {
         addClassNames(CssClass.Btn, CssClass.BtnSecondary, CssClass.HeaderAction)
     }

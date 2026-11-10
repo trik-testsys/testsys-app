@@ -29,7 +29,8 @@
   `TestSysTheme.DESIGN_SYSTEM`, `TestSysTheme.VAADIN_OVERRIDES`.
 
 Пакеты компонентов используют скоупы из `layout`. Намеренные обратные зависимости: `EditingSwitch` использует
-действия из `actions` и иконки `core`, а `Page`/`PageScope` — шапку из `navigation.header` и заголовок из `navigation`.
+действия из `actions` и иконки `core`, `Page`/`PageScope` — шапку из `navigation.header` и заголовок из `navigation`,
+а меню пользователя в `navigation.header` — `MenuScope` из `overlay`.
 
 Публичные точки входа и общие ручки находятся в корне `tech.testsys.web.components`.
 Реализации сгруппированы по назначению: `layout`, `forms`, `display`, `actions`, `feedback`, `data`, `overlay`,
@@ -261,7 +262,7 @@ Driver перемещает выделение и прокручивает ст�
 | `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
 | `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
-| `MenuScope` | `item`, `destructiveItem` |
+| `MenuScope` | `item`, `link`, `destructiveItem` |
 | `DialogScope` | `row` (строка на 24 колонках), `section(title)`, `footer { dialog -> }` |
 | `DialogSectionScope` | `row` (строка на собственной сетке из 24 колонок) |
 
@@ -750,21 +751,23 @@ lookup(
 
 ## Меню
 
-`menu(label = null) { … }` в `ContentScope` — кнопка, которая по клику открывает меню действий: без `label` — иконка
-«⋯» с доступным именем `ui_overlay.menu.actions` (как `iconAction`), с `label` — кнопка `action` с этим текстом.
-Возвращает `ElementHandle`.
+`menu { … }` в `ContentScope` — кнопка-иконка «⋯» с доступным именем `ui_overlay.menu.actions` (как `iconAction`),
+которая по клику открывает меню действий. Возвращает `ElementHandle`.
 
 - `item(label, isEnabled = true) { }` — пункт меню; выключенный пункт виден, но не выбирается.
-  `destructiveItem(label) { }` — пункт, который удаляет или отменяет. Разрушительные пункты идут последними,
-  разделитель перед ними DSL ставит сам. `item` после `destructiveItem` и меню без пунктов — `IllegalStateException`.
+  `link(label, target, parameters = RouteParameters.empty())` — пункт, который открывает маршрут `target`.
+  `destructiveItem(label, isEnabled = true) { }` — пункт, который удаляет или отменяет. Разрушительные пункты идут
+  последними. Если перед разрушительными пунктами есть обычные, DSL сам ставит разделитель между этими группами.
+  `item` или `link` после
+  `destructiveItem` и меню без пунктов — `IllegalStateException`.
+- Тот же `MenuScope` задаёт меню пользователя в шапке, см.
+  [Интерактивная шапка Кабинета](#интерактивная-шапка-кабинета).
 - Подсказок клавиш у пунктов нет: без настоящих горячих клавиш они вводили бы в заблуждение.
-- `menuColumn(size = 1) { row -> … }` в `TableScope` — последняя колонка без подписи; её размер следует
-  [контракту сетки колонок](#колонки) (имя заголовка —
-  `ui_overlay.menu.actions`) с «⋯» в каждой строке; меню строится для строки при отрисовке страницы таблицы. Колонка
-  после `menuColumn` и второй `menuColumn` — `IllegalStateException`.
-  Перегрузка `menuColumn(ariaLabel = { row -> … }) { row -> … }` задаёт полную локализованную фразу для доступного
-  имени и подсказки кнопки конкретной строки. Заголовок колонки и значок «⋯» сохраняются; вызов без функции имени
-  использует общее `ui_overlay.menu.actions`.
+- `menuColumn(size = 1, ariaLabel = null) { row -> … }` в `TableScope` — последняя колонка без подписи; её размер
+  следует [контракту сетки колонок](#колонки) (имя заголовка — `ui_overlay.menu.actions`) с «⋯» в каждой строке;
+  меню строится для строки при отрисовке страницы таблицы. Колонка после `menuColumn` и второй `menuColumn` —
+  `IllegalStateException`. `ariaLabel = { row -> … }` задаёт полную локализованную фразу для доступного имени
+  и подсказки кнопки конкретной строки; без `ariaLabel` кнопка получает общее `ui_overlay.menu.actions`.
 - Клик по «⋯» в строке не вызывает `onRowClick`: «⋯» — кнопка, а клик по элементам управления строку не «кликает»
   (см. `onRowClick` в разделе [Таблица](#таблица)). Выбор пункта тоже не вызывает: меню открывается вне таблицы.
 - Меню — `ContextMenu` Vaadin, открываемое кликом; у кнопки — `aria-haspopup="menu"`. Клавиатура, роли
@@ -1162,9 +1165,9 @@ UI обновляется через access.
 
 ## Интерактивная шапка Кабинета
 
-`CabinetHeader.menuSearchKey` включает поиск по одному существующему `MegaMenuItem`: поле поиска открывает
-и фильтрует тот же Popover. Ключ должен существовать. Поле стоит сразу после nav, перед растягивающим spacer;
-без `menuSearchKey` поля поиска нет. Поиск доступен и гостю, Cmd/Ctrl+K фокусирует поле на прикреплённой странице.
+`MegaMenuItem(isSearchable = true)` включает поиск по этому разделу: поле поиска открывает и фильтрует тот же
+Popover. Поле стоит сразу после nav, перед растягивающим spacer;
+без такого раздела поля поиска нет. Поиск доступен и гостю, Cmd/Ctrl+K фокусирует поле на прикреплённой странице.
 Пустой запрос восстанавливает дерево; совпадение с заголовком или `HeaderMegaColumn.searchText` сохраняет всю группу,
 иначе остаются только совпавшие дочерние ссылки. Подсветка литеральная, регистр не учитывается, HTML не интерпретируется.
 
@@ -1181,18 +1184,27 @@ Escape закрывает панель и возвращает фокус в п�
 Клиентские сценарии Escape на триггере и очистки подписок проверяются в `header-interactions.test.mjs`,
 см. [Проверка компонентов](#проверка-компонентов).
 
-`signInParameters` дополняет гостевую ссылку `signIn` параметрами маршрута; default — пустые параметры.
+Гостевая ссылка входа `signIn` — `HeaderDestination.Route` с маршрутом и его параметрами.
 
-`CabinetHeader` принимает список `HeaderItem`: прежний `NavItem` остаётся ссылкой на маршрут,
+`CabinetHeader` принимает список `HeaderItem`: `NavItem` — ссылка на маршрут `destination: HeaderDestination.Route`,
 `MegaMenuItem` открывает `HeaderMegaMenu` без фиктивной цели. Меню содержит `HeaderMegaColumn` с
 `HeaderMegaLink`. `HeaderDestination.Route` сохраняет `RouteParameters`,
 `HeaderDestination.Action` вызывает обработчик приложения в UI-потоке.
 
+При построении шапки DSL проверяет конфигурацию и при ошибке бросает `IllegalArgumentException`:
+
+- ключи разделов уникальны;
+- `active` равен `null` или ключу одного из разделов;
+- `user` и `signIn` не заданы вместе;
+- `notifications` заданы только вместе с `user`;
+- `isSearchable` включён не больше чем у одного `MegaMenuItem`.
+
 Мега-меню открывается наведением, кликом, Enter/Space и ArrowDown/ArrowUp на триггере. Escape, клик вне и уход
 указателя из области триггера и панели закрывают его. В шапке одновременно открыт один слой.
-`HeaderUser(name)` сохраняет прежний блок; необязательный `HeaderUserMenu` добавляет ссылки и действия,
-выключенные пункты и разрушительные действия в конце, после разделителя. Стрелки, Home и End перемещают фокус
-по доступным пунктам меню. Гостю остаётся ссылка входа, настроенная через `signIn`.
+`HeaderUser(name)` показывает аватар и имя Пользователя. `HeaderUser(name, menu = { … })` добавляет меню
+пользователя: его пункты задаёт `MenuScope` с теми же правилами, что и в разделе [Меню](#меню). Ссылка `link`
+становится `RouterLink`, остальные пункты — кнопками. Стрелки, Home и End перемещают фокус по доступным пунктам
+меню. Гостю остаётся ссылка входа, настроенная через `signIn`.
 
 `HeaderNotifications.items` — `Signal<List<HeaderNotification>>`, единственный источник списка и прочтения.
 `onRead(key)` вызывается перед открытием непрочитанного уведомления, `onReadAll()` — кнопкой чтения всех;

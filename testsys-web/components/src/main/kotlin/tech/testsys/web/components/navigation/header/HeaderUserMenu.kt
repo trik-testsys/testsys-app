@@ -25,39 +25,10 @@ import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.display.avatarInitials
+import tech.testsys.web.components.overlay.MenuEntry
+import tech.testsys.web.components.overlay.hasSeparatorBefore
+import tech.testsys.web.components.overlay.menuEntries
 import java.util.Locale
-
-/**
- * User menu supplied by the application; destructive items follow ordinary items.
- *
- * @property items the links and actions in display order.
- * @since %CURRENT_VERSION%
- */
-data class HeaderUserMenu(val items: List<HeaderUserMenuItem>) {
-    init {
-        require(items.isNotEmpty()) { "Header user menu must have at least one item" }
-        val misplaced = items.dropWhile { item -> !item.isDestructive }.firstOrNull { item -> !item.isDestructive }
-        require(misplaced == null) {
-            "Header user menu item '${misplaced?.label}' follows a destructive item; destructive items come last"
-        }
-    }
-}
-
-/**
- * Configurable link or action of the signed-in user.
- *
- * @property label the text of the item.
- * @property destination the route or handler.
- * @property isEnabled whether the item can be selected.
- * @property isDestructive whether the action is visually separated and marked as destructive.
- * @since %CURRENT_VERSION%
- */
-data class HeaderUserMenuItem(
-    val label: String,
-    val destination: HeaderDestination,
-    val isEnabled: Boolean = true,
-    val isDestructive: Boolean = false,
-)
 
 internal fun userMenu(user: HeaderUser, texts: UiPage, interactions: HeaderInteractions, locale: Locale): Div {
     val trigger = NativeButton().apply {
@@ -80,9 +51,9 @@ internal fun userMenu(user: HeaderUser, texts: UiPage, interactions: HeaderInter
     popup.setAriaRole(ElementRole.Menu)
 
     val list = Div().apply { addClassName(CssClass.HeaderUserMenu) }
-    val items = checkNotNull(user.menu) { "Header user menu is not configured" }.items
+    val items = menuEntries(checkNotNull(user.menu) { "Header user menu is not configured" })
     items.forEachIndexed { index, item ->
-        if (item.isDestructive && (index == 0 || !items[index - 1].isDestructive)) {
+        if (items.hasSeparatorBefore(index)) {
             list.add(
                 Div().apply {
                     addClassName(CssClass.HeaderUserSeparator)
@@ -91,8 +62,12 @@ internal fun userMenu(user: HeaderUser, texts: UiPage, interactions: HeaderInter
             )
         }
 
+        val destination = when (item) {
+            is MenuEntry.Action -> HeaderDestination.Action(item.onSelect)
+            is MenuEntry.Link -> HeaderDestination.Route(item.target, item.parameters)
+        }
         val entry = if (item.isEnabled) {
-            destinationLink(item.label, item.destination) { popup.close() }
+            destinationLink(item.label, destination) { popup.close() }
         } else {
             NativeButton(item.label).apply { isEnabled = false }
         }

@@ -120,6 +120,21 @@ class ActionTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should run only the latest click listener`() {
+            val clicks = mutableListOf<String>()
+            buildTestContent {
+                mainAction("Отправить") {
+                    onClick { clicks += "first" }
+                    onClick { clicks += "second" }
+                }
+            }
+
+            _get<Button> { text = "Отправить" }._click()
+
+            assertEquals(listOf("second"), clicks)
+        }
+
+        @Test
         fun `should click the action on Enter`() {
             var clicks = 0
             buildTestContent {

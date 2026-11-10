@@ -8,11 +8,11 @@ import tech.testsys.web.components.layout.ContentScope
 
 /**
  * Adds a neutral action named [label] that copies the text returned by [value] at the moment of the click to the clipboard
- * of the browser.
+ * of the browser. [configure] may set its own click listener; copying still runs.
  *
  * @since %CURRENT_VERSION%
  */
 fun ContentScope.copyAction(label: String, value: () -> String, configure: ActionHandle.() -> Unit = {}): ActionHandle = action(label) {
-    onClick { button.element.copyToClipboardClient(value()) }
+    button.addClickListener { _ -> if (!isLoading) button.element.copyToClipboardClient(value()) }
     configure()
 }

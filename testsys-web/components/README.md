@@ -119,7 +119,7 @@ class ProfileView : TestSysView() {
 | `badge(text, tone)` | Бейдж справа от заголовка, как `badge` в `ContentScope` |
 | `meta(text)` | Приглушённый текст справа от бейджей (`.ts-page-head__meta`) |
 | `actions { }` | Кнопки справа в строке заголовка — `ContentScope`, кнопки обычного размера |
-| `tabs { }` | Вкладки разделов одного объекта — `PageTabsScope`, см. [Вкладки страницы](#вкладки-страницы) |
+| `tabs(matchRouteParameters = false) { }` | Вкладки разделов одного объекта — `PageTabsScope`, см. [Вкладки страницы](#вкладки-страницы) |
 
 - `head` — до рядов и футера и не больше одного: после `row`, настройки `footer` или второго `head` —
   `IllegalStateException`.
@@ -146,10 +146,10 @@ class ProfileView : TestSysView() {
 - Заголовок, общий для страниц-вкладок одного объекта, собирает функция приложения вида
   `fun PageScope.contestHead(contest: Contest)`, которую первой вызывает каждая из этих страниц.
 
-`PageHeadScope.tabs(matchRouteParameters = true) { }` включает точное сравнение Location, включая параметры маршрута.
-Это перегрузка: прежние `tabs { }` и `tabs(content)` сохраняют class-based выбор. Если вкладки непосредственно
-ведут на класс текущей страницы, активность обновляется штатным RouterLink при навигации и инициализируется
-для новых ссылок. При отсутствии прямого target прежний fallback `activeOn` сохраняется.
+`matchRouteParameters = true` в `PageHeadScope.tabs` сравнивает адрес страницы целиком, вместе с параметрами
+маршрута. По умолчанию текущая вкладка выбирается по классу страницы, как описано выше. Если вкладки непосредственно
+ведут на класс текущей страницы, отметку текущей вкладки ставит штатный `RouterLink` при построении и обновляет
+при навигации. Если ни одна вкладка не ведёт на класс текущей страницы, текущая вкладка выбирается по `activeOn`.
 
 ### Страницы с параметром маршрута
 
@@ -280,7 +280,7 @@ Driver перемещает выделение и прокручивает ст�
 
 `copyAction(label, value) { }` в `ContentScope` добавляет обычное действие `action` и возвращает его `ActionHandle`.
 По нажатию действие копирует в буфер обмена браузера текст, который `value` возвращает в момент нажатия.
-Результат копирования сервер не получает.
+Результат копирования сервер не получает. `onClick`, заданный в `configure`, выполняется вместе с копированием.
 
 ## Поля
 
@@ -403,8 +403,7 @@ block(title = "Посылки") {
 - Общая разметка: `button.ts-filter` с `aria-pressed`; у включённой — `.ts-filter--on` и иконка галочки перед
   подписью. Клик переключает состояние.
 - `isSelected` читает и задаёт состояние; запись из кода не вызывает `onChange`.
-- `onChange { isOn -> }` — переключение пользователем, слушатель получает новое состояние; новый слушатель заменяет
-  прежний.
+- `onChange { isOn -> }` — переключение пользователем, слушатель получает новое состояние.
 - `bindSelected(signal)` — состояние следует сигналу. Пока привязка активна, клик только вызывает слушатель `onChange`
   с новым состоянием, а кнопка покажет его, когда значение примет сигнал. Ручной `isSelected` при активной привязке
   и повторная привязка — `BindingActiveException` (см. [Привязки к сигналам](#привязки-к-сигналам)).
@@ -425,7 +424,7 @@ block(title = "Посылки") {
 - Доступные имена — из сообщений `ui_data.pagination.*`: у стрелок — `previous` и `next`, у кнопок страниц — `page`
   («Страница 3»).
 - Клик по кнопке страницы или стрелке вызывает слушатель `onChange { page -> }` с выбранной страницей; клик
-  по текущей странице его не вызывает; новый слушатель заменяет прежний. Если страница сменилась, фокус переходит
+  по текущей странице его не вызывает. Если страница сменилась, фокус переходит
   на кнопку новой текущей страницы; нажатая стрелка сохраняет фокус, пока остаётся включённой.
 - `page` — текущая страница, запись из кода не вызывает `onChange`. `pageCount` — число страниц; если оно стало
   меньше текущей страницы, текущей становится последняя.
@@ -893,7 +892,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `counter`, `text`) |
 | `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick`, `clickOnEnter()` — нажатие Enter на странице нажимает действие |
 | `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
-| `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает; новый слушатель заменяет прежний) — возвращает `pills` |
+| `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает) — возвращает `pills` |
 | `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)`, `bindCount(value, signal)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |
 | `TableHandle<T>` | `isVisible`, `bindVisible` (скрывает таблицу с пагинацией, блок остаётся), `refresh(toFirstPage = false)` (из любого потока), `selected` (ключи выбранных строк), `selection` (они же сигналом только для чтения, см. [Выбор строк](#выбор-строк)), `clearSelection()` (без нового запроса страницы), `onSelectionChange { keys -> }` |
 | `FilterChipHandle` | `isVisible`, `bindVisible`, `isSelected` (запись из кода не вызывает `onChange`), `bindSelected(signal)`, `onChange { isOn -> }` — возвращает `filterChip`, см. [Кнопка-фильтр](#кнопка-фильтр) |
@@ -901,6 +900,12 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `LoadHandle` | `isVisible`, `bindVisible` (скрывает тело блока с пагинацией загруженной таблицы; шапка и собственный подвал блока остаются), `reload()` (из любого потока) — возвращает `load`, см. [Живые обновления](#живые-обновления) |
 | `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `bindEditable(signal)`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону, переходом) |
 | `ValueInput<T>` | всё из `FieldHandle`, `isEnabled`, `bindEnabled(signal)`, `isEditable`, `bindEditable(signal)` и всё из `HasValue`, `HasValidation`, `HasValidator`, включая `bindValue(signal, writeCallback)`, `bindReadOnly(signal)`, `bindRequiredIndicatorVisible(signal)` |
+
+Собственные методы подписки ручек и скоупов с именем `on*` (`onClick`, `onChange`, `onClose`, `onSelectionChange`,
+`onRowClick`) хранят один слушатель: новый вызов заменяет прежний. Методы Vaadin `add*Listener` у `ValueInput`
+накапливают слушателей; на них опирается `Binder`. `addValueChangeListener` возвращает `Registration`, через который
+слушателя снимают. `addValidationStatusChangeListener` добавляет слушателя только у `dateInput`, `timeInput`,
+`dateTimeInput` и `dateRangeInput`; у остальных полей он возвращает `null` и слушателя не добавляет.
 
 `ValueInput` привязывается к `Binder` как обычное поле: `binder.forField(input)`. Ручка не является компонентом
 Vaadin, поэтому `Binder` не пропускает скрытое поле сам. Явный хелпер `binding.skipWhenHidden()` исключает привязку

@@ -195,7 +195,7 @@ internal abstract class LookupFrame<V>(
         if (!isChoosable() || currentDialog != null) return
         val dialog = buildDialog()
         currentDialog = dialog
-        dialog.onClose { if (currentDialog === dialog) currentDialog = null }
+        dialog.shell.dialog.addOpenedChangeListener { event -> if (!event.isOpened && currentDialog === dialog) currentDialog = null }
         dialog.open()
     }
 }
@@ -262,10 +262,5 @@ internal class LookupDialog<T : Any>(
     fun open() {
         shell.open()
         search.focus()
-    }
-
-    /** Runs [listener] whenever the dialog closes, however it is closed. */
-    fun onClose(listener: () -> Unit) {
-        shell.dialog.addOpenedChangeListener { event -> if (!event.isOpened) listener() }
     }
 }

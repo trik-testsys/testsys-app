@@ -31,12 +31,6 @@ import tech.testsys.web.components.texts.currentUiLocalization
  */
 @TestSysDsl
 class DrawerHandle internal constructor(private val delegate: DialogHandle) {
-    private var closeListener: () -> Unit = {}
-
-    init {
-        delegate.onClose { closeListener() }
-    }
-
     val isOpen: Boolean
         get() = delegate.isOpen
     var isEditable: Boolean
@@ -71,12 +65,12 @@ class DrawerHandle internal constructor(private val delegate: DialogHandle) {
     fun bindEditable(signal: Signal<Boolean>): SignalBinding<Boolean> = delegate.bindEditable(signal)
 
     /**
-     * Runs [listener] for every closing action; a later listener replaces the earlier one.
+     * Runs [listener] whenever the drawer closes. Replaces a listener set by an earlier call.
      *
      * @since %CURRENT_VERSION%
      */
     fun onClose(listener: () -> Unit) {
-        closeListener = listener
+        delegate.onClose(listener)
     }
 }
 

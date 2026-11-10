@@ -86,23 +86,13 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
 
     /**
      * Adds tabs that open the sections of one object; the tab of the built page is marked as current.
+     * [matchRouteParameters] compares the whole location, including route parameters, instead of the page class.
      *
      * @throws IllegalArgumentException if there are fewer than two tabs.
      * @throws IllegalStateException if the head already has tabs.
      * @since %CURRENT_VERSION%
      */
-    fun tabs(content: PageTabsScope.() -> Unit) {
-        tabs(matchRouteParameters = false, content = content)
-    }
-
-    /**
-     * Adds page tabs with optional exact route matching, including route parameters; the default overload matches classes.
-     *
-     * @throws IllegalArgumentException if there are fewer than two tabs.
-     * @throws IllegalStateException if the head already has tabs.
-     * @since %CURRENT_VERSION%
-     */
-    fun tabs(matchRouteParameters: Boolean, content: PageTabsScope.() -> Unit) {
+    fun tabs(matchRouteParameters: Boolean = false, content: PageTabsScope.() -> Unit) {
         check(tabsNav == null) { "Page head already has tabs; call tabs() once" }
         tabsNav = PageTabsScope(view, texts, matchRouteParameters).apply(content).build(texts.messages.uiPage.navigationSections())
     }

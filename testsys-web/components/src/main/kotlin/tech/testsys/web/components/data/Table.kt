@@ -72,7 +72,8 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
     }
 
     /**
-     * Runs [listener] with the keys of the selected rows after every change of the selection.
+     * Runs [listener] with the keys of the selected rows after every change of the selection. Replaces a listener set by
+     * an earlier call.
      *
      * @since %CURRENT_VERSION%
      */

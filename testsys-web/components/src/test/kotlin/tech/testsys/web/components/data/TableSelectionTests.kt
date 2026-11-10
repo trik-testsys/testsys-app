@@ -238,6 +238,20 @@ class TableSelectionTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should tell only the latest selection listener`() {
+        val first = mutableListOf<Set<Any>>()
+        val second = mutableListOf<Set<Any>>()
+        val handle = buildTable(Source(size = 12))
+        handle.onSelectionChange { keys -> first += keys }
+        handle.onSelectionChange { keys -> second += keys }
+
+        rowCheckbox(2)._setValue(true)
+
+        assertTrue(first.isEmpty())
+        assertEquals(listOf(setOf<Any>(3)), second)
+    }
+
+    @Test
     fun `should clear the selection without fetching`() {
         val source = Source(size = 12)
         val handle = buildTable(source)

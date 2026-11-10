@@ -191,8 +191,9 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Runs [listener] for rows accepted by [isClickable], except clicks on their controls.
-     * [isNavigation] marks a click opening another page and styles its first text column as a link.
+     * Runs [listener] for rows accepted by [isClickable], except clicks on their controls; replaces an earlier call
+     * together with its [isNavigation] and [isClickable]. [isNavigation] marks a click opening another page and styles
+     * its first text column as a link.
      *
      * @param isClickable whether the row accepts clicks and receives interactive styling.
      * @param listener the action performed for an accepted row click.

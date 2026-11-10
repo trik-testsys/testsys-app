@@ -473,6 +473,21 @@ class TableTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should replace the row click with its navigation and clickable rows by a later call`() {
+        val clicked = mutableListOf<String>()
+        buildTable(Source(size = 12)) {
+            onRowClick(isNavigation = true, isClickable = { row -> row.id == 1 }) { clicked += "first" }
+            onRowClick { row -> clicked += "second ${row.id}" }
+        }
+
+        rows()[1]._fireDomEvent("click", rowClick(isOnControl = false))
+
+        assertEquals(listOf("second 2"), clicked)
+        assertTrue("ts-row-clickable" in rows()[1].classes())
+        assertTrue(rows()[0].children.toList().none { cell -> "ts-navigation-cell" in cell.classes() })
+    }
+
+    @Test
     fun `should reject rows and a table in one block`() {
         val source = Source(size = 3)
 

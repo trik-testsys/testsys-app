@@ -282,6 +282,20 @@ class FormDialogTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should call only the latest close listener`() {
+        val closes = mutableListOf<String>()
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
+        handle.onClose { closes += "first" }
+        handle.onClose { closes += "second" }
+        handle.open()
+        openDialogs()
+
+        handle.close()
+
+        assertEquals(listOf("second"), closes)
+    }
+
+    @Test
     fun `should make its fields read-only when not editable`() {
         val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
         handle.open()

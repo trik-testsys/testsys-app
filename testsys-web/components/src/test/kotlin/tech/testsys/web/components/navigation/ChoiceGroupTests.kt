@@ -82,6 +82,20 @@ class ChoiceGroupTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should tell only the latest listener`() {
+        val handle = buildTabs()
+        val first = mutableListOf<Filter>()
+        val second = mutableListOf<Filter>()
+        handle.onChange { value -> first += value }
+        handle.onChange { value -> second += value }
+
+        tabs()[2]._click()
+
+        assertTrue(first.isEmpty())
+        assertEquals(listOf(Filter.Failed), second)
+    }
+
+    @Test
     fun `should not tell the listener when the page sets the value`() {
         val handle = buildTabs()
         val chosen = mutableListOf<Filter>()

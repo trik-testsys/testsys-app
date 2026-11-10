@@ -32,6 +32,12 @@ import tech.testsys.web.components.texts.currentUiLocalization
  */
 @TestSysDsl
 class DialogHandle internal constructor(private val shell: DialogShell, private val editState: BlockEditState) {
+    private var closeListener: () -> Unit = {}
+
+    init {
+        shell.dialog.addOpenedChangeListener { event -> if (!event.isOpened) closeListener() }
+    }
+
     val isOpen: Boolean
         get() = shell.dialog.isOpened
 
@@ -69,11 +75,12 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
 
     /**
      * Runs [listener] whenever the dialog closes, by an action, the close button, Esc, a click outside or navigation.
+     * Replaces a listener set by an earlier call.
      *
      * @since %CURRENT_VERSION%
      */
     fun onClose(listener: () -> Unit) {
-        shell.dialog.addOpenedChangeListener { event -> if (!event.isOpened) listener() }
+        closeListener = listener
     }
 }
 

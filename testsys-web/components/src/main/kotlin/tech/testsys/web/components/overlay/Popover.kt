@@ -89,7 +89,7 @@ class PopoverHandle internal constructor(root: Div, private val popup: Popover, 
     }
 
     /**
-     * Replaces the closing [listener].
+     * Runs [listener] whenever the popup closes. Replaces a listener set by an earlier call.
      *
      * @since %CURRENT_VERSION%
      */

@@ -42,7 +42,7 @@ class ActionTests : MockVaadinTests() {
 
         @Test
         fun `should label icon-only action for screen readers`() {
-            buildTestContent { iconAction(IconName.Trash, "Удалить задачу") }
+            buildTestContent { action("Удалить задачу", IconName.Trash, iconOnly = true) }
 
             val button = _find<Button>().single { button -> button.element.hasAttribute("data-ts-icon-only") }
             assertEquals("Удалить задачу", button.ariaLabel.orElseThrow())

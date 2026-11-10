@@ -9,7 +9,7 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H2
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.shared.Registration
-import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.DomProperty
@@ -88,7 +88,10 @@ internal class DialogShell(texts: UiLocalization, title: String, subtitle: Strin
             val titles = Div(heading).apply { addClassName(CssClass.BlockTitles) }
             subtitle?.let { text -> titles.add(Span(text).apply { addClassName(CssClass.BlockSub) }) }
             val head = Div(titles).apply { addClassName(CssClass.DialogHead) }
-            ContentScope(head, texts, Placement.Head).iconAction(IconName.X, texts.messages.uiOverlay.dialogClose()) { onClick { close() } }
+            ContentScope(head, texts, Placement.Head).action(texts.messages.uiOverlay.dialogClose(), IconName.X, iconOnly = true) {
+                onClick { close() }
+            }
+
             body.add(content)
             card.add(head, body, foot)
         }

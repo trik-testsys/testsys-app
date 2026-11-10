@@ -9,18 +9,12 @@ import com.vaadin.flow.component.HasHelper
 import com.vaadin.flow.component.HasValidation
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.data.binder.HasValidator
-import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.DomProperty
-import tech.testsys.web.components.core.ElementSize
 import tech.testsys.web.components.core.InternalComponentsApi
-import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setInput
 import tech.testsys.web.components.core.setProperty
-import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.layout.BlockRowScope
-import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.LabelAction
-import tech.testsys.web.components.layout.fieldValueArea
 import tech.testsys.web.components.layout.placeField
 
 /** Adds [control] as a grid field of [label] with the helper [hint] and returns its configured handle. */
@@ -50,44 +44,9 @@ internal fun <C, T> BlockRowScope.addInput(
         component = control,
         validation = control,
         validator = control,
-        valueArea = parts.valueCell,
     )
     input.followBlock(editState)
     return input.apply(configure)
-}
-
-/**
- * Adds [control] without a visible label, e.g. a filter in a block head: [label] is only its accessible name, and the
- * control takes the small size in a compact place.
- */
-internal fun <C, T> ContentScope.addLabelLessInput(
-    label: String,
-    control: C,
-    configure: ValueInput<T>.() -> Unit,
-): ValueInput<T>
-    where C : AbstractField<C, T>, C : HasValidation, C : HasValidator<T> {
-    control.element.setSize(if (placement.isCompact) ElementSize.Small else ElementSize.Medium)
-    return placeLabelLessInput(label, control, configure)
-}
-
-/** Places a label-less control in a value area whose focus and hover remain independent of its edit and enabled modes. */
-internal fun <C, T> ContentScope.placeLabelLessInput(
-    label: String,
-    control: C,
-    configure: ValueInput<T>.() -> Unit,
-): ValueInput<T>
-    where C : AbstractField<*, T>, C : HasValidation, C : HasValidator<T> {
-    nameControl(control, label)
-    control.element.setInput(true)
-    val area = fieldValueArea(label, control).apply { addClassName(CssClass.FieldValueInline) }
-    add(area)
-    return ValueInput(
-        parts = null,
-        component = control,
-        validation = control,
-        validator = control,
-        valueArea = area,
-    ).apply(configure)
 }
 
 /** Gives [control] the accessible name [label], since the visible label of a grid field is not its own. */

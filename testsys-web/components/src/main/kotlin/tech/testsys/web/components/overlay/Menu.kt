@@ -9,7 +9,7 @@ import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.router.RouteParameters
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -114,7 +114,7 @@ fun ContentScope.menu(content: MenuScope.() -> Unit): ElementHandle = iconMenu(t
 
 /** Adds the compact ellipsis trigger with the complete accessible name [ariaLabel]. */
 internal fun ContentScope.iconMenu(ariaLabel: String, content: MenuScope.() -> Unit): ElementHandle {
-    val trigger = iconAction(IconName.Ellipsis, ariaLabel)
+    val trigger = action(ariaLabel, IconName.Ellipsis, iconOnly = true)
     attachMenu(trigger.button, content)
     return ElementHandle(trigger.button)
 }

@@ -225,13 +225,6 @@ class TestSysThemeTests {
     }
 
     @Test
-    fun `should keep the natural width of a brand image`() {
-        val css = text("testsys-ui/tokens/components.css")
-
-        assertEquals("auto", rule(css, ".ts-brand-image")["width"])
-    }
-
-    @Test
     fun `should draw a status badge as a pill with a 6px dot`() {
         val css = text("testsys-ui/tokens/components.css")
 

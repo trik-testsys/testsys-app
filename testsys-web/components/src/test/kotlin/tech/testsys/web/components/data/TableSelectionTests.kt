@@ -1,14 +1,12 @@
 package tech.testsys.web.components.data
 
 import com.github.mvysny.kaributesting.v10._click
-import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._setValue
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.html.NativeButton
-import com.vaadin.flow.component.select.Select
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -21,25 +19,14 @@ import tech.testsys.web.components.classes
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
-import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.testTexts
 import tools.jackson.databind.ObjectMapper
 
 class TableSelectionTests : MockVaadinTests() {
     @Test
-    fun `should mark a select in a cell as an input that the row click filter excludes`() {
-        buildSelectTable {}
-
-        val select = _find<Select<*>>().single()
-
-        assertTrue(select.element.hasAttribute("data-ts-input"))
-        assertTrue(ROW_CLICK_FILTER.contains("[data-ts-input]"))
-    }
-
-    @Test
     fun `should ignore a row click that the client filter rejects`() {
         var clicks = 0
-        val root = buildSelectTable { clicks++ }
+        val root = buildClickableTable { clicks++ }
 
         root.find("ts-table").findAll("ts-row-clickable").single()._fireDomEvent("click", rowClick(isAccepted = false))
 
@@ -49,7 +36,7 @@ class TableSelectionTests : MockVaadinTests() {
     @Test
     fun `should run the row click for a click that the client filter accepts`() {
         var clicks = 0
-        val root = buildSelectTable { clicks++ }
+        val root = buildClickableTable { clicks++ }
 
         root.find("ts-table").findAll("ts-row-clickable").single()._fireDomEvent("click", rowClick(isAccepted = true))
 
@@ -417,11 +404,11 @@ class TableSelectionTests : MockVaadinTests() {
         return handle
     }
 
-    private fun buildSelectTable(onClick: () -> Unit): Component = buildTestPage {
+    private fun buildClickableTable(onClick: () -> Unit): Component = buildTestPage {
         row {
             block {
                 table(key = { value: String -> value }, fetch = { Page(listOf("row"), 1) }) {
-                    column("Choice", size = 1) { select("Choice", listOf("One", "Two"), { choice -> choice }) }
+                    column("Choice", size = 1) { text("One") }
                     onRowClick { onClick() }
                 }
             }

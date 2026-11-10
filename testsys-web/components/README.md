@@ -12,9 +12,9 @@
 [structure.md](../../docs/project/structure.md#зависимости-между-модулями). Логи он пишет
 через SLF4J, который приходит с зависимостями Vaadin; своей зависимости на него у модуля нет.
 
-- Статические компоненты (сетка, блоки, шапка, заголовок страницы, вкладки, пилюли, кнопки-фильтры, пагинация,
-  теги, бейджи, алерты, пустое состояние) рендерят разметку с общими классами `.ts-*`; ссылки
-  в ней — `RouterLink`, кнопки вкладок, пилюль, фильтров и пагинации — `NativeButton`.
+- Статические компоненты (сетка, блоки, шапка, заголовок страницы, вкладки, теги, бейджи, алерты, пустое
+  состояние) рендерят разметку с общими классами `.ts-*`; ссылки в ней — `RouterLink`, кнопки вкладок и стрелки
+  пейджера таблицы — `NativeButton`.
 - Интерактивные (кнопки, поля, тосты, диалоги, меню) — компоненты Vaadin под темой Lumo, связанной с токенами.
 - Таблица — разметка `.ts-table`; её страница, сортировка и выбор строк хранятся на сервере.
 - CSS и ресурсы расположены непосредственно в `src/main/resources/META-INF/resources/testsys-ui/`.
@@ -225,7 +225,7 @@ Driver перемещает выделение и прокручивает ст�
 |---------|------------|---------|
 | `page` | `row` | Ряды страницы стоят друг под другом |
 | `row` страницы | `block(size)`, `highlightBlock(size)`, `space(size)` | `size` от 1 до 24; без `size` блок занимает остаток ряда, после него ряд закрыт; `space` оставляет колонки пустыми, например по бокам узкого блока; сумма — не больше 24 |
-| `row` блока, диалога и `drawer` | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше 24 колонок контейнера |
+| `row` блока, диалога и `drawer` | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше 24 колонок контейнера |
 
 - Неверный размер — `IllegalArgumentException`, переполнение ряда и элемент после занявшего остаток строки —
   `IllegalStateException` с перечнем размеров. Ошибка возникает при построении страницы, поэтому каждая
@@ -257,9 +257,9 @@ Driver перемещает выделение и прокручивает ст�
 | `GuideStepsScope` | `step` (пояснение поля или действия блока) |
 | `PageRowScope` | `block`, `highlightBlock`, `space` |
 | `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)`, `guide` |
-| `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
-| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
-| `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
+| `BlockRowScope` | поля, `field`, элементы отображения с `size`, `horizontal(size)`, `vertical(size)` |
+| `ContentScope` | `text`, действия, `menu`, `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
+| `TabsScope<V>` | `tab` |
 | `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
 | `MenuScope` | `item`, `link`, `destructiveItem` |
 | `DialogScope` | `row` (строка на 24 колонках), `section(title)`, `footer { dialog -> }` |
@@ -271,11 +271,10 @@ Driver перемещает выделение и прокручивает ст�
 
 Функции содержимого — расширения скоупов в пакетах `actions`, `forms`, `display`, `feedback`, `data`, `navigation`,
 `overlay`, `core`; `toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`.
-Функции отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) и `pills` объявлены и для `ContentScope`,
-и для `BlockRowScope` (с необязательным `size`). Поля с подписью есть только в `BlockRowScope`; в `ContentScope`
-есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)) и `multiSelect`.
+Функции отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) объявлены и для `ContentScope`,
+и для `BlockRowScope` (с необязательным `size`). Поля есть только в `BlockRowScope`.
 `fileDrop` объявлен в обоих скоупах. В строке блока `labelSize` размещает подпись слева как у поля;
-при этом `size` обязателен и задаёт ширину приёма. Без `labelSize` подпись находится над приёмом. Действия, `menu`, `filterChip` и `pagination`
+при этом `size` обязателен и задаёт ширину приёма. Без `labelSize` подпись находится над приёмом. Действия и `menu`
 объявлены для `ContentScope`; `downloadAction` есть также в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`.
 
 `copyAction(label, value) { }` в `ContentScope` добавляет обычное действие `action` и возвращает его `ActionHandle`.
@@ -321,7 +320,7 @@ Driver перемещает выделение и прокручивает ст�
 ### Скрытые значения
 
 `FieldHandle.isObscured` управляет визуальным скрытием значения, default — `false`.
-Свойство доступно у `field { }`, всех `ValueInput`, в том числе у полей без подписи, и `FileDropHandle`.
+Свойство доступно у `field { }`, всех `ValueInput` и `FileDropHandle`.
 `bindObscured(signal)` применяет сигнал сразу; ручная запись при активной привязке и повторная привязка
 бросают `BindingActiveException`, как у остальных свойств ручек.
 
@@ -330,111 +329,28 @@ Driver перемещает выделение и прокручивает ст�
 вспомогательным технологиям. `skipWhenHidden` по-прежнему относится только к полному скрытию через `isVisible`.
 Область значения доступна через Tab даже у информационного или отключённого поля; после выключения режима
 её прежний tab-порядок восстанавливается. В составном поле фокус любой части раскрывает значение.
-У полей без подписи область значения также является отдельным контейнером; режимы остаются на самом контроле,
-а наведение и фокус контейнера раскрывают даже отключённое значение. Видимость ручки скрывает эту композицию целиком.
 У загрузчика скрываются только имена файлов. Действия внутри информационного `field { }` также остаются читаемыми.
 Оформление и раскрытие принадлежат [ui-design.md](../../docs/project/ui-design.md), раздел «Визуальные основы».
 
-## Вкладки и пилюли
+## Вкладки
 
-`tabs(initial) { tab(value, label, count = null, countKind = CounterKind.Neutral) }` в `BlockScope` и
-`pills(initial) { pill(value, label) }` в `ContentScope` (например, в `actions { }` блока) и в `BlockRowScope`
-(с необязательным `size`) — группы кнопок, которые переключают значение: чаще всего фильтр того, что показывает блок.
-Адрес страницы не меняется. Таблица читает значение в `fetch`, а слушатель выбора её обновляет:
-`filter.onChange { rows.refresh(toFirstPage = true) }`.
+`tabs(initial) { tab(value, label, count = null, countKind = CounterKind.Neutral) }` в `BlockScope` — группа кнопок,
+которые переключают значение: чаще всего фильтр того, что показывает блок. Адрес страницы не меняется. Таблица
+читает значение в `fetch`, а слушатель выбора её обновляет: `filter.onChange { rows.refresh(toFirstPage = true) }`.
 
 - Вкладки блока без `title` и `subtitle` стоят на месте заголовка, справа от них — `actions { }`. С `title` или `subtitle`
   шапка становится двухэтажной (`.ts-block__head--tabs`): сверху заголовок и `actions { }`, снизу вкладки.
   У блока с `guide` без `title` вкладки стоят в ряду `ts-block__title-row` вместе с кнопкой гайда, `subtitle` — под
   ними, а класс `.ts-block__head--tabs` не ставится. В блоке одна группа вкладок, вторая — `IllegalStateException`.
-- У вкладок есть счётчик (только при `count` больше нуля), у пилюль — нет.
+- Счётчик вкладки виден только при `count` больше нуля.
 - Кнопок хотя бы две, значения уникальны, `initial` — одно из них, `count` не отрицательный — иначе
   `IllegalArgumentException`.
-- Разметка: `div.ts-tabs.ts-tabs--bare.ts-tabs--lg` или `div.ts-pills` с `role="group"`, кнопки `button.ts-tab`
-  или `button.ts-pill`. У выбранной — `.ts-tab--active` или `.ts-pill--active` и `aria-pressed="true"`, у остальных —
-  `aria-pressed="false"`. Имя группы вкладок (`aria-label`) — заголовок блока, если он есть; у пилюль имени нет.
+- Разметка: `div.ts-tabs.ts-tabs--bare.ts-tabs--lg` с `role="group"`, кнопки `button.ts-tab`. У выбранной —
+  `.ts-tab--active` и `aria-pressed="true"`, у остальных — `aria-pressed="false"`. Имя группы (`aria-label`) —
+  заголовок блока, если он есть.
 - Роль `tablist` не используется: она требует навигации стрелками и `tabpanel`, а здесь это фильтр. Между кнопками
   переходят клавишей Tab.
-- Ручки — `TabsHandle` и `ChoiceHandle`, см. [Ручки и служебные свойства](#ручки-и-служебные-свойства).
-
-## Фильтры в шапке
-
-Кроме вкладок и пилюль, фильтр того, что показывает блок, задают выпадающий список `select` и кнопка-фильтр
-`filterChip` в `actions { }` блока. Обе функции объявлены в `ContentScope`, поэтому работают и в других его местах:
-в подвале, в ячейке таблицы, в строке блока внутри `horizontal { }`. Таблица читает значения фильтров в `fetch`,
-а слушатели их изменений её обновляют.
-
-```kotlin
-var verdict: Verdict? = null
-var isErrorsOnly = false
-block(title = "Посылки") {
-    val rows = table(key = { it.id }, fetch = { request -> submissions.find(verdict, isErrorsOnly, request) }) { … }
-    actions {
-        select("Вердикт", items = Verdict.entries, itemLabel = { it.title }, emptyLabel = "Все вердикты") {
-            addValueChangeListener { event -> verdict = event.value; rows.refresh(toFirstPage = true) }
-        }
-        filterChip("С ошибками") { onChange { isOn -> isErrorsOnly = isOn; rows.refresh(toFirstPage = true) } }
-    }
-}
-```
-
-### Выпадающий список
-
-`select(label, items, itemLabel, emptyLabel = null) { }` в `ContentScope` — выпадающий список Vaadin без видимой
-подписи. Возвращает `ValueInput<T?>`, как `select` строки блока: значение, `HasValue`, `Binder` и привязки — те же
-(см. [Ручки и служебные свойства](#ручки-и-служебные-свойства)).
-
-- `label` — плейсхолдер при пустом значении и доступное имя контрола.
-- `emptyLabel` добавляет первым пунктом вариант с этим текстом, который сбрасывает значение в `null` («все»).
-  Без `emptyLabel` выбранное значение пользователь не сбросит.
-- Размер — по месту, как у кнопок: в `actions { }` блока, в пустом состоянии и в ячейке таблицы — маленький
-  (`data-ts-size="sm"`), в остальных местах — обычный (`data-ts-size="md"`).
-- Режим редактирования блока на список не действует: фильтр работает и в блоке в режиме просмотра, а `isEditable`
-  и `bindEditable` меняют только его собственную редактируемость.
-- Ошибка проверки у маленького списка видна только по красной рамке: текст ошибки не выводится, чтобы не менять
-  высоту шапки, но остаётся доступным описанием контрола. У обычного текст ошибки — под контролом.
-- `isVisible` скрывает контрол, `isEnabled = false` выключает его.
-
-### Кнопка-фильтр
-
-`filterChip(label, isSelected = false) { }` в `ContentScope` — кнопка, которая включает и выключает один фильтр;
-`isSelected` — начальное состояние. Возвращает `FilterChipHandle`.
-
-- Общая разметка: `button.ts-filter` с `aria-pressed`; у включённой — `.ts-filter--on` и иконка галочки перед
-  подписью. Клик переключает состояние.
-- `isSelected` читает и задаёт состояние; запись из кода не вызывает `onChange`.
-- `onChange { isOn -> }` — переключение пользователем, слушатель получает новое состояние.
-- `bindSelected(signal)` — состояние следует сигналу. Пока привязка активна, клик только вызывает слушатель `onChange`
-  с новым состоянием, а кнопка покажет его, когда значение примет сигнал. Ручной `isSelected` при активной привязке
-  и повторная привязка — `BindingActiveException` (см. [Привязки к сигналам](#привязки-к-сигналам)).
-- Выпадающего меню у кнопки-фильтра нет: выбор одного из нескольких значений — `select`.
-
-## Пагинация
-
-`pagination(pageCount, page = 1) { }` в `ContentScope` — полный пейджер для списка, который страница листает
-сама: стрелки и кнопки страниц. Возвращает `PaginationHandle`. В строке блока пейджер ставится в `horizontal { }`.
-Таблица использует свой компактный пейджер, см. [Пагинация таблицы](#пагинация-таблицы).
-
-- Разметка: `div.ts-pager` со стрелкой «‹», кнопками страниц `button.ts-pager__btn`, пропусками
-  `span.ts-pager__gap` («…») и стрелкой «›». Текущая страница — `.ts-pager__btn--active` с `aria-current="page"`.
-  Стрелки выключены на первой и последней странице.
-- Кнопки страниц: до 7 страниц — все; иначе первая и последняя, а между ними пять страниц у начала, если текущая
-  не дальше четвёртой, пять у конца, если текущая среди последних четырёх, или текущая с соседями между двумя
-  пропусками: «1 2 3 4 5 … 20», «1 … 16 17 18 19 20», «1 … 9 10 11 … 20».
-- Доступные имена — из сообщений `ui_data.pagination.*`: у стрелок — `previous` и `next`, у кнопок страниц — `page`
-  («Страница 3»).
-- Клик по кнопке страницы или стрелке вызывает слушатель `onChange { page -> }` с выбранной страницей; клик
-  по текущей странице его не вызывает. Если страница сменилась, фокус переходит
-  на кнопку новой текущей страницы; нажатая стрелка сохраняет фокус, пока остаётся включённой.
-- `page` — текущая страница, запись из кода не вызывает `onChange`. `pageCount` — число страниц; если оно стало
-  меньше текущей страницы, текущей становится последняя.
-- `bindPage(signal)` — страница следует сигналу. Пока привязка активна, клик только вызывает слушатель, а пейджер
-  покажет страницу, когда её примет сигнал. Значение сигнала больше `pageCount` сохраняется и показывается как
-  последняя страница (её же возвращает `page`), а если `pageCount` потом вырастет, пейджер снова покажет значение
-  сигнала. Ручной `page` при активной привязке и повторная привязка — `BindingActiveException`.
-- `pageCount` меньше 1 и `page` вне `1..pageCount` (при создании и при записи) — `IllegalArgumentException`.
-  Значение сигнала меньше 1 не применяется: `IllegalArgumentException` получает обработчик ошибок сессии,
-  а пейджер остаётся на прежней странице.
+- Ручка — `TabsHandle`, см. [Ручки и служебные свойства](#ручки-и-служебные-свойства).
 
 ## Пустое состояние
 
@@ -484,7 +400,6 @@ Signal-привязками. Отдельного семейства полей 
 `load.reload` сохраняет собственное существующее поведение замены тела.
 
 Реализация — [TableFilters.kt](src/main/kotlin/tech/testsys/web/components/data/TableFilters.kt).
-Компактный `ContentScope.select` и `filterChip` из раздела «Фильтры в шапке» остаются отдельными средствами.
 
 ## Таблица
 
@@ -599,18 +514,17 @@ block(title = "Посылки") {
 Пагинация таблицы стоит в подвале блока после его собственного содержимого (`.ts-table-pager`): слева диапазон
 «1–20 из 1 412» (`ui_data.table.range`), справа компактный пейджер «‹ 3 / 71 ›» (`.ts-pager`, счётчик —
 `ui_data.pagination.counter`) с кнопками
-`ui_data.pagination.previous` и `ui_data.pagination.next` (те же тексты, что у [Пагинации](#пагинация)),
-выключенными на первой и последней странице. Если все строки
+`ui_data.pagination.previous` и `ui_data.pagination.next`, выключенными на первой и последней странице. Если все строки
 помещаются на одну страницу, пагинация не выводится, а подвал без собственного содержимого скрывается вместе с ней.
 
 ## Диалоги
 
 Диалог — `vaadin-dialog` (модальность, затемнение, ловушка фокуса, закрытие по Esc и клику по фону) с разметкой
 `.ts-dialog` внутри; части оверлея Vaadin обнуляются в `testsys-ui/styles/vaadin.css`, как у тоста. Роль диалога —
-`dialog` (у опасного подтверждения — `alertdialog`), доступное имя — заголовок. Крестик закрытия в шапке — `iconAction`
-с подписью `ui_overlay.dialog.close`; у опасного подтверждения шапки нет. Открытый диалог прикреплён к `UI`, а не
-к странице, и сам при смене страницы не закрылся бы. Поэтому компоненты закрывают его после любого перехода, включая
-«Назад» браузера. Так же закрываются `confirm`, `drawer` и диалоги лукапов.
+`dialog` (у опасного подтверждения — `alertdialog`), доступное имя — заголовок. Крестик закрытия в шапке — `action`
+с `iconOnly = true` и подписью `ui_overlay.dialog.close`; у опасного подтверждения шапки нет. Открытый диалог
+прикреплён к `UI`, а не к странице, и сам при смене страницы не закрылся бы. Поэтому компоненты закрывают его после
+любого перехода, включая «Назад» браузера. Так же закрываются `confirm`, `drawer` и диалоги лукапов.
 
 `confirm` и `dialog` — функции верхнего уровня пакета `overlay`. Они берут тексты из локализации текущего `UI`
 (см. [Тексты](#тексты)); вызов без текущего `UI` или с `UI`, к которому локализация не привязана, —
@@ -749,8 +663,8 @@ lookup(
 
 ## Меню
 
-`menu { … }` в `ContentScope` — кнопка-иконка «⋯» с доступным именем `ui_overlay.menu.actions` (как `iconAction`),
-которая по клику открывает меню действий. Возвращает `ElementHandle`.
+`menu { … }` в `ContentScope` — кнопка-иконка «⋯» с доступным именем `ui_overlay.menu.actions` (как `action`
+с `iconOnly = true`), которая по клику открывает меню действий. Возвращает `ElementHandle`.
 
 - `item(label, isEnabled = true) { }` — пункт меню; выключенный пункт виден, но не выбирается.
   `link(label, target, parameters = RouteParameters.empty())` — пункт, который открывает маршрут `target`.
@@ -863,9 +777,9 @@ block(title = "Туры") {
 
 | Что | Как выбирается вид |
 |-----|--------------------|
-| Кнопки | Роль: `mainAction` — primary, `action` — secondary, `destructiveAction` — danger-soft, `linkAction` — link, `iconAction` — secondary, `mainIconAction` — primary и `destructiveIconAction` — danger-soft без подписи (подпись уходит в `aria-label` и подсказку). Внутренняя роль `danger` (заливка `--danger`, как `.ts-btn--danger`) — только у кнопки действия опасного `confirm`, страницам она недоступна. Размер: в `actions { }` блока, в пустом состоянии и в ячейках таблицы (`column`, `menuColumn`) — sm, в заголовке страницы, группах строк блока и `footer { }` — md; так же по месту выбирается размер `select` без подписи |
-| Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table` и скелетон `load`. Вкладки и пилюли в тёмном блоке светлые |
-| Вкладки, пилюли, пустое состояние, меню | Вкладки страницы и блока — всегда `.ts-tabs--bare.ts-tabs--lg`, место вкладок блока — по наличию заголовка; пустое состояние — `.ts-empty`, ошибка загрузки таблицы и `load` — `.ts-empty--error`; разрушительный пункт меню — `destructiveItem` |
+| Кнопки | Роль: `mainAction` — primary, `action` — secondary, `destructiveAction` — danger-soft, `linkAction` — link. С `iconOnly = true` любая из них показывает только иконку, а подпись становится доступным именем (`aria-label`) и подсказкой; без иконки или с пустой подписью — `IllegalArgumentException`. Внутренняя роль `danger` (заливка `--danger`, как `.ts-btn--danger`) — только у кнопки действия опасного `confirm`, страницам она недоступна. Размер: в `actions { }` блока, в пустом состоянии и в ячейках таблицы (`column`, `menuColumn`) — sm, в заголовке страницы, группах строк блока и `footer { }` — md |
+| Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table` и скелетон `load`. Вкладки в тёмном блоке светлые |
+| Вкладки, пустое состояние, меню | Вкладки страницы и блока — всегда `.ts-tabs--bare.ts-tabs--lg`, место вкладок блока — по наличию заголовка; пустое состояние — `.ts-empty`, ошибка загрузки таблицы и `load` — `.ts-empty--error`; разрушительный пункт меню — `destructiveItem` |
 | Бейдж, тег, счётчик, алерт, тост (`toast(kind, title)` — функция верхнего уровня, вызывается из обработчиков) | Перечисления смысла: `Tone`, `TagKind`, `CounterKind`, `FeedbackKind`; текст бейджа передаёт страница |
 | Таблица, диалог | Вид ячейки — по функции колонки, ширина колонки — по долям сетки (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — `S`, `dialog` — по `size`, лукапы — по `dialogSize`, у обоих по умолчанию `M`; `isDanger` — вид `.ts-dialog--alert` |
 | Раскладка в блоке | Строки `row { }`; в строке — группы `horizontal(size) { }` и `vertical(size) { }` на своих колонках, в шапке, подвале и группах — `horizontal { }` и `vertical { }` без размера |
@@ -875,8 +789,8 @@ block(title = "Туры") {
 Соглашение об изменяемом состоянии — в [code-style.md](../../docs/project/code-style.md#неизменяемость).
 
 Функции возвращают ручку. Действия и поля ввода принимают завершающую лямбду `configure` с ней же; элементы
-отображения (`text`, `tag`, `badge`, `counter`, …) и `field { }` возвращают ручку без `configure`. Расширенное представление `brandImage`
-и компоненты с `DataHandle` принимают необязательный `configure` для настройки своей ручки:
+отображения (`text`, `tag`, `badge`, `counter`, …) и `field { }` возвращают ручку без `configure`. Компоненты
+с `DataHandle` принимают необязательный `configure` для настройки своей ручки:
 
 ```kotlin
 mainAction("Отправить решение", icon = IconName.Upload) {
@@ -892,11 +806,9 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `counter`, `text`) |
 | `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick`, `clickOnEnter()` — нажатие Enter на странице нажимает действие |
 | `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
-| `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает) — возвращает `pills` |
+| `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает) |
 | `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)`, `bindCount(value, signal)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |
 | `TableHandle<T>` | `isVisible`, `bindVisible` (скрывает таблицу с пагинацией, блок остаётся), `refresh(toFirstPage = false)` (из любого потока), `selected` (ключи выбранных строк), `selection` (они же сигналом только для чтения, см. [Выбор строк](#выбор-строк)), `clearSelection()` (без нового запроса страницы), `onSelectionChange { keys -> }` |
-| `FilterChipHandle` | `isVisible`, `bindVisible`, `isSelected` (запись из кода не вызывает `onChange`), `bindSelected(signal)`, `onChange { isOn -> }` — возвращает `filterChip`, см. [Кнопка-фильтр](#кнопка-фильтр) |
-| `PaginationHandle` | `isVisible`, `bindVisible`, `page` (запись из кода не вызывает `onChange`), `pageCount`, `bindPage(signal)`, `onChange { page -> }` — возвращает `pagination`, см. [Пагинация](#пагинация) |
 | `LoadHandle` | `isVisible`, `bindVisible` (скрывает тело блока с пагинацией загруженной таблицы; шапка и собственный подвал блока остаются), `reload()` (из любого потока) — возвращает `load`, см. [Живые обновления](#живые-обновления) |
 | `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `bindEditable(signal)`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону, переходом) |
 | `ValueInput<T>` | всё из `FieldHandle`, `isEnabled`, `bindEnabled(signal)`, `isEditable`, `bindEditable(signal)` и всё из `HasValue`, `HasValidation`, `HasValidator`, включая `bindValue(signal, writeCallback)`, `bindReadOnly(signal)`, `bindRequiredIndicatorVisible(signal)` |
@@ -931,10 +843,10 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 
 Поле строки блока редактируемо, только если редактируемы и оно само (`ValueInput.isEditable`/`bindEditable`), и его
 блок (`BlockHandle.isEditable`/`bindEditable`); по умолчанию оба `true`, и правило действует при любом сочетании ручных
-значений и привязок. `select` без подписи из `ContentScope` от режима блока не зависит, см.
-[Выпадающий список](#выпадающий-список). `fileDrop` в строке блока следует режиму блока, а из `ContentScope` —
-нет, см. [Настоящая передача файлов](#настоящая-передача-файлов). Нередактируемое поле — `readOnly` в Vaadin: тип и формат значения
-сохраняются, значение можно выделить и скопировать, из кода оно читается и записывается; вид — пунктирная рамка без заливки. Выключенное поле
+значений и привязок. `fileDrop` в строке блока следует режиму блока, а из `ContentScope` — нет,
+см. [Настоящая передача файлов](#настоящая-передача-файлов). Нередактируемое поле — `readOnly` в Vaadin: тип и формат
+значения сохраняются, значение можно выделить и скопировать, из кода оно читается и записывается; вид — пунктирная
+рамка без заливки. Выключенное поле
 (`isEnabled = false`) остаётся серым, даже если оно ещё и нередактируемо. `Binder.setReadOnly` работает через
 `isEditable`. `BlockHandle.bindEditable(signal)` бросает `IllegalStateException`, если у блока уже есть переключатель
 `editing(onSave, onCancel)`: режимом блока управляет либо он, либо привязка, не оба сразу.
@@ -968,7 +880,7 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 |-------|---------------|--------|
 | `ui_page` | `brand`, `header`, `navigation`, `footer`, `guide` | Каркас страницы: имя продукта в шапке, футере и заголовке вкладки, шапка, навигация, футер и гайды |
 | `ui_form` | `field`, `date_field`, `calendar`, `lookup`, `editing` | Ограничения полей, составные поля дат, календарь, лукап и множественный выбор, переключатель редактирования |
-| `ui_data` | `table`, `table_filters`, `pagination` | Таблица, её фильтры и пагинация; `pagination` общая для `pagination` и компактного пейджера таблицы |
+| `ui_data` | `table`, `table_filters`, `pagination` | Таблица, её фильтры и пагинация |
 | `ui_overlay` | `dialog`, `menu` | Диалоги и меню действий |
 | `ui_feedback` | `load`, `error`, `timer` | Ошибка загрузки и скелетон, экраны ошибок и заголовки тостов о неудачном действии по роду отказа, таймер |
 | `ui_transfer` | — | Загрузка и скачивание файлов |
@@ -1030,8 +942,6 @@ inline-стили — в [CssStyles.kt](src/main/kotlin/tech/testsys/web/compone
 `initializeUiLocale(ui, region, fallbackTimeZone)` настраивает локализацию, язык UI и документа внутри ядра
 (см. [Тексты](#тексты)); приложения подключают его через свой обычный lifecycle.
 
-`brandImage(asset, label)` использует `BrandAsset` с сохранёнными ресурсами, пропорциями и доступным именем.
-
 ## Добавление компонентов
 
 Процедура — в [add-web-component.md](../../docs/guides/add-web-component.md).
@@ -1056,8 +966,6 @@ node --test testsys-web/components/src/test/frontend/*.test.mjs
 `radio`, `codeEditor` и `multiSelect` добавляются в `BlockRowScope` и возвращают `ValueInput`: обычные режимы,
 сигналы, обязательность и Binder действуют так же, как у других полей.
 `radio` использует `RadioButtonGroup` и проверяет, что значение входит в локальные варианты.
-
-`multiSelect` из `ContentScope` служит компактным фильтром и не зависит от режима блока.
 
 | Функция | Значение и особенности |
 |---------|------------------------|
@@ -1089,7 +997,6 @@ Escape и закрытие снаружи отменяют черновик. У�
 | Функция | Данные и ручка |
 |---------|----------------|
 | `verdict` | Нейтральный числовой балл `Double` (включая 0), необязательная подпись; `DataHandle<Double>`, configure и размещение в строке через `size` |
-| `progressBar` | `ProgressValue.Determinate` (0–100) или `Indeterminate`; доступное имя обязательно |
 | `timer` | `TimerValue.Static(Duration)` либо `Until(Instant)`, варианты `Chip`, `Hero`, `Tiles`, `Text`; `TimerHandle.remainingSeconds` — сигнал только для чтения |
 | `skeleton`, `skeletonRows` | Геометрия в ядре; страница выбирает форму, число строк и `size`. Декоративные формы `Text`, `Circle`, `Badge`, `Rectangle` и строки внутри одного доступного статуса загрузки |
 

@@ -10,7 +10,7 @@ import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.value.ValueChangeMode
 import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.actions.ActionHandle
-import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssUnit
@@ -110,8 +110,8 @@ internal abstract class LookupFrame<V>(
 
     init {
         val actions = ContentScope(box, texts, Placement.Head)
-        clearAction = actions.iconAction(IconName.X, texts.messages.uiForm.lookupClear()) { onClick { clearByUser() } }
-        openAction = actions.iconAction(IconName.Search, texts.messages.uiForm.lookupOpen()) { onClick { openDialog() } }
+        clearAction = actions.action(texts.messages.uiForm.lookupClear(), IconName.X, iconOnly = true) { onClick { clearByUser() } }
+        openAction = actions.action(texts.messages.uiForm.lookupOpen(), IconName.Search, iconOnly = true) { onClick { openDialog() } }
         openAction.button.tabIndex = -1
         box.element.addEventListener(DomEvent.Click) { openDialog() }.setFilter(DomEventFilter.LookupClick)
         add(box)

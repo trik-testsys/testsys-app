@@ -149,25 +149,12 @@ vaadin-button > .ts-spinner { display: inline-block; }
     border-color: var(--ink-600);
   }
   :scope vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { color:var(--white); border-color:var(--ink-600); }
-  :scope .ts-progress { background:var(--ink-700); }
-  :scope .ts-progress__bar { background:var(--white); }
 }
 .ts-field__value > :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-date-time-picker, vaadin-integer-field, vaadin-number-field, vaadin-custom-field) {
   width: 100%;
   padding-block: 0;
 }
-/* Label-less select in a line or a block head: no room for a label above; the small one matches small buttons. */
-vaadin-select[data-ts-size] { padding-block: 0; }
-/* The frame takes its height from --lumo-text-field-size and the value button inside from --lumo-size-m; the border
-   adds 2px. */
-vaadin-select[data-ts-size="sm"] {
-  --lumo-text-field-size: calc(var(--control-sm) - 2px);
-  --lumo-size-m: calc(var(--control-sm) - 2px);
-  --vaadin-input-field-value-font-size: var(--fs-xs);
-}
-/* A compact select keeps its height: the error shows as the red border, and its text stays the accessible description. */
-vaadin-select[data-ts-size="sm"]::part(error-message) { display: none; }
 .ts-field__value > vaadin-checkbox { display: flex; align-items: center; min-height: var(--control-md); }
 /* Native values remain separate from the shadow field frame, clear/toggle buttons, hints and errors. */
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-date-picker, vaadin-time-picker,

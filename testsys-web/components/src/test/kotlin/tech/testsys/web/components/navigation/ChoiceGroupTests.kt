@@ -228,67 +228,6 @@ class ChoiceGroupTests : MockVaadinTests() {
         }
     }
 
-    @Test
-    fun `should put pills in the block head actions`() {
-        buildTestPage {
-            row {
-                block(title = "Каталог") {
-                    actions {
-                        pills(initial = 1) {
-                            pill(1, "Все")
-                            pill(2, "Квизы")
-                        }
-                    }
-                }
-            }
-        }
-
-        val pills = ui().findAll("ts-pill")
-        assertEquals(ui().find("ts-block__actions"), ui().find("ts-pills").parent.orElseThrow())
-        assertTrue("ts-pill--active" in pills[0].classes())
-        assertTrue(ui().findAll("ts-counter").isEmpty())
-    }
-
-    @Test
-    fun `should change the value on a pill click`() {
-        lateinit var handle: ChoiceHandle<Int>
-        buildTestPage {
-            row {
-                block(title = "Каталог") {
-                    actions {
-                        handle = pills(initial = 1) {
-                            pill(1, "Все")
-                            pill(2, "Квизы")
-                        }
-                    }
-                }
-            }
-        }
-
-        (ui().findAll("ts-pill")[1] as NativeButton)._click()
-
-        assertEquals(2, handle.value)
-    }
-
-    @Test
-    fun `should place pills on the columns of a block row`() {
-        buildTestPage {
-            row {
-                block {
-                    row {
-                        pills(initial = 1, size = 12) {
-                            pill(1, "Все")
-                            pill(2, "Квизы")
-                        }
-                        text("x")
-                    }
-                }
-            }
-        }
-
-        assertEquals("span 12", ui().find("ts-pills").element.style.get("grid-column"))
-    }
-
     @Nested
     inner class BindCountTests {
         @Test

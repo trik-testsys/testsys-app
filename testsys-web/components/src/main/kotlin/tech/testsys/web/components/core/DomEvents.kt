@@ -11,7 +11,7 @@ import tools.jackson.databind.JsonNode
 internal const val TABLE_SORT_KEY_FILTER: String = "event.key === 'Enter' || event.key === ' '"
 internal const val TABLE_ROW_CLICK_FILTER: String =
     "!event.target.closest('[data-ts-input], vaadin-checkbox, vaadin-button, vaadin-text-field, button, a, input, label, " +
-        "select, textarea, [role=button], .ts-field__value--inline')"
+        "select, textarea, [role=button]')"
 internal const val LOOKUP_CONTROL_SELECTOR: String = "vaadin-button, .ts-chip__x"
 internal const val LOOKUP_CLICK_EXPRESSION: String = "!event.target.closest('$LOOKUP_CONTROL_SELECTOR')"
 

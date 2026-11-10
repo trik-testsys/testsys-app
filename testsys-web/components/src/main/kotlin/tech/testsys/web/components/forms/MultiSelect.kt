@@ -31,7 +31,6 @@ import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
-import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.texts.UiLocalization
 
 /**
@@ -290,28 +289,3 @@ internal class MultiSelectField<T : Any>(
         count.text = texts.messages.uiForm.lookupSelectedCount(count = current.size)
     }
 }
-
-/**
- * Adds a compact local multi-selection filter that ignores the block edit mode.
- * Accepted values show as at most [maxChips] chips, or only as their count if it is `null`.
- *
- * @param T the type of the options.
- * @since %CURRENT_VERSION%
- */
-fun <T : Any> ContentScope.multiSelect(
-    label: String,
-    items: List<T>,
-    itemLabel: (T) -> String,
-    maxChips: Int? = 3,
-    configure: ValueInput<Set<T>>.() -> Unit = {},
-): ValueInput<Set<T>> = placeLabelLessInput(
-    label,
-    MultiSelectField(
-        texts,
-        label,
-        items,
-        itemLabel,
-        maxChips = maxChips,
-    ),
-    configure,
-)

@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
 import tech.testsys.web.components.display.field
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.forms.FileDropHandle
@@ -18,18 +16,10 @@ import tech.testsys.web.components.forms.UploadLimits
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.dateRangeInput
 import tech.testsys.web.components.forms.fileDrop
-import tech.testsys.web.components.forms.multiSelect
-import tech.testsys.web.components.forms.select
-import tech.testsys.web.components.forms.skipWhenHidden
 import tech.testsys.web.components.forms.textInput
 
 class FieldHandleTests : MockVaadinTests() {
     private class Draft(var code: String = "")
-
-    enum class LabelLessKind(val expected: Any) {
-        Single("a"),
-        Multiple(setOf("a")),
-    }
 
     @Test
     fun `should keep values unobscured by default`() {
@@ -168,18 +158,6 @@ class FieldHandleTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should preserve a label less control tab position when obscuring is disabled`() {
-        lateinit var input: ValueInput<String?>
-        buildTestPage { row { block { footer { input = select("Mode", items = listOf("A"), itemLabel = { value -> value }) } } } }
-
-        input.isObscured = true
-        input.isObscured = false
-
-        assertFalse(input.component.element.hasAttribute("data-ts-obscured"))
-        assertFalse(input.component.element.hasAttribute("tabindex"))
-    }
-
-    @Test
     fun `should obscure upload values without disabling file reception`() {
         lateinit var input: FileDropHandle
         buildTestRow {
@@ -192,82 +170,5 @@ class FieldHandleTests : MockVaadinTests() {
         assertTrue(input.isEditable)
         assertTrue(input.component.element.hasAttribute("data-ts-obscured"))
         assertEquals("File", input.component.element.getAttribute("aria-label"))
-    }
-
-    @ParameterizedTest
-    @EnumSource(LabelLessKind::class)
-    fun `should provide an independent obscured area around a disabled label less control`(kind: LabelLessKind) {
-        val input = labelLessInput(kind)
-        input.isEnabled = false
-
-        input.isObscured = true
-
-        assertEquals("div", input.component.element.tag)
-        assertEquals("Mode", input.component.element.getAttribute("aria-label"))
-        assertEquals("0", input.component.element.getAttribute("tabindex"))
-        assertTrue(input.component.element.isEnabled)
-        assertFalse(input.component.child(0).element.isEnabled)
-        assertFalse(input.isEnabled)
-        assertEquals(kind.expected, input.value)
-    }
-
-    @ParameterizedTest
-    @EnumSource(LabelLessKind::class)
-    fun `should reveal a read only label less control without enabling edits`(kind: LabelLessKind) {
-        val input = labelLessInput(kind)
-        input.isEditable = false
-
-        input.isObscured = true
-
-        assertEquals("div", input.component.element.tag)
-        assertEquals("0", input.component.element.getAttribute("tabindex"))
-        assertTrue(input.isReadOnly)
-        assertFalse(input.isEditable)
-        assertEquals(kind.expected, input.value)
-    }
-
-    @Test
-    fun `should skip a hidden obscured label less control when Binder writes`() {
-        lateinit var input: ValueInput<String?>
-        buildTestContent { input = select("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = "a" } }
-        val binder = Binder<Draft>()
-        val draft = Draft("a")
-        binder.forField(input).bind({ bean -> bean.code }, { bean, code -> bean.code = code.orEmpty() }).skipWhenHidden()
-        input.isObscured = true
-        input.isVisible = false
-        input.value = "b"
-
-        binder.writeBean(draft)
-
-        assertEquals("a", draft.code)
-        assertFalse(input.component.isVisible)
-    }
-
-    @Test
-    fun `should write an obscured label less control again once visible`() {
-        lateinit var input: ValueInput<String?>
-        buildTestContent { input = select("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = "a" } }
-        val binder = Binder<Draft>()
-        val draft = Draft("a")
-        binder.forField(input).bind({ bean -> bean.code }, { bean, code -> bean.code = code.orEmpty() }).skipWhenHidden()
-        input.isObscured = true
-        input.isVisible = false
-        input.value = "b"
-        input.isVisible = true
-
-        binder.writeBean(draft)
-
-        assertEquals("b", draft.code)
-    }
-
-    private fun labelLessInput(kind: LabelLessKind): ValueInput<*> {
-        lateinit var input: ValueInput<*>
-        buildTestContent {
-            input = when (kind) {
-                LabelLessKind.Single -> select("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = "a" }
-                LabelLessKind.Multiple -> multiSelect("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = setOf("a") }
-            }
-        }
-        return input
     }
 }

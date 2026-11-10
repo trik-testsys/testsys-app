@@ -6,7 +6,6 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.dom.Element
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -37,7 +36,6 @@ internal class PresentationNamesTests {
         component.setClassName(CssClass.TableScroll)
 
         assertEquals(listOf("ts-table-scroll"), component.classNames.toList())
-        assertTrue(component.hasClassName(CssClass.TableScroll))
     }
 
     @Test
@@ -124,15 +122,5 @@ internal class PresentationNamesTests {
         assertEquals("4", style.get("--ts-menu-columns"))
         assertEquals("81.7", style.get("--ts-download-offset"))
         assertEquals("10", style.get("--ts-code-min-lines"))
-    }
-
-    @Test
-    fun `should remove the width and return the style`() {
-        val style = Element("div").style.apply { setWidth(100.0, CssUnit.Percent) }
-
-        val result = style.removeWidth()
-
-        assertSame(style, result)
-        assertFalse(style.has("width"))
     }
 }

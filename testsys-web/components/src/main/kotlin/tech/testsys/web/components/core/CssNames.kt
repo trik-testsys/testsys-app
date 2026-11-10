@@ -45,7 +45,6 @@ internal enum class CssClass(internal val value: String) {
     DrawerTable("ts-drawer-table"),
     BlockTitles("ts-block__titles"),
     Brand("ts-brand"),
-    BrandImage("ts-brand-image"),
     BrandLogo("ts-brand__logo"),
     Btn("ts-btn"),
     BtnBusy("ts-btn--busy"),
@@ -107,13 +106,10 @@ internal enum class CssClass(internal val value: String) {
     FieldRequired("ts-field__required"),
     FieldText("ts-field__text"),
     FieldValue("ts-field__value"),
-    FieldValueInline("ts-field__value--inline"),
     Filedrop("ts-filedrop"),
     FiledropActions("ts-filedrop__actions"),
     FiledropMeta("ts-filedrop__meta"),
     FiledropStatus("ts-filedrop__status"),
-    Filter("ts-filter"),
-    FilterOn("ts-filter--on"),
     Footer("ts-footer"),
     FooterBrand("ts-footer__brand"),
     FooterInner("ts-footer__inner"),
@@ -187,24 +183,10 @@ internal enum class CssClass(internal val value: String) {
     PageHeadTitleRow("ts-page-head__title-row"),
     Pager("ts-pager"),
     PagerBtn("ts-pager__btn"),
-    PagerBtnActive("ts-pager__btn--active"),
-    PagerGap("ts-pager__gap"),
     PagerLabel("ts-pager__label"),
-    Pill("ts-pill"),
-    PillActive("ts-pill--active"),
-    Pills("ts-pills"),
     Pop("ts-pop"),
     PopoverFoot("ts-popover__foot"),
     PopoverSearch("ts-popover__search"),
-    Progress("ts-progress"),
-    ProgressAccent("ts-progress--accent"),
-    ProgressDanger("ts-progress--danger"),
-    ProgressIndeterminate("ts-progress--indeterminate"),
-    ProgressNeutral("ts-progress--neutral"),
-    ProgressSuccess("ts-progress--success"),
-    ProgressThin("ts-progress--thin"),
-    ProgressWarning("ts-progress--warning"),
-    ProgressBar("ts-progress__bar"),
     RadioGroup("ts-radio-group"),
     Right("ts-right"),
     Row("ts-row"),
@@ -306,9 +288,6 @@ internal fun HasStyle.addClassNames(vararg values: CssClass) = addClassNames(*va
 
 @InternalComponentsApi
 internal fun HasStyle.removeClassName(value: CssClass): Boolean = removeClassName(value.value)
-
-@InternalComponentsApi
-internal fun HasStyle.hasClassName(value: CssClass): Boolean = hasClassName(value.value)
 
 @InternalComponentsApi
 internal fun HasStyle.removeClassNames(vararg values: CssClass) = removeClassNames(*values.map { value -> value.value }.toTypedArray())

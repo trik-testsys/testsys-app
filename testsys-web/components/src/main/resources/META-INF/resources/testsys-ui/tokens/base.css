@@ -4,7 +4,6 @@ button, input, textarea, select { font-family: inherit; }
 a { color: var(--text-link); text-decoration: none; }
 a:hover { color: var(--accent-hover); text-decoration: underline; }
 @keyframes ts-spin { to { transform: rotate(360deg); } }
-@keyframes ts-indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
 @keyframes ts-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 @keyframes ts-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ts-pop-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }

@@ -44,9 +44,6 @@ internal fun Style.setGridTemplateColumns(value: Int): Style = set(CssProperty.G
 internal fun Style.setWidth(value: Number, unit: CssUnit): Style = set(CssProperty.Width, "$value${unit.value}")
 
 @InternalComponentsApi
-internal fun Style.removeWidth(): Style = remove(CssProperty.Width.value)
-
-@InternalComponentsApi
 internal fun Style.setHeightPixels(value: Int): Style = set(CssProperty.Height, "${value}px")
 
 @InternalComponentsApi

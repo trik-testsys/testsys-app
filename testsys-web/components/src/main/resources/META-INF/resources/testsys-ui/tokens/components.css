@@ -76,16 +76,6 @@
 .ts-radio { width:18px; height:18px; flex:none; border-radius:50%; border:1.5px solid var(--ink-300); display:grid; place-items:center; background:var(--surface-card); }
 .ts-radio--on { border-color:var(--accent); }
 .ts-radio__dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
-.ts-switch { width:36px; height:20px; flex:none; border-radius:var(--radius-pill); padding:2px; background:var(--line-strong); display:flex; transition:background var(--dur-fast) var(--ease-out); }
-.ts-switch--on { background:var(--accent); }
-.ts-switch__knob { width:16px; height:16px; border-radius:50%; background:var(--white); box-shadow:0 1px 3px rgba(22,24,29,.15); transition:transform var(--dur-base) var(--ease-out); }
-.ts-switch--on .ts-switch__knob { transform:translateX(16px); }
-.ts-seg { display:inline-flex; padding:3px; border-radius:var(--radius-lg); background:var(--muted); gap:2px; }
-.ts-seg--block { display:flex; }
-.ts-seg__item { height:26px; padding:0 var(--space-3); border-radius:7px; border:0; background:transparent; color:var(--text-secondary); font:var(--fw-semibold) var(--fs-xs) var(--font-sans); cursor:pointer; flex:1; white-space:nowrap; }
-.ts-seg__item--active { background:var(--surface-card); color:var(--text-primary); box-shadow:var(--shadow-segment); }
-.ts-seg--sm .ts-seg__item { height:22px; padding:0 10px; font-size:var(--fs-caption); }
-.ts-seg--lg .ts-seg__item { height:30px; font-size:var(--fs-sm); }
 
 /* ---------- File drop ---------- */
 .ts-drop { min-height:var(--control-md); border-radius:var(--radius-md); border:1px dashed var(--border-strong); background:var(--surface-card); display:block; color:var(--text-secondary); padding:calc((var(--control-md) - var(--control-sm)) / 2 - 1px) var(--space-2); text-align:left; transition:background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); }
@@ -468,7 +458,7 @@ a.ts-tab { text-decoration:none; }
 .ts-toast { animation:ts-rise-in var(--dur-slow) var(--ease-out); }
 .ts-check svg, .ts-check__dash, .ts-radio__dot { animation:ts-mark-in var(--dur-fast) var(--ease-out); }
 .ts-tab--active::after, .ts-nav__item--active::after { animation:ts-underline-in var(--dur-base) var(--ease-out); transform-origin:center; }
-.ts-seg__item, .ts-pill, .ts-filter, .ts-pager__btn, .ts-tab, .ts-option, .ts-menu__item, .ts-cal__day { transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
+.ts-pill, .ts-filter, .ts-pager__btn, .ts-tab, .ts-option, .ts-menu__item, .ts-cal__day { transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
 .ts-table tbody tr { transition:background var(--dur-fast) var(--ease-out); }
 .ts-table tr.ts-row-new td, .ts-flash { animation:ts-flash var(--dur-flash) var(--ease-out) both; }
 .ts-status--live .ts-status__dot { box-shadow:none; animation:ts-live-ring 2s var(--ease-out) infinite; }

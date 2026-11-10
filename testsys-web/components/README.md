@@ -39,9 +39,8 @@
 пояс.
 Пакет `core` содержит внутренние средства работы с DOM, сигналами и фоновыми задачами.
 
-Radio и segmented control реализованы в `forms/RadioChoices.kt`, переключатель — в `forms/SwitchInput.kt`,
-редактор кода — в `forms/CodeEditor.kt`. Раскладку подписей полей задаёт `layout/FieldLayout.kt`;
-публичное информационное поле остаётся в `display/Field.kt`.
+Radio реализован в `forms/RadioChoices.kt`, редактор кода — в `forms/CodeEditor.kt`. Раскладку подписей полей
+задаёт `layout/FieldLayout.kt`; публичное информационное поле остаётся в `display/Field.kt`.
 Тестовые пакеты повторяют расположение проверяемого кода.
 
 ## Страница
@@ -259,7 +258,7 @@ Driver перемещает выделение и прокручивает ст�
 | `PageRowScope` | `block`, `highlightBlock`, `space` |
 | `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)`, `guide` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
-| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
+| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
 | `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
 | `MenuScope` | `item`, `link`, `destructiveItem` |
@@ -274,7 +273,7 @@ Driver перемещает выделение и прокручивает ст�
 `overlay`, `core`; `toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`.
 Функции отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) и `pills` объявлены и для `ContentScope`,
 и для `BlockRowScope` (с необязательным `size`). Поля с подписью есть только в `BlockRowScope`; в `ContentScope`
-есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)), `segmentedControl` и `multiSelect`.
+есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)) и `multiSelect`.
 `fileDrop` объявлен в обоих скоупах. В строке блока `labelSize` размещает подпись слева как у поля;
 при этом `size` обязателен и задаёт ширину приёма. Без `labelSize` подпись находится над приёмом. Действия, `menu`, `filterChip` и `pagination`
 объявлены для `ContentScope`; `downloadAction` есть также в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`.
@@ -1049,22 +1048,17 @@ node --test testsys-web/components/src/test/frontend/*.test.mjs
 
 ## Остальные поля и локальный выбор
 
-`radio`, `switchInput`, `segmentedControl`, `codeEditor` и `multiSelect` добавляются в `BlockRowScope` и возвращают
-`ValueInput`: обычные режимы, сигналы, обязательность и Binder действуют так же, как у других полей.
-`radio` и `segmentedControl` используют `RadioButtonGroup`, `switchInput` — штатный `Switch`.
-Тонкая настройка radio-группы проверяет локальные варианты; `META-INF/frontend/testsys-ui/segmented-choice.ts`
-добавляет только выбор Home/End. Его клиентские сценарии проверяются в `segmented-choice.test.mjs`,
-см. [Проверка компонентов](#проверка-компонентов).
+`radio`, `codeEditor` и `multiSelect` добавляются в `BlockRowScope` и возвращают `ValueInput`: обычные режимы,
+сигналы, обязательность и Binder действуют так же, как у других полей.
+`radio` использует `RadioButtonGroup` и проверяет, что значение входит в локальные варианты.
 
-`segmentedControl` и `multiSelect` из `ContentScope` служат компактными фильтрами и не зависят от режима блока.
+`multiSelect` из `ContentScope` служит компактным фильтром и не зависит от режима блока.
 
 | Функция | Значение и особенности |
 |---------|------------------------|
 | `radio` | `T?`; уникальные локальные варианты, подписи и необязательные метаданные |
-| `switchInput` | `Boolean`; переключатель с доступной семантикой switch |
-| `segmentedControl` | `T?`; стрелки, Home и End выбирают варианты |
 | `codeEditor` | `String`; обычный моноширинный ввод, `minLines`, номера строк и синхронная прокрутка без подсветки синтаксиса |
-| `multiSelect` | `Set<T>`; локальный поиск и отдельный черновик popup, варианты `Chips`/`Count` |
+| `multiSelect` | `Set<T>`; локальный поиск и отдельный черновик popup; принятые значения показаны не более чем `maxChips` чипами (по умолчанию 3), остальные — чипом «+N»; при `null` показано только число выбранных |
 
 В `multiSelect` «Выбрать все» выбирает видимые результаты, «Сбросить» меняет черновик, «Применить» фиксирует его.
 Escape и закрытие снаружи отменяют черновик. Удаление принятого чипа и очистка действуют сразу. Программная запись,

@@ -212,8 +212,6 @@ internal enum class CssClass(internal val value: String) {
     RowEmpty("ts-row-empty"),
     RowNew("ts-row-new"),
     RowSelected("ts-row-selected"),
-    Seg("ts-seg"),
-    SegSm("ts-seg--sm"),
     Skel("ts-skel"),
     SkelBadge("ts-skel--badge"),
     SkelCircle("ts-skel--circle"),

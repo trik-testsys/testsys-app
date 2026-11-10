@@ -19,7 +19,6 @@ import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.dateRangeInput
 import tech.testsys.web.components.forms.fileDrop
 import tech.testsys.web.components.forms.multiSelect
-import tech.testsys.web.components.forms.segmentedControl
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.skipWhenHidden
 import tech.testsys.web.components.forms.textInput
@@ -29,7 +28,6 @@ class FieldHandleTests : MockVaadinTests() {
 
     enum class LabelLessKind(val expected: Any) {
         Single("a"),
-        Segments("a"),
         Multiple(setOf("a")),
     }
 
@@ -267,7 +265,6 @@ class FieldHandleTests : MockVaadinTests() {
         buildTestContent {
             input = when (kind) {
                 LabelLessKind.Single -> select("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = "a" }
-                LabelLessKind.Segments -> segmentedControl("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = "a" }
                 LabelLessKind.Multiple -> multiSelect("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = setOf("a") }
             }
         }

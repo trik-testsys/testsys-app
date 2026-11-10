@@ -1,7 +1,7 @@
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.component.checkbox.Switch
+import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.dom.Element
 import com.vaadin.flow.internal.nodefeature.ElementPropertyMap
@@ -108,12 +108,12 @@ class NativeFieldsTests : MockVaadinTests() {
     }
 
     @Nested
-    inner class SwitchTests {
+    inner class CheckboxTests {
         @Test
         fun `should publish client checked changes to the handle and Binder`() {
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", labelSize = 4, size = 8) }
-            val field = control<Switch>("Switch")
+            buildTestRow { input = checkbox("Checkbox", labelSize = 4, size = 8) }
+            val field = control<Checkbox>("Checkbox")
             val binder = Binder<Draft>()
             val draft = Draft()
             binder.forField(input).bind({ bean -> bean.isEnabled }, { bean, isEnabled -> bean.isEnabled = isEnabled })
@@ -123,14 +123,14 @@ class NativeFieldsTests : MockVaadinTests() {
 
             assertEquals(true, input.value)
             assertEquals(true, draft.isEnabled)
-            assertEquals("Switch", field.ariaLabel.orElseThrow())
+            assertEquals("Checkbox", field.ariaLabel.orElseThrow())
         }
 
         @Test
         fun `should ignore client checked changes while readonly`() {
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", labelSize = 4, size = 8) { isEditable = false } }
-            val field = control<Switch>("Switch")
+            buildTestRow { input = checkbox("Checkbox", labelSize = 4, size = 8) { isEditable = false } }
+            val field = control<Checkbox>("Checkbox")
 
             clientChange(field.element, "checked", JsonNodeFactory.instance.booleanNode(true))
 
@@ -141,9 +141,9 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should ignore client checked changes while disabled`() {
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", labelSize = 4, size = 8) { isEnabled = false } }
+            buildTestRow { input = checkbox("Checkbox", labelSize = 4, size = 8) { isEnabled = false } }
 
-            clientChange(control<Switch>("Switch").element, "checked", JsonNodeFactory.instance.booleanNode(true))
+            clientChange(control<Checkbox>("Checkbox").element, "checked", JsonNodeFactory.instance.booleanNode(true))
 
             assertEquals(false, input.value)
         }
@@ -152,7 +152,7 @@ class NativeFieldsTests : MockVaadinTests() {
         fun `should accept programmatic checked changes while readonly and disabled`() {
             lateinit var input: ValueInput<Boolean>
             buildTestRow {
-                input = switchInput("Switch", labelSize = 4, size = 8) {
+                input = checkbox("Checkbox", labelSize = 4, size = 8) {
                     isEditable = false
                     isEnabled = false
                 }
@@ -164,13 +164,13 @@ class NativeFieldsTests : MockVaadinTests() {
         }
 
         @Test
-        fun `should publish client switch requests without replacing the bound signal`() {
+        fun `should publish client checkbox requests without replacing the bound signal`() {
             val source = ValueSignal(false)
             var isRequested = false
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", labelSize = 4, size = 8) { bindValue(source) { value -> isRequested = value } } }
+            buildTestRow { input = checkbox("Checkbox", labelSize = 4, size = 8) { bindValue(source) { value -> isRequested = value } } }
 
-            clientChange(control<Switch>("Switch").element, "checked", JsonNodeFactory.instance.booleanNode(true))
+            clientChange(control<Checkbox>("Checkbox").element, "checked", JsonNodeFactory.instance.booleanNode(true))
 
             assertEquals(true, isRequested)
             assertEquals(false, source.peek())

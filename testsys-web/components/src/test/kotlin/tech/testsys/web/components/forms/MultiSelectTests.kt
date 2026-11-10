@@ -12,8 +12,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestRow
 import tech.testsys.web.components.control
@@ -123,12 +125,19 @@ internal class MultiSelectTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should show the number of accepted values in the count display`() {
-        buildMultiSelect(display = MultiSelectDisplay.Count)
+    fun `should show only the number of accepted values without chips if max chips is null`() {
+        buildMultiSelect(maxChips = null)
 
         input.value = setOf("Анна", "Борис")
 
         assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 2), field().find("ts-counter").element.text)
+        assertTrue(field().findAll("ts-chip").isEmpty())
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [0, -1])
+    fun `should reject max chips below one`(maxChips: Int) {
+        assertThrows<IllegalArgumentException> { buildMultiSelect(maxChips = maxChips) }
     }
 
     @Test
@@ -189,7 +198,7 @@ internal class MultiSelectTests : MockVaadinTests() {
         ReadOnly({ field -> field.isReadOnly = true }),
     }
 
-    private fun buildMultiSelect(display: MultiSelectDisplay = MultiSelectDisplay.Chips, maxChips: Int = 3) {
+    private fun buildMultiSelect(maxChips: Int? = 3) {
         buildTestRow {
             input = multiSelect(
                 "Участники",
@@ -197,7 +206,6 @@ internal class MultiSelectTests : MockVaadinTests() {
                 size = 8,
                 items = listOf("Анна", "Аркадий", "Борис"),
                 itemLabel = { value -> value },
-                display = display,
                 maxChips = maxChips,
             )
         }

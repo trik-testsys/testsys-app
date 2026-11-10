@@ -28,7 +28,6 @@
   --shadow-toast: 0 2px 8px rgba(22, 24, 29, 0.04), 0 20px 48px -20px rgba(22, 24, 29, 0.24);
   --shadow-dialog: 0 4px 16px rgba(22, 24, 29, 0.05), 0 32px 72px -24px rgba(22, 24, 29, 0.30);
   --shadow-drawer: -2px 0 8px rgba(22, 24, 29, 0.03), -32px 0 64px -24px rgba(22, 24, 29, 0.22);
-  --shadow-segment: 0 1px 3px rgba(22, 24, 29, 0.08);
 
   /* Layout */
   --container: 1280px;

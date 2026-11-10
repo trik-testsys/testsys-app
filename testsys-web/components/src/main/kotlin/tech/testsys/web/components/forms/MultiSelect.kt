@@ -35,8 +35,8 @@ import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.texts.UiLocalization
 
 /**
- * Adds a local multi-selection of [items] shown by [itemLabel]; popup changes become the value only on Apply.
- * The control takes [size] columns beside [labelSize] label columns.
+ * Adds a local multi-selection of [items] on [size] columns beside [labelSize] label columns; popup changes take effect only on Apply.
+ * Accepted values show as at most [maxChips] chips, or only as their count if it is `null`.
  *
  * @param T the type of the selectable items.
  * @since %CURRENT_VERSION%
@@ -49,11 +49,10 @@ fun <T : Any> BlockRowScope.multiSelect(
     itemLabel: (T) -> String,
     hint: String? = null,
     itemMeta: ((T) -> String)? = null,
-    display: MultiSelectDisplay = MultiSelectDisplay.Chips,
-    maxChips: Int = 3,
+    maxChips: Int? = 3,
     configure: ValueInput<Set<T>>.() -> Unit = {},
 ): ValueInput<Set<T>> {
-    val field = MultiSelectField(texts, label, items, itemLabel, itemMeta, display, maxChips)
+    val field = MultiSelectField(texts, label, items, itemLabel, itemMeta, maxChips)
     return addInput(label, labelSize, size, field, hint, configure)
 }
 
@@ -64,8 +63,7 @@ internal class MultiSelectField<T : Any>(
     private val items: List<T>,
     private val itemLabel: (T) -> String,
     private val itemMeta: ((T) -> String)? = null,
-    private val display: MultiSelectDisplay = MultiSelectDisplay.Chips,
-    private val maxChips: Int = 3,
+    private val maxChips: Int? = 3,
 ) : CustomField<Set<T>>(emptySet(), true), HasValidator<Set<T>> {
     private val trigger: NativeButton = NativeButton(texts.messages.uiForm.lookupOpen()).apply {
         element.setType(ElementType.Button)
@@ -108,7 +106,7 @@ internal class MultiSelectField<T : Any>(
         trigger.addClickListener { if (popup.isOpened) close() else open() }
         search.addValueChangeListener { renderDraft() }
 
-        require(maxChips > 0) { "MultiSelect max chips must be positive, got $maxChips" }
+        require(maxChips == null || maxChips > 0) { "MultiSelect max chips must be positive or null, got $maxChips" }
 
         val duplicates = items.groupBy { item -> item }.filterValues { same -> same.size > 1 }.keys
         require(duplicates.isEmpty()) { "MultiSelect '$label' items must be unique, repeated: $duplicates" }
@@ -222,7 +220,7 @@ internal class MultiSelectField<T : Any>(
     private fun renderValue(selected: Set<T>) {
         chips.removeAll()
 
-        val visible = items.filter { item -> item in selected }.take(if (display == MultiSelectDisplay.Chips) maxChips else 0)
+        val visible = items.filter { item -> item in selected }.take(maxChips ?: 0)
         visible.forEach { item ->
             val chip = Span(Span(itemLabel(item)).apply { addClassName(CssClass.ObscuredValue) }).apply { addClassName(CssClass.Chip) }
             if (choosable()) {
@@ -238,14 +236,14 @@ internal class MultiSelectField<T : Any>(
             chips.add(chip)
         }
 
-        if (display == MultiSelectDisplay.Count && selected.isNotEmpty()) {
+        if (maxChips == null && selected.isNotEmpty()) {
             val counter = Span(texts.messages.uiForm.lookupSelectedCount(count = selected.size)).apply {
                 addClassNames(CssClass.Counter, CssClass.CounterAccent, CssClass.ObscuredValue)
             }
             chips.add(counter)
         }
 
-        if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
+        if (maxChips != null && selected.size > maxChips) {
             val more = Span(texts.messages.uiForm.lookupMoreChip(count = selected.size - maxChips)).apply {
                 addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
                 element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiForm.lookupMore(count = selected.size - maxChips))
@@ -294,14 +292,8 @@ internal class MultiSelectField<T : Any>(
 }
 
 /**
- * Presentation of accepted multi-selection values.
- *
- * @since %CURRENT_VERSION%
- */
-enum class MultiSelectDisplay { Chips, Count }
-
-/**
  * Adds a compact local multi-selection filter that ignores the block edit mode.
+ * Accepted values show as at most [maxChips] chips, or only as their count if it is `null`.
  *
  * @param T the type of the options.
  * @since %CURRENT_VERSION%
@@ -310,8 +302,7 @@ fun <T : Any> ContentScope.multiSelect(
     label: String,
     items: List<T>,
     itemLabel: (T) -> String,
-    display: MultiSelectDisplay = MultiSelectDisplay.Chips,
-    maxChips: Int = 3,
+    maxChips: Int? = 3,
     configure: ValueInput<Set<T>>.() -> Unit = {},
 ): ValueInput<Set<T>> = placeLabelLessInput(
     label,
@@ -320,7 +311,6 @@ fun <T : Any> ContentScope.multiSelect(
         label,
         items,
         itemLabel,
-        display = display,
         maxChips = maxChips,
     ),
     configure,

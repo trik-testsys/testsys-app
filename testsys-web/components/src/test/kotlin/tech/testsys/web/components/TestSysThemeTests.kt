@@ -168,8 +168,6 @@ class TestSysThemeTests {
     @ValueSource(
         strings = [
             "vaadin-custom-field[disabled] .ts-code",
-            "vaadin-radio-group.ts-seg[disabled]::part(group-field)",
-            "vaadin-switch[disabled]::part(switch)",
         ],
     )
     fun `should retain opaque disabled controls`(selector: String) {

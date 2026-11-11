@@ -7,6 +7,10 @@ html {
   --lumo-primary-color: var(--accent);
   --lumo-primary-text-color: var(--accent);
   --lumo-primary-color-50pct: var(--accent-ring);
+  /* Lumo takes the focus ring from the 50pct colour, too pale here to be seen; a filled button hides an accent
+     border, so Vaadin controls without a field frame get a solid ring of the accent colour. */
+  --vaadin-focus-ring-color: var(--border-focus);
+  --vaadin-focus-ring-width: 2px;
   --lumo-error-color: var(--danger);
   --lumo-error-text-color: var(--danger);
   --lumo-success-color: var(--success);

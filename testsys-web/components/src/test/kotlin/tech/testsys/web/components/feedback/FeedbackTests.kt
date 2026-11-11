@@ -1,10 +1,13 @@
 package tech.testsys.web.components.feedback
 
+import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.getNotifications
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.notification.Notification
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -58,6 +61,20 @@ class FeedbackTests : MockVaadinTests() {
             assertEquals("Решение отправлено", card.find("ts-toast__title").element.textRecursively)
             assertEquals(TOAST_DURATION_MS, notification.duration)
             assertEquals(Notification.Position.BOTTOM_END, notification.position)
+        }
+
+        @Test
+        fun `should keep an error toast until its close button is clicked`() {
+            toast(FeedbackKind.Error, "Не удалось сохранить")
+
+            val notification = getNotifications().single()
+            val card = _get<Div> { classes = "ts-toast" }
+            assertEquals(0, notification.duration)
+            assertEquals("alert", card.element.getAttribute("role"))
+
+            _get<NativeButton> { classes = "ts-toast__close" }._click()
+
+            assertFalse(notification.isOpened)
         }
     }
 }

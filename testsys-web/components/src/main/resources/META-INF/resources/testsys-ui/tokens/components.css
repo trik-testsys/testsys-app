@@ -311,9 +311,6 @@ span.ts-obscured-value:not(.ts-chip, .ts-counter) { display:inline-block; }
 .ts-toast.ts-header-arrival { width:360px; max-width:calc(100vw - 2 * var(--space-6)); box-sizing:border-box; animation:none; }
 .ts-toast.ts-header-arrival--enter { animation:ts-pop-in var(--dur-base) var(--ease-out); }
 .ts-header-arrival .ts-toast__title, .ts-header-arrival .ts-toast__desc { overflow-wrap:anywhere; }
-.ts-header-arrival .ts-toast__close { width:24px; height:24px; display:grid; place-items:center; flex:none; border-radius:var(--radius-sm); }
-.ts-header-arrival .ts-toast__close:hover { background:var(--canvas); color:var(--text-primary); }
-.ts-header-arrival .ts-toast__close:focus-visible { outline:1px solid var(--border-focus); outline-offset:0; box-shadow:0 0 0 3px var(--accent-ring); }
 .ts-bell__dot--arrival { animation:ts-header-bell-pulse 700ms var(--ease-out) 2; }
 .ts-header-notification--arrival { box-shadow:inset 3px 0 0 var(--accent); background:var(--accent-soft); animation:ts-header-arrival-highlight 2400ms var(--ease-out); }
 @keyframes ts-header-bell-pulse { 0%,100% { box-shadow:0 0 0 0 var(--danger-bg); } 50% { box-shadow:0 0 0 5px var(--danger-bg); } }
@@ -353,7 +350,8 @@ a.ts-tab { text-decoration:none; }
 .ts-toast__text { flex:1; display:flex; flex-direction:column; gap:2px; min-width:0; }
 .ts-toast__title { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
 .ts-toast__desc { font:var(--fw-regular) var(--fs-xs)/var(--lh-xs) var(--font-sans); color:var(--text-secondary); }
-.ts-toast__close { border:0; background:transparent; padding:0; cursor:pointer; color:var(--text-tertiary); }
+.ts-toast__close { width:24px; height:24px; display:grid; place-items:center; flex:none; border:0; border-radius:var(--radius-sm); background:transparent; padding:0; cursor:pointer; color:var(--text-tertiary); }
+.ts-toast__close:hover { background:var(--canvas); color:var(--text-primary); }
 .ts-toaster { position:fixed; right:var(--space-6); bottom:var(--space-6); display:flex; flex-direction:column; gap:10px; z-index:100; }
 .ts-alert { display:flex; gap:var(--space-3); padding:10px var(--space-3); border-radius:var(--radius-lg); align-items:flex-start; }
 .ts-alert__icon { flex:none; margin-top:1px; }

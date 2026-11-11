@@ -24,6 +24,7 @@ import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -53,7 +54,6 @@ import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.app.service.developer.TaskValidationSnapshotVo
 import tech.testsys.web.app.service.developer.TestVo
-import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.app.service.toVo
 import tools.jackson.databind.ObjectMapper
 import java.time.Instant
@@ -72,9 +72,6 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var headers: CabinetHeaders
-
-    @Autowired
-    private lateinit var multipleRoleUserService: MultipleRoleUserService
 
     private val developers by lazy { DeveloperFixtures(fixtures, developerService, tasks, dataSource) }
 
@@ -408,6 +405,17 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should keep testing unavailable when the testing history fails to load`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+
+        val service = testingPage(task, emptyList(), history = { error("History is unavailable") })
+
+        assertFalse(pageButton("Протестировать").isEnabled)
+        verify(exactly = 0) { service.testTask(any()) }
+    }
+
+    @Test
     fun `should open testing details as a separate page`() {
         developers.signInDeveloper()
         val task = developers.task()
@@ -726,8 +734,10 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         task: TaskVo,
         requests: List<TaskValidationRequestVo>,
         resources: List<ResourceVo> = emptyList(),
+        history: () -> List<TaskValidationRequestVo> = { requests },
     ): DeveloperService {
         val service = mockk<DeveloperService>()
+        every { service.checkTaskAccess(task.id) } returns task
         every { service.viewTask(task.id) } returns (task to emptyList())
         every { service.viewResources() } returns resources
         resources.forEach { resource ->
@@ -735,8 +745,8 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
             every { service.viewResource(task.id, resource.versionBucket) } returns versions
         }
         every { service.viewTrikStudioVersions() } returns developerService.viewTrikStudioVersions()
-        every { service.viewTaskValidationRequests(task.id) } returns requests
-        val view = DeveloperTaskView(headers, service, multipleRoleUserService, mockk())
+        every { service.viewTaskValidationRequests(task.id) } answers { history() }
+        val view = DeveloperTaskView(headers, service, mockk())
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns taskParameters(task.id)
         UI.getCurrent().removeAll()

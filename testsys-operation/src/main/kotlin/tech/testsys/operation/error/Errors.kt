@@ -11,6 +11,7 @@ import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
@@ -198,6 +199,41 @@ sealed interface EditCompetitionError : OperationError
 sealed interface DownloadParticipantsError : OperationError
 
 /**
+ * Failure of checking the manager role before a page of the manager opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckManagerRoleError : OperationError
+
+/**
+ * Failure of checking access to a class owned by the manager before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckManagerClassAccessError : OperationError
+
+/**
+ * Failure of checking access to a competition owned by the manager before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckCompetitionAccessError : OperationError
+
+/**
+ * Failure of checking access to a contest added to a class owned by the manager before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckClassContestAccessError : OperationError
+
+/**
+ * Failure of checking access to a contest added to a competition owned by the manager before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckCompetitionContestAccessError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
@@ -222,6 +258,11 @@ data object MissedManagerRoleError :
     EditClassError,
     EditCompetitionError,
     DownloadParticipantsError,
+    CheckManagerRoleError,
+    CheckManagerClassAccessError,
+    CheckCompetitionAccessError,
+    CheckClassContestAccessError,
+    CheckCompetitionContestAccessError,
     MissedRequiredRoleError
 
 /**
@@ -275,6 +316,11 @@ data class ClassNotExistsError(val classId: ClassId) :
     DownloadStudentTaskResourceError,
     DownloadStudentSolutionError,
     SendStudentSolutionError,
+    CheckManagerClassAccessError,
+    CheckClassContestAccessError,
+    CheckStudentClassAccessError,
+    CheckStudentContestAccessError,
+    CheckStudentTaskAccessError,
     EntityNotExistsError
 
 /**
@@ -299,6 +345,11 @@ data class ClassAccessDeniedError(val classId: ClassId) :
     DownloadStudentTaskResourceError,
     DownloadStudentSolutionError,
     SendStudentSolutionError,
+    CheckManagerClassAccessError,
+    CheckClassContestAccessError,
+    CheckStudentClassAccessError,
+    CheckStudentContestAccessError,
+    CheckStudentTaskAccessError,
     AccessDeniedError
 
 /**
@@ -323,6 +374,10 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     DownloadParticipantSolutionError,
     SendParticipantSolutionError,
     DownloadObserverResultError,
+    CheckCompetitionAccessError,
+    CheckCompetitionContestAccessError,
+    CheckParticipantContestAccessError,
+    CheckParticipantTaskAccessError,
     EntityNotExistsError
 
 /**
@@ -340,6 +395,8 @@ data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
     AddCompetitionContestError,
     CreateParticipantsError,
     DownloadObserverResultError,
+    CheckCompetitionAccessError,
+    CheckCompetitionContestAccessError,
     AccessDeniedError
 
 /**
@@ -349,7 +406,9 @@ data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
  * @property contestId the id of the contest missing from the class.
  * @since %CURRENT_VERSION%
  */
-data class ContestNotAddedToClassError(val classId: ClassId, val contestId: ContestId) : ViewClassContestError
+data class ContestNotAddedToClassError(val classId: ClassId, val contestId: ContestId) :
+    ViewClassContestError,
+    CheckClassContestAccessError
 
 /**
  * The contest is not added to the competition.
@@ -359,7 +418,8 @@ data class ContestNotAddedToClassError(val classId: ClassId, val contestId: Cont
  * @since %CURRENT_VERSION%
  */
 data class ContestNotAddedToCompetitionError(val competitionId: CompetitionId, val contestId: ContestId) :
-    ViewCompetitionContestError
+    ViewCompetitionContestError,
+    CheckCompetitionContestAccessError
 
 /**
  * The contest is already added to the class.
@@ -590,6 +650,27 @@ sealed interface DeleteObserverError : OperationError
 sealed interface ViewCommunityContestsError : OperationError
 
 /**
+ * Failure of checking the administrator role before a page of the administrator opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckAdministratorRoleError : OperationError
+
+/**
+ * Failure of checking access to a community owned by the administrator before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckCommunityAccessError : OperationError
+
+/**
+ * Failure of checking access to a user available to the administrator before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckUserAccessError : OperationError
+
+/**
  * The user does not hold the administrator role.
  *
  * @since %CURRENT_VERSION%
@@ -615,6 +696,9 @@ data object MissedAdministratorRoleError :
     RemoveFromCommunityError,
     DeleteObserverError,
     ViewCommunityContestsError,
+    CheckAdministratorRoleError,
+    CheckCommunityAccessError,
+    CheckUserAccessError,
     MissedRequiredRoleError
 
 /**
@@ -657,6 +741,7 @@ data class UserNotExistsError(val userId: UserId) :
     GrantRoleError,
     RemoveFromCommunityError,
     DeleteObserverError,
+    CheckUserAccessError,
     EntityNotExistsError
 
 /**
@@ -675,6 +760,7 @@ data class UserAccessDeniedError(val userId: UserId) :
     ViewUserAssignedContestsError,
     GrantRoleError,
     DeleteObserverError,
+    CheckUserAccessError,
     AccessDeniedError
 
 /**
@@ -793,6 +879,20 @@ sealed interface DownloadLogsError : OperationError
 sealed interface DownloadRecordingError : OperationError
 
 /**
+ * Failure of checking the judge role before a page of the judge opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckJudgeRoleError : OperationError
+
+/**
+ * Failure of checking access to a submission available to the judge before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckSubmissionAccessError : OperationError
+
+/**
  * The user does not hold the judge role.
  *
  * @since %CURRENT_VERSION%
@@ -804,6 +904,8 @@ data object MissedJudgeRoleError :
     DownloadSolutionError,
     DownloadLogsError,
     DownloadRecordingError,
+    CheckJudgeRoleError,
+    CheckSubmissionAccessError,
     MissedRequiredRoleError
 
 /**
@@ -820,6 +922,7 @@ data class SubmissionNotExistsError(val submissionId: SubmissionId) :
     DownloadSolutionError,
     DownloadLogsError,
     DownloadRecordingError,
+    CheckSubmissionAccessError,
     EntityNotExistsError
 
 /**
@@ -836,6 +939,7 @@ data class SubmissionAccessDeniedError(val submissionId: SubmissionId) :
     DownloadSolutionError,
     DownloadLogsError,
     DownloadRecordingError,
+    CheckSubmissionAccessError,
     AccessDeniedError
 
 /**
@@ -1253,6 +1357,41 @@ sealed interface DetachTestError : OperationError
  * @since %CURRENT_VERSION%
  */
 sealed interface DetachDeveloperSolutionError : OperationError
+
+/**
+ * Failure of checking the developer role before a page of the developer opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckDeveloperRoleError : OperationError
+
+/**
+ * Failure of checking access to a task owned by the developer before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckTaskAccessError : OperationError
+
+/**
+ * Failure of checking access to a resource of a task owned by the developer before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckResourceAccessError : OperationError
+
+/**
+ * Failure of checking access to a testing request of a task owned by the developer before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckTaskValidationRequestAccessError : OperationError
+
+/**
+ * Failure of checking access to a contest available to the developer before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckContestAccessError : OperationError
 // endregion
 
 // region Errors
@@ -1300,7 +1439,12 @@ data object MissedDeveloperRoleError :
     AttachExerciseError,
     AttachTestError,
     AttachDeveloperSolutionError,
-    ViewTrikStudioVersionsError
+    ViewTrikStudioVersionsError,
+    CheckDeveloperRoleError,
+    CheckTaskAccessError,
+    CheckResourceAccessError,
+    CheckTaskValidationRequestAccessError,
+    CheckContestAccessError
 
 /**
  * The contest end is specified without its start.
@@ -1370,7 +1514,14 @@ data class ContestNotExistsError(
     ViewClassContestError,
     ViewCompetitionContestError,
     AddClassContestError,
-    AddCompetitionContestError
+    AddCompetitionContestError,
+    CheckContestAccessError,
+    CheckClassContestAccessError,
+    CheckCompetitionContestAccessError,
+    CheckParticipantContestAccessError,
+    CheckStudentContestAccessError,
+    CheckParticipantTaskAccessError,
+    CheckStudentTaskAccessError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -1401,7 +1552,12 @@ data class ContestAccessDeniedError(
     SendParticipantSolutionError,
     SendStudentSolutionError,
     AddClassContestError,
-    AddCompetitionContestError
+    AddCompetitionContestError,
+    CheckContestAccessError,
+    CheckParticipantContestAccessError,
+    CheckStudentContestAccessError,
+    CheckParticipantTaskAccessError,
+    CheckStudentTaskAccessError
 
 /**
  * The contest is shared to at least one community.
@@ -1453,7 +1609,22 @@ data class TaskNotExistsError(val taskId: TaskId) :
     DownloadStudentTaskResourceError,
     DownloadStudentSolutionError,
     SendParticipantSolutionError,
-    SendStudentSolutionError
+    SendStudentSolutionError,
+    CheckTaskAccessError,
+    CheckResourceAccessError,
+    CheckTaskValidationRequestAccessError,
+    CheckParticipantTaskAccessError,
+    CheckStudentTaskAccessError
+
+/**
+ * The testing request does not exist or belongs to another task.
+ *
+ * @property requestId the id of the missing request.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskValidationRequestNotExistsError(val requestId: TaskValidationRequestId) :
+    EntityNotExistsError,
+    CheckTaskValidationRequestAccessError
 
 /**
  * The statement does not exist.
@@ -1505,7 +1676,8 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
     GrantRoleError,
     RemoveFromCommunityError,
     ViewCommunityContestsError,
-    EditCommunityError
+    EditCommunityError,
+    CheckCommunityAccessError
 
 /**
  * The user lacks the access to the task required by the operation.
@@ -1548,7 +1720,12 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     DownloadStudentTaskResourceError,
     DownloadStudentSolutionError,
     SendParticipantSolutionError,
-    SendStudentSolutionError
+    SendStudentSolutionError,
+    CheckTaskAccessError,
+    CheckResourceAccessError,
+    CheckTaskValidationRequestAccessError,
+    CheckParticipantTaskAccessError,
+    CheckStudentTaskAccessError
 
 /**
  * The user is not a member of the community, or it belongs to another user.
@@ -1568,7 +1745,8 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) :
     GrantRoleError,
     RemoveFromCommunityError,
     ViewCommunityContestsError,
-    EditCommunityError
+    EditCommunityError,
+    CheckCommunityAccessError
 
 /**
  * The task has no committed version.
@@ -1771,7 +1949,11 @@ data class ResourceVersionNotAttachedError(val taskId: TaskId, val versionId: Do
  * @property versionBucket the missing resource chain.
  * @since %CURRENT_VERSION%
  */
-data class ResourceNotExistsError(val versionBucket: VersionBucket) : EntityNotExistsError, ViewResourceError, DownloadResourceVersionError
+data class ResourceNotExistsError(val versionBucket: VersionBucket) :
+    EntityNotExistsError,
+    ViewResourceError,
+    DownloadResourceVersionError,
+    CheckResourceAccessError
 
 /**
  * The requested resource chain is not uploaded to the task.
@@ -1783,7 +1965,8 @@ data class ResourceNotExistsError(val versionBucket: VersionBucket) : EntityNotE
 data class ResourceNotUploadedToTaskError(val taskId: TaskId, val versionBucket: VersionBucket) :
     ResourceAccessError,
     ViewResourceError,
-    DownloadResourceVersionError
+    DownloadResourceVersionError,
+    CheckResourceAccessError
 
 /**
  * The requested resource version does not exist in the selected chain.
@@ -1936,6 +2119,48 @@ sealed interface SendStudentSolutionError : OperationError
 sealed interface JoinClassError : OperationError
 
 /**
+ * Failure of checking the student role before a page of the student opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckStudentRoleError : OperationError
+
+/**
+ * Failure of checking access to a class of the student before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckStudentClassAccessError : OperationError
+
+/**
+ * Failure of checking access to a contest in the participant's competition before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckParticipantContestAccessError : OperationError
+
+/**
+ * Failure of checking access to a contest in the selected class before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckStudentContestAccessError : OperationError
+
+/**
+ * Failure of checking access to a task of a contest in the participant's competition before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckParticipantTaskAccessError : OperationError
+
+/**
+ * Failure of checking access to a task of a contest in the selected class before its page opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckStudentTaskAccessError : OperationError
+
+/**
  * The user is not a participant.
  *
  * @since %CURRENT_VERSION%
@@ -1948,7 +2173,9 @@ data object MissedParticipantRoleError :
     ViewParticipantTaskError,
     DownloadParticipantTaskResourceError,
     DownloadParticipantSolutionError,
-    SendParticipantSolutionError
+    SendParticipantSolutionError,
+    CheckParticipantContestAccessError,
+    CheckParticipantTaskAccessError
 
 /**
  * The user does not hold the student role.
@@ -1965,7 +2192,11 @@ data object MissedStudentRoleError :
     DownloadStudentTaskResourceError,
     DownloadStudentSolutionError,
     SendStudentSolutionError,
-    JoinClassError
+    JoinClassError,
+    CheckStudentRoleError,
+    CheckStudentClassAccessError,
+    CheckStudentContestAccessError,
+    CheckStudentTaskAccessError
 
 /**
  * The entered code matches no class invite code.
@@ -2020,7 +2251,9 @@ data class ContestNotEnteredError(val contestId: ContestId) :
     DownloadStudentTaskResourceError,
     DownloadStudentSolutionError,
     SendParticipantSolutionError,
-    SendStudentSolutionError
+    SendStudentSolutionError,
+    CheckParticipantTaskAccessError,
+    CheckStudentTaskAccessError
 
 /**
  * A solution submission is at or after the first entry in the selected context plus the contest attempt duration.

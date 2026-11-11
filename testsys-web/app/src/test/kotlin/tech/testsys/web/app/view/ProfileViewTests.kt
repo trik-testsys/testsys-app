@@ -5,10 +5,13 @@ import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.RouterLink
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -21,6 +24,7 @@ import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepos
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.RecordedMail
+import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import java.time.Instant
 
 @SpringBootTest
@@ -33,6 +37,9 @@ class ProfileViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var emailChangeRequests: EmailChangeRequestRepository
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
 
     @Test
     fun `should announce the first email confirmation code delivery`() {
@@ -53,6 +60,21 @@ class ProfileViewTests : MockSpringVaadinTests() {
         assertTrue(textField("Псевдоним").isReadOnly && textField("Почта").isReadOnly)
         val crumbs = UI.getCurrent()._get<Nav> { classes = "ts-crumbs" }._find<RouterLink>().associate { link -> link.text to link.href }
         assertEquals(mapOf("Главная" to "home"), crumbs)
+    }
+
+    @Test
+    fun `should keep the title and the e-mail change and show a load error in the profile if it fails to load`() {
+        signIn(fixtures.multipleRoleUser())
+        val service = mockk<MultipleRoleUserService>()
+        every { service.viewProfile() } throws IllegalStateException("Profile storage unavailable")
+        UI.getCurrent().removeAll()
+
+        val view = ProfileView(headers, service)
+        UI.getCurrent().add(view)
+
+        assertEquals("Профиль", view._get<H1>().text)
+        assertEquals(1, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+        assertTrue(view._get<Button> { text = "Получить код" }.isEnabled)
     }
 
     @Test

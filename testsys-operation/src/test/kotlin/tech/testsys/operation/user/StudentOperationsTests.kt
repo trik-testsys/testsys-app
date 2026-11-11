@@ -903,6 +903,88 @@ class StudentOperationsTests {
         }
     }
 
+    @Nested
+    inner class CheckStudentRoleTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should accept a student without reading storage`() {
+                operations.checkStudentRole(user).getOrThrow()
+
+                verify { listOf(groups, contests, entries, clock, invites) wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @ParameterizedTest
+            @MethodSource("tech.testsys.operation.user.StudentOperationsTests#usersWithoutStudentRole")
+            fun `should raise MissedStudentRoleError if user has no Student role`(wrongRole: MultipleRoleUser) {
+                assertRaises(MissedStudentRoleError) { operations.checkStudentRole(wrongRole) }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckClassAccessTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the class that lists the student`() {
+                every { groups.findById(group.id) } returns group
+
+                val result = operations.checkClassAccess(user = user, classId = group.id).getOrThrow()
+
+                assertSame(group, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @ParameterizedTest
+            @MethodSource("tech.testsys.operation.user.StudentOperationsTests#usersWithoutStudentRole")
+            fun `should raise MissedStudentRoleError before reading classes if user has no Student role`(wrongRole: MultipleRoleUser) {
+                assertRaises(MissedStudentRoleError) { operations.checkClassAccess(user = wrongRole, classId = group.id) }
+
+                verify { groups wasNot Called }
+            }
+
+            @Test
+            fun `should raise ClassNotExistsError if the selected class does not exist`() {
+                every { groups.findById(group.id) } returns null
+
+                assertRaises(ClassNotExistsError(group.id)) { operations.checkClassAccess(user = user, classId = group.id) }
+            }
+
+            @Test
+            fun `should raise ClassAccessDeniedError if the student is not a member of the selected class`() {
+                every { groups.findById(group.id) } returns group.withData { students = mutableListOf() }
+
+                assertRaises(ClassAccessDeniedError(group.id)) { operations.checkClassAccess(user = user, classId = group.id) }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should read only the class without its contests or entries`() {
+                every { groups.findById(group.id) } returns group
+
+                operations.checkClassAccess(user = user, classId = group.id).getOrThrow()
+
+                verify(exactly = 0) { groups.update(any<Class>()) }
+                verify { listOf(contests, entries, clock, invites) wasNot Called }
+            }
+        }
+    }
+
     companion object {
         @JvmStatic
         fun usersWithoutStudentRole(): List<MultipleRoleUser> = listOf(

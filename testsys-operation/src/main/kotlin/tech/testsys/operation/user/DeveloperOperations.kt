@@ -44,6 +44,7 @@ import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationExecution
 import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -65,6 +66,11 @@ import tech.testsys.operation.error.AttachStatementError
 import tech.testsys.operation.error.AttachTaskError
 import tech.testsys.operation.error.AttachTestError
 import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
+import tech.testsys.operation.error.CheckContestAccessError
+import tech.testsys.operation.error.CheckDeveloperRoleError
+import tech.testsys.operation.error.CheckResourceAccessError
+import tech.testsys.operation.error.CheckTaskAccessError
+import tech.testsys.operation.error.CheckTaskValidationRequestAccessError
 import tech.testsys.operation.error.CommitTaskError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
@@ -122,6 +128,7 @@ import tech.testsys.operation.error.TaskTestingNoPolygonsError
 import tech.testsys.operation.error.TaskTestingNoStatementError
 import tech.testsys.operation.error.TaskTestingNoTrikStudioVersionsError
 import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
+import tech.testsys.operation.error.TaskValidationRequestNotExistsError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestTaskError
@@ -229,6 +236,29 @@ class DeveloperOperations(
             ensure(task != null) { TaskNotExistsError(taskId) }
             ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
             return taskValidationRequestRepository.findHistory(taskId).asSuccess()
+        }
+
+    /**
+     * Returns the task with [taskId] owned by [user] with its testing request [requestId] without the other requests,
+     * so that a page checks access before it loads the request. Missing role, task, ownership, and a missing request or
+     * a request of another task are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.testTask")
+    fun checkTaskValidationRequestAccess(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        requestId: TaskValidationRequestId,
+    ): OperationResult<Pair<Task, TaskValidationRequest>, CheckTaskValidationRequestAccessError> =
+        operation<Pair<Task, TaskValidationRequest>, CheckTaskValidationRequestAccessError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            val request = taskValidationRequestRepository.findById(requestId)
+            ensure(request != null && request.data.task.id == taskId) { TaskValidationRequestNotExistsError(requestId) }
+            return (task to request).asSuccess()
         }
 
     /**
@@ -343,6 +373,25 @@ class DeveloperOperations(
                 contest.data.tasks.ids.mapNotNull(tasks::get),
                 contest.data.sharedTo.ids.mapNotNull(communities::get),
             ).asSuccess()
+        }
+
+    /**
+     * Returns [contestId] owned by [user] or shared to communities of their [Developer] role without its tasks and
+     * communities, so that a page checks access before it loads them. Missing role, contest and access are expected
+     * failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.viewContest")
+    fun checkContestAccess(user: MultipleRoleUser, contestId: ContestId): OperationResult<Contest, CheckContestAccessError> =
+        operation<Contest, CheckContestAccessError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            val developer = user.data.roles.filterIsInstance<Developer>().single()
+            val isShared = contest.data.sharedTo.ids.any { communityId -> communityId in developer.memberOf.ids }
+            ensure(contest.data.owner.id == user.id || isShared) { ContestAccessDeniedError(contestId) }
+            return contest.asSuccess()
         }
 
     /**
@@ -609,6 +658,39 @@ class DeveloperOperations(
         }
 
     /**
+     * Returns the communities of the [Developer] role of [user] in ascending order of identifiers, so that a page
+     * checks the role before it loads its lists. Missing developer role is an expected failure; storage exceptions
+     * propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.viewTasks")
+    fun checkDeveloperRole(user: MultipleRoleUser): OperationResult<List<Community>, CheckDeveloperRoleError> =
+        operation<List<Community>, CheckDeveloperRoleError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val developer = user.data.roles.filterIsInstance<Developer>().single()
+            return communityRepository.loadByIdsAsMap(developer.memberOf.ids).values
+                .sortedBy { community -> community.id.value }
+                .asSuccess()
+        }
+
+    /**
+     * Returns the task with [taskId] owned by [user] without its communities, so that a page checks access before it
+     * loads the rest. Missing role, task and ownership are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.viewTask")
+    fun checkTaskAccess(user: MultipleRoleUser, taskId: TaskId): OperationResult<Task, CheckTaskAccessError> =
+        operation<Task, CheckTaskAccessError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            return task.asSuccess()
+        }
+
+    /**
      * Edits [taskName], [taskDescription] and [supportedTrikStudioVersions] of [taskId] owned by [user], retaining omitted values.
      * Version set changes affect only the editable revision; unchanged values return the task without saving.
      *
@@ -707,6 +789,33 @@ class DeveloperOperations(
                 }
                 version to solution
             }.asSuccess()
+        }
+
+    /**
+     * Returns the task with [taskId] owned by [user] with the latest version of [versionBucket] uploaded to it, so that
+     * a page checks access before it loads the history. Missing role, task, chain, ownership and a chain of another task
+     * are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.viewResource")
+    fun checkResourceAccess(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        versionBucket: VersionBucket,
+    ): OperationResult<Pair<Task, DomainEntity<*>>, CheckResourceAccessError> =
+        operation<Pair<Task, DomainEntity<*>>, CheckResourceAccessError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            val latest: DomainEntity<*>? = statementRepository.findLatestByVersionBucket(versionBucket)
+                ?: exerciseRepository.findLatestByVersionBucket(versionBucket)
+                ?: testRepository.findLatestByVersionBucket(versionBucket)
+                ?: developerSolutionRepository.findLatestByVersionBucket(versionBucket)
+            ensure(latest != null) { ResourceNotExistsError(versionBucket) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            ensure(versionBucket in task.data.uploadedResources) { ResourceNotUploadedToTaskError(taskId, versionBucket) }
+            return (task to latest).asSuccess()
         }
 
     /**

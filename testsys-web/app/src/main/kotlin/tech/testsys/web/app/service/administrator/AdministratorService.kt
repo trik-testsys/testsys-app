@@ -74,6 +74,17 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     }
 
     /**
+     * Runs [AdministratorOperations.checkUserAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkUserAccess(userId: UserId): Pair<AdminUserVo, Set<CommunityId>> {
+        val (user, communities) = operations.checkUserAccess(currentUser.multipleRoleUser(), userId).getOrThrow()
+        return user.toAdminVo() to communities
+    }
+
+    /**
      * Runs [AdministratorOperations.viewUserTasks].
      *
      * @since %CURRENT_VERSION%
@@ -159,6 +170,24 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     @Transactional(readOnly = true)
     fun viewCommunityInvites(communityId: CommunityId): List<CommunityInviteVo> =
         operations.viewCommunityInvites(currentUser.multipleRoleUser(), communityId).getOrThrow().map { invite -> invite.toVo() }
+
+    /**
+     * Runs [AdministratorOperations.checkCommunityAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkCommunityAccess(communityId: CommunityId): CommunityVo =
+        operations.checkCommunityAccess(currentUser.multipleRoleUser(), communityId).getOrThrow().toVo()
+
+    /**
+     * Runs [AdministratorOperations.checkAdministratorRole].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkAdministratorRole(): List<CommunityVo> =
+        operations.checkAdministratorRole(currentUser.multipleRoleUser()).getOrThrow().map { community -> community.toVo() }
 
     /**
      * Runs [AdministratorOperations.viewCommunities].

@@ -19,9 +19,13 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -58,6 +62,9 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var managerService: ManagerService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
 
     @Test
     fun `should save the name and description through the details editor`() {
@@ -110,6 +117,25 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
         open(fixtures.studyClass(owner = signInManager(), name = "Кружок").id)
 
         assertEquals("Класс", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
+    @Test
+    fun `should keep the title and show a load error in each block if the class fails to load`() {
+        val studyClass = fixtures.studyClass(owner = signInManager(), name = "Кружок")
+        val service = mockk<ManagerService>()
+        every { service.checkClassAccess(studyClass.id) } returns managerService.checkClassAccess(studyClass.id)
+        every { service.viewClass(studyClass.id) } throws IllegalStateException("Class storage unavailable")
+        val view = ManagerClassView(headers, service)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns classParameters(studyClass.id)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(event)
+
+        assertEquals("Класс «Кружок»", view._get<H1>().text)
+        assertEquals(4, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+        assertFalse(view._get<Button> { text = "Скопировать" }.isEnabled)
     }
 
     @Test

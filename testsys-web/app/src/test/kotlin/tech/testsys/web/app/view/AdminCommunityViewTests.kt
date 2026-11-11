@@ -17,8 +17,11 @@ import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -70,6 +73,9 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var communities: CommunityRepository
 
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
     @Test
     fun `should show the not found screen for a missing community`() {
         signInAdministrator()
@@ -108,6 +114,26 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
 
         assertEquals("Сообщество", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
         assertEquals("Сообщество «Кружок»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should keep the title and show a load error in each block if the community fails to load`() {
+        val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
+        val service = mockk<AdministratorService>()
+        every { service.checkCommunityAccess(community.id) } returns
+            administratorService.checkCommunityAccess(community.id) andThenThrows IllegalStateException("Community storage unavailable")
+        every { service.viewCommunityInvites(community.id) } throws IllegalStateException("Invite storage unavailable")
+        every { service.viewUsers(any(), any()) } throws IllegalStateException("User storage unavailable")
+        val view = AdminCommunityView(headers, service)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns communityParameters(community.id)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(event)
+
+        assertEquals("Сообщество «Кружок»", view._get<H1>().text)
+        assertEquals(3, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
     }
 
     @Test

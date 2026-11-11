@@ -19,6 +19,7 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
@@ -43,7 +44,6 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
 
     /** Rebuilds the page; with [newEmail] the e-mail change waits for the code sent to it. */
     private fun show(newEmail: String?) {
-        val profile = multipleRoleUserService.viewProfile()
         val localization = currentLocalization()
         val texts = localization.pageProfile
         val confirmation = localization.pageConfirmation
@@ -53,8 +53,10 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
             row {
                 block(size = HALF_COLUMNS, title = texts.title()) {
                     guide(texts.profileBlockGuide())
-                    row { textInput(texts.nickname(), labelSize = 6, size = 18) { value = profile.name } }
-                    row { textInput(texts.email(), labelSize = 6, size = 18) { value = profile.email } }
+                    load({ multipleRoleUserService.viewProfile() }) { profile ->
+                        row { textInput(texts.nickname(), labelSize = 6, size = 18) { value = profile.name } }
+                        row { textInput(texts.email(), labelSize = 6, size = 18) { value = profile.email } }
+                    }
                 }.isEditable = false
                 block(title = texts.changeTitle()) {
                     guide(texts.changeBlockGuide())

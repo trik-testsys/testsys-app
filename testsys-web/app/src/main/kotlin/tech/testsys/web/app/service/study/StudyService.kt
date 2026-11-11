@@ -70,6 +70,42 @@ class StudyService(
         operations.viewTask(currentUser.multipleRoleUser(), classId, contestId, taskId).getOrThrow().toVo()
 
     /**
+     * Runs [StudyOperations.checkContestAccess] for a participant.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkContestAccess(contestId: ContestId): StudyContestContextVo =
+        operations.checkContestAccess(currentUser.singleRoleUser(), contestId).getOrThrow().toVo()
+
+    /**
+     * Runs [StudyOperations.checkContestAccess] for a student of [classId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkContestAccess(classId: ClassId, contestId: ContestId): StudyContestContextVo =
+        operations.checkContestAccess(currentUser.multipleRoleUser(), classId, contestId).getOrThrow().toVo()
+
+    /**
+     * Runs [StudyOperations.checkTaskAccess] for a participant.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkTaskAccess(contestId: ContestId, taskId: TaskId): StudyTaskContextVo =
+        operations.checkTaskAccess(currentUser.singleRoleUser(), contestId, taskId).getOrThrow().toVo()
+
+    /**
+     * Runs [StudyOperations.checkTaskAccess] for a student of [classId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkTaskAccess(classId: ClassId, contestId: ContestId, taskId: TaskId): StudyTaskContextVo =
+        operations.checkTaskAccess(currentUser.multipleRoleUser(), classId, contestId, taskId).getOrThrow().toVo()
+
+    /**
      * Runs [StudyOperations.downloadTaskResource] for a participant.
      *
      * @since %CURRENT_VERSION%

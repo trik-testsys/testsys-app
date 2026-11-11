@@ -21,7 +21,6 @@ import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
-import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.destructiveAction
@@ -32,6 +31,7 @@ import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
@@ -40,6 +40,7 @@ import tech.testsys.web.components.forms.lookup
 import tech.testsys.web.components.forms.multiSelect
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
@@ -52,6 +53,9 @@ import java.time.LocalDateTime
 /** Columns of the contest details block; the access block takes the rest of the row beside it. */
 private const val DETAILS_COLUMNS = 14
 
+/** Contest with its tasks and the communities it is shared to, as the blocks of the page load them. */
+private typealias ContestDetails = Triple<ContestVo, List<TaskVo>, List<CommunityVo>>
+
 /**
  * Contest of a Developer (testsys.web.page.developer.contest): its details, tasks and access of communities. Only the
  * owner changes the contest, and only until access is shared; otherwise the page explains why it cannot be changed.
@@ -63,7 +67,6 @@ private const val DETAILS_COLUMNS = 14
 class DeveloperContestView(
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
-    private val multipleRoleUserService: MultipleRoleUserService,
     private val currentUser: CurrentUser,
 ) : TestSysView(),
     BeforeEnterObserver,
@@ -75,7 +78,9 @@ class DeveloperContestView(
     }
 
     private fun show(contestId: ContestId) {
-        val (contest, tasks, shared) = developerService.viewContest(contestId)
+        // Checks access before the blocks load, so that a refusal opens its error screen.
+        val contest = developerService.checkContestAccess(contestId)
+        val loaded = lazy { developerService.viewContest(contestId) }
         val me = currentUser.multipleRoleUser().id
         val isOwner = contest.owner == me
         val isChangeable = isOwner && contest.sharedTo.isEmpty()
@@ -104,14 +109,28 @@ class DeveloperContestView(
                 }
             }
             row {
-                detailsBlock(contest, isChangeable)
-                accessBlock(contest, shared, isOwner)
+                detailsBlock(isChangeable, loaded)
+                accessBlock(contest, isOwner, loaded)
             }
-            tasksBlock(contest, tasks, me, isChangeable)
+            tasksBlock(contest, me, isChangeable, loaded)
         }
     }
 
-    private fun PageRowScope.detailsBlock(contest: ContestVo, isChangeable: Boolean) {
+    private fun PageRowScope.detailsBlock(isChangeable: Boolean, loaded: Lazy<ContestDetails>) {
+        val texts = currentLocalization().pageDeveloper
+        var form: DetailsForm? = null
+        val details = block(size = DETAILS_COLUMNS, title = texts.details()) {
+            guide(if (isChangeable) texts.contestDetailsGuide() else texts.contestDetailsGuideLocked())
+            if (isChangeable) {
+                editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
+            }
+            load({ loaded.value.first }) { current -> form = detailsRows(current) }
+        }
+        if (!isChangeable) details.isEditable = false
+    }
+
+    /** Adds the rows of the details of [contest] and returns their form. */
+    private fun BlockScope.detailsRows(contest: ContestVo): DetailsForm {
         val texts = currentLocalization().pageDeveloper
         val draft = Binder<ContestDraft>()
         val initial = ContestDraft(
@@ -120,119 +139,116 @@ class DeveloperContestView(
             endsAt = contest.endsAt?.toUserDateTime(),
         )
         lateinit var startsAt: ValueInput<LocalDateTime?>
-        val details = block(size = DETAILS_COLUMNS, title = texts.details()) {
-            guide(if (isChangeable) texts.contestDetailsGuide() else texts.contestDetailsGuideLocked())
-            if (isChangeable) {
-                editing(
-                    onSave = {
-                        val values = ContestDraft()
-                        val isValid = draft.writeBeanIfValid(values)
-                        if (isValid) {
-                            developerService.editContest(
-                                contestId = contest.id,
-                                contestName = values.name,
-                                startsAt = values.startsAt?.toUserInstant(),
-                                endsAt = values.endsAt?.toUserInstant(),
-                            )
-                            toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestEdited())
-                            show(contest.id)
-                        }
-                        isValid
-                    },
-                    onCancel = { draft.readBean(initial) },
-                )
-            }
-            row {
-                codeInput(texts.id(), labelSize = 7, size = 17) {
-                    value = contest.id.value.toString()
-                    isEditable = false
-                }
-            }
-            row {
-                textInput(texts.name(), labelSize = 7, size = 17) {
-                    draft.forField(this)
-                        .nameRules(texts.nameRequired())
-                        .bind({ values -> values.name }, { values, name -> values.name = name })
-                }
-            }
-            row {
-                textInput(texts.trikStudioVersion(), labelSize = 7, size = 17) {
-                    value = contest.trikStudioVersion.version
-                    isEditable = false
-                }
-            }
-            row {
-                textArea(texts.description(), labelSize = 7, size = 17, maxLines = 4) {
-                    value = contest.description
-                    isEditable = false
-                }
-            }
-            row {
-                startsAt = dateTimeInput(texts.startsAt(), labelSize = 7, size = 17) {
-                    draft.forField(this).bind({ values -> values.startsAt }, { values, start -> values.startsAt = start })
-                }
-            }
-            row {
-                dateTimeInput(texts.endsAt(), labelSize = 7, size = 17) {
-                    draft.forField(this)
-                        .scheduleRules { startsAt.value }
-                        .withValidator({ end -> fitsAttempt(contest.attemptDuration, startsAt.value, end) }, texts.contestLimitExceeds())
-                        .bind({ values -> values.endsAt }, { values, end -> values.endsAt = end })
-                }
-            }
-            row {
-                textInput(texts.attemptLimit(), labelSize = 7, size = 17) {
-                    value = contest.attemptDuration?.let { duration -> texts.contestAttemptMinutes(minutes = duration.toMinutes()) }
-                        ?: texts.contestNoAttemptLimit()
-                    isEditable = false
-                }
+        row {
+            codeInput(texts.id(), labelSize = 7, size = 17) {
+                value = contest.id.value.toString()
+                isEditable = false
             }
         }
-        if (!isChangeable) details.isEditable = false
+        row {
+            textInput(texts.name(), labelSize = 7, size = 17) {
+                draft.forField(this)
+                    .nameRules(texts.nameRequired())
+                    .bind({ values -> values.name }, { values, name -> values.name = name })
+            }
+        }
+        row {
+            textInput(texts.trikStudioVersion(), labelSize = 7, size = 17) {
+                value = contest.trikStudioVersion.version
+                isEditable = false
+            }
+        }
+        row {
+            textArea(texts.description(), labelSize = 7, size = 17, maxLines = 4) {
+                value = contest.description
+                isEditable = false
+            }
+        }
+        row {
+            startsAt = dateTimeInput(texts.startsAt(), labelSize = 7, size = 17) {
+                draft.forField(this).bind({ values -> values.startsAt }, { values, start -> values.startsAt = start })
+            }
+        }
+        row {
+            dateTimeInput(texts.endsAt(), labelSize = 7, size = 17) {
+                draft.forField(this)
+                    .scheduleRules { startsAt.value }
+                    .withValidator({ end -> fitsAttempt(contest.attemptDuration, startsAt.value, end) }, texts.contestLimitExceeds())
+                    .bind({ values -> values.endsAt }, { values, end -> values.endsAt = end })
+            }
+        }
+        row {
+            textInput(texts.attemptLimit(), labelSize = 7, size = 17) {
+                value = contest.attemptDuration?.let { duration -> texts.contestAttemptMinutes(minutes = duration.toMinutes()) }
+                    ?: texts.contestNoAttemptLimit()
+                isEditable = false
+            }
+        }
 
         draft.readBean(initial)
+        return DetailsForm(
+            save = {
+                val values = ContestDraft()
+                val isValid = draft.writeBeanIfValid(values)
+                if (isValid) {
+                    developerService.editContest(
+                        contestId = contest.id,
+                        contestName = values.name,
+                        startsAt = values.startsAt?.toUserInstant(),
+                        endsAt = values.endsAt?.toUserInstant(),
+                    )
+                    toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestEdited())
+                    show(contest.id)
+                }
+                isValid
+            },
+            cancel = { draft.readBean(initial) },
+        )
     }
 
-    private fun PageRowScope.accessBlock(contest: ContestVo, shared: List<CommunityVo>, isOwner: Boolean) {
+    private fun PageRowScope.accessBlock(contest: ContestVo, isOwner: Boolean, loaded: Lazy<ContestDetails>) {
         val texts = currentLocalization().pageDeveloper
         block(title = texts.access()) {
             guide(texts.contestAccessGuide())
-            table(key = { community: CommunityVo -> community.id }, fetch = { request -> pageOf(shared, request) }) {
-                textColumn(texts.community()) { community -> community.name }
-                empty(texts.accessEmpty())
+            load({ loaded.value.third }) { shared ->
+                table(key = { community: CommunityVo -> community.id }, fetch = { request -> pageOf(shared, request) }) {
+                    textColumn(texts.community()) { community -> community.name }
+                    empty(texts.accessEmpty())
+                }
             }
-            val sharing = shareDialog(contest, shared)
             actions {
                 action(texts.share()) {
                     isEnabled = isOwner
-                    onClick { sharing() }
+                    onClick { shareDialog(contest, loaded.value.third)() }
                 }
             }
         }
     }
 
-    private fun PageScope.tasksBlock(contest: ContestVo, tasks: List<TaskVo>, me: MultipleRoleUserId, isChangeable: Boolean) {
+    private fun PageScope.tasksBlock(contest: ContestVo, me: MultipleRoleUserId, isChangeable: Boolean, loaded: Lazy<ContestDetails>) {
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         row {
             block(title = localization.pageCabinet.sectionTasks()) {
                 guide(texts.contestTasksGuide())
-                table(key = { task: TaskVo -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
-                    codeColumn(texts.id(), size = 5) { task -> task.id.value.toString() }
-                    textColumn(texts.name(), size = 12) { task -> task.name }
-                    onRowClick(isNavigation = true, isClickable = { task -> task.owner == me }) { task -> openDeveloperTask(task.id) }
-                    column(texts.state(), size = 6) { task ->
-                        val state = stateOf(task)
-                        badge(texts.taskState(state = state.variant), state.tone)
-                    }
-                    menuColumn(ariaLabel = { task -> texts.contestTaskActions(name = task.name) }) { task ->
-                        item(texts.detach(), isEnabled = isChangeable) {
-                            developerService.detachTask(contest.id, task.id)
-                            toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestTaskDetached())
-                            show(contest.id)
+                load({ loaded.value.second }) { tasks ->
+                    table(key = { task: TaskVo -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
+                        codeColumn(texts.id(), size = 5) { task -> task.id.value.toString() }
+                        textColumn(texts.name(), size = 12) { task -> task.name }
+                        onRowClick(isNavigation = true, isClickable = { task -> task.owner == me }) { task -> openDeveloperTask(task.id) }
+                        column(texts.state(), size = 6) { task ->
+                            val state = stateOf(task)
+                            badge(texts.taskState(state = state.variant), state.tone)
                         }
+                        menuColumn(ariaLabel = { task -> texts.contestTaskActions(name = task.name) }) { task ->
+                            item(texts.detach(), isEnabled = isChangeable) {
+                                developerService.detachTask(contest.id, task.id)
+                                toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestTaskDetached())
+                                show(contest.id)
+                            }
+                        }
+                        empty(texts.tasksEmpty(), texts.contestTasksEmptyHint())
                     }
-                    empty(texts.tasksEmpty(), texts.contestTasksEmptyHint())
                 }
                 val attaching = attachDialog(contest)
                 actions {
@@ -303,7 +319,7 @@ class DeveloperContestView(
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         val sharedIds = shared.map { community -> community.id }.toSet()
-        val candidates = developerCommunities(multipleRoleUserService).filter { community -> community.id !in sharedIds }
+        val candidates = developerService.checkDeveloperRole().filter { community -> community.id !in sharedIds }
         lateinit var chosen: ValueInput<Set<CommunityVo>>
         val sharing = dialog(title = texts.contestShareTitle()) {
             row {

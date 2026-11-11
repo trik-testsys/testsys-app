@@ -766,10 +766,11 @@ block(title = "Туры") {
 накопленные вызовы `ui.access`. Изменение сигнала и ручной вызов привязанной ручки в UI-потоке применяются
 синхронно и `clientRoundtrip` не требуют.
 
-Подменить фоновый исполнитель можно только в тестах самого `testsys-web:components`: `Background.executorOverride`
-внутренний. Поэтому тесты страниц в `testsys-web` проверяют скелетон и структуру блока с `load`, а поведение DSL
-(загрузка, ошибка, повтор, `reload`, `refresh`, подсветка) покрыто тестами модуля.
-Образцы — `LoadTests` и `TableLiveTests` в `testsys-web/components/src/test/kotlin/tech/testsys/web/components/`.
+`Background.executorOverride` внутренний, поэтому подменить им фоновый исполнитель можно только в тестах самого
+`testsys-web:components`. Поведение DSL (загрузка, ошибка, повтор, `reload`, `refresh`, подсветка) покрыто тестами
+модуля. Тесты приложения подменяют исполнитель сервиса Vaadin, см. раздел «Запуск и проверка» в
+[app/README.md](../app/README.md#запуск-и-проверка). Образцы — `LoadTests` и `TableLiveTests`
+в `testsys-web/components/src/test/kotlin/tech/testsys/web/components/`.
 
 ## Оформление
 

@@ -16,7 +16,6 @@ import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.filters
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.multiSelect
@@ -119,13 +118,14 @@ internal class CommunityDraft(var name: String = "", var description: String = "
 /**
  * Fills the block with the users of the communities of the administrator (testsys.user.multi.admin.viewUsers), paged
  * and filtered by nickname, roles and, unless [community] fixes it, by one of [communities]; a row opens the user page.
+ * The first page loads in the background.
  */
 internal fun BlockScope.adminUsersTable(service: AdministratorService, communities: List<CommunityVo>, community: CommunityId?) {
     val localization = currentLocalization()
     val texts = localization.pageAdministrator
     val defaults = UserFilter(communityId = community)
     var applied = defaults
-    val rows = table(
+    val rows = loadTable(
         key = { (user, _): Pair<AdminUserVo, Instant?> -> user.id },
         fetch = { request ->
             val users = service.viewUsers(request.toPagination(), applied)

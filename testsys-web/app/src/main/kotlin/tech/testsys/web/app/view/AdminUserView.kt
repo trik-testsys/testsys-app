@@ -42,6 +42,7 @@ import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.counter
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
@@ -52,7 +53,6 @@ import tech.testsys.web.components.overlay.MenuScope
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
 import tech.testsys.web.components.texts.currentLocalization
-import java.time.Instant
 
 /**
  * Tab of the page of a user with non-fixed roles with the sections of one role.
@@ -111,11 +111,12 @@ class AdminUserView(
      * the user has no such section.
      */
     private fun show(userId: UserId, section: AdminUserSection? = null): RouteParameters? {
-        val (user, lastLogin) = administratorService.viewUser(userId)
-        val communities = administratorService.viewCommunities().map { (community, _) -> community }
-        val sections = sectionsOf(user, communities.map { community -> community.id }.toSet())
+        // Checks the role, the user and access before the blocks load, so that a refusal opens its error screen.
+        val (user, owned) = administratorService.checkUserAccess(userId)
+        val sections = sectionsOf(user, owned)
         if (section != null && section !in sections) return userParameters(userId)
 
+        val communities = lazy { administratorService.checkAdministratorRole() }
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -136,7 +137,7 @@ class AdminUserView(
             guide(texts.userGuide())
             when (section) {
                 null -> {
-                    detailsBlock(user, lastLogin)
+                    detailsBlock(user)
                     rolesBlock(user, communities)
                     if (user is ObserverVo) assignedContestsBlock(user.id)
                 }
@@ -154,60 +155,74 @@ class AdminUserView(
         return null
     }
 
+    /** Loads the common data of [user]; the deletion of an observer needs only the checked [user]. */
     @RawAccessTokenDependency(reason = "Shows the stored access code of an observer as the issued one.")
-    private fun PageScope.detailsBlock(user: AdminUserVo, lastLogin: Instant?) {
+    private fun PageScope.detailsBlock(user: AdminUserVo) {
         val texts = currentLocalization().pageAdministrator
         row {
             block(title = texts.details()) {
                 guide(texts.userDetailsGuide())
-                row {
-                    codeInput(texts.id(), labelSize = 3, size = 6) { value = user.id.value.toString() }
-                    textInput(texts.nickname(), labelSize = 3, size = 8) { value = user.name }
-                }
-                row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 6) { value = lastLogin?.toUserDateTime() } }
-                if (user is ObserverVo) {
+                load({ administratorService.viewUser(user.id) }) { (viewed, lastLogin) ->
                     row {
-                        codeInput(texts.accessCode(), labelSize = 3, size = 6) {
-                            value = user.accessTokenHash.value
-                            isObscured = true
+                        codeInput(texts.id(), labelSize = 3, size = 6) { value = viewed.id.value.toString() }
+                        textInput(texts.nickname(), labelSize = 3, size = 8) { value = viewed.name }
+                    }
+                    row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 6) { value = lastLogin?.toUserDateTime() } }
+                    if (viewed is ObserverVo) {
+                        row {
+                            codeInput(texts.accessCode(), labelSize = 3, size = 6) {
+                                value = viewed.accessTokenHash.value
+                                isObscured = true
+                            }
                         }
                     }
+                }
+                if (user is ObserverVo) {
                     actions { destructiveAction(texts.userObserverDelete()) { onClick { deleteObserver(user) } } }
                 }
             }.isEditable = false
         }
     }
 
-    private fun PageScope.rolesBlock(user: AdminUserVo, communities: List<CommunityVo>) {
-        val localization = currentLocalization()
-        val texts = localization.pageAdministrator
-        val memberships = communities.mapNotNull { community ->
+    /** Loads the roles of [user] in [communities] of the administrator; granting a role opens with those communities. */
+    private fun PageScope.rolesBlock(user: AdminUserVo, communities: Lazy<List<CommunityVo>>) {
+        val texts = currentLocalization().pageAdministrator
+        row {
+            block(title = texts.userRolesTitle()) {
+                guide(texts.userRolesGuide())
+                load({ communities.value }) { loaded ->
+                    val memberships = membershipsOf(user, loaded)
+                    table(
+                        key = { membership: Membership -> membership.community.id },
+                        fetch = { request -> pageOf(memberships, request) },
+                    ) {
+                        textColumn(texts.userCommunity(), size = 12) { membership -> membership.community.name }
+                        column(texts.roles()) { membership -> membership.labels.forEach { label -> tag(label) } }
+                        if (user is MultipleRoleUserVo) {
+                            menuColumn(
+                                ariaLabel = { membership -> texts.userRolesActions(community = membership.community.name) },
+                            ) { membership -> removalItems(user, membership, loaded) }
+                        }
+                        empty(texts.userRolesEmpty())
+                        onRowClick(isNavigation = true) { membership -> openAdminCommunity(membership.community.id) }
+                    }
+                }
+                if (user is MultipleRoleUserVo) {
+                    actions { action(texts.userRolesGrant()) { onClick { grantDialog(user, communities.value)() } } }
+                }
+            }
+        }
+    }
+
+    /** Returns the roles of [user] in each of [communities] where it holds any, with their labels. */
+    private fun membershipsOf(user: AdminUserVo, communities: List<CommunityVo>): List<Membership> {
+        val observerLabel = currentLocalization().pageCabinet.roleName(role = RoleNameRole.OBSERVER)
+        return communities.mapNotNull { community ->
             when (user) {
                 is MultipleRoleUserVo -> user.roles.filter { role -> community.id in role.memberOf }
                     .takeIf { roles -> roles.isNotEmpty() }
                     ?.let { roles -> Membership(community, roles.map(::labelOf), roles) }
-                is ObserverVo -> Membership(community, listOf(localization.pageCabinet.roleName(role = RoleNameRole.OBSERVER)), emptyList())
-                    .takeIf { user.community == community.id }
-            }
-        }
-        row {
-            block(title = texts.userRolesTitle()) {
-                guide(texts.userRolesGuide())
-                table(key = { membership: Membership -> membership.community.id }, fetch = { request -> pageOf(memberships, request) }) {
-                    textColumn(texts.userCommunity(), size = 12) { membership -> membership.community.name }
-                    column(texts.roles()) { membership -> membership.labels.forEach { label -> tag(label) } }
-                    if (user is MultipleRoleUserVo) {
-                        menuColumn(
-                            ariaLabel = { membership -> texts.userRolesActions(community = membership.community.name) },
-                        ) { membership -> removalItems(user, membership, communities) }
-                    }
-                    empty(texts.userRolesEmpty())
-                    onRowClick(isNavigation = true) { membership -> openAdminCommunity(membership.community.id) }
-                }
-                if (user is MultipleRoleUserVo) {
-                    val granting = grantDialog(user, communities)
-                    actions { action(texts.userRolesGrant()) { onClick { granting() } } }
-                }
+                is ObserverVo -> Membership(community, listOf(observerLabel), emptyList()).takeIf { user.community == community.id }
             }
         }
     }
@@ -292,18 +307,21 @@ class AdminUserView(
     private fun PageScope.tasksBlock(userId: UserId) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
-        val tasks = administratorService.viewUserTasks(userId)
         row {
             block(title = localization.pageCabinet.sectionTasks()) {
                 guide(texts.userTasksGuide())
-                table(key = { (task, _, _) -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
-                    textColumn(texts.name(), size = 10) { (task, _, _) -> task.name }
-                    column(texts.userTasksStatus(), size = 6) { (_, request, _) ->
-                        val (text, tone) = validationStatusOf(request?.execution)
-                        badge(text, tone)
+                load({ administratorService.viewUserTasks(userId) }) { tasks ->
+                    table(key = { (task, _, _) -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
+                        textColumn(texts.name(), size = 10) { (task, _, _) -> task.name }
+                        column(texts.userTasksStatus(), size = 6) { (_, request, _) ->
+                            val (text, tone) = validationStatusOf(request?.execution)
+                            badge(text, tone)
+                        }
+                        textColumn(texts.userTasksCommunities()) { (_, _, shared) ->
+                            shared.joinToString(", ") { community -> community.name }
+                        }
+                        empty(texts.userTasksEmpty())
                     }
-                    textColumn(texts.userTasksCommunities()) { (_, _, shared) -> shared.joinToString(", ") { community -> community.name } }
-                    empty(texts.userTasksEmpty())
                 }
             }
         }
@@ -312,20 +330,21 @@ class AdminUserView(
     private fun PageScope.contestsBlock(userId: UserId) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
-        val contests = administratorService.viewUserContests(userId)
         row {
             block(title = localization.pageCabinet.sectionContests()) {
                 guide(texts.userContestsGuide())
-                table(key = { (contest, _) -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
-                    textColumn(texts.name(), size = 10) { (contest, _) -> contest.name }
-                    numberColumn(texts.userContestsTasks(), size = 3) { (_, tasks) -> tasks.size }
-                    column(texts.userContestsSolutions()) { (_, tasks) ->
-                        tasks.forEach { (task, submissions) ->
-                            tag(task.name)
-                            counter(Math.toIntExact(submissions), CounterKind.Neutral)
+                load({ administratorService.viewUserContests(userId) }) { contests ->
+                    table(key = { (contest, _) -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
+                        textColumn(texts.name(), size = 10) { (contest, _) -> contest.name }
+                        numberColumn(texts.userContestsTasks(), size = 3) { (_, tasks) -> tasks.size }
+                        column(texts.userContestsSolutions()) { (_, tasks) ->
+                            tasks.forEach { (task, submissions) ->
+                                tag(task.name)
+                                counter(Math.toIntExact(submissions), CounterKind.Neutral)
+                            }
                         }
+                        empty(texts.userContestsEmpty())
                     }
-                    empty(texts.userContestsEmpty())
                 }
             }
         }
@@ -334,16 +353,17 @@ class AdminUserView(
     private fun PageScope.classesBlock(userId: UserId) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
-        val classes = administratorService.viewUserClasses(userId)
         row {
             block(title = localization.pageCabinet.sectionClasses()) {
                 guide(texts.userClassesGuide())
-                table(key = { (group, _) -> group.id }, fetch = { request -> pageOf(classes, request) }) {
-                    textColumn(texts.name(), size = 9) { (group, _) -> group.name }
-                    numberColumn(texts.userClassesStudents(), size = 5) { (group, _) -> group.students.size }
-                    numberColumn(texts.userSolutions(), size = 5) { (_, count) -> count.submissions }
-                    numberColumn(texts.userClassesAuthors()) { (_, count) -> count.authors }
-                    empty(texts.userClassesEmpty())
+                load({ administratorService.viewUserClasses(userId) }) { classes ->
+                    table(key = { (group, _) -> group.id }, fetch = { request -> pageOf(classes, request) }) {
+                        textColumn(texts.name(), size = 9) { (group, _) -> group.name }
+                        numberColumn(texts.userClassesStudents(), size = 5) { (group, _) -> group.students.size }
+                        numberColumn(texts.userSolutions(), size = 5) { (_, count) -> count.submissions }
+                        numberColumn(texts.userClassesAuthors()) { (_, count) -> count.authors }
+                        empty(texts.userClassesEmpty())
+                    }
                 }
             }
         }
@@ -352,16 +372,17 @@ class AdminUserView(
     private fun PageScope.competitionsBlock(userId: UserId) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
-        val competitions = administratorService.viewUserCompetitions(userId)
         row {
             block(title = localization.pageCabinet.sectionCompetitions()) {
                 guide(texts.userCompetitionsGuide())
-                table(key = { (competition, _) -> competition.id }, fetch = { request -> pageOf(competitions, request) }) {
-                    textColumn(texts.name(), size = 9) { (competition, _) -> competition.name }
-                    numberColumn(texts.userCompetitionsParticipants(), size = 5) { (competition, _) -> competition.participants.size }
-                    numberColumn(texts.userSolutions(), size = 5) { (_, count) -> count.submissions }
-                    numberColumn(texts.userCompetitionsAuthors()) { (_, count) -> count.authors }
-                    empty(texts.userCompetitionsEmpty())
+                load({ administratorService.viewUserCompetitions(userId) }) { competitions ->
+                    table(key = { (competition, _) -> competition.id }, fetch = { request -> pageOf(competitions, request) }) {
+                        textColumn(texts.name(), size = 9) { (competition, _) -> competition.name }
+                        numberColumn(texts.userCompetitionsParticipants(), size = 5) { (competition, _) -> competition.participants.size }
+                        numberColumn(texts.userSolutions(), size = 5) { (_, count) -> count.submissions }
+                        numberColumn(texts.userCompetitionsAuthors()) { (_, count) -> count.authors }
+                        empty(texts.userCompetitionsEmpty())
+                    }
                 }
             }
         }
@@ -369,16 +390,17 @@ class AdminUserView(
 
     private fun PageScope.judgmentsBlock(userId: UserId) {
         val texts = currentLocalization().pageAdministrator
-        val judgments = administratorService.viewUserJudgments(userId)
         row {
             block(title = texts.userJudgmentsTitle()) {
                 guide(texts.userJudgmentsGuide())
-                table(key = { (order, _, _) -> order.id }, fetch = { request -> pageOf(judgments, request) }) {
-                    codeColumn(texts.userJudgmentsSolution(), size = 6) { (_, solution, _) -> solution.value.toString() }
-                    dateTimeColumn(texts.userJudgmentsIssued(), size = 6) { (order, _, _) -> order.createdAt.toUserDateTime() }
-                    numberColumn(texts.userJudgmentsPreviousResult(), size = 6) { (_, _, previous) -> previous }
-                    numberColumn(texts.userJudgmentsNewResult()) { (order, _, _) -> order.score.value }
-                    empty(texts.userJudgmentsEmpty())
+                load({ administratorService.viewUserJudgments(userId) }) { judgments ->
+                    table(key = { (order, _, _) -> order.id }, fetch = { request -> pageOf(judgments, request) }) {
+                        codeColumn(texts.userJudgmentsSolution(), size = 6) { (_, solution, _) -> solution.value.toString() }
+                        dateTimeColumn(texts.userJudgmentsIssued(), size = 6) { (order, _, _) -> order.createdAt.toUserDateTime() }
+                        numberColumn(texts.userJudgmentsPreviousResult(), size = 6) { (_, _, previous) -> previous }
+                        numberColumn(texts.userJudgmentsNewResult()) { (order, _, _) -> order.score.value }
+                        empty(texts.userJudgmentsEmpty())
+                    }
                 }
             }
         }
@@ -386,16 +408,17 @@ class AdminUserView(
 
     private fun PageScope.assignedContestsBlock(userId: UserId) {
         val texts = currentLocalization().pageAdministrator
-        val contests = administratorService.viewUserAssignedContests(userId)
         row {
             block(title = texts.userAssignedTitle()) {
                 guide(texts.userAssignedGuide())
-                table(key = { (contest, _) -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
-                    textColumn(texts.userAssignedContest(), size = 10) { (contest, _) -> contest.name }
-                    textColumn(texts.userAssignedCompetitions()) { (_, competitions) ->
-                        competitions.joinToString(", ") { competition -> competition.name }
+                load({ administratorService.viewUserAssignedContests(userId) }) { contests ->
+                    table(key = { (contest, _) -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
+                        textColumn(texts.userAssignedContest(), size = 10) { (contest, _) -> contest.name }
+                        textColumn(texts.userAssignedCompetitions()) { (_, competitions) ->
+                            competitions.joinToString(", ") { competition -> competition.name }
+                        }
+                        empty(texts.userAssignedEmpty())
                     }
-                    empty(texts.userAssignedEmpty())
                 }
             }
         }

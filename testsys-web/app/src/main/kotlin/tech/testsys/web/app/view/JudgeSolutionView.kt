@@ -22,6 +22,7 @@ import tech.testsys.web.app.service.judge.SubmissionDetailsVo
 import tech.testsys.web.app.service.judge.TestVerdictVo
 import tech.testsys.web.app.service.study.GradingResultVo
 import tech.testsys.web.app.service.study.SubmissionStatusVo
+import tech.testsys.web.app.service.study.SubmissionVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.action
@@ -34,6 +35,7 @@ import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.field
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.emptyState
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
@@ -66,90 +68,96 @@ class JudgeSolutionView(
     override fun getPageTitle(): String = currentLocalization().pageJudge.submission()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
-        // Loads the submission before the page is built, so that a refusal opens its error screen.
+        // Checks access before the blocks load, so that a refusal opens its error screen.
         show(SubmissionId(event.routeParameters.getLong(SUBMISSION_ID_PARAMETER).orElseThrow()))
     }
 
     private fun show(submissionId: SubmissionId) {
-        val details = judgeService.viewSolution(submissionId)
-        val (status, tone) = statusOf(details.submission.status)
+        val submission = judgeService.checkSubmissionAccess(submissionId)
+        val (status, tone) = statusOf(submission.status)
+        val details = lazy { judgeService.viewSolution(submissionId) }
         val localization = currentLocalization()
         val texts = localization.pageJudge
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(texts.solutionTitle(id = details.submission.id.value)) {
+            head(texts.solutionTitle(id = submission.id.value)) {
                 crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), JudgeView::class.java)
                 crumb(localization.pageCabinet.sectionSubmissions(), JudgeView::class.java, judgeSubmissionsParameters())
                 badge(texts.solutionStatus(status = status), tone)
             }
             guide(texts.solutionGuide())
-            detailsBlock(details)
-            verdictBlock(details)
-            judgmentsBlock(details)
+            detailsBlock(submissionId, details)
+            verdictBlock(submissionId, details)
+            judgmentsBlock(submission, details)
         }
     }
 
-    private fun PageScope.detailsBlock(details: SubmissionDetailsVo) {
+    private fun PageScope.detailsBlock(submissionId: SubmissionId, loaded: Lazy<SubmissionDetailsVo>) {
         val texts = currentLocalization().pageJudge
-        val submissionId = details.submission.id
-        val (status, tone) = statusOf(details.submission.status)
         row {
             block(title = texts.solutionDetailsTitle()) {
                 guide(texts.solutionDetailsGuide())
-                row {
-                    codeInput(texts.solutionDetailsId(), labelSize = 3, size = 9) { value = submissionId.value.toString() }
-                    dateTimeInput(texts.solutionDetailsSent(), labelSize = 3, size = 9) {
-                        value = details.submission.createdAt.toUserDateTime()
+                load({ loaded.value }) { details ->
+                    val (status, tone) = statusOf(details.submission.status)
+                    row {
+                        codeInput(texts.solutionDetailsId(), labelSize = 3, size = 9) { value = submissionId.value.toString() }
+                        dateTimeInput(texts.solutionDetailsSent(), labelSize = 3, size = 9) {
+                            value = details.submission.createdAt.toUserDateTime()
+                        }
                     }
-                }
-                row {
-                    textInput(texts.author(), labelSize = 3, size = 9) { value = details.author.name }
-                    codeInput(texts.authorId(), labelSize = 3, size = 9) { value = details.author.id.value.toString() }
-                }
-                row {
-                    textInput(texts.solutionDetailsTask(), labelSize = 3, size = 9) { value = details.task.name }
-                    textInput(texts.solutionDetailsContest(), labelSize = 3, size = 9) { value = details.contest.name }
-                }
-                row {
-                    field(texts.solutionDetailsFile(), labelSize = 3, size = 9) {
-                        downloadAction(details.solution.fileName, produce = { download(judgeService.downloadSolution(submissionId)) })
+                    row {
+                        textInput(texts.author(), labelSize = 3, size = 9) { value = details.author.name }
+                        codeInput(texts.authorId(), labelSize = 3, size = 9) { value = details.author.id.value.toString() }
                     }
-                    textInput(texts.solutionDetailsLanguage(), labelSize = 3, size = 9) {
-                        value = texts.solutionLanguage(language = languageOf(details.solution.language))
+                    row {
+                        textInput(texts.solutionDetailsTask(), labelSize = 3, size = 9) { value = details.task.name }
+                        textInput(texts.solutionDetailsContest(), labelSize = 3, size = 9) { value = details.contest.name }
                     }
-                }
-                row {
-                    field(texts.solutionDetailsStatus(), labelSize = 3, size = 9) { badge(texts.solutionStatus(status = status), tone) }
-                    codeInput(texts.finalScore(), labelSize = 3, size = 9) { value = details.finalScore?.toString() ?: "—" }
+                    row {
+                        field(texts.solutionDetailsFile(), labelSize = 3, size = 9) {
+                            downloadAction(details.solution.fileName, produce = { download(judgeService.downloadSolution(submissionId)) })
+                        }
+                        textInput(texts.solutionDetailsLanguage(), labelSize = 3, size = 9) {
+                            value = texts.solutionLanguage(language = languageOf(details.solution.language))
+                        }
+                    }
+                    row {
+                        field(texts.solutionDetailsStatus(), labelSize = 3, size = 9) { badge(texts.solutionStatus(status = status), tone) }
+                        codeInput(texts.finalScore(), labelSize = 3, size = 9) { value = details.finalScore?.toString() ?: "—" }
+                    }
                 }
             }.isEditable = false
         }
     }
 
-    private fun PageScope.verdictBlock(details: SubmissionDetailsVo) {
+    private fun PageScope.verdictBlock(submissionId: SubmissionId, loaded: Lazy<SubmissionDetailsVo>) {
         val texts = currentLocalization().pageJudge
-        val submissionId = details.submission.id
-        val verdict = details.verdict
         row {
             block(title = texts.solutionVerdictTitle()) {
                 guide(texts.solutionVerdictGuide())
-                if (verdict == null) {
-                    emptyState(texts.solutionVerdictEmpty(), texts.solutionVerdictEmptyHint())
-                } else {
-                    val outcomes = verdict.testVerdicts.zip(details.tests)
-                    table(key = { (_, test): Pair<TestVerdictVo, TestVo> -> test.id }, fetch = { request -> pageOf(outcomes, request) }) {
-                        textColumn(texts.solutionVerdictPolygon(), size = 12) { (_, test) -> test.name }
-                        numberColumn(texts.solutionScore(), size = 6) { (outcome, _) -> outcome.score.value }
-                        column(texts.solutionVerdictFiles()) { (outcome, test) ->
-                            iconDownloadAction(
-                                texts.solutionVerdictDownloadLogs(name = test.name),
-                                produce = { download(judgeService.downloadLogs(submissionId, outcome.test)) },
-                            )
-                            if (outcome.recording != null) {
+                load({ loaded.value }) { details ->
+                    val verdict = details.verdict
+                    if (verdict == null) {
+                        emptyState(texts.solutionVerdictEmpty(), texts.solutionVerdictEmptyHint())
+                    } else {
+                        val outcomes = verdict.testVerdicts.zip(details.tests)
+                        table(
+                            key = { (_, test): Pair<TestVerdictVo, TestVo> -> test.id },
+                            fetch = { request -> pageOf(outcomes, request) },
+                        ) {
+                            textColumn(texts.solutionVerdictPolygon(), size = 12) { (_, test) -> test.name }
+                            numberColumn(texts.solutionScore(), size = 6) { (outcome, _) -> outcome.score.value }
+                            column(texts.solutionVerdictFiles()) { (outcome, test) ->
                                 iconDownloadAction(
-                                    texts.solutionVerdictDownloadRecording(name = test.name),
-                                    produce = { download(judgeService.downloadRecording(submissionId, outcome.test)) },
+                                    texts.solutionVerdictDownloadLogs(name = test.name),
+                                    produce = { download(judgeService.downloadLogs(submissionId, outcome.test)) },
                                 )
+                                if (outcome.recording != null) {
+                                    iconDownloadAction(
+                                        texts.solutionVerdictDownloadRecording(name = test.name),
+                                        produce = { download(judgeService.downloadRecording(submissionId, outcome.test)) },
+                                    )
+                                }
                             }
                         }
                     }
@@ -158,25 +166,28 @@ class JudgeSolutionView(
         }
     }
 
-    private fun PageScope.judgmentsBlock(details: SubmissionDetailsVo) {
+    private fun PageScope.judgmentsBlock(submission: SubmissionVo, loaded: Lazy<SubmissionDetailsVo>) {
         val localization = currentLocalization()
         val texts = localization.pageJudge
-        val orders = details.judgmentOrders
         row {
             block(title = texts.solutionJudgmentsTitle()) {
                 guide(texts.solutionJudgmentsGuide())
-                table(
-                    key = { (order, _): Pair<JudgmentOrderVo, NamedUserVo> -> order.id },
-                    fetch = { request -> pageOf(orders, request) },
-                ) {
-                    numberColumn(texts.solutionScore(), size = 3) { (order, _) -> order.score.value }
-                    textColumn(texts.solutionReason(), size = 11) { (order, _) -> order.reason }
-                    textColumn(localization.pageCabinet.roleName(role = RoleNameRole.JUDGE), size = 5) { (_, judge) -> judge.name }
-                    dateTimeColumn(texts.solutionJudgmentsIssued()) { (order, _) -> order.createdAt.toUserDateTime() }
-                    empty(texts.solutionJudgmentsEmpty())
+                load({ loaded.value.judgmentOrders }) { orders ->
+                    table(
+                        key = { (order, _): Pair<JudgmentOrderVo, NamedUserVo> -> order.id },
+                        fetch = { request -> pageOf(orders, request) },
+                    ) {
+                        numberColumn(texts.solutionScore(), size = 3) { (order, _) -> order.score.value }
+                        textColumn(texts.solutionReason(), size = 11) { (order, _) -> order.reason }
+                        textColumn(localization.pageCabinet.roleName(role = RoleNameRole.JUDGE), size = 5) { (_, judge) -> judge.name }
+                        dateTimeColumn(texts.solutionJudgmentsIssued()) { (order, _) -> order.createdAt.toUserDateTime() }
+                        empty(texts.solutionJudgmentsEmpty())
+                    }
                 }
-                if (details.verdict != null) {
-                    val issuing = judgmentDialog(details.submission.id)
+                // A successful grading is exactly what gives the submission a verdict to judge.
+                val status = submission.status
+                if (status is SubmissionStatusVo.Graded && status.grade is GradingResultVo.Success) {
+                    val issuing = judgmentDialog(submission.id)
                     actions { action(texts.solutionJudgmentsIssue()) { onClick { issuing() } } }
                 }
             }

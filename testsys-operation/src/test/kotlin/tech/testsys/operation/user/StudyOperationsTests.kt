@@ -1285,6 +1285,445 @@ class StudyOperationsTests {
     }
 
     @Nested
+    inner class CheckContestAccessTests {
+
+        @Nested
+        inner class ParticipantTests {
+
+            @Nested
+            inner class HappyPathTests {
+
+                @Test
+                fun `should return the contest with the saved first entry time and no class`() {
+                    prepareParticipantView(enteredAt = firstEntry)
+
+                    val result = check().getOrThrow()
+
+                    assertEquals(StudyOperations.StudyContestContext(studyClass = null, enteredAt = firstEntry, contest = contest), result)
+                    assertSame(contest, result.contest)
+                }
+
+                @Test
+                fun `should return no entry time if participant has not entered the contest`() {
+                    prepareParticipantView()
+
+                    val result = check().getOrThrow()
+
+                    assertNull(result.enteredAt)
+                }
+            }
+
+            @Nested
+            inner class RefusalTests {
+
+                @Test
+                fun `should raise MissedParticipantRoleError before reading storage if user is a Supervisor`() {
+                    assertRaises(MissedParticipantRoleError) {
+                        operations.checkContestAccess(user = testSupervisor(), contestId = contest.id)
+                    }
+
+                    verify { competitions wasNot Called }
+                }
+
+                @Test
+                fun `should raise CompetitionNotExistsError if participant competition is missing`() {
+                    every { competitions.findById(competition.id) } returns null
+
+                    assertRaises(CompetitionNotExistsError(competition.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ContestNotExistsError if contest is missing`() {
+                    every { competitions.findById(competition.id) } returns competition
+                    every { contests.findById(contest.id) } returns null
+
+                    assertRaises(ContestNotExistsError(contest.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ContestAccessDeniedError before reading the entry if contest belongs to another competition`() {
+                    every { competitions.findById(competition.id) } returns competition.withData { contests = mutableListOf() }
+                    every { contests.findById(contest.id) } returns contest
+
+                    assertRaises(ContestAccessDeniedError(contest.id)) { check() }
+
+                    verify { participantEntries wasNot Called }
+                }
+            }
+
+            @Nested
+            inner class InvariantTests {
+
+                @Test
+                fun `should read neither tasks nor submissions and save no entry`() {
+                    prepareParticipantView(current = taskContest, enteredAt = firstEntry)
+
+                    check(contestId = taskContest.id).getOrThrow()
+
+                    verify { listOf(taskRepository, submissionRepository, verdictRepository, judgmentOrderRepository) wasNot Called }
+                    verify(exactly = 0) { participantEntries.findOrCreate(any()) }
+                }
+            }
+
+            private fun check(contestId: ContestId = contest.id) = operations.checkContestAccess(user = participant, contestId = contestId)
+        }
+
+        @Nested
+        inner class StudentTests {
+
+            @Nested
+            inner class HappyPathTests {
+
+                @Test
+                fun `should return the selected class, the saved first entry time in it and the contest`() {
+                    prepareStudentView(enteredAt = firstEntry)
+
+                    val result = check().getOrThrow()
+
+                    assertEquals(
+                        StudyOperations.StudyContestContext(studyClass = studyClass, enteredAt = firstEntry, contest = contest),
+                        result,
+                    )
+                    assertSame(studyClass, result.studyClass)
+                }
+
+                @Test
+                fun `should return no entry time if the contest was entered only in another class`() {
+                    stubEntryInOtherClass(contestId = contest.id)
+                    prepareStudentView()
+
+                    val result = check().getOrThrow()
+
+                    assertNull(result.enteredAt)
+                }
+            }
+
+            @Nested
+            inner class RefusalTests {
+
+                @Test
+                fun `should raise MissedStudentRoleError before reading storage if user has other roles without Student`() {
+                    val user = testMultipleRoleUser { roles { developer { data = developerData {} } } }
+
+                    assertRaises(MissedStudentRoleError) { check(user = user) }
+
+                    verify { classes wasNot Called }
+                }
+
+                @Test
+                fun `should raise ClassNotExistsError if selected class is missing`() {
+                    every { classes.findById(studyClass.id) } returns null
+
+                    assertRaises(ClassNotExistsError(studyClass.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ContestNotExistsError if contest is missing`() {
+                    every { classes.findById(studyClass.id) } returns studyClass
+                    every { contests.findById(contest.id) } returns null
+
+                    assertRaises(ContestNotExistsError(contest.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ClassAccessDeniedError if student is not enrolled in selected class`() {
+                    every { classes.findById(studyClass.id) } returns studyClass.withData { students = mutableListOf() }
+                    every { contests.findById(contest.id) } returns contest
+
+                    assertRaises(ClassAccessDeniedError(studyClass.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ContestAccessDeniedError before reading the entry if contest is outside selected class`() {
+                    every { classes.findById(studyClass.id) } returns studyClass.withData { contests = mutableListOf() }
+                    every { contests.findById(contest.id) } returns contest
+
+                    assertRaises(ContestAccessDeniedError(contest.id)) { check() }
+
+                    verify { studentEntries wasNot Called }
+                }
+            }
+
+            @Nested
+            inner class InvariantTests {
+
+                @Test
+                fun `should read neither tasks nor submissions and save no entry`() {
+                    prepareStudentView(current = taskContest, enteredAt = firstEntry)
+
+                    check(contestId = taskContest.id).getOrThrow()
+
+                    verify { listOf(taskRepository, submissionRepository, verdictRepository, judgmentOrderRepository) wasNot Called }
+                    verify(exactly = 0) { studentEntries.findOrCreate(any()) }
+                }
+
+                @Test
+                fun `should deny class access despite ownership and communities of other roles`() {
+                    val user = studentWithOtherRoles()
+                    prepareContextOwnedWithoutEnrollment(user = user, current = contest)
+
+                    assertRaises(ClassAccessDeniedError(studyClass.id)) { check(user = user) }
+                }
+            }
+
+            private fun check(user: MultipleRoleUser = student, contestId: ContestId = contest.id) =
+                operations.checkContestAccess(user = user, classId = studyClass.id, contestId = contestId)
+        }
+    }
+
+    @Nested
+    inner class CheckTaskAccessTests {
+
+        private val languagesTask = testTask {
+            committed {
+                exercises(listOf(1))
+                statement(1)
+                developerSolutions(listOf(81, 82, 83))
+            }
+        }
+
+        @Nested
+        inner class ParticipantTests {
+
+            @Nested
+            inner class HappyPathTests {
+
+                @Test
+                fun `should return the entered task with the languages of its last committed revision and no class`() {
+                    prepareParticipantTask(currentTask = languagesTask)
+                    stubTaskResources()
+                    stubLanguages()
+
+                    val result = check().getOrThrow()
+
+                    assertNull(result.studyClass)
+                    assertEquals(firstEntry, result.enteredAt)
+                    assertSame(taskContest, result.contest)
+                    assertSame(languagesTask, result.task)
+                    assertEquals(listOf(TrikSupportedLanguage.VisualLanguage, TrikSupportedLanguage.Python), result.languages)
+                }
+
+                @Test
+                fun `should return no languages for a New task`() {
+                    prepareParticipantTask(currentTask = testNewTask())
+
+                    val result = check().getOrThrow()
+
+                    assertEquals(emptyList<TrikSupportedLanguage>(), result.languages)
+                    verify { developerSolutionRepository wasNot Called }
+                }
+            }
+
+            @Nested
+            inner class RefusalTests {
+
+                @Test
+                fun `should raise MissedParticipantRoleError before reading storage if user is a Supervisor`() {
+                    assertRaises(MissedParticipantRoleError) {
+                        operations.checkTaskAccess(user = testSupervisor(), contestId = taskContest.id, taskId = task.id)
+                    }
+
+                    verify { competitions wasNot Called }
+                }
+
+                @Test
+                fun `should raise CompetitionNotExistsError if participant competition is missing`() {
+                    every { competitions.findById(competition.id) } returns null
+
+                    assertRaises(CompetitionNotExistsError(competition.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ContestNotExistsError if contest is missing`() {
+                    every { competitions.findById(competition.id) } returns competition
+                    every { contests.findById(taskContest.id) } returns null
+
+                    assertRaises(ContestNotExistsError(taskContest.id)) { check() }
+                }
+
+                @Test
+                fun `should raise TaskNotExistsError if task is missing`() {
+                    every { competitions.findById(competition.id) } returns competition
+                    every { contests.findById(taskContest.id) } returns taskContest
+                    every { taskRepository.findById(task.id) } returns null
+
+                    assertRaises(TaskNotExistsError(task.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ContestAccessDeniedError if contest belongs to another competition`() {
+                    every { competitions.findById(competition.id) } returns competition.withData { contests = mutableListOf() }
+                    every { contests.findById(taskContest.id) } returns taskContest
+                    every { taskRepository.findById(task.id) } returns task
+
+                    assertRaises(ContestAccessDeniedError(taskContest.id)) { check() }
+                }
+
+                @Test
+                fun `should raise TaskAccessDeniedError before reading the entry if task is outside the contest`() {
+                    prepareParticipantTask(current = contest)
+
+                    assertRaises(TaskAccessDeniedError(task.id)) { check(contestId = contest.id) }
+
+                    verify { participantEntries wasNot Called }
+                }
+
+                @Test
+                fun `should raise ContestNotEnteredError if participant has not entered the contest`() {
+                    prepareParticipantTask(enteredAt = null)
+
+                    assertRaises(ContestNotEnteredError(taskContest.id)) { check() }
+                }
+            }
+
+            @Nested
+            inner class InvariantTests {
+
+                @Test
+                fun `should read neither submissions nor resources and save no entry`() {
+                    prepareParticipantTask()
+                    stubTaskResources()
+
+                    check().getOrThrow()
+
+                    verify {
+                        listOf(submissionRepository, verdictRepository, judgmentOrderRepository, statementRepository, exerciseRepository)
+                            .wasNot(Called)
+                    }
+                    verify(exactly = 0) { participantEntries.findOrCreate(any()) }
+                }
+            }
+
+            private fun check(contestId: ContestId = taskContest.id) =
+                operations.checkTaskAccess(user = participant, contestId = contestId, taskId = task.id)
+        }
+
+        @Nested
+        inner class StudentTests {
+
+            @Nested
+            inner class HappyPathTests {
+
+                @Test
+                fun `should return the selected class and the entered task with the languages of its last committed revision`() {
+                    prepareStudentTask(currentTask = languagesTask)
+                    stubTaskResources()
+                    stubLanguages()
+
+                    val result = check().getOrThrow()
+
+                    assertSame(studyClass, result.studyClass)
+                    assertEquals(firstEntry, result.enteredAt)
+                    assertSame(taskContest, result.contest)
+                    assertSame(languagesTask, result.task)
+                    assertEquals(listOf(TrikSupportedLanguage.VisualLanguage, TrikSupportedLanguage.Python), result.languages)
+                }
+            }
+
+            @Nested
+            inner class RefusalTests {
+
+                @Test
+                fun `should raise MissedStudentRoleError before reading storage if user has other roles without Student`() {
+                    val user = testMultipleRoleUser { roles { developer { data = developerData {} } } }
+
+                    assertRaises(MissedStudentRoleError) { check(user = user) }
+
+                    verify { classes wasNot Called }
+                }
+
+                @Test
+                fun `should raise ClassNotExistsError if selected class is missing`() {
+                    every { classes.findById(studyClass.id) } returns null
+
+                    assertRaises(ClassNotExistsError(studyClass.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ContestNotExistsError if contest is missing`() {
+                    every { classes.findById(studyClass.id) } returns studyClass
+                    every { contests.findById(taskContest.id) } returns null
+
+                    assertRaises(ContestNotExistsError(taskContest.id)) { check() }
+                }
+
+                @Test
+                fun `should raise TaskNotExistsError if task is missing`() {
+                    every { classes.findById(studyClass.id) } returns studyClass
+                    every { contests.findById(taskContest.id) } returns taskContest
+                    every { taskRepository.findById(task.id) } returns null
+
+                    assertRaises(TaskNotExistsError(task.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ClassAccessDeniedError if student is not enrolled in selected class`() {
+                    every { classes.findById(studyClass.id) } returns studyClass.withData { students = mutableListOf() }
+                    every { contests.findById(taskContest.id) } returns taskContest
+                    every { taskRepository.findById(task.id) } returns task
+
+                    assertRaises(ClassAccessDeniedError(studyClass.id)) { check() }
+                }
+
+                @Test
+                fun `should raise ContestAccessDeniedError if contest is outside selected class`() {
+                    every { classes.findById(studyClass.id) } returns studyClass.withData { contests = mutableListOf() }
+                    every { contests.findById(taskContest.id) } returns taskContest
+                    every { taskRepository.findById(task.id) } returns task
+
+                    assertRaises(ContestAccessDeniedError(taskContest.id)) { check() }
+                }
+
+                @Test
+                fun `should raise TaskAccessDeniedError before reading the entry if task is outside the contest`() {
+                    prepareStudentTask(current = contest)
+
+                    assertRaises(TaskAccessDeniedError(task.id)) { check(contestId = contest.id) }
+
+                    verify { studentEntries wasNot Called }
+                }
+
+                @Test
+                fun `should raise ContestNotEnteredError if the contest was entered only in another class`() {
+                    stubEntryInOtherClass(contestId = taskContest.id)
+                    prepareStudentTask(enteredAt = null)
+
+                    assertRaises(ContestNotEnteredError(taskContest.id)) { check() }
+                }
+            }
+
+            @Nested
+            inner class InvariantTests {
+
+                @Test
+                fun `should read neither submissions nor resources and save no entry`() {
+                    prepareStudentTask()
+                    stubTaskResources()
+
+                    check().getOrThrow()
+
+                    verify {
+                        listOf(submissionRepository, verdictRepository, judgmentOrderRepository, statementRepository, exerciseRepository)
+                            .wasNot(Called)
+                    }
+                    verify(exactly = 0) { studentEntries.findOrCreate(any()) }
+                }
+            }
+
+            private fun check(user: MultipleRoleUser = student, contestId: ContestId = taskContest.id) =
+                operations.checkTaskAccess(user = user, classId = studyClass.id, contestId = contestId, taskId = task.id)
+        }
+
+        private fun stubLanguages() {
+            stubDeveloperSolutionLanguages(
+                81L to TrikSupportedLanguage.VisualLanguage,
+                82L to TrikSupportedLanguage.Python,
+                83L to TrikSupportedLanguage.VisualLanguage,
+            )
+        }
+    }
+
+    @Nested
     inner class DownloadSolutionTests {
 
         @Nested

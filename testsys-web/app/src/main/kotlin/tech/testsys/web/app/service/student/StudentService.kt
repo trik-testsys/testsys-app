@@ -52,4 +52,23 @@ class StudentService(private val operations: StudentOperations, private val curr
     @Transactional(readOnly = true)
     fun viewClasses(): List<ClassVo> =
         operations.viewClasses(currentUser.multipleRoleUser()).getOrThrow().map { studyClass -> studyClass.toVo() }
+
+    /**
+     * Runs [StudentOperations.checkStudentRole].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkStudentRole() {
+        operations.checkStudentRole(currentUser.multipleRoleUser()).getOrThrow()
+    }
+
+    /**
+     * Runs [StudentOperations.checkClassAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkClassAccess(classId: ClassId): ClassVo =
+        operations.checkClassAccess(currentUser.multipleRoleUser(), classId).getOrThrow().toVo()
 }

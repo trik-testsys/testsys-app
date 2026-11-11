@@ -1,9 +1,12 @@
 package tech.testsys.web.app
 
+import com.vaadin.flow.spring.annotation.VaadinTaskExecutor
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
+import org.springframework.core.task.SyncTaskExecutor
+import org.springframework.core.task.TaskExecutor
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.communityData
@@ -113,6 +116,13 @@ class AppTestConfiguration {
     @Bean
     @Primary
     fun recordedMail(): RecordedMail = RecordedMail()
+
+    /**
+     * Runs the background work of pages in the calling thread, so that a block is loaded once its page is attached.
+     * It is not a default candidate, so Spring Boot keeps its `applicationTaskExecutor` as in production.
+     */
+    @Bean(VaadinTaskExecutor.NAME, defaultCandidate = false)
+    fun vaadinTaskExecutor(): TaskExecutor = SyncTaskExecutor()
 }
 
 /** Stores users, groups and submissions with unique access codes, names and e-mail addresses. */

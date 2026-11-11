@@ -9,6 +9,7 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
@@ -16,6 +17,8 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -29,6 +32,7 @@ import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepos
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.MockSpringVaadinTests
+import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
 import java.time.Instant
@@ -43,6 +47,9 @@ class MultiMainViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var communityConfig: CommunityConfig
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
 
     @Test
     fun `should list the roles of the user and the communities with the roles in each`() {
@@ -158,6 +165,21 @@ class MultiMainViewTests : MockSpringVaadinTests() {
         row._fireDomEvent("click", acceptedClick(row))
 
         assertEquals(DeveloperView::class.java, currentView)
+    }
+
+    @Test
+    fun `should keep the title and joining and show a load error in the roles and communities if they fail to load`() {
+        signIn(fixtures.multipleRoleUser())
+        val service = mockk<MultipleRoleUserService>()
+        every { service.viewProfile() } throws IllegalStateException("Profile storage unavailable")
+        UI.getCurrent().removeAll()
+
+        val view = MultiMainView(headers, service)
+        UI.getCurrent().add(view)
+
+        assertEquals("Главная", view._get<H1>().text)
+        assertEquals(2, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+        assertTrue(view._get<Button> { text = "Присоединиться" }.isEnabled)
     }
 
     @Test

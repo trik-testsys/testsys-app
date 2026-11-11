@@ -22,16 +22,16 @@ import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.linkAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
-import tech.testsys.web.components.data.TableHandle
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.lookupMany
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
@@ -57,14 +57,13 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
     override fun getPageTitle(): String = currentLocalization().pageAdministrator.communityTitle()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
-        val communityId = CommunityId(event.routeParameters.getLong(COMMUNITY_ID_PARAMETER).orElseThrow())
-        // Checks the role, the community and its owner before the tables load, so that a refusal opens its error screen.
-        administratorService.viewCommunityInvites(communityId)
-        val communities = administratorService.viewCommunities().map { (community, _) -> community }
-        show(communities.first { community -> community.id == communityId }, communities, observer = null)
+        show(CommunityId(event.routeParameters.getLong(COMMUNITY_ID_PARAMETER).orElseThrow()), observer = null)
     }
 
-    private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: ObserverVo?) {
+    /** Shows [communityId], with the access code of the just created [observer] if given. */
+    private fun show(communityId: CommunityId, observer: ObserverVo?) {
+        // Checks the role, the community and its owner before the blocks load, so that a refusal opens its error screen.
+        val community = administratorService.checkCommunityAccess(communityId)
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -79,67 +78,75 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
             }
             guide(texts.communityGuide())
             row {
-                detailsBlock(community) { edited -> show(edited, communities, observer) }
-                invitesBlock(community.id)
+                detailsBlock(communityId) { show(communityId, observer) }
+                invitesBlock(communityId)
             }
             observer?.let { created -> createdObserverBlock(created) }
             row {
                 block(title = texts.communityUsersTitle()) {
                     guide(texts.communityUsersGuide())
-                    adminUsersTable(administratorService, communities, community.id)
-                    val creation = observerDialog(community.id) { created -> show(community, communities, created) }
+                    // The community is fixed, so the community filter is hidden and offers only it.
+                    adminUsersTable(administratorService, listOf(community), communityId)
+                    val creation = observerDialog(communityId) { created -> show(communityId, created) }
                     actions { action(texts.communityObserverCreate()) { onClick { creation() } } }
                 }
             }
         }
     }
 
-    /** Shows the name and description of [community] for viewing; a saved change rebuilds the page through [onEdited]. */
-    private fun PageRowScope.detailsBlock(community: CommunityVo, onEdited: (CommunityVo) -> Unit) {
+    /** Loads the name and description of [communityId] for viewing; a saved change rebuilds the page through [onEdited]. */
+    private fun PageRowScope.detailsBlock(communityId: CommunityId, onEdited: () -> Unit) {
         val texts = currentLocalization().pageAdministrator
-        val draft = Binder<CommunityDraft>()
+        var form: DetailsForm? = null
         block(size = DETAILS_COLUMNS, title = texts.details()) {
             guide(texts.communityDetailsGuide())
-            editing(
-                onSave = {
-                    val values = CommunityDraft()
-                    val isValid = draft.writeBeanIfValid(values)
-                    if (isValid) {
-                        onEdited(
-                            administratorService.editCommunity(
-                                communityId = community.id,
-                                communityName = values.name,
-                                description = values.description,
-                            ),
-                        )
-                        toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityEdited())
-                    }
-                    isValid
-                },
-                onCancel = { draft.readBean(CommunityDraft(community.name, community.description)) },
-            )
-            row {
-                codeInput(texts.id(), labelSize = 6, size = 18) {
-                    value = community.id.value.toString()
-                    isEditable = false
-                }
+            editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
+            load({ administratorService.checkCommunityAccess(communityId) }) { community -> form = detailsRows(community, onEdited) }
+        }
+    }
+
+    /** Adds the rows of the name and description of [community] and returns their form. */
+    private fun BlockScope.detailsRows(community: CommunityVo, onEdited: () -> Unit): DetailsForm {
+        val texts = currentLocalization().pageAdministrator
+        val draft = Binder<CommunityDraft>()
+        row {
+            codeInput(texts.id(), labelSize = 6, size = 18) {
+                value = community.id.value.toString()
+                isEditable = false
             }
-            row {
-                textInput(texts.name(), labelSize = 6, size = 18) {
-                    draft.forField(this)
-                        .nameRules(texts.nameRequired())
-                        .bind({ values -> values.name }, { values, name -> values.name = name })
-                }
+        }
+        row {
+            textInput(texts.name(), labelSize = 6, size = 18) {
+                draft.forField(this)
+                    .nameRules(texts.nameRequired())
+                    .bind({ values -> values.name }, { values, name -> values.name = name })
             }
-            row {
-                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
-                    draft.forField(this)
-                        .bind({ values -> values.description }, { values, description -> values.description = description })
-                }
+        }
+        row {
+            textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
+                draft.forField(this)
+                    .bind({ values -> values.description }, { values, description -> values.description = description })
             }
         }
 
         draft.readBean(CommunityDraft(community.name, community.description))
+        return DetailsForm(
+            save = {
+                val values = CommunityDraft()
+                val isValid = draft.writeBeanIfValid(values)
+                if (isValid) {
+                    administratorService.editCommunity(
+                        communityId = community.id,
+                        communityName = values.name,
+                        description = values.description,
+                    )
+                    onEdited()
+                    toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityEdited())
+                }
+                isValid
+            },
+            cancel = { draft.readBean(CommunityDraft(community.name, community.description)) },
+        )
     }
 
     @RawAccessTokenDependency(reason = "Shows the stored access code of the created observer as the issued one.")
@@ -173,8 +180,8 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
         block(title = texts.communityInvitesTitle()) {
             guide(texts.communityInvitesGuide())
             // The menu of a row refreshes the table that contains it.
-            lateinit var rows: TableHandle<CommunityInviteVo>
-            rows = table(
+            lateinit var rows: LoadedTable<CommunityInviteVo>
+            rows = loadTable(
                 key = { invite: CommunityInviteVo -> invite.kind },
                 fetch = { request -> pageOf(administratorService.viewCommunityInvites(communityId), request) },
             ) {

@@ -19,9 +19,12 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -59,6 +62,7 @@ import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.texts.currentTimeZone
@@ -92,6 +96,12 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var dataSource: DataSource
 
+    @Autowired
+    private lateinit var administratorService: AdministratorService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
     @Test
     fun `should show the common data and the roles of a member in the communities of the administrator`() {
         val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
@@ -113,6 +123,26 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
         assertEquals("Пользователь", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
         assertEquals("Пользователь «Разработчик Иван»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should keep the title and tabs and show a load error in the details and roles if they fail to load`() {
+        val member = developerOf(fixtures.community(owner = signInAdministrator()), name = "Разработчик Иван")
+        val service = mockk<AdministratorService>()
+        every { service.checkUserAccess(member.id) } returns administratorService.checkUserAccess(member.id)
+        every { service.viewUser(member.id) } throws IllegalStateException("User storage unavailable")
+        every { service.checkAdministratorRole() } throws IllegalStateException("Community storage unavailable")
+        val view = AdminUserView(headers, service, communityConfig)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns userParameters(member.id)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(event)
+
+        assertEquals("Пользователь «Разработчик Иван»", view._get<H1>().text)
+        assertEquals(listOf("Сведения", "Разработчик"), tabLabels())
+        assertEquals(2, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
     }
 
     @Test

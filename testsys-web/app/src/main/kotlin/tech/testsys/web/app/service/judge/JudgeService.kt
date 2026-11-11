@@ -13,6 +13,8 @@ import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.JudgeOperations
 import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.map
+import tech.testsys.web.app.service.study.SubmissionVo
+import tech.testsys.web.app.service.study.toVo
 
 /**
  * Runs [JudgeOperations] for the current user in one transaction per call.
@@ -32,6 +34,25 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     fun viewResults(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<JudgeResultVo> =
         operations.viewResults(currentUser.multipleRoleUser(), pagination, filter)
             .getOrThrow().map { result -> result.toVo() }
+
+    /**
+     * Runs [JudgeOperations.checkJudgeRole].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkJudgeRole() {
+        operations.checkJudgeRole(currentUser.multipleRoleUser()).getOrThrow()
+    }
+
+    /**
+     * Runs [JudgeOperations.checkSubmissionAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkSubmissionAccess(submissionId: SubmissionId): SubmissionVo =
+        operations.checkSubmissionAccess(currentUser.multipleRoleUser(), submissionId).getOrThrow().toVo()
 
     /**
      * Runs [JudgeOperations.changeVerdict].

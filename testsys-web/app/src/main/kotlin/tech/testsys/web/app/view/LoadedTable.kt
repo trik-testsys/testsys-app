@@ -20,7 +20,8 @@ internal const val TABLE_PAGE_SIZE = 20
 internal class LoadedTable<T> {
     internal lateinit var load: LoadHandle
 
-    // The table of the latest load; refresh may come from any thread.
+    // The table of the latest successful load, null from the start of a load until it shows a table; refresh may come
+    // from any thread.
     @Volatile
     internal var table: TableHandle<T>? = null
 
@@ -34,7 +35,7 @@ internal class LoadedTable<T> {
 /**
  * Fills the block body with a table of [pageSize] rows a page whose first page [fetch] returns in the background while
  * the body shows a skeleton; the table fetches the other pages, sorting and refreshes itself. [key] and [content] are
- * as in `table`.
+ * as in `table`. The refresh button in the block head loads the whole block again, from the first page and without sorting.
  *
  * @param T the type of the rows.
  */
@@ -46,7 +47,10 @@ internal fun <T> BlockScope.loadTable(
 ): LoadedTable<T> {
     val first = PageRequest(offset = 0, limit = pageSize, sort = null)
     val loaded = LoadedTable<T>()
-    loaded.load = load({ fetch(first) }) { page ->
+    loaded.load = load({
+        loaded.table = null
+        fetch(first)
+    }) { page ->
         loaded.table = table(key = key, pageSize = pageSize, fetch = servingFirst(first, page, fetch), content = content)
     }
     return loaded

@@ -43,7 +43,7 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
 
     private fun show() {
         // Both the roles and the communities blocks show the roles of one profile read.
-        val profile = lazy { multipleRoleUserService.viewProfile().roles }
+        val profile = SharedFetch { multipleRoleUserService.viewProfile().roles }
         val texts = currentLocalization().pageHome
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
             head(texts.title())
@@ -51,7 +51,7 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
             row {
                 block(size = ROLES_COLUMNS, title = texts.rolesTitle()) {
                     guide(texts.rolesGuide())
-                    load({ profile.value }) { roles ->
+                    load(profile.forLoad()) { roles ->
                         table(
                             key = { (role, _): Pair<RoleVo, List<CommunityVo>> -> labelOf(role) },
                             fetch = { request -> pageOf(roles, request) },
@@ -78,7 +78,7 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
             row {
                 block(title = texts.communitiesTitle()) {
                     guide(texts.communitiesGuide())
-                    load({ communitiesOf(profile.value) }) { communities ->
+                    load(profile.forLoad { roles -> communitiesOf(roles) }) { communities ->
                         table(
                             key = { (community, _): Pair<CommunityVo, List<RoleVo>> -> community.id },
                             fetch = { request -> pageOf(communities, request) },

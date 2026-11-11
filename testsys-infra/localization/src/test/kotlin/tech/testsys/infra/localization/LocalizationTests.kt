@@ -477,6 +477,11 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should label the refresh button in table refresh`() {
+            assertEquals("Обновить", l.uiData.tableRefresh())
+        }
+
+        @Test
         fun `should name the previous page button in pagination previous`() {
             assertEquals("Перейти на предыдущую страницу", l.uiData.paginationPrevious())
         }

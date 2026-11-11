@@ -22,6 +22,7 @@ import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.destructiveAction
 import tech.testsys.web.components.actions.mainAction
@@ -80,7 +81,7 @@ class DeveloperContestView(
     private fun show(contestId: ContestId) {
         // Checks access before the blocks load, so that a refusal opens its error screen.
         val contest = developerService.checkContestAccess(contestId)
-        val loaded = lazy { developerService.viewContest(contestId) }
+        val loaded = SharedFetch { developerService.viewContest(contestId) }
         val me = currentUser.multipleRoleUser().id
         val isOwner = contest.owner == me
         val isChangeable = isOwner && contest.sharedTo.isEmpty()
@@ -116,7 +117,7 @@ class DeveloperContestView(
         }
     }
 
-    private fun PageRowScope.detailsBlock(isChangeable: Boolean, loaded: Lazy<ContestDetails>) {
+    private fun PageRowScope.detailsBlock(isChangeable: Boolean, loaded: SharedFetch<ContestDetails>) {
         val texts = currentLocalization().pageDeveloper
         var form: DetailsForm? = null
         val details = block(size = DETAILS_COLUMNS, title = texts.details()) {
@@ -124,7 +125,7 @@ class DeveloperContestView(
             if (isChangeable) {
                 editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
             }
-            load({ loaded.value.first }) { current -> form = detailsRows(current) }
+            load(loaded.forLoad { data -> data.first }) { current -> form = detailsRows(current) }
         }
         if (!isChangeable) details.isEditable = false
     }
@@ -206,32 +207,40 @@ class DeveloperContestView(
         )
     }
 
-    private fun PageRowScope.accessBlock(contest: ContestVo, isOwner: Boolean, loaded: Lazy<ContestDetails>) {
+    private fun PageRowScope.accessBlock(contest: ContestVo, isOwner: Boolean, loaded: SharedFetch<ContestDetails>) {
         val texts = currentLocalization().pageDeveloper
         block(title = texts.access()) {
             guide(texts.contestAccessGuide())
-            load({ loaded.value.third }) { shared ->
+            lateinit var share: ActionHandle
+            actions {
+                // Enabled once the communities are loaded.
+                share = action(texts.share()) {
+                    isEnabled = false
+                    onClick { shareDialog(contest, loaded.value.third)() }
+                }
+            }
+            load(loaded.forLoad { data -> data.third }, onReset = { share.isEnabled = false }) { shared ->
                 table(key = { community: CommunityVo -> community.id }, fetch = { request -> pageOf(shared, request) }) {
                     textColumn(texts.community()) { community -> community.name }
                     empty(texts.accessEmpty())
                 }
-            }
-            actions {
-                action(texts.share()) {
-                    isEnabled = isOwner
-                    onClick { shareDialog(contest, loaded.value.third)() }
-                }
+                share.isEnabled = isOwner
             }
         }
     }
 
-    private fun PageScope.tasksBlock(contest: ContestVo, me: MultipleRoleUserId, isChangeable: Boolean, loaded: Lazy<ContestDetails>) {
+    private fun PageScope.tasksBlock(
+        contest: ContestVo,
+        me: MultipleRoleUserId,
+        isChangeable: Boolean,
+        loaded: SharedFetch<ContestDetails>,
+    ) {
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         row {
             block(title = localization.pageCabinet.sectionTasks()) {
                 guide(texts.contestTasksGuide())
-                load({ loaded.value.second }) { tasks ->
+                load(loaded.forLoad { data -> data.second }) { tasks ->
                     table(key = { task: TaskVo -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
                         codeColumn(texts.id(), size = 5) { task -> task.id.value.toString() }
                         textColumn(texts.name(), size = 12) { task -> task.name }

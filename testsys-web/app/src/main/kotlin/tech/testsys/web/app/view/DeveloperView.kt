@@ -141,7 +141,6 @@ class DeveloperView(
                         community.value = null
                         applied = initial
                     },
-                    onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
                     row {
                         name = textInput(texts.name(), labelSize = 2, size = 10, hint = texts.nameHint())
@@ -209,7 +208,6 @@ class DeveloperView(
                         community.value = null
                         applied = ContestFilter(ownerId = me)
                     },
-                    onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
                     row {
                         name = textInput(texts.name(), labelSize = 2, size = 10, hint = texts.nameHint())

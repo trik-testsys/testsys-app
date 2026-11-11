@@ -88,7 +88,7 @@ abstract class StudyTaskView(
     private fun show(access: StudyAccess, contestId: ContestId, taskId: TaskId) {
         // Checks the access and the entry before the blocks load, so that a refusal opens its error screen.
         val context = access.checkTask(contestId, taskId)
-        val loaded = lazy { access.viewTask(contestId, taskId) }
+        val loaded = SharedFetch { access.viewTask(contestId, taskId) }
         val now = clock.instant()
         val deadline = studyDeadline(context.contest, context.enteredAt)
         val isSendable = context.languages.isNotEmpty() && (deadline == null || now.isBefore(deadline))
@@ -102,7 +102,7 @@ abstract class StudyTaskView(
             row {
                 block(size = TASK_DETAILS_COLUMNS, title = texts.detailsTitle()) {
                     guide(texts.taskDetailsGuide())
-                    load({ loaded.value }) { task -> detailsRows(access, contestId, task) }
+                    load(loaded.forLoad()) { task -> detailsRows(access, contestId, task) }
                 }.isEditable = false
                 // The time left stays outside the load: it follows the clock, and the solution form follows its timer.
                 highlightBlock(title = texts.remainingTitle()) {
@@ -236,13 +236,13 @@ abstract class StudyTaskView(
         access: StudyAccess,
         contestId: ContestId,
         taskId: TaskId,
-        loaded: Lazy<StudyTaskVo>,
+        loaded: SharedFetch<StudyTaskVo>,
         isSendable: Boolean,
     ) {
         row {
             block(title = texts.taskSubmissionsTitle()) {
                 guide(texts.taskSubmissionsGuide())
-                load({ loaded.value }) { task -> submissionsTable(access, contestId, taskId, task, isSendable) }
+                load(loaded.forLoad()) { task -> submissionsTable(access, contestId, taskId, task, isSendable) }
             }
         }
     }

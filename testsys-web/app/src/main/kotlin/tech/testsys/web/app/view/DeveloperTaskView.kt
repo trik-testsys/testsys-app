@@ -35,7 +35,6 @@ import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.downloadAction
 import tech.testsys.web.components.actions.mainAction
-import tech.testsys.web.components.data.TableHandle
 import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.ProgressValue
@@ -183,9 +182,12 @@ class DeveloperTaskView(
     private fun show(taskId: TaskId) {
         // Checks access before the blocks load, so that a refusal opens its error screen.
         val task = developerService.checkTaskAccess(taskId)
-        val shared = lazy { developerService.viewTask(taskId).second }
-        val chains = lazy { chainsOf(task) }
-        val requests = lazy { developerService.viewTaskValidationRequests(taskId).reversed() }
+        val shared = SharedFetch { developerService.viewTask(taskId).second }
+        val chains = SharedFetch { developerService.checkTaskAccess(taskId).let { fresh -> fresh to chainsOf(fresh) } }
+        val requests = SharedFetch {
+            val fresh = developerService.checkTaskAccess(taskId)
+            fresh to developerService.viewTaskValidationRequests(taskId).reversed()
+        }
         val state = stateOf(task)
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
@@ -198,7 +200,10 @@ class DeveloperTaskView(
                 actions {
                     action(texts.taskViewCommitted()) {
                         isEnabled = task.lastCommitted != null
-                        onClick { committedDialog(task, sortedChains(chains.value)) }
+                        onClick {
+                            val (current, loaded) = chains.value
+                            committedDialog(current, sortedChains(loaded))
+                        }
                     }
                 }
             }
@@ -208,7 +213,7 @@ class DeveloperTaskView(
                 accessBlock(task, shared)
             }
             resourcesBlock(task, chains)
-            testingBlock(task, requests)
+            testingBlock(taskId, requests)
             regradesBlock(taskId)
         }
     }
@@ -351,49 +356,52 @@ class DeveloperTaskView(
         }
     }
 
-    private fun PageRowScope.accessBlock(task: TaskVo, shared: Lazy<List<CommunityVo>>) {
+    private fun PageRowScope.accessBlock(task: TaskVo, shared: SharedFetch<List<CommunityVo>>) {
         val texts = currentLocalization().pageDeveloper
         block(title = texts.access()) {
             guide(texts.taskAccessGuide())
-            load({ shared.value }) { communities ->
+            lateinit var share: ActionHandle
+            actions {
+                // Enabled once the communities are loaded.
+                share = action(texts.share()) {
+                    isEnabled = false
+                    onClick { shareDialog(task, shared.value)() }
+                }
+            }
+            load(shared.forLoad(), onReset = { share.isEnabled = false }) { communities ->
                 table(key = { community: CommunityVo -> community.id }, fetch = { request -> pageOf(communities, request) }) {
                     textColumn(texts.community()) { community -> community.name }
                     empty(texts.accessEmpty(), texts.taskAccessEmptyHint())
                 }
-            }
-            actions {
-                action(texts.share()) {
-                    isEnabled = task.lastCommitted != null
-                    onClick { shareDialog(task, shared.value)() }
-                }
+                share.isEnabled = task.lastCommitted != null
             }
         }
     }
 
-    private fun PageScope.resourcesBlock(task: TaskVo, chains: Lazy<List<Chain>>) {
+    private fun PageScope.resourcesBlock(task: TaskVo, chains: SharedFetch<Pair<TaskVo, List<Chain>>>) {
         val texts = currentLocalization().pageDeveloper
-        val editable = task.wip ?: task.lastCommitted
         row {
             block(title = texts.taskResourcesTitle(), subtitle = texts.taskResourcesSubtitle()) {
                 guide(texts.taskResourcesGuide())
                 var resourceFilter = ResourceFilter()
-                var rows: TableHandle<Chain>? = null
-                load({ chains.value }) { loaded ->
+                lateinit var attach: ActionHandle
+                load(chains.forLoad(), onReset = { attach.isEnabled = false }) { (current, loaded) ->
+                    val editable = current.wip ?: current.lastCommitted
                     val sorted = sortedChains(loaded)
-                    rows = table(
+                    table(
                         key = { chain: Chain -> chain.latest.versionBucket },
-                        fetch = { request -> pageOf(sorted.filter { chain -> resourceFilter.matches(chain, task) }, request) },
+                        fetch = { request -> pageOf(sorted.filter { chain -> resourceFilter.matches(chain, current) }, request) },
                     ) {
                         textColumn(texts.name(), size = 6) { chain -> chain.latest.name }
                         textColumn(texts.type(), size = 3) { chain -> typeOf(chain.latest) }
                         column(texts.attached()) { chain ->
-                            if (chain.attachedIn(task.lastCommitted) != null) badge(texts.attachedCommitted(), tone = Tone.Success)
-                            if (chain.attachedIn(task.wip) != null) badge(texts.attachedWorking(), tone = Tone.Warning)
+                            if (chain.attachedIn(current.lastCommitted) != null) badge(texts.attachedCommitted(), tone = Tone.Success)
+                            if (chain.attachedIn(current.wip) != null) badge(texts.attachedWorking(), tone = Tone.Warning)
                         }
                         menuColumn(ariaLabel = { chain -> texts.taskResourcesActions(name = chain.latest.name) }) { chain ->
                             val attached = chain.attachedIn(editable)
                             item(texts.detach(), isEnabled = attached != null) {
-                                changeState(task, next = TaskState.Uncommitted) {
+                                changeState(current, next = TaskState.Uncommitted) {
                                     detach(task.id, checkNotNull(attached))
                                     toast(FeedbackKind.Success, currentLocalization().pageDeveloper.taskResourcesDetached())
                                     show(task.id)
@@ -407,15 +415,19 @@ class DeveloperTaskView(
                         }
                         onRowClick(isNavigation = true) { chain -> openDeveloperResource(task.id, chain.latest.versionBucket) }
                     }
+                    attach.isEnabled = true
                 }
-                // Before the load the table does not exist yet; it applies the current filter when it is built.
-                resourceFilters(task, apply = { applied -> resourceFilter = applied }) { rows?.refresh(toFirstPage = true) }
+                resourceFilters(task) { applied -> resourceFilter = applied }
                 val uploading = uploadDialog(task.id)
                 actions {
                     action(texts.taskResourcesUpload()) { onClick { uploading() } }
-                    action(texts.attach()) {
+                    // Enabled once the resources are loaded.
+                    attach = action(texts.attach()) {
+                        isEnabled = false
                         onClick {
-                            attachDialog(task, sortedChains(chains.value).filter { chain -> chain.attachedIn(editable) == null })()
+                            val (current, loaded) = chains.value
+                            val editable = current.wip ?: current.lastCommitted
+                            attachDialog(current, sortedChains(loaded).filter { chain -> chain.attachedIn(editable) == null })()
                         }
                     }
                 }
@@ -423,7 +435,7 @@ class DeveloperTaskView(
         }
     }
 
-    private fun BlockScope.resourceFilters(task: TaskVo, apply: (ResourceFilter) -> Unit, refresh: () -> Unit) {
+    private fun BlockScope.resourceFilters(task: TaskVo, apply: (ResourceFilter) -> Unit) {
         val texts = currentLocalization().pageDeveloper
         val isComparisonAvailable = task.wip != null && task.lastCommitted != null
         val comparisonHint = if (isComparisonAvailable) texts.taskResourcesDifferencesHint() else texts.taskResourcesComparisonUnavailable()
@@ -443,7 +455,6 @@ class DeveloperTaskView(
                 usage.value = ResourceUsage.All
                 differences.value = false
             },
-            onRefresh = refresh,
         ) {
             row {
                 name = textInput(texts.name(), labelSize = 3, size = 9, hint = texts.nameHint())
@@ -471,38 +482,42 @@ class DeveloperTaskView(
         }
     }
 
-    private fun PageScope.testingBlock(task: TaskVo, requests: Lazy<List<TaskValidationRequestVo>>) {
+    private fun PageScope.testingBlock(taskId: TaskId, requests: SharedFetch<Pair<TaskVo, List<TaskValidationRequestVo>>>) {
         val texts = currentLocalization().pageDeveloper
         row {
             block(title = texts.taskTestingTitle()) {
                 guide(texts.taskTestingGuide())
-                val committing = commitDialog(task)
+                val committing = commitDialog(taskId)
                 lateinit var run: ActionHandle
                 lateinit var commit: ActionHandle
+                lateinit var revert: ActionHandle
                 actions {
-                    // Enabled once the history is loaded: a started request is compared with the history read before it.
+                    // Enabled once the task with its history is loaded and has a working revision: a started request is
+                    // compared with the history read before it.
                     run = action(texts.taskTestingRun()) {
                         isEnabled = false
                         onClick {
                             val current = currentLocalization().pageDeveloper
                             refusable(current.taskTestingRunFailed()) {
-                                val request = developerService.testTask(task.id)
-                                if (requests.value.any { existing -> existing.id == request.id }) {
+                                val request = developerService.testTask(taskId)
+                                if (requests.value.second.any { existing -> existing.id == request.id }) {
                                     toast(FeedbackKind.Info, current.taskTestingRunning(), current.taskTestingRunningHint())
                                 } else {
                                     toast(FeedbackKind.Success, current.taskTestingStarted(), current.taskTestingStartedHint())
                                 }
                             }
-                            show(task.id)
+                            show(taskId)
                         }
                     }
-                    // Enabled once the history is loaded and shows a successful testing of the working revision.
+                    // Enabled once the task with its history is loaded and the history shows a successful testing of the
+                    // working revision.
                     commit = action(texts.taskCommit()) {
                         isEnabled = false
-                        onClick { committing() }
+                        onClick { committing(requests.value.first) }
                     }
-                    action(texts.taskRevert()) {
-                        isEnabled = stateOf(task) == TaskState.Uncommitted
+                    // Enabled once the task is loaded with uncommitted changes.
+                    revert = action(texts.taskRevert()) {
+                        isEnabled = false
                         onClick {
                             val current = currentLocalization().pageDeveloper
                             confirm(
@@ -511,16 +526,22 @@ class DeveloperTaskView(
                                 action = current.taskRevert(),
                                 isDanger = true,
                             ) {
-                                developerService.revertTask(task.id)
+                                developerService.revertTask(taskId)
                                 toast(FeedbackKind.Success, currentLocalization().pageDeveloper.taskReverted())
-                                show(task.id)
+                                show(taskId)
                             }
                         }
                     }
                 }
-                load({ requests.value }) { loaded ->
-                    run.isEnabled = task.wip != null
-                    commit.isEnabled = isTested(task, loaded)
+                val disableActions = {
+                    run.isEnabled = false
+                    commit.isEnabled = false
+                    revert.isEnabled = false
+                }
+                load(requests.forLoad(), onReset = disableActions) { (current, loaded) ->
+                    run.isEnabled = current.wip != null
+                    commit.isEnabled = isTested(current, loaded)
+                    revert.isEnabled = stateOf(current) == TaskState.Uncommitted
                     table(key = { request: TaskValidationRequestVo -> request.id }, fetch = { request -> pageOf(loaded, request) }) {
                         dateTimeColumn(texts.startedAt(), size = 6) { request -> request.createdAt.toUserDateTime() }
                         column(texts.status(), size = 5) { request ->
@@ -529,7 +550,7 @@ class DeveloperTaskView(
                         }
                         textColumn(texts.summary()) { request -> summaryOf(request.execution) }
                         empty(texts.taskTestingEmpty(), texts.taskTestingEmptyHint())
-                        onRowClick(isNavigation = true) { request -> openDeveloperTesting(task.id, request.id) }
+                        onRowClick(isNavigation = true) { request -> openDeveloperTesting(taskId, request.id) }
                     }
                 }
             }
@@ -537,10 +558,11 @@ class DeveloperTaskView(
     }
 
     /**
-     * Builds the commit dialog of [task] and returns its opening, which counts the submissions to grade again: the
-     * regrade choice is offered only if there are any, otherwise the dialog names the reason.
+     * Builds the commit dialog of the task [taskId] and returns its opening, which takes the loaded task and counts the
+     * submissions to grade again: the regrade choice is offered only if there are any, otherwise the dialog names the
+     * reason.
      */
-    private fun commitDialog(task: TaskVo): () -> Unit {
+    private fun commitDialog(taskId: TaskId): (TaskVo) -> Unit {
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         lateinit var regrade: ValueInput<Boolean>
@@ -560,16 +582,16 @@ class DeveloperTaskView(
                         val current = currentLocalization().pageDeveloper
                         dialog.close()
                         refusable(current.taskCommitFailed()) {
-                            developerService.commitTask(task.id, regrade.value)
+                            developerService.commitTask(taskId, regrade.value)
                             toast(FeedbackKind.Success, current.taskCommitted())
                         }
-                        show(task.id)
+                        show(taskId)
                     }
                 }
             }
         }
-        return {
-            val count = developerService.countRegradeSubmissions(task.id)
+        return { task ->
+            val count = developerService.countRegradeSubmissions(taskId)
             val current = currentLocalization().pageDeveloper
             regrade.value = false
             regrade.isVisible = count != null && count > 0

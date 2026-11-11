@@ -54,7 +54,7 @@ class ManagerClassView(private val headers: CabinetHeaders, private val managerS
     private fun show(classId: ClassId) {
         // Checks access before the blocks load, so that a refusal opens its error screen.
         val studyClass = managerService.checkClassAccess(classId)
-        val loaded = lazy { managerService.viewClass(classId) }
+        val loaded = SharedFetch { managerService.viewClass(classId) }
         val texts = currentLocalization().pageManager
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.classTitle(name = studyClass.name)) { managerCrumbs(CLASSES_SECTION) }
@@ -65,7 +65,7 @@ class ManagerClassView(private val headers: CabinetHeaders, private val managerS
             }
             studentsBlock(loaded)
             managerContestsBlock(
-                fetch = { loaded.value.contests },
+                fetch = loaded.forLoad { details -> details.contests },
                 managerService,
                 onOpen = { contest -> openClassContest(classId, contest.id) },
                 onAdd = { contest ->
@@ -77,13 +77,13 @@ class ManagerClassView(private val headers: CabinetHeaders, private val managerS
         }
     }
 
-    private fun PageRowScope.detailsBlock(loaded: Lazy<ClassDetailsVo>) {
+    private fun PageRowScope.detailsBlock(loaded: SharedFetch<ClassDetailsVo>) {
         val texts = currentLocalization().pageManager
         var form: DetailsForm? = null
         block(size = DETAILS_COLUMNS, title = texts.detailsTitle()) {
             guide(texts.detailsGuide())
             editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
-            load({ loaded.value }) { details -> form = detailsRows(details) }
+            load(loaded.forLoad()) { details -> form = detailsRows(details) }
         }
     }
 
@@ -137,7 +137,7 @@ class ManagerClassView(private val headers: CabinetHeaders, private val managerS
     }
 
     @RawInviteCodeDependency(reason = "Shows and copies the stored invite code of the class as the issued one.")
-    private fun PageRowScope.inviteBlock(classId: ClassId, loaded: Lazy<ClassDetailsVo>) {
+    private fun PageRowScope.inviteBlock(classId: ClassId, loaded: SharedFetch<ClassDetailsVo>) {
         val texts = currentLocalization().pageManager
         block(title = texts.classInviteCode()) {
             guide(texts.classInviteGuide())
@@ -165,7 +165,7 @@ class ManagerClassView(private val headers: CabinetHeaders, private val managerS
                     }
                 }
             }
-            load({ loaded.value.invite }) { invite ->
+            load(loaded.forLoad { details -> details.invite }, onReset = { copy.isEnabled = false }) { invite ->
                 row {
                     codeInput(texts.classInviteCode(), labelSize = 5, size = 6) {
                         value = invite.codeHash.value
@@ -178,12 +178,12 @@ class ManagerClassView(private val headers: CabinetHeaders, private val managerS
         }.isEditable = false
     }
 
-    private fun PageScope.studentsBlock(loaded: Lazy<ClassDetailsVo>) {
+    private fun PageScope.studentsBlock(loaded: SharedFetch<ClassDetailsVo>) {
         val texts = currentLocalization().pageManager
         row {
             block(title = texts.classStudentsTitle()) {
                 guide(texts.classStudentsGuide())
-                load({ loaded.value.students }) { students ->
+                load(loaded.forLoad { details -> details.students }) { students ->
                     table(
                         key = { (student, _): Pair<MultipleRoleUserVo, Instant?> -> student.id },
                         fetch = { request -> pageOf(students, request) },

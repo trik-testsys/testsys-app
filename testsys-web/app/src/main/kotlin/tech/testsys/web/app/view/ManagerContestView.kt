@@ -86,7 +86,7 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
                 filename = "contest-${contestId.value}-competition-${competitionId.value}.csv",
             )
         }
-        val loaded = lazy(group.fetch)
+        val loaded = SharedFetch(group.fetch)
 
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.contestTitle(name = group.contest.name)) {
@@ -99,12 +99,12 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
         }
     }
 
-    private fun PageScope.detailsBlock(loaded: Lazy<ContestResultsVo>) {
+    private fun PageScope.detailsBlock(loaded: SharedFetch<ContestResultsVo>) {
         val texts = currentLocalization().pageManager
         row {
             block(title = texts.detailsTitle()) {
                 guide(texts.contestDetailsGuide())
-                load({ loaded.value.contest }) { contest ->
+                load(loaded.forLoad { results -> results.contest }) { contest ->
                     row {
                         codeInput(texts.id(), labelSize = 3, size = 9) { value = contest.id.value.toString() }
                         textInput(texts.name(), labelSize = 3, size = 9) { value = contest.name }
@@ -123,13 +123,13 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
         }
     }
 
-    private fun PageScope.resultsBlock(group: Group, loaded: Lazy<ContestResultsVo>) {
+    private fun PageScope.resultsBlock(group: Group, loaded: SharedFetch<ContestResultsVo>) {
         val texts = currentLocalization().pageManager
         val ui = UI.getCurrent()
         row {
             block(title = texts.contestResultsTitle()) {
                 guide(texts.contestResultsGuide())
-                load({ loaded.value }) { results ->
+                load(loaded.forLoad()) { results ->
                     val byMemberAndTask = results.results.associateBy { result -> result.authorId to result.taskId }
                     val taskColumns = TASK_COLUMNS * results.tasks.size
                     // With few tasks the nickname takes the rest, so the table fills the block.

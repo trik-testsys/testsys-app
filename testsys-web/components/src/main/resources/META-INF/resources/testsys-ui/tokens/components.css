@@ -183,6 +183,8 @@
 .ts-block__sub { font:var(--fw-regular) var(--fs-xs)/var(--lh-xs) var(--font-sans); color:var(--text-secondary); }
 .ts-block__actions { display:flex; align-items:center; gap:var(--space-2); }
 .ts-block__editing { display:contents; }
+.ts-block__refresh { display:flex; }
+.ts-block__actions > :not([hidden]) ~ .ts-block__refresh { margin-left:var(--space-2); padding-left:var(--space-4); border-left:1px solid var(--border-default); }
 .ts-block__head--tabs { flex-wrap:wrap; row-gap:0; padding-bottom:0; }
 .ts-block__head--tabs > .ts-tabs { flex-basis:100%; }
 .ts-block__head--tabs:has(> .ts-tabs[hidden]) { padding-bottom:var(--space-2); }

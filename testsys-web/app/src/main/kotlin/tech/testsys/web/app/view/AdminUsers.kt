@@ -147,7 +147,7 @@ internal fun BlockScope.adminUsersTable(
     val texts = localization.pageAdministrator
     val defaults = UserFilter(communityId = community)
     var applied = defaults
-    val rows = loadTable(
+    loadTable(
         key = { (user, _): Pair<AdminUserVo, Instant?> -> user.id },
         fetch = { request ->
             val users = service.viewUsers(request.toPagination(), applied)
@@ -182,7 +182,6 @@ internal fun BlockScope.adminUsersTable(
             communityChoice.value = null
             applied = defaults
         },
-        onRefresh = { rows.refresh(toFirstPage = true) },
     ) {
         row {
             name = textInput(texts.nickname(), labelSize = 2, size = 10, hint = texts.usersNicknameHint())

@@ -113,6 +113,23 @@ class DeveloperFixtures(
         return draft.id
     }
 
+    /** Stores the working revision of [taskId] of the signed-in developer as its committed one. */
+    fun commit(taskId: TaskId) {
+        val wip = checkNotNull(developerService.viewTask(taskId).first.wip)
+        val stored = checkNotNull(tasks.findById(taskId))
+        tasks.update(
+            stored.withData {
+                content.committed {
+                    tests = wip.tests.toMutableList()
+                    exercises = wip.exercises.toMutableList()
+                    statement = wip.statement
+                    developerSolutions = wip.developerSolutions.toMutableList()
+                    supportedTrikStudioVersions = wip.supportedTrikStudioVersions.toMutableList()
+                }
+            },
+        )
+    }
+
     /** Stores a completed request without grader work for the signed-in developer's [task]. */
     fun testing(task: TaskVo): TaskValidationRequestVo {
         val requests = VaadinService.getCurrent().instantiator.getOrCreate(TaskValidationRequestRepository::class.java)

@@ -1,6 +1,7 @@
 package tech.testsys.web.components.actions
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.button.Button
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -38,7 +39,8 @@ internal class IconActionTests : MockVaadinTests() {
     fun `should preserve icon role name tooltip and placement`(role: ActionRole, placement: Placement, size: String) {
         buildInPlacement(role, placement)
 
-        val button = _get<Button>()
+        // A table block also has the refresh button in its head, so the action is found by its name.
+        val button = _find<Button>().single { action -> action.ariaLabel.orElse(null) == "Action name" }
         assertEquals(role.attribute, button.element.getAttribute("data-ts-role"))
         assertEquals(size, button.element.getAttribute("data-ts-size"))
         assertEquals("Action name", button.ariaLabel.orElseThrow())

@@ -75,7 +75,7 @@ class JudgeSolutionView(
     private fun show(submissionId: SubmissionId) {
         val submission = judgeService.checkSubmissionAccess(submissionId)
         val (status, tone) = statusOf(submission.status)
-        val details = lazy { judgeService.viewSolution(submissionId) }
+        val details = SharedFetch { judgeService.viewSolution(submissionId) }
         val localization = currentLocalization()
         val texts = localization.pageJudge
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -92,12 +92,12 @@ class JudgeSolutionView(
         }
     }
 
-    private fun PageScope.detailsBlock(submissionId: SubmissionId, loaded: Lazy<SubmissionDetailsVo>) {
+    private fun PageScope.detailsBlock(submissionId: SubmissionId, loaded: SharedFetch<SubmissionDetailsVo>) {
         val texts = currentLocalization().pageJudge
         row {
             block(title = texts.solutionDetailsTitle()) {
                 guide(texts.solutionDetailsGuide())
-                load({ loaded.value }) { details ->
+                load(loaded.forLoad()) { details ->
                     val (status, tone) = statusOf(details.submission.status)
                     row {
                         codeInput(texts.solutionDetailsId(), labelSize = 3, size = 9) { value = submissionId.value.toString() }
@@ -130,12 +130,12 @@ class JudgeSolutionView(
         }
     }
 
-    private fun PageScope.verdictBlock(submissionId: SubmissionId, loaded: Lazy<SubmissionDetailsVo>) {
+    private fun PageScope.verdictBlock(submissionId: SubmissionId, loaded: SharedFetch<SubmissionDetailsVo>) {
         val texts = currentLocalization().pageJudge
         row {
             block(title = texts.solutionVerdictTitle()) {
                 guide(texts.solutionVerdictGuide())
-                load({ loaded.value }) { details ->
+                load(loaded.forLoad()) { details ->
                     val verdict = details.verdict
                     if (verdict == null) {
                         emptyState(texts.solutionVerdictEmpty(), texts.solutionVerdictEmptyHint())
@@ -166,13 +166,13 @@ class JudgeSolutionView(
         }
     }
 
-    private fun PageScope.judgmentsBlock(submission: SubmissionVo, loaded: Lazy<SubmissionDetailsVo>) {
+    private fun PageScope.judgmentsBlock(submission: SubmissionVo, loaded: SharedFetch<SubmissionDetailsVo>) {
         val localization = currentLocalization()
         val texts = localization.pageJudge
         row {
             block(title = texts.solutionJudgmentsTitle()) {
                 guide(texts.solutionJudgmentsGuide())
-                load({ loaded.value.judgmentOrders }) { orders ->
+                load(loaded.forLoad { details -> details.judgmentOrders }) { orders ->
                     table(
                         key = { (order, _): Pair<JudgmentOrderVo, NamedUserVo> -> order.id },
                         fetch = { request -> pageOf(orders, request) },

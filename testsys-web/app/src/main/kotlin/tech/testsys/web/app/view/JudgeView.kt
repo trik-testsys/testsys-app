@@ -86,7 +86,7 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
     private fun BlockScope.submissionsTable() {
         val texts = currentLocalization().pageJudge
         var applied = VerdictFilter()
-        val rows = loadTable(
+        loadTable(
             key = { result: JudgeResultVo -> result.verdict.id },
             fetch = { request ->
                 val pageNumber = request.offset / request.limit
@@ -118,7 +118,6 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
                 draft.readBean(VerdictFilterDraft())
                 applied = VerdictFilter()
             },
-            onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
                 codeInput(texts.authorId(), labelSize = 3, size = 9) {

@@ -1146,3 +1146,23 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
 - Independent review, «по новому набору Полигонов»: in a table of several Regrades a reader of an older row could
   take «новый» as the latest set; «по набору Полигонов, с которым запущена Перепроверка» is a longer alternative.
   Kept: the natural reading refers back to the first sentence. Inference from the table context, no language source.
+
+## «Обновить» as the icon-only refresh button of a table (`ui_data.table.refresh`)
+
+- «Обновить» is a perfective transitive verb. Викисловарь lists the senses "restore, repair", "revive" (перен.),
+  "replace the outdated with the new" (перен.) and "use a new item for the first time" (разг.); no offensive or
+  jargon sense. Source: https://ru.wiktionary.org/wiki/обновить (read 2026-11-11).
+- Ambiguity: in software «Обновить» also means "update/upgrade" (install a newer version) or "edit and save"
+  (update a record). For an icon-only `refresh-cw` button at the end of a table header the reading "fetch the rows
+  again" is the natural one; inference from the UI context, no language source states it.
+- The project already uses the reload sense in `ui_feedback.error.page_failed.description` («Обновите страницу…»).
+- Unverified: the Microsoft Terminology entry for "Refresh" was not read; a search on 2026-11-11 returned only the
+  terminology portal and the Russian style guide PDF without the entry.
+- Independent review re-read Викисловарь (2026-11-11): five senses, the closest to refreshing data is «заменить новым
+  что-либо негодное, устаревшее» (mapping is an inference); no computing sense, no offensive sense.
+- Usage evidence of one product's localization, not a norm: the Russian ArcGIS Pro help uses the command «Обновить»
+  for re-reading a list («Когда вы обновляете элемент, появляются добавленные файлы, удаленные файлы удаляются»).
+  Source: https://doc.esri.com/ru/arcgis-pro/latest/help/projects/refresh-a-locations-content.html (read 2026-11-11).
+- In ru-RU bundles «Обновить»/«обновите» occurs only in the reload sense; editing uses «Изменить» and «Сохранить».
+- Optional alternative raised in review: «Обновить таблицу» names the object for screen readers on pages with several
+  tables; the bare verb follows neighbouring labels («Применить», «Сбросить», «Выбрать строку») and was kept.

@@ -114,7 +114,9 @@ class AdminUserView(
         val sections = sectionsOf(user, owned)
         if (section != null && section !in sections) return userParameters(userId)
 
-        val communities = lazy { administratorService.checkAdministratorRole() }
+        val communities = SharedFetch {
+            administratorService.checkUserAccess(userId).first to administratorService.checkAdministratorRole()
+        }
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -174,10 +176,10 @@ class AdminUserView(
     }
 
     /**
-     * Loads the roles of [user] in [communities] of the administrator; granting a role is enabled once those communities
-     * are loaded and opens with them.
+     * Loads the roles of [user] in [communities] of the administrator, reading the user again with them; granting a role
+     * is enabled once those communities are loaded and opens with them.
      */
-    private fun PageScope.rolesBlock(user: AdminUserVo, communities: Lazy<List<CommunityVo>>) {
+    private fun PageScope.rolesBlock(user: AdminUserVo, communities: SharedFetch<Pair<AdminUserVo, List<CommunityVo>>>) {
         val texts = currentLocalization().pageAdministrator
         row {
             block(title = texts.userRolesTitle()) {
@@ -188,12 +190,12 @@ class AdminUserView(
                         // Enabled once the communities are loaded.
                         grant = action(texts.userRolesGrant()) {
                             isEnabled = false
-                            onClick { grantDialog(user, communities.value)() }
+                            onClick { grantDialog(user, communities.value.second)() }
                         }
                     }
                 }
-                load({ communities.value }) { loaded ->
-                    val memberships = membershipsOf(user, loaded)
+                load(communities.forLoad(), onReset = { grant?.isEnabled = false }) { (current, loaded) ->
+                    val memberships = membershipsOf(current, loaded)
                     table(
                         key = { membership: Membership -> membership.community.id },
                         fetch = { request -> pageOf(memberships, request) },

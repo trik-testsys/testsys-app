@@ -11,7 +11,10 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Section
+import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.BeforeEnterEvent
@@ -194,6 +197,26 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show a role granted meanwhile after a refresh of the roles table`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val member = fixtures.multipleRoleUser {
+            roles {
+                developer {
+                    memberOf(listOf(fixtures.community().id.value))
+                    data = developerData {}
+                }
+            }
+        }
+        val target = fixtures.community(name = "Целевое сообщество")
+        open(member.id.value)
+        supervisorService.addToCommunity(member.id, target.id, CommunityRole.Student)
+
+        rolesBlock()._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+
+        assertTrue("Целевое сообществоУченик" in rolesBlock().element.textRecursively, rolesBlock().element.textRecursively)
+    }
+
+    @Test
     fun `should title the browser tab of a user and head the page with its kind`() {
         signIn(fixtures.userOf(UserKind.SUPERVISOR))
         val name = fixtures.unique("Наблюдатель")
@@ -335,6 +358,13 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     }
 
     private fun openDialog(): Dialog = UI.getCurrent()._find<Dialog>().single { dialog -> dialog.isOpened }
+
+    /** Returns the block with the roles table. */
+    private fun rolesBlock(): Section {
+        val table = UI.getCurrent()._find<Table>().first { candidate -> "Роли" in candidate.element.textRecursively }
+        return generateSequence(table.parent.orElse(null)) { component -> component.parent.orElse(null) }
+            .filterIsInstance<Section>().first()
+    }
 
     private fun accessCodeFields(): List<TextField> =
         UI.getCurrent()._find<TextField>().filter { textField -> textField.ariaLabel.orElse(null) == "Код-доступа" }

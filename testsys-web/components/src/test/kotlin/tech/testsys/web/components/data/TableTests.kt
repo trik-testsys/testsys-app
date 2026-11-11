@@ -5,6 +5,7 @@ import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.local.ValueSignal
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.components.MockVaadinTests
+import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.child
 import tech.testsys.web.components.classes
@@ -137,6 +139,42 @@ class TableTests : MockVaadinTests() {
         assertTrue(idHeader().element.textRecursively.endsWith("↓"))
         assertFalse("ts-sorted" in scoreHeader().classes())
         assertEquals("Баллы", scoreHeader().element.textRecursively)
+    }
+
+    @Test
+    fun `should keep an icon-only refresh button last in the block head actions when the block switches to editing`() {
+        buildTestPage {
+            row {
+                block(title = "Посылки") {
+                    table(key = { row: Row -> row.id }, fetch = Source(size = 3)::fetch) { textColumn("Участник") { row -> row.name } }
+                    actions { action("Экспорт") }
+                    editing(onSave = { true }, onCancel = {})
+                }
+            }
+        }
+        val bar = ui().find("ts-block__actions")
+
+        val button = refreshButton()
+        _get<Button> { text = testTexts.messages.uiForm.editingStart() }._click()
+
+        assertEquals(listOf("Экспорт", "ts-block__editing", "ts-block__refresh"), bar.children.map(::headPart).toList())
+        assertEquals(testTexts.messages.uiData.tableRefresh(), button.element.getAttribute("aria-label"))
+        assertTrue(button.element.hasAttribute("data-ts-icon-only"))
+        assertEquals("", button.text)
+    }
+
+    @Test
+    fun `should fetch the current page again with the sort and flash new rows on a refresh click`() {
+        val source = Source(size = 12)
+        buildTable(source)
+        scoreHeader()._fireDomEvent("click")
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
+        source.rows = source.rows + Row(13, "Участник 13", 130)
+
+        refreshButton()._click()
+
+        assertEquals(PageRequest(offset = 5, limit = 5, sort = Sort("score", isDescending = true)), source.requests.last())
+        assertEquals(listOf("8"), rows().filter { row -> "ts-row-new" in row.classes() }.map { row -> cellTexts(row)[0] })
     }
 
     @Test
@@ -647,6 +685,11 @@ class TableTests : MockVaadinTests() {
 
     /** Data of a row click as the client sends it: whether the click passed the filter of clicks on controls. */
     private fun rowClick(isOnControl: Boolean) = ObjectMapper().createObjectNode().put(ROW_CLICK_FILTER, !isOnControl)
+
+    private fun refreshButton(): Button = ui().find("ts-block__refresh")._get<Button>()
+
+    /** A part of the block head actions: the text of a button, otherwise its class. */
+    private fun headPart(part: Component): String = (part as? Button)?.text ?: part.classes().single()
 
     /** Data of a key press on a header as the client sends it: whether the key passed the filter of sort keys. */
     private fun sortKeyPress(isSortKey: Boolean) = ObjectMapper().createObjectNode().put(SORT_KEY_FILTER, isSortKey)

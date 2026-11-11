@@ -115,9 +115,9 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
 }
 
 /**
- * Fills the block body with a horizontally scrollable table fetched by [fetch], [pageSize] rows a page;
- * [key] identifies a row; [selectable] adds a checkbox column on [selectionSize] fractions.
- * [gridColumns] defaults to the containing block. The pagination goes to the end of the block footer.
+ * Fills the block body with a horizontally scrollable table fetched by [fetch], [pageSize] rows a page; [key] identifies a
+ * row; [selectable] adds a checkbox column on [selectionSize] fractions; [gridColumns] defaults to the containing block.
+ * The pagination ends the block footer; a refresh button ends the block head and fetches the page again or reloads a load.
  *
  * @param T the type of the rows.
  * @throws IllegalArgumentException if [pageSize] is below one or the table declares no columns.
@@ -145,6 +145,10 @@ fun <T> BlockScope.table(
     checkTablePlace()
 
     val table = DataTable(texts, key, pageSize, selectable, fetch, spec)
-    placeTable(table = table.root, pager = table.pager.root) { host -> table.pagerHost = host }
+    placeTable(
+        table = table.root,
+        pager = table.pager.root,
+        refresh = { toFirstPage -> table.reload(toFirstPage, highlightNew = !toFirstPage) },
+    ) { host -> table.pagerHost = host }
     return TableHandle(table)
 }

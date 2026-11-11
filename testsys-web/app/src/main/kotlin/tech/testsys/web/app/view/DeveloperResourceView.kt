@@ -82,7 +82,7 @@ class DeveloperResourceView(
     private fun show(taskId: TaskId, versionBucket: VersionBucket) {
         // Checks the role, the task, the chain and access before the blocks load, so that a refusal opens its error screen.
         val (task, latest) = developerService.checkResourceAccess(taskId, versionBucket)
-        val history = lazy { developerService.viewResource(taskId, versionBucket).sortedWith(NEWEST_FIRST) }
+        val history = SharedFetch { developerService.viewResource(taskId, versionBucket).sortedWith(NEWEST_FIRST) }
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -98,14 +98,14 @@ class DeveloperResourceView(
         }
     }
 
-    private fun PageScope.detailsBlock(task: TaskVo, history: Lazy<List<Pair<ResourceVo, SolutionVo?>>>) {
+    private fun PageScope.detailsBlock(task: TaskVo, history: SharedFetch<List<Pair<ResourceVo, SolutionVo?>>>) {
         val texts = currentLocalization().pageDeveloper
         var form: DetailsForm? = null
         row {
             block(title = texts.details()) {
                 guide(texts.editingGuide())
                 editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
-                load({ history.value }) { versions -> form = detailsRows(task, versions) }
+                load(history.forLoad()) { versions -> form = detailsRows(task, versions) }
             }
         }
     }
@@ -195,13 +195,13 @@ class DeveloperResourceView(
         )
     }
 
-    private fun PageScope.historyBlock(task: TaskVo, latest: ResourceVo, history: Lazy<List<Pair<ResourceVo, SolutionVo?>>>) {
+    private fun PageScope.historyBlock(task: TaskVo, latest: ResourceVo, history: SharedFetch<List<Pair<ResourceVo, SolutionVo?>>>) {
         val texts = currentLocalization().pageDeveloper
         val isSolution = latest is DeveloperSolutionVo
         row {
             block(title = texts.resourceHistoryTitle()) {
                 guide(texts.resourceHistoryGuide())
-                load({ history.value }) { versions ->
+                load(history.forLoad()) { versions ->
                     table(
                         key = { (version, _): Pair<ResourceVo, SolutionVo?> -> version.id },
                         fetch = { request -> pageOf(versions, request) },

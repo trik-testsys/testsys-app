@@ -25,6 +25,7 @@ import tech.testsys.web.app.service.ManagerRoleVo
 import tech.testsys.web.app.service.MultipleRoleUserVo
 import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.ParticipantVo
+import tech.testsys.web.app.service.RoleVo
 import tech.testsys.web.app.service.supervisor.SupervisorService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.ActionHandle
@@ -83,7 +84,9 @@ class SupervisorUserView(
     private fun show(id: Long, section: AdminUserSection? = null): Boolean {
         // Checks the role and the user before the blocks load, so that a refusal opens its error screen.
         val user = service.checkUserAccessByIdValue(id)
-        val communities = lazy { service.checkSupervisorRole() }
+        val communities = SharedFetch {
+            (service.checkUserAccessByIdValue(id) as? MultipleRoleUserVo)?.roles.orEmpty() to service.checkSupervisorRole()
+        }
         val sections = if (user is MultipleRoleUserVo) {
             AdminUserSection.entries.filter { entry ->
                 user.roles.any { role ->
@@ -217,10 +220,10 @@ class SupervisorUserView(
     }
 
     /**
-     * Loads the community roles of [user] with their removal; the inclusion into a community opens with the loaded
-     * [communities], and the administrator grant needs only the checked [user].
+     * Loads the community roles of [user], read again with [communities], with their removal; the inclusion into a
+     * community opens with the loaded [communities], and the administrator grant needs only the checked [user].
      */
-    private fun PageScope.rolesBlock(id: Long, user: MultipleRoleUserVo, communities: Lazy<List<CommunityVo>>) {
+    private fun PageScope.rolesBlock(id: Long, user: MultipleRoleUserVo, communities: SharedFetch<Pair<List<RoleVo>, List<CommunityVo>>>) {
         val texts = currentLocalization().pageSupervisor
         row {
             block(title = texts.userRolesTitle()) {
@@ -230,7 +233,7 @@ class SupervisorUserView(
                     // Enabled once the communities are loaded.
                     add = action(texts.userRolesGrant()) {
                         isEnabled = false
-                        onClick { addDialog(user, communities.value) { show(id) }() }
+                        onClick { addDialog(user, communities.value.second) { show(id) }() }
                     }
                     if (user.roles.none { it is AdministratorRoleVo }) {
                         action(texts.userAdministratorGrant()) {
@@ -248,19 +251,19 @@ class SupervisorUserView(
                         }
                     }
                 }
-                load({ communities.value }) { loaded ->
-                    membershipsTable(id, user, loaded)
+                load(communities.forLoad(), onReset = { add.isEnabled = false }) { (userRoles, loaded) ->
+                    membershipsTable(id, user, userRoles, loaded)
                     add.isEnabled = true
                 }
             }
         }
     }
 
-    /** Adds the table of the roles of [user] in each of [communities] where it holds any, with their removal. */
-    private fun BlockScope.membershipsTable(id: Long, user: MultipleRoleUserVo, communities: List<CommunityVo>) {
+    /** Adds the table of [userRoles] of [user] in each of [communities] where it holds any, with their removal. */
+    private fun BlockScope.membershipsTable(id: Long, user: MultipleRoleUserVo, userRoles: List<RoleVo>, communities: List<CommunityVo>) {
         val texts = currentLocalization().pageSupervisor
         val memberships = communities.mapNotNull { community ->
-            user.roles.filter { community.id in it.memberOf }.takeIf { it.isNotEmpty() }
+            userRoles.filter { role -> community.id in role.memberOf }.takeIf { roles -> roles.isNotEmpty() }
                 ?.let { roles -> community to roles }
         }
         table(

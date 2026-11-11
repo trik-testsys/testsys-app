@@ -152,7 +152,6 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
                 dates.value = DateRange()
                 applied = GroupsFilter()
             },
-            onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
                 name = textInput(texts.name(), labelSize = 3, size = 9, hint = texts.filterNameHint())

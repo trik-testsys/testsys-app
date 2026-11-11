@@ -45,7 +45,7 @@ class ObserverView(private val headers: CabinetHeaders, private val service: Obs
             row {
                 block(title = texts.contestsTitle()) {
                     guide(texts.contestsGuide())
-                    val rows = loadTable(
+                    loadTable(
                         key = { pair: ObserverContestVo ->
                             pair.competition.id to pair.contest.id
                         },
@@ -89,7 +89,6 @@ class ObserverView(private val headers: CabinetHeaders, private val service: Obs
                             contestId.value = ""
                             applied = ObserverContestFilter()
                         },
-                        onRefresh = { rows.refresh(toFirstPage = true) },
                     ) {
                         row {
                             competitionName = textInput(texts.competition(), labelSize = 3, size = 9)

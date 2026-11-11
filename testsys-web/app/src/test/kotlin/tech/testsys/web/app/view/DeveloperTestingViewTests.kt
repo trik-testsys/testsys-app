@@ -131,6 +131,20 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show the details and a load error in the diagnostics and submissions if resource names fail to load`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val request = testingRequest(task)
+        val service = service(task, request)
+        every { service.viewResources() } throws IllegalStateException("Resource storage unavailable")
+
+        open(task.id, request.id, service)
+
+        assertEquals("Выполняются Диагностики", textField("Итог").value)
+        assertEquals(2, Regex("Не удалось загрузить").findAll(UI.getCurrent().element.textRecursively).count())
+    }
+
+    @Test
     fun `should use historical resource names from the selected request snapshot`() {
         developers.signInDeveloper()
         val draft = developers.task()

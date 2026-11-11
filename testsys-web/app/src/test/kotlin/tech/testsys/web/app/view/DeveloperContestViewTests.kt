@@ -13,7 +13,10 @@ import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -27,6 +30,7 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.toVo
@@ -42,6 +46,12 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var dataSource: DataSource
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
+    @Autowired
+    private lateinit var currentUser: CurrentUser
 
     private val developers by lazy { DeveloperFixtures(fixtures, developerService, tasks, dataSource) }
 
@@ -129,6 +139,24 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
         assertTrue("нельзя будет изменить и удалить" in warning, warning)
         assertEquals(listOf(community.id), developerService.viewContest(contest.id).first.sharedTo)
         assertEquals("Доступ к Туру предоставлен", lastToastTitle())
+    }
+
+    @Test
+    fun `should disable sharing if the contest fails to load`() {
+        developers.signInDeveloper()
+        val contest = developers.contest(developers.trikStudioVersion())
+        val service = mockk<DeveloperService>()
+        every { service.checkContestAccess(contest.id) } returns developerService.checkContestAccess(contest.id)
+        every { service.viewContest(contest.id) } throws IllegalStateException("Contest storage unavailable")
+        val view = DeveloperContestView(headers, service, currentUser)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns contestParameters(contest.id)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(event)
+
+        assertFalse(pageButton("Предоставить доступ").isEnabled)
     }
 
     @Test

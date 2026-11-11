@@ -53,8 +53,10 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
     private fun show(taskId: TaskId, requestId: TaskValidationRequestId) {
         // Checks access before the blocks load, so that a refusal or a request of another task opens its error screen.
         val (task, request) = developerService.checkTaskValidationRequestAccess(taskId, requestId)
-        val current = lazy { developerService.checkTaskValidationRequestAccess(taskId, requestId).second }
-        val names = lazy { resourceNames(task, current.value) }
+        val loaded = SharedFetch {
+            val current = developerService.checkTaskValidationRequestAccess(taskId, requestId).second
+            current to resourceNames(task, current)
+        }
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -67,19 +69,20 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
             row {
                 block(title = texts.details()) {
                     guide(texts.testingDetailsGuide())
-                    load({ current.value }) { loaded -> detailsRows(loaded) }
+                    val details = { developerService.checkTaskValidationRequestAccess(taskId, requestId).second }
+                    load(details) { current -> detailsRows(current) }
                 }
             }
             row {
                 block(title = texts.testingDiagnosticsTitle()) {
                     guide(texts.testingDiagnosticsGuide())
-                    load({ current.value to names.value }) { (loaded, known) -> diagnosticsTable(loaded, known) }
+                    load(loaded.forLoad()) { (current, known) -> diagnosticsTable(current, known) }
                 }
             }
             row {
                 block(title = localization.pageCabinet.sectionSubmissions()) {
                     guide(texts.testingSubmissionsGuide())
-                    load({ current.value to names.value }) { (loaded, known) -> submissionRows(loaded, known) }
+                    load(loaded.forLoad()) { (current, known) -> submissionRows(current, known) }
                 }
             }
         }

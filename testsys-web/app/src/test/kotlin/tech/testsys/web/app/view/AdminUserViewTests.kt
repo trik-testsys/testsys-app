@@ -12,7 +12,9 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
@@ -241,6 +243,19 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         assertEquals(setOf(communityConfig.publicCommunityId, other.id), student.memberOf.ids.toSet())
         assertTrue("Второе сообществоУченик" in rolesText(), rolesText())
         assertEquals("Пользователь включён в Сообщество", lastToastTitle())
+    }
+
+    @Test
+    fun `should show a role granted meanwhile after a refresh of the roles table`() {
+        val administrator = signInAdministrator()
+        val member = developerOf(fixtures.community(owner = administrator))
+        val other = fixtures.community(owner = administrator, name = "Второе сообщество")
+        openUser(member)
+        administratorService.grantRole(member.id, other.id, CommunityRole.Student)
+
+        refreshRoles()
+
+        assertTrue("Второе сообществоУченик" in rolesText(), rolesText())
     }
 
     @Test
@@ -521,6 +536,14 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
     private fun rolesText(): String =
         UI.getCurrent()._find<Table>().first { table -> "Роли" in table.element.textRecursively }.element.textRecursively
+
+    /** Clicks the refresh button of the block with the roles table. */
+    private fun refreshRoles() {
+        val table = UI.getCurrent()._find<Table>().first { candidate -> "Роли" in candidate.element.textRecursively }
+        generateSequence(table.parent.orElse(null)) { component -> component.parent.orElse(null) }
+            .filterIsInstance<Section>().first()
+            ._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+    }
 
     /** Returns the text of the first table with the column [title]. */
     private fun tableText(title: String): String =

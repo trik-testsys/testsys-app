@@ -58,7 +58,7 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
     private fun show(competitionId: CompetitionId) {
         // Checks access before the blocks load, so that a refusal opens its error screen.
         val competition = managerService.checkCompetitionAccess(competitionId)
-        val loaded = lazy { managerService.viewCompetition(competitionId) }
+        val loaded = SharedFetch { managerService.viewCompetition(competitionId) }
         val texts = currentLocalization().pageManager
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.competitionTitle(name = competition.name)) { managerCrumbs(COMPETITIONS_SECTION) }
@@ -66,7 +66,7 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
             detailsBlock(loaded)
             participantsBlock(competitionId, loaded)
             managerContestsBlock(
-                fetch = { loaded.value.contests },
+                fetch = loaded.forLoad { details -> details.contests },
                 managerService,
                 onOpen = { contest -> openCompetitionContest(competitionId, contest.id) },
                 onAdd = { contest ->
@@ -78,14 +78,14 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
         }
     }
 
-    private fun PageScope.detailsBlock(loaded: Lazy<CompetitionDetailsVo>) {
+    private fun PageScope.detailsBlock(loaded: SharedFetch<CompetitionDetailsVo>) {
         val texts = currentLocalization().pageManager
         var form: DetailsForm? = null
         row {
             block(title = texts.detailsTitle()) {
                 guide(texts.detailsGuide())
                 editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
-                load({ loaded.value }) { details -> form = detailsRows(details) }
+                load(loaded.forLoad()) { details -> form = detailsRows(details) }
             }
         }
     }
@@ -172,7 +172,7 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
         }.open()
     }
 
-    private fun PageScope.participantsBlock(competitionId: CompetitionId, loaded: Lazy<CompetitionDetailsVo>) {
+    private fun PageScope.participantsBlock(competitionId: CompetitionId, loaded: SharedFetch<CompetitionDetailsVo>) {
         val texts = currentLocalization().pageManager
         row {
             block(title = texts.competitionParticipantsTitle()) {
@@ -188,8 +188,7 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                         onClick { rows?.let { shown -> deleteSelected(competitionId, shown) } }
                     }
                 }
-                load({ loaded.value.participants }) { participants ->
-                    deleteSelected.isEnabled = false
+                load(loaded.forLoad { details -> details.participants }, onReset = { deleteSelected.isEnabled = false }) { participants ->
                     val built = table(
                         key = { (participant, _): Pair<ParticipantVo, Instant?> -> participant.id },
                         selectable = true,

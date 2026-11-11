@@ -50,14 +50,22 @@ enum class DialogSize(internal val cssClass: CssClass?) {
  * Modal `vaadin-dialog` drawing the `.ts-dialog` markup: a head with the title and a close button, or an alert body
  * with a warning glyph; [content] and [foot] take the content. [size] gives the width of the card. An open dialog
  * closes on navigation: opening attaches it to the UI, not to the page, so leaving the page would keep it shown.
+ * A dialog holding typed values passes [isClosedByOutsideClick] `false`, so a stray click does not discard them.
  */
-internal class DialogShell(texts: UiLocalization, title: String, subtitle: String?, size: DialogSize, isAlert: Boolean) {
+internal class DialogShell(
+    texts: UiLocalization,
+    title: String,
+    subtitle: String?,
+    size: DialogSize,
+    isAlert: Boolean,
+    isClosedByOutsideClick: Boolean = true,
+) {
     val dialog = Dialog().apply {
         addThemeName(CssTheme.Dialog)
         // Vaadin defaults, set explicitly to state how every dialog closes.
         modality = ModalityMode.STRICT
         isCloseOnEsc = true
-        isCloseOnOutsideClick = true
+        isCloseOnOutsideClick = isClosedByOutsideClick
         setAriaRole(if (isAlert) ElementRole.AlertDialog else ElementRole.Dialog)
         // Dialog.setAriaLabel is protected; it only sets this property.
         element.setProperty(DomProperty.AriaLabel, title)

@@ -50,6 +50,16 @@ class FormDialogTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should keep a form dialog open on a click outside it`() {
+        val handle = dialog(title = "Ресурсы") { row { textInput("Название", labelSize = 6, size = 18) } }
+
+        handle.open()
+
+        assertFalse(openDialogs().single().isCloseOnOutsideClick)
+        assertTrue(openDialogs().single().isCloseOnEsc)
+    }
+
+    @Test
     fun `should reject a section row wider than 24 columns`() {
         assertThrows(IllegalStateException::class.java) {
             dialog(title = "Ресурсы") {

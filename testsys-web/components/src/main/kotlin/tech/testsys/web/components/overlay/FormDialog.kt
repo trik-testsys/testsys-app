@@ -74,7 +74,7 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
     }
 
     /**
-     * Runs [listener] whenever the dialog closes, by an action, the close button, Esc, a click outside or navigation.
+     * Runs [listener] whenever the dialog closes, by an action, the close button, Esc or navigation.
      * Replaces a listener set by an earlier call.
      *
      * @since 1.0.0-beta.1
@@ -166,7 +166,14 @@ class DialogSectionScope internal constructor(
  */
 fun dialog(title: String, subtitle: String? = null, size: DialogSize = DialogSize.M, content: DialogScope.() -> Unit): DialogHandle {
     val texts = currentUiLocalization()
-    val shell = DialogShell(texts, title = title, subtitle = subtitle, size = size, isAlert = false)
+    val shell = DialogShell(
+        texts,
+        title = title,
+        subtitle = subtitle,
+        size = size,
+        isAlert = false,
+        isClosedByOutsideClick = false,
+    )
     shell.content.addClassName(CssClass.DialogGrid)
 
     val editState = BlockEditState(shell.dialog.element)

@@ -40,6 +40,8 @@ import tech.testsys.web.components.testTexts
 import java.util.concurrent.Executor
 import kotlin.concurrent.thread
 
+private const val LOAD_MARK = "ts-block__body--load"
+
 class LoadTests : MockVaadinTests() {
     private val queue = QueueExecutor()
 
@@ -139,6 +141,20 @@ class LoadTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should mark the body of a load`() {
+            buildTestPage { row { block { load({ 1 }) { value -> row { text("Всего: $value") } } } } }
+
+            assertTrue(LOAD_MARK in body().classes())
+        }
+
+        @Test
+        fun `should not mark the body of a block without a load`() {
+            buildTestPage { row { block { row { text("Всего: 1") } } } }
+
+            assertFalse(LOAD_MARK in body().classes())
+        }
+
+        @Test
         fun `should show the block head and actions while loading`() {
             buildTestPage {
                 row {
@@ -183,13 +199,22 @@ class LoadTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should keep the load mark on the body with loaded content`() {
+            buildTestPage { row { block { load({ 42 }) { value -> row { text("Всего: $value") } } } } }
+
+            queue.runAll()
+
+            assertTrue(LOAD_MARK in body().classes())
+        }
+
+        @Test
         fun `should build rows as a block without load does`() {
             val expected = buildTestPage { row { block { row { text("Всего: 3") } } } }.find("ts-block__body").element.outerHTML
             val loaded = buildTestPage { row { block { load({ 3 }) { value -> row { text("Всего: $value") } } } } }
 
             queue.runAll()
 
-            assertEquals(expected, loaded.find("ts-block__body").element.outerHTML)
+            assertEquals(expected, loaded.find("ts-block__body").htmlWithoutLoadMark())
         }
 
         @Test
@@ -221,7 +246,7 @@ class LoadTests : MockVaadinTests() {
 
             queue.runAll()
 
-            assertEquals(expected, loaded.find("ts-block__body").element.outerHTML)
+            assertEquals(expected, loaded.find("ts-block__body").htmlWithoutLoadMark())
         }
 
         @Test
@@ -398,6 +423,15 @@ class LoadTests : MockVaadinTests() {
             assertFalse("ts-block__body--flush" in body().classes())
             assertFalse("ts-block__body--grid" in body().classes())
             assertNull(body().element.getAttribute("aria-busy"))
+        }
+
+        @Test
+        fun `should keep the load mark on the body with the error state`() {
+            buildTestPage { row { block { load<Int>({ error("Test fetch failure") }) { value -> row { text("Всего: $value") } } } } }
+
+            queue.runAll()
+
+            assertTrue(LOAD_MARK in body().classes())
         }
 
         @Test
@@ -1033,6 +1067,9 @@ class LoadTests : MockVaadinTests() {
     private fun ui(): Component = UI.getCurrent()
 
     private fun body(): Component = ui().find("ts-block__body")
+
+    /** The outer HTML of a loaded body without the load mark, which a body of a block without a load lacks. */
+    private fun Component.htmlWithoutLoadMark(): String = element.outerHTML.replace(" $LOAD_MARK", "")
 
     /** Keeps background tasks until a test runs them in the test thread, which is the UI thread. */
     private class QueueExecutor : Executor {

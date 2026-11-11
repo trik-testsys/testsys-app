@@ -35,6 +35,7 @@ internal enum class CssClass(internal val value: String) {
     BlockBody("ts-block__body"),
     BlockBodyFlush("ts-block__body--flush"),
     BlockBodyGrid("ts-block__body--grid"),
+    BlockBodyLoad("ts-block__body--load"),
     BlockEditing("ts-block__editing"),
     BlockFoot("ts-block__foot"),
     BlockHead("ts-block__head"),

@@ -180,6 +180,14 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should fade in the loaded body and delay its skeleton`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertEquals("ts-fade-in var(--dur-base) var(--ease-out) backwards", rule(components, ".ts-block__body--load > *")["animation"])
+        assertEquals("150ms", rule(components, ".ts-block__body--load[aria-busy=\"true\"] > *")["animation-delay"])
+    }
+
+    @Test
     fun `should animate the drawer on opening only when motion is allowed`() {
         val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
         val drawer = "vaadin-dialog[theme~=\"ts-drawer\"]::part(overlay)"

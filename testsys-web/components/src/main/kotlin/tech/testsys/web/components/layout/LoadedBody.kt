@@ -8,6 +8,7 @@ import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.hasAriaBusy
 import tech.testsys.web.components.core.setAriaBusy
 import tech.testsys.web.components.core.setClassName
@@ -17,7 +18,7 @@ import tech.testsys.web.components.texts.UiLocalization
  * Body of a block that a load fills after the block is built, again on every reload: either a placeholder or
  * a failure that fills it whole, or content built by a scope of its own, as the block itself would build it; content
  * that adds nothing hides the body, as a block without rows has none. The pagination of a loaded table goes to the end
- * of the block footer.
+ * of the block footer, and a load mark on the body fades in the placeholder and whatever replaces it.
  */
 internal class LoadedBody(
     private val body: Div,
@@ -34,6 +35,10 @@ internal class LoadedBody(
 
     // Whether the body holds anything: false only after content that added nothing.
     private var hasContent = true
+
+    init {
+        body.addClassName(CssClass.BlockBodyLoad)
+    }
 
     /** The body itself. */
     val component: Component

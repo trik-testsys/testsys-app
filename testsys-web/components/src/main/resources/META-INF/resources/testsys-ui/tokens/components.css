@@ -482,6 +482,9 @@ a.ts-tab { text-decoration:none; }
 .ts-table tbody tr { transition:background var(--dur-fast) var(--ease-out); }
 .ts-table tr.ts-row-new td, .ts-flash { animation:ts-flash var(--dur-flash) var(--ease-out) both; }
 .ts-status--live .ts-status__dot { box-shadow:none; animation:ts-live-ring 2s var(--ease-out) infinite; }
+/* A loaded block body fades in what replaces its skeleton; the skeleton waits, so a fast load does not flash it. */
+.ts-block__body--load > * { animation:ts-fade-in var(--dur-base) var(--ease-out) backwards; }
+.ts-block__body--load[aria-busy="true"] > * { animation-delay:150ms; }
 .ts-enter { animation:ts-rise-in var(--dur-slow) var(--ease-out) both; }
 .ts-enter-fade { animation:ts-fade-in var(--dur-base) var(--ease-out) both; }
 .ts-verdict, .ts-status { transition:background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }

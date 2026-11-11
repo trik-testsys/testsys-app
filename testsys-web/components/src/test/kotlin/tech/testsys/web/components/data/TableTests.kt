@@ -502,6 +502,19 @@ class TableTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should run the row click on Enter in the focusable link of a navigating row`() {
+        var clicked: Row? = null
+        buildTable(Source(size = 12)) { onRowClick(isNavigation = true) { row -> clicked = row } }
+
+        val link = rows()[1].children.toList().first { cell -> "ts-navigation-cell" in cell.classes() }.child(0)
+        link._fireDomEvent("keydown", ObjectMapper().createObjectNode().put(tech.testsys.web.components.core.TABLE_LINK_KEY_FILTER, true))
+
+        assertEquals("link", link.element.getAttribute("role"))
+        assertEquals("0", link.element.getAttribute("tabindex"))
+        assertEquals(2, clicked?.id)
+    }
+
+    @Test
     fun `should not mark a cell if the row click does not navigate`() {
         buildTable(Source(size = 12)) { onRowClick {} }
 

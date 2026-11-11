@@ -190,6 +190,7 @@ internal enum class CssClass(internal val value: String) {
     NavItem("ts-nav__item"),
     NavItemActive("ts-nav__item--active"),
     NavigationCell("ts-navigation-cell"),
+    NavigationLink("ts-navigation-link"),
     Num("ts-num"),
     ObscuredValue("ts-obscured-value"),
     Option("ts-option"),

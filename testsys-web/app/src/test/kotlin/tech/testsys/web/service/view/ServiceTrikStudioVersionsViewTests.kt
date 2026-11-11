@@ -11,6 +11,7 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
@@ -82,6 +83,19 @@ class ServiceTrikStudioVersionsViewTests : ServiceMockVaadinTests() {
         val table = UI.getCurrent()._get<Table>().element.textRecursively
         assertTrue("Версий TRIK Studio нет" in table)
         assertFalse(registered.tag in table)
+    }
+
+    @Test
+    fun `should keep the title and adding and show a load error in the versions if they fail to load`() {
+        every { versions.findAll() } throws IllegalStateException("Version storage unavailable")
+
+        UI.getCurrent().navigate(ServiceHomeView::class.java)
+        UI.getCurrent().navigate(ServiceTrikStudioVersionsView::class.java)
+
+        assertEquals("Версии TRIK Studio", UI.getCurrent()._get<H1>().text)
+        assertTrue(UI.getCurrent()._get<Button> { text = "Добавить" }.isEnabled)
+        val page = UI.getCurrent()._get<ServiceTrikStudioVersionsView>().element.textRecursively
+        assertEquals(1, Regex("Не удалось загрузить").findAll(page).count())
     }
 
     @Test

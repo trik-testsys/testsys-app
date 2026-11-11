@@ -43,8 +43,8 @@ import tech.testsys.web.components.texts.currentLocalization
 private const val DETAILS_COLUMNS = 12
 
 /**
- * Community details and applicable management actions shared by administrator and supervisor routes. [checkAccess]
- * checks the access to the community before the blocks load and returns it for the page head.
+ * Community details and applicable management actions shared by administrator and supervisor routes. The access check of
+ * [service] runs before the blocks load and returns the community for the page head.
  *
  * @since 1.0.0-beta.1
  */
@@ -55,10 +55,6 @@ abstract class CommunityDetailsView(
     private val cabinetPage: Class<out Component>,
     private val cabinetLabel: String,
     private val onOpenUser: (AdminUserVo) -> Unit,
-    private val checkAccess: (CommunityId) -> CommunityVo = { communityId ->
-        service.viewCommunityInvites(communityId)
-        service.viewCommunities().first { (community, _) -> community.id == communityId }.first
-    },
 ) :
     TestSysView(),
     BeforeEnterObserver,
@@ -71,7 +67,7 @@ abstract class CommunityDetailsView(
 
     private fun show(communityId: CommunityId) {
         // Checks role and community access before the blocks load, so a refusal opens its error screen.
-        val community = checkAccess(communityId)
+        val community = service.checkCommunityAccess(communityId)
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -111,7 +107,7 @@ abstract class CommunityDetailsView(
         block(size = DETAILS_COLUMNS, title = texts.details()) {
             guide(texts.communityDetailsGuide())
             editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
-            load({ checkAccess(communityId) }) { community -> form = detailsRows(community, onEdited) }
+            load({ service.checkCommunityAccess(communityId) }) { community -> form = detailsRows(community, onEdited) }
         }
     }
 
@@ -310,5 +306,4 @@ class AdminCommunityView(headers: CabinetHeaders, service: AdministratorService)
     AdminView::class.java,
     currentLocalization().pageAdministrator.title(),
     ::openAdminUser,
-    service::checkCommunityAccess,
 )

@@ -25,11 +25,11 @@ import tech.testsys.infra.database.api.service.ServiceUserFilter
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserRole
 import tech.testsys.infra.database.api.service.ServiceUserSearch
+import tech.testsys.web.app.view.loadTable
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.filters
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.multiSelect
@@ -69,7 +69,7 @@ class ServiceUsersView(private val headers: ServiceHeaders, private val search: 
             head("Пользователи")
             row {
                 block(title = "Пользователи") {
-                    val rows = table(
+                    val rows = loadTable(
                         key = { user: User<*> -> user.id.value },
                         fetch = { request ->
                             val users = search.find(applied, request.toPagination())

@@ -144,6 +144,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         assertEquals("Пользователь «Разработчик Иван»", view._get<H1>().text)
         assertEquals(listOf("Сведения", "Разработчик"), tabLabels())
         assertEquals(2, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+        assertFalse(view._get<Button> { text = "Включить в Сообщество" }.isEnabled)
     }
 
     @Test

@@ -38,6 +38,9 @@ import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.AddToCommunityError
 import tech.testsys.operation.error.AdministratorInPublicCommunityError
+import tech.testsys.operation.error.CheckSupervisorCommunityAccessError
+import tech.testsys.operation.error.CheckSupervisorRoleError
+import tech.testsys.operation.error.CheckSupervisorUserAccessError
 import tech.testsys.operation.error.CommunityIsPublicError
 import tech.testsys.operation.error.CommunityNameBlankError
 import tech.testsys.operation.error.CommunityNameTooLongError
@@ -64,7 +67,6 @@ import tech.testsys.operation.error.UserNotCommunityMemberError
 import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.ViewSupervisorCommunitiesError
 import tech.testsys.operation.error.ViewSupervisorCommunityContestsError
-import tech.testsys.operation.error.ViewSupervisorCommunityError
 import tech.testsys.operation.error.ViewSupervisorCommunityInvitesError
 import tech.testsys.operation.error.ViewSupervisorUserAssignedContestsError
 import tech.testsys.operation.error.ViewSupervisorUserClassesError
@@ -234,13 +236,42 @@ class SupervisorOperations(
         }
 
     /**
-     * Returns one community available to a supervisor.
+     * Returns all communities without their user counts, so that a page checks the role and builds its community filter
+     * before it loads its lists. Refusals match [viewCommunities]; nothing is written.
      *
-     * @since 1.0.0-beta.1
+     * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.single.supervisor.authorization")
-    fun viewCommunity(user: User<*>, communityId: CommunityId): OperationResult<Community, ViewSupervisorCommunityError> =
-        operation<Community, ViewSupervisorCommunityError> {
+    fun checkSupervisorRole(user: User<*>): OperationResult<List<Community>, CheckSupervisorRoleError> =
+        operation<List<Community>, CheckSupervisorRoleError> {
+            ensure(user is Supervisor, MissedSupervisorRoleError)
+            communities.findAllCommunities()
+        }
+
+    /**
+     * Returns the non-supervisor user [userId] without its last login, so that a page checks it and picks the role sections
+     * before it loads them. Refusals match [viewUser]; nothing is written.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.single.supervisor.authorization")
+    fun checkUserAccess(user: User<*>, userId: UserId): OperationResult<User<*>, CheckSupervisorUserAccessError> =
+        operation<User<*>, CheckSupervisorUserAccessError> {
+            ensure(user is Supervisor, MissedSupervisorRoleError)
+            val found = users.findUserById(userId)
+            ensure(found != null) { UserNotExistsError(userId) }
+            found
+        }
+
+    /**
+     * Returns [communityId] without its invite codes and users, so that a page checks it before it loads them. Missing role
+     * and community are expected failures; nothing is written.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.single.supervisor.authorization")
+    fun checkCommunityAccess(user: User<*>, communityId: CommunityId): OperationResult<Community, CheckSupervisorCommunityAccessError> =
+        operation<Community, CheckSupervisorCommunityAccessError> {
             ensure(user is Supervisor, MissedSupervisorRoleError)
             val community = communityRepository.findById(communityId)
             ensure(community != null) { CommunityNotExistsError(communityId) }

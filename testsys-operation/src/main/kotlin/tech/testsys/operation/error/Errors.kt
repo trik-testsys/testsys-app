@@ -733,6 +733,7 @@ data class UserNotExistsError(val userId: UserId) :
     AddToCommunityError,
     GrantAdministratorError,
     ViewSupervisorUserError,
+    CheckSupervisorUserAccessError,
     RemoveSupervisorMemberError,
     ImpersonateError,
     EntityNotExistsError
@@ -866,11 +867,25 @@ sealed interface ViewSupervisorUserError :
 sealed interface ViewSupervisorCommunitiesError : OperationError
 
 /**
- * Failure of viewing one community for a supervisor.
+ * Failure of checking the supervisor role before a page of the supervisor opens.
  *
- * @since 1.0.0-beta.1
+ * @since %CURRENT_VERSION%
  */
-sealed interface ViewSupervisorCommunityError : OperationError
+sealed interface CheckSupervisorRoleError : OperationError
+
+/**
+ * Failure of checking a non-supervisor user before its page of the supervisor opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckSupervisorUserAccessError : OperationError
+
+/**
+ * Failure of checking a community before its page of the supervisor opens.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckSupervisorCommunityAccessError : OperationError
 
 /**
  * Failure of adding a multiple-role user to any community in a non-fixed role.
@@ -958,7 +973,9 @@ data object MissedSupervisorRoleError :
     ViewSupervisorUsersError,
     ViewSupervisorUserError,
     ViewSupervisorCommunitiesError,
-    ViewSupervisorCommunityError,
+    CheckSupervisorRoleError,
+    CheckSupervisorUserAccessError,
+    CheckSupervisorCommunityAccessError,
     AddToCommunityError,
     GrantAdministratorError,
     EditSupervisorCommunityError,
@@ -1902,7 +1919,7 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
     EditCommunityError,
     CheckCommunityAccessError,
     AddToCommunityError,
-    ViewSupervisorCommunityError,
+    CheckSupervisorCommunityAccessError,
     EditSupervisorCommunityError,
     RemoveSupervisorMemberError,
     CreateSupervisorObserverError,

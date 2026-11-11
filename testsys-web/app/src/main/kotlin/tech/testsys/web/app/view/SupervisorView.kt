@@ -12,7 +12,6 @@ import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.supervisor.SupervisorService
 import tech.testsys.web.components.TestSysView
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.texts.currentLocalization
 
 /** Opens the community details of [communityId] in the Supervisor cabinet. */
@@ -46,7 +45,8 @@ class SupervisorView(
             event.forwardTo(SupervisorView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "users"))
             return
         }
-        val communities = service.viewCommunities()
+        // Checks the role before the blocks load and gives the community filter of the users.
+        val communities = service.checkSupervisorRole()
         val localization = currentLocalization()
         val texts = localization.pageSupervisor
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -70,14 +70,14 @@ class SupervisorView(
                 row {
                     block(title = localization.pageCabinet.sectionUsers()) {
                         guide(texts.usersGuide())
-                        adminUsersTable(service, communities.map { it.first }, community = null, openUser = ::openSupervisorUser)
+                        adminUsersTable(service, communities, community = null, openUser = ::openSupervisorUser)
                     }
                 }
             } else {
                 row {
                     block(title = localization.pageCabinet.sectionCommunities()) {
                         guide(texts.communitiesGuide())
-                        table(
+                        loadTable(
                             key = { (community, _): Pair<CommunityVo, Long> -> community.id },
                             fetch = { request -> pageOf(service.viewCommunities(), request) },
                         ) {

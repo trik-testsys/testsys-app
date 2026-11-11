@@ -121,13 +121,8 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     override fun viewCommunityInvites(communityId: CommunityId): List<CommunityInviteVo> =
         operations.viewCommunityInvites(currentUser.multipleRoleUser(), communityId).getOrThrow().map { invite -> invite.toVo() }
 
-    /**
-     * Runs [AdministratorOperations.checkCommunityAccess].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun checkCommunityAccess(communityId: CommunityId): CommunityVo =
+    override fun checkCommunityAccess(communityId: CommunityId): CommunityVo =
         operations.checkCommunityAccess(currentUser.multipleRoleUser(), communityId).getOrThrow().toVo()
 
     /**

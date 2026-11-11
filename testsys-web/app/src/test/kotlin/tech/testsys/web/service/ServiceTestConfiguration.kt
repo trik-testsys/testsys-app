@@ -1,9 +1,12 @@
 package tech.testsys.web.service
 
+import com.vaadin.flow.spring.annotation.VaadinTaskExecutor
 import io.mockk.every
 import io.mockk.mockk
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.core.task.SyncTaskExecutor
+import org.springframework.core.task.TaskExecutor
 import org.springframework.mock.env.MockEnvironment
 import tech.testsys.bootstrap.ServiceWebSettings
 import tech.testsys.domain.builder.api.multipleRoleUser
@@ -159,4 +162,8 @@ class ServiceTestConfiguration {
 
     @Bean
     fun cabinetSignInStore(): CabinetSignInStore = mockk(relaxed = true)
+
+    /** Runs the background work of pages in the calling thread, as `AppTestConfiguration` does for the main interface. */
+    @Bean(VaadinTaskExecutor.NAME, defaultCandidate = false)
+    fun vaadinTaskExecutor(): TaskExecutor = SyncTaskExecutor()
 }

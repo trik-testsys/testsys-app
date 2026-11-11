@@ -27,21 +27,23 @@ import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.ParticipantVo
 import tech.testsys.web.app.service.supervisor.SupervisorService
 import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
 import tech.testsys.web.components.texts.currentLocalization
-import java.time.Instant
 
 /** Message variants naming the community roles a supervisor grants. */
 private val COMMUNITY_ROLE_NAMES: Map<CommunityRole, RoleNameRole> = mapOf(
@@ -79,8 +81,9 @@ class SupervisorUserView(
 
     /** Shows a section; returns false if the selected user does not hold the requested role. */
     private fun show(id: Long, section: AdminUserSection? = null): Boolean {
-        val (user, login) = service.viewUserByIdValue(id)
-        val communities = service.viewCommunities().map { it.first }
+        // Checks the role and the user before the blocks load, so that a refusal opens its error screen.
+        val user = service.checkUserAccessByIdValue(id)
+        val communities = lazy { service.checkSupervisorRole() }
         val sections = if (user is MultipleRoleUserVo) {
             AdminUserSection.entries.filter { entry ->
                 user.roles.any { role ->
@@ -135,7 +138,7 @@ class SupervisorUserView(
                 }
                 AdminUserSection.Judge -> judgmentsBlock(service, user.id)
                 null -> {
-                    detailsBlock(user, login)
+                    detailsBlock(user)
                     if (user is ObserverVo) {
                         assignedContestsBlock(service, user.id)
                     }
@@ -147,11 +150,12 @@ class SupervisorUserView(
                 row {
                     block(title = texts.userCommunityTitle()) {
                         guide(texts.userCommunityGuide())
-                        val community = communities.firstOrNull { it.id == user.community }
-                        row {
-                            textInput(texts.name(), labelSize = 2, size = 22) {
-                                value = community?.name.orEmpty()
-                                isEditable = false
+                        load({ service.checkCommunityAccess(user.community) }) { community ->
+                            row {
+                                textInput(texts.name(), labelSize = 2, size = 22) {
+                                    value = community.name
+                                    isEditable = false
+                                }
                             }
                         }
                     }
@@ -173,25 +177,28 @@ class SupervisorUserView(
         return true
     }
 
-    private fun PageScope.detailsBlock(user: AdminUserVo, login: Instant?) {
+    /** Loads the common data of [user]; signing in as the user needs only the checked [user]. */
+    private fun PageScope.detailsBlock(user: AdminUserVo) {
         val texts = currentLocalization().pageSupervisor
         row {
             block(title = texts.details()) {
                 guide(texts.userDetailsGuide())
-                row {
-                    codeInput(texts.id(), labelSize = 3, size = 4) {
-                        value = user.id.value.toString()
-                        isEditable = false
+                load({ service.viewUser(user.id) }) { (viewed, login) ->
+                    row {
+                        codeInput(texts.id(), labelSize = 3, size = 4) {
+                            value = viewed.id.value.toString()
+                            isEditable = false
+                        }
+                        textInput(texts.nickname(), labelSize = 3, size = 8) {
+                            value = viewed.name
+                            isEditable = false
+                        }
                     }
-                    textInput(texts.nickname(), labelSize = 3, size = 8) {
-                        value = user.name
-                        isEditable = false
-                    }
-                }
-                row {
-                    dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) {
-                        value = login?.toUserDateTime()
-                        isEditable = false
+                    row {
+                        dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) {
+                            value = login?.toUserDateTime()
+                            isEditable = false
+                        }
                     }
                 }
                 actions {
@@ -209,52 +216,22 @@ class SupervisorUserView(
         UI.getCurrent().navigate(startPageOf(principal.kind))
     }
 
-    /** Shows the community roles of [user] with their removal, the inclusion into a community and the administrator grant. */
-    private fun PageScope.rolesBlock(id: Long, user: MultipleRoleUserVo, communities: List<CommunityVo>) {
+    /**
+     * Loads the community roles of [user] with their removal; the inclusion into a community opens with the loaded
+     * [communities], and the administrator grant needs only the checked [user].
+     */
+    private fun PageScope.rolesBlock(id: Long, user: MultipleRoleUserVo, communities: Lazy<List<CommunityVo>>) {
         val texts = currentLocalization().pageSupervisor
         row {
             block(title = texts.userRolesTitle()) {
                 guide(texts.userRolesGuide())
-                val memberships = communities.mapNotNull { community ->
-                    user.roles.filter { community.id in it.memberOf }.takeIf { it.isNotEmpty() }
-                        ?.let { roles -> community to roles }
-                }
-                table(
-                    key = { (community, _) -> community.id },
-                    fetch = { request -> pageOf(memberships, request) },
-                ) {
-                    textColumn(texts.userRolesCommunity(), size = 12) { (community, _) -> community.name }
-                    column(texts.roles()) { (_, roles) -> roles.forEach { role -> tag(labelOf(role)) } }
-                    menuColumn(
-                        ariaLabel = { (community, _) -> texts.userRolesActions(community = community.name) },
-                    ) { (community, roles) ->
-                        val removable = roles.mapNotNull { role -> communityRoleOf(role)?.let { it to labelOf(role) } }
-                        if (community.id == communityConfig.publicCommunityId || removable.isEmpty()) {
-                            item(texts.userRolesNothingToRemove(), isEnabled = false) {}
-                        } else {
-                            removable.forEach { (role, label) ->
-                                destructiveItem(texts.userRolesRemove(role = label)) {
-                                    confirm(
-                                        title = texts.userRolesRemoveTitle(user = user.name, community = community.name, role = label),
-                                        text = texts.userRolesRemoveText(),
-                                        action = texts.userRolesRemoveAction(),
-                                        isDanger = true,
-                                    ) {
-                                        service.removeFromCommunity(user.id, community.id, role)
-                                        val shown = currentLocalization().pageSupervisor
-                                        toast(FeedbackKind.Success, shown.userRolesRemoved(), shown.userRole(role = label))
-                                        show(id)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    empty(texts.userRolesEmpty())
-                    onRowClick(isNavigation = true) { (community, _) -> openSupervisorCommunity(community.id) }
-                }
-                val add = addDialog(user, communities) { show(id) }
+                lateinit var add: ActionHandle
                 actions {
-                    action(texts.userRolesGrant()) { onClick { add() } }
+                    // Enabled once the communities are loaded.
+                    add = action(texts.userRolesGrant()) {
+                        isEnabled = false
+                        onClick { addDialog(user, communities.value) { show(id) }() }
+                    }
                     if (user.roles.none { it is AdministratorRoleVo }) {
                         action(texts.userAdministratorGrant()) {
                             onClick {
@@ -271,7 +248,53 @@ class SupervisorUserView(
                         }
                     }
                 }
+                load({ communities.value }) { loaded ->
+                    membershipsTable(id, user, loaded)
+                    add.isEnabled = true
+                }
             }
+        }
+    }
+
+    /** Adds the table of the roles of [user] in each of [communities] where it holds any, with their removal. */
+    private fun BlockScope.membershipsTable(id: Long, user: MultipleRoleUserVo, communities: List<CommunityVo>) {
+        val texts = currentLocalization().pageSupervisor
+        val memberships = communities.mapNotNull { community ->
+            user.roles.filter { community.id in it.memberOf }.takeIf { it.isNotEmpty() }
+                ?.let { roles -> community to roles }
+        }
+        table(
+            key = { (community, _) -> community.id },
+            fetch = { request -> pageOf(memberships, request) },
+        ) {
+            textColumn(texts.userRolesCommunity(), size = 12) { (community, _) -> community.name }
+            column(texts.roles()) { (_, roles) -> roles.forEach { role -> tag(labelOf(role)) } }
+            menuColumn(
+                ariaLabel = { (community, _) -> texts.userRolesActions(community = community.name) },
+            ) { (community, roles) ->
+                val removable = roles.mapNotNull { role -> communityRoleOf(role)?.let { it to labelOf(role) } }
+                if (community.id == communityConfig.publicCommunityId || removable.isEmpty()) {
+                    item(texts.userRolesNothingToRemove(), isEnabled = false) {}
+                } else {
+                    removable.forEach { (role, label) ->
+                        destructiveItem(texts.userRolesRemove(role = label)) {
+                            confirm(
+                                title = texts.userRolesRemoveTitle(user = user.name, community = community.name, role = label),
+                                text = texts.userRolesRemoveText(),
+                                action = texts.userRolesRemoveAction(),
+                                isDanger = true,
+                            ) {
+                                service.removeFromCommunity(user.id, community.id, role)
+                                val shown = currentLocalization().pageSupervisor
+                                toast(FeedbackKind.Success, shown.userRolesRemoved(), shown.userRole(role = label))
+                                show(id)
+                            }
+                        }
+                    }
+                }
+            }
+            empty(texts.userRolesEmpty())
+            onRowClick(isNavigation = true) { (community, _) -> openSupervisorCommunity(community.id) }
         }
     }
 

@@ -587,6 +587,17 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 `ImpersonationDeniedError`.
 Операции изменения Сообществ используют общие действия `AdministratorOperations`.
 
+Операции `check*` проверяют доступ до загрузки блоков страницы по правилу из раздела
+[Кабинет Разработчика](#кабинет-разработчика). Кодификатором `authorization` помечены несколько просмотров
+Супервайзера, поэтому просмотр с теми же отказами указан явно: у `checkSupervisorRole` это `viewCommunities`, у `checkUserAccess` —
+`viewUser`, у `checkCommunityAccess` — `viewCommunityInvites`.
+
+| Операция | Кодификатор | Результат |
+|----------|-------------|-----------|
+| `checkSupervisorRole` | `authorization` | Все Сообщества без числа Пользователей |
+| `checkUserAccess` | `authorization` | Пользователь без момента последнего входа |
+| `checkCommunityAccess` | `authorization` | Сообщество |
+
 ## Кабинет Судьи
 
 [JudgeOperations](src/main/kotlin/tech/testsys/operation/user/JudgeOperations.kt) реализует фичи

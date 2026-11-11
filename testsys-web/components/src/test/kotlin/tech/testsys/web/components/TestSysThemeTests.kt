@@ -11,6 +11,8 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.web.components.display.Tone
+import java.security.MessageDigest
+import java.util.HexFormat
 
 class TestSysThemeTests {
     @Test
@@ -21,8 +23,31 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should version every token import by the content hash of the imported file`() {
+        val imports = Regex("""@import url\('\.\./tokens/([\w-]+\.css)\?v-c=([0-9a-f]{8})'\);""")
+            .findAll(text(TestSysTheme.DESIGN_SYSTEM)).toList()
+
+        assertEquals(6, imports.size)
+        imports.forEach { import ->
+            val (file, version) = import.destructured
+            val hash = MessageDigest.getInstance("SHA-256").digest(resource("testsys-ui/tokens/$file")!!.readBytes())
+            assertEquals(HexFormat.of().formatHex(hash, 0, 4), version, file)
+        }
+    }
+
+    @Test
     fun `should package Vaadin overrides stylesheet`() {
         assertNotNull(resource(TestSysTheme.VAADIN_OVERRIDES))
+    }
+
+    @Test
+    fun `should remove Lumo icon theme padding from square icon actions`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+        val iconAction = rule(overrides, "vaadin-button[data-ts-icon-only]")
+
+        assertEquals("0", iconAction["padding"])
+        assertEquals("var(--control-md)", iconAction["width"])
+        assertEquals("var(--control-sm)", rule(overrides, "vaadin-button[data-ts-icon-only][data-ts-size=\"sm\"]")["width"])
     }
 
     @Test
@@ -33,6 +58,20 @@ class TestSysThemeTests {
         assertEquals("var(--tracking-tight)", rule(components, ".ts-h1")["letter-spacing"])
         assertTrue(rule(components, ".ts-block__title").getValue("font").contains("var(--fw-bold)"))
         assertTrue(rule(components, ".ts-dialog__title").getValue("font").contains("var(--fw-bold)"))
+    }
+
+    @Test
+    fun `should span block section headings and neutral separators across the body`() {
+        val components = text("testsys-ui/tokens/components.css")
+        val heading = rule(components, ".ts-block__section-title")
+        val separator = rule(components, ".ts-block__separator")
+
+        assertEquals("1 / -1", heading["grid-column"])
+        assertEquals("var(--fw-bold) var(--fs-h3)/var(--lh-h3) var(--font-sans)", heading["font"])
+        assertEquals("inherit", heading["color"])
+        assertEquals("1 / -1", separator["grid-column"])
+        assertEquals("1px solid var(--border-default)", separator["border-top"])
+        assertEquals("0", separator["margin"])
     }
 
     @Test
@@ -100,6 +139,17 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should let the label of a segment take clicks across the whole segment`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertEquals("relative", rule(overrides, "vaadin-radio-group.ts-seg > vaadin-radio-button")["position"])
+        val area = rule(overrides, "vaadin-radio-group.ts-seg > vaadin-radio-button > label::after")
+        assertEquals("absolute", area["position"])
+        assertEquals("0", area["inset"])
+        assertEquals("inherit", rule(overrides, "vaadin-radio-group.ts-seg > vaadin-radio-button > label")["cursor"])
+    }
+
+    @Test
     fun `should style tooltips through the overlay part of the tooltip`() {
         val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
 
@@ -137,6 +187,28 @@ class TestSysThemeTests {
         assertTrue(rule(overrides, drawer).getValue("animation").contains("ts-drawer-in"))
         assertEquals("none", rule(overrides, "vaadin-dialog[theme~=\"ts-drawer\"] .ts-dialog")["animation"])
         assertTrue(overrides.substringAfter("@media (prefers-reduced-motion: reduce)", "").contains(drawer))
+    }
+
+    @Test
+    fun `should drain the cooldown bar of an action only when motion is allowed`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+        val bar = "vaadin-button[data-ts-cooldown]::before"
+
+        assertEquals("ts-cooldown-drain var(--ts-cooldown-duration) linear forwards", rule(overrides, bar)["animation"])
+        assertEquals("1", rule(overrides, bar)["opacity"])
+        assertTrue(overrides.contains("@keyframes ts-cooldown-drain"))
+        assertTrue(overrides.contains("@media (prefers-reduced-motion: reduce) { $bar"))
+    }
+
+    @Test
+    fun `should show the cooldown seconds over the hidden Lumo overlay of an action`() {
+        val countdown = rule(text(TestSysTheme.VAADIN_OVERRIDES), "vaadin-button[data-ts-cooldown]::after")
+
+        assertEquals("attr(data-ts-cooldown)", countdown["content"])
+        assertEquals("absolute", countdown["position"])
+        assertEquals("1", countdown["opacity"])
+        assertEquals("none", countdown["filter"])
+        assertEquals("none", countdown["transition"])
     }
 
     @Test

@@ -1,5 +1,6 @@
 package tech.testsys.infra.mail.api
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -22,6 +23,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.infra.mail.internal.InternalMailApi
 import tech.testsys.infra.mail.internal.MailSettings
+import tech.testsys.infra.monitoring.api.TechnicalFailures
+import tech.testsys.infra.monitoring.api.TestSysMetrics
 import java.time.ZoneId
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -31,9 +34,11 @@ import kotlin.test.assertFailsWith
 class SmtpUserMailSenderTests {
 
     private val mailSender = mockk<JavaMailSender>()
+    private val registry = SimpleMeterRegistry()
     private val sender = SmtpUserMailSender(
         mailSender = mailSender,
         settings = MailSettings(from = "noreply@testsys.tech", region = SupportedRegion.RU, timeZone = ZoneId.of("Europe/Moscow")),
+        failures = TechnicalFailures(registry),
     )
     private val message = slot<SimpleMailMessage>()
 
@@ -74,34 +79,6 @@ class SmtpUserMailSenderTests {
             assertFailsWith<MailSendException> {
                 sender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "012345")
             }
-        }
-    }
-
-    @Nested
-    inner class SendAccessTokenTests {
-
-        @Test
-        fun `should send the letter from the configured address to the email`() {
-            sender.sendAccessToken(email = "user@example.com", name = "Маша", accessToken = "aB3d-x9Yz-0kLm-P7qR")
-
-            assertEquals("noreply@testsys.tech", message.captured.from)
-            assertEquals(listOf("user@example.com"), message.captured.to?.toList())
-        }
-
-        @Test
-        fun `should render the access code subject`() {
-            sender.sendAccessToken(email = "user@example.com", name = "Маша", accessToken = "aB3d-x9Yz-0kLm-P7qR")
-
-            assertEquals("Ваш Код-доступа к TestSys", message.captured.subject)
-        }
-
-        @Test
-        fun `should put the nickname and the access code verbatim into the text`() {
-            sender.sendAccessToken(email = "user@example.com", name = "Маша", accessToken = "aB3d-x9Yz-0kLm-P7qR")
-
-            val text = message.captured.text.orEmpty()
-            assertContains(text, "Здравствуйте, Маша!")
-            assertContains(text, "\n\naB3d-x9Yz-0kLm-P7qR\n\n")
         }
     }
 
@@ -178,6 +155,43 @@ class SmtpUserMailSenderTests {
     }
 
     @Nested
+    inner class SendAccessRestorationCodeTests {
+
+        @Test
+        fun `should send the letter from the configured address to the email`() {
+            sender.sendAccessRestorationCode(email = "user@example.com", confirmationCode = "01234567")
+
+            assertEquals("noreply@testsys.tech", message.captured.from)
+            assertEquals(listOf("user@example.com"), message.captured.to?.toList())
+        }
+
+        @Test
+        fun `should render the access restoration code subject`() {
+            sender.sendAccessRestorationCode(email = "user@example.com", confirmationCode = "01234567")
+
+            assertEquals("Код подтверждения для восстановления доступа к TestSys", message.captured.subject)
+        }
+
+        @Test
+        fun `should put the code into the text without a nickname`() {
+            sender.sendAccessRestorationCode(email = "user@example.com", confirmationCode = "01234567")
+
+            val text = message.captured.text.orEmpty()
+            assertContains(text, "Здравствуйте!\n\n")
+            assertContains(text, "\n\n01234567\n\n")
+        }
+
+        @Test
+        fun `should propagate exceptions of the mail sender`() {
+            every { mailSender.send(any<SimpleMailMessage>()) } throws MailSendException("smtp is down")
+
+            assertFailsWith<MailSendException> {
+                sender.sendAccessRestorationCode(email = "user@example.com", confirmationCode = "01234567")
+            }
+        }
+    }
+
+    @Nested
     inner class DeliveryTests {
 
         private val transactionManager = NoOpTransactionManager()
@@ -206,12 +220,12 @@ class SmtpUserMailSenderTests {
         @Test
         fun `should send the letter after the transaction commits`() {
             val transaction = transactionManager.getTransaction(DefaultTransactionDefinition())
-            sender.sendAccessToken(email = "user@example.com", name = "Маша", accessToken = "aB3d-x9Yz-0kLm-P7qR")
+            sender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "012345")
 
             transactionManager.commit(transaction)
 
             assertEquals(listOf("user@example.com"), message.captured.to?.toList())
-            assertContains(message.captured.text.orEmpty(), "\n\naB3d-x9Yz-0kLm-P7qR\n\n")
+            assertContains(message.captured.text.orEmpty(), "012345")
         }
 
         @Test
@@ -252,6 +266,32 @@ class SmtpUserMailSenderTests {
 
             assertDoesNotThrow { transactionManager.commit(transaction) }
         }
+
+        @Test
+        fun `should count a mail failure after the commit as a technical failure`() {
+            every { mailSender.send(any<SimpleMailMessage>()) } throws MailSendException("smtp is down")
+            val transaction = transactionManager.getTransaction(DefaultTransactionDefinition())
+            sender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "012345")
+
+            transactionManager.commit(transaction)
+
+            assertEquals(1.0, afterCommitFailures())
+        }
+
+        @Test
+        fun `should not count a mail failure that reaches the caller at once`() {
+            every { mailSender.send(any<SimpleMailMessage>()) } throws MailSendException("smtp is down")
+
+            assertFailsWith<MailSendException> {
+                sender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "012345")
+            }
+
+            assertEquals(0.0, afterCommitFailures())
+        }
+
+        private fun afterCommitFailures(): Double = registry.find(TestSysMetrics.TECHNICAL_FAILURES)
+            .tags(TestSysMetrics.SOURCE, "mail", TestSysMetrics.STAGE, "after_commit", TestSysMetrics.EXCEPTION, "MailSendException")
+            .counter()?.count() ?: 0.0
     }
 
     /**

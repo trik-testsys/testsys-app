@@ -9,7 +9,7 @@ import tech.testsys.web.components.layout.BlockRowScope
  * Adds a whole-number field; [min], [max] and [step] are checked by the default validator, [unit] is shown after
  * the value. The label takes [labelSize] columns and the control [size] columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.integerInput(
     label: String,
@@ -42,7 +42,7 @@ fun BlockRowScope.integerInput(
  * Adds a fractional-number field with the same constraints as [integerInput].
  * The label takes [labelSize] columns and the control [size] columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.decimalInput(
     label: String,

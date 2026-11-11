@@ -62,7 +62,7 @@ private const val RESOURCE_CONTENT_TYPE = "application/octet-stream"
  * exercises to download, the time left, sending a solution in an allowed language and the sent solutions with their results,
  * the best of them marked. Each kind of user has its own page with its own route and texts.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class StudyTaskView(
     private val headers: CabinetHeaders,
@@ -116,12 +116,12 @@ abstract class StudyTaskView(
     }
 
     private fun BlockScope.detailsRows(access: StudyAccess, contestId: ContestId, task: StudyTaskVo) {
-        row { codeInput(texts.id(), labelSize = 6, size = 10) { value = task.task.id.value.toString() } }
-        row { textInput(texts.name(), labelSize = 6, size = 18) { value = task.task.name } }
-        row { textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) { value = task.task.description } }
-        row { field(texts.taskFiles(), labelSize = 6, size = 18) { resourceDownloads(access, contestId, task) } }
+        row { codeInput(texts.id(), labelSize = 4, size = 6) { value = task.task.id.value.toString() } }
+        row { textInput(texts.name(), labelSize = 4, size = 20) { value = task.task.name } }
+        row { textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) { value = task.task.description } }
+        row { field(texts.taskFiles(), labelSize = 4, size = 20) { resourceDownloads(access, contestId, task) } }
         row {
-            field(texts.taskBest(), labelSize = 6, size = 18) {
+            field(texts.taskBest(), labelSize = 4, size = 20) {
                 task.best?.score?.let { score -> verdict(score.toDouble()) } ?: text(texts.taskBestNone())
             }
         }
@@ -131,7 +131,8 @@ abstract class StudyTaskView(
         if (task.statement == null && task.exercises.isEmpty()) text(texts.taskFilesEmpty())
         task.statement?.let { statement -> resourceDownload(texts.taskDownloadStatement(), access, contestId, task.task.id, statement.id) }
         task.exercises.forEach { exercise ->
-            resourceDownload(texts.taskDownloadExercise(name = exercise.name), access, contestId, task.task.id, exercise.id)
+            val label = texts.taskDownloadExercise(language = languageLabel(exercise.language))
+            resourceDownload(label, access, contestId, task.task.id, exercise.id)
         }
     }
 
@@ -175,8 +176,8 @@ abstract class StudyTaskView(
                 row {
                     language = select(
                         texts.taskSendLanguage(),
-                        labelSize = 4,
-                        size = 8,
+                        labelSize = 2,
+                        size = 10,
                         items = languages,
                         itemLabel = ::languageLabel,
                     ) {
@@ -185,8 +186,8 @@ abstract class StudyTaskView(
                     }
                     drop = fileDrop(
                         texts.taskSendFile(),
-                        labelSize = 4,
-                        size = 8,
+                        labelSize = 2,
+                        size = 10,
                         limits = UploadLimits(
                             maxFiles = 1,
                             maxFileBytes = MAX_SOLUTION_BYTES,
@@ -255,7 +256,7 @@ abstract class StudyTaskView(
     ) {
         table(
             key = { submission: StudySubmissionVo -> submission.submission.id },
-            fetch = { request -> pageOf(task.submissions, request) },
+            fetch = { request -> pageOf(task.submissions.asReversed(), request) },
         ) {
             dateTimeColumn(texts.taskSubmissionsSent(), size = 5) { submission -> submission.submission.createdAt.toUserDateTime() }
             textColumn(texts.taskSubmissionsFile(), size = 9) { submission -> submission.filename }
@@ -301,7 +302,7 @@ abstract class StudyTaskView(
 /**
  * Task of a contest of a class of a Student (testsys.web.page.study.task).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("student/classes/:classId([0-9]+)/contests/:contestId([0-9]+)/tasks/:taskId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -321,7 +322,7 @@ class StudentTaskView(
 /**
  * Task of a contest of the competition of a Participant (testsys.web.page.study.task).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("participant/contests/:contestId([0-9]+)/tasks/:taskId([0-9]+)")
 @RolesAllowed("PARTICIPANT")

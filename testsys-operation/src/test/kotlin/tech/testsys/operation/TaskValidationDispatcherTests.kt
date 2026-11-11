@@ -26,11 +26,13 @@ class TaskValidationDispatcherTests {
     private val operations = mockk<TaskValidationOperations>()
     private val grader = mockk<Grader>()
     private val queued = ArrayDeque<Runnable>()
+    private val reported = mutableListOf<Exception>()
     private val dispatcher = TaskValidationDispatcher(
         requests = requests,
         operations = operations,
         grader = grader,
         executor = Executor { task -> queued.addLast(task) },
+        onTechnicalFailure = { exception -> reported.add(exception) },
     )
     private val request = testTaskValidationRequest()
 
@@ -82,6 +84,59 @@ class TaskValidationDispatcherTests {
 
             assertEquals("java.lang.IllegalStateException: Grader unavailable", failure.captured.description)
         }
+
+        @Test
+        fun `should report the exception of a recorded technical failure`() {
+            val exception = IllegalStateException("Grader unavailable")
+            every { operations.proceed(request.id) } throws exception
+            every { requests.recordTechnicalFailure(request.id, any()) } returns request
+
+            dispatcher.schedule(request.id)
+            runQueued()
+
+            assertEquals(listOf(exception), reported)
+        }
+
+        @Test
+        fun `should report the processing and the recording exceptions if recording the technical failure throws`() {
+            val processing = IllegalStateException("Grader unavailable")
+            val recording = IllegalStateException("Database unavailable")
+            every { operations.proceed(request.id) } throws processing
+            every { requests.recordTechnicalFailure(request.id, any()) } throws recording
+
+            dispatcher.schedule(request.id)
+            runQueued()
+
+            assertEquals(listOf(processing, recording), reported)
+        }
+
+        @Test
+        fun `should process a later request after recording a technical failure throws`() {
+            val other = taskValidationRequest {
+                id = 12
+                createdAt = Instant.EPOCH
+                data = request.data
+            }
+            every { operations.proceed(request.id) } throws IllegalStateException("Grader unavailable")
+            every { requests.recordTechnicalFailure(request.id, any()) } throws IllegalStateException("Database unavailable")
+            every { operations.proceed(other.id) } returns other
+
+            dispatcher.schedule(request.id)
+            dispatcher.schedule(other.id)
+            runQueued()
+
+            verify(exactly = 1) { operations.proceed(other.id) }
+        }
+
+        @Test
+        fun `should report nothing if processing succeeds`() {
+            every { operations.proceed(request.id) } returns request
+
+            dispatcher.schedule(request.id)
+            runQueued()
+
+            assertEquals(emptyList<Exception>(), reported)
+        }
     }
 
     @Nested
@@ -125,6 +180,27 @@ class TaskValidationDispatcherTests {
         }
 
         @Test
+        fun `should resend and process every active request if recording the failure of an earlier one throws`() {
+            val other = taskValidationRequest {
+                id = 12
+                createdAt = Instant.EPOCH
+                data = request.data
+            }
+            subscribe(active = listOf(request, other))
+            every { operations.resendUnfinishedSubmissions(request.id) } throws IllegalStateException("No nodes")
+            every { requests.recordTechnicalFailure(request.id, any()) } throws IllegalStateException("Database unavailable")
+            every { operations.resendUnfinishedSubmissions(other.id) } returns other
+            every { operations.proceed(any()) } returns request
+
+            dispatcher.start()
+            runQueued()
+
+            verify(exactly = 1) { operations.resendUnfinishedSubmissions(other.id) }
+            verify(exactly = 1) { operations.proceed(request.id) }
+            verify(exactly = 1) { operations.proceed(other.id) }
+        }
+
+        @Test
         fun `should process the active request linked to a graded submission`() {
             subscribe(active = emptyList())
             every { requests.findBySubmissionId(SubmissionId(101)) } returns request
@@ -154,6 +230,32 @@ class TaskValidationDispatcherTests {
             runQueued()
 
             verify(exactly = 0) { operations.proceed(any()) }
+        }
+
+        @Test
+        fun `should report the exception if the request of a graded submission cannot be loaded`() {
+            val exception = IllegalStateException("Database unavailable")
+            subscribe(active = emptyList())
+            every { requests.findBySubmissionId(SubmissionId(101)) } throws exception
+            dispatcher.start()
+            runQueued()
+
+            onGraded.captured(SubmissionId(101))
+            runQueued()
+
+            assertEquals(listOf(exception), reported)
+        }
+
+        @Test
+        fun `should report the exception if active requests cannot be loaded`() {
+            val exception = IllegalStateException("Database unavailable")
+            every { grader.subscribeOnGraded(capture(onGraded)) } just Runs
+            every { requests.findActive() } throws exception
+
+            dispatcher.start()
+            runQueued()
+
+            assertEquals(listOf(exception), reported)
         }
 
         private fun subscribe(active: List<TaskValidationRequest>) {

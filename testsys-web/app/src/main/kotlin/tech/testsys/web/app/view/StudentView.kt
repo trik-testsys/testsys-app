@@ -28,7 +28,7 @@ private const val CLASSES_COLUMNS = 16
  * Cabinet of a Student (testsys.web.page.student): the classes of the student with links to their pages and joining a class
  * by an invite code.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("student/:section?(classes)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -67,7 +67,7 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
                 block(title = texts.joinTitle()) {
                     guide(texts.joinGuide())
                     lateinit var inviteCode: ValueInput<String>
-                    row { inviteCode = codeInput(texts.joinInviteCode(), labelSize = 10, size = 14) }
+                    row { inviteCode = codeInput(texts.joinInviteCode(), labelSize = 7, size = 10) }
                     footer {
                         mainAction(texts.joinSubmit()) {
                             clickOnEnter()

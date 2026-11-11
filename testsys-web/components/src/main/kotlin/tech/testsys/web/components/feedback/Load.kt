@@ -23,7 +23,7 @@ private const val LOAD_OWNER = "a load"
  * the pagination of a loaded table, across reloads; the head and the own footer content of the block stay. A manual
  * [isVisible] while [bindVisible] is bound, and a second binding, throw `BindingActiveException`.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LoadHandle internal constructor(private val loader: BlockLoader<*>) : ElementHandle(loader.component) {
     private val visible = Bindable(loader.component.element, initial = true) { value -> loader.isShown = value }
@@ -41,7 +41,7 @@ class LoadHandle internal constructor(private val loader: BlockLoader<*>) : Elem
      * from any thread: the load then starts in the UI thread. A closed page ignores the call; a block taken out of its
      * UI, e.g. by navigation to another route, fetches nothing until it is attached again and then loads once.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun reload() {
         loader.reload()
@@ -61,7 +61,7 @@ class LoadHandle internal constructor(private val loader: BlockLoader<*>) : Elem
  * @throws IllegalArgumentException if [skeletonRows] is below one.
  * @throws IllegalStateException if the block already holds rows, a table, an empty state or a load, if this is
  * the content of a load, or if no UI builds the block.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T> BlockScope.load(fetch: () -> T, skeletonRows: Int = 3, content: BlockScope.(T) -> Unit): LoadHandle {
     require(skeletonRows >= 1) { "Load must show at least 1 skeleton row, got $skeletonRows" }

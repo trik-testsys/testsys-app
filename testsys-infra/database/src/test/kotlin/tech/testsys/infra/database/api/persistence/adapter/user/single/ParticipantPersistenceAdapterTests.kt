@@ -10,6 +10,7 @@ import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
@@ -37,6 +38,9 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     override lateinit var repository: ParticipantRepository
 
     @Autowired
+    private lateinit var accessTokenHasher: AccessTokenHasher
+
+    @Autowired
     private lateinit var userJpaEntityRepository: UserJpaEntityRepository
 
     @Autowired
@@ -57,13 +61,13 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         val competitionId = fixtures.competition().id.value
         return participantData {
             competition(competitionId)
-            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, accessTokenHasher)
             name = fixtures.unique("Participant")
         }
     }
 
     override fun modified(entity: Participant): Participant = entity.withData {
-        accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+        accessToken(fixtures.unique("token"), accessTokenHasher)
         name = fixtures.unique("Renamed participant")
     }
 
@@ -92,11 +96,11 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
 
         assertEquals(data.accessTokenHash.value, saved.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHash.algorithm)
+        assertEquals(HashAlgorithm.HmacSha256, saved.data.accessTokenHash.algorithm)
         assertEquals(modified.data.accessTokenHash.value, found.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHash.algorithm)
+        assertEquals(HashAlgorithm.HmacSha256, found.data.accessTokenHash.algorithm)
         assertEquals(modified.data.accessTokenHash.value, row.accessToken)
-        assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
+        assertEquals(HashAlgorithmJpaEnum.HMAC_SHA256, row.accessTokenHashAlgorithm)
     }
 
     @Test
@@ -128,7 +132,7 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     @Test
     fun `should save a participant of the competition per access code in order with the name computed from its id`() {
         val competition = fixtures.competition()
-        val hashes = listOf(identityHash(fixtures.unique("first")), identityHash(fixtures.unique("second")))
+        val hashes = listOf(storedHash(fixtures.unique("first")), storedHash(fixtures.unique("second")))
 
         val saved = repository.saveToCompetition(competition.id, hashes) { participantId -> "named-${participantId.value}" }
 
@@ -148,7 +152,7 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         val existing = fixtures.participant()
         val competition = fixtures.competition()
         val usersBefore = userJpaEntityRepository.count()
-        val hashes = listOf(identityHash(fixtures.unique("fresh")), existing.data.accessTokenHash)
+        val hashes = listOf(storedHash(fixtures.unique("fresh")), existing.data.accessTokenHash)
 
         assertFailsWith<DataIntegrityViolationException> {
             repository.saveToCompetition(competition.id, hashes) { participantId -> "st${participantId.value}" }
@@ -161,8 +165,8 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     @Test
     fun `should save participants of the competition with the same statement count for one and twenty access codes`() {
         val competition = fixtures.competition()
-        val oneHash = listOf(identityHash(fixtures.unique("one")))
-        val twentyHashes = List(20) { index -> identityHash(fixtures.unique("twenty-$index")) }
+        val oneHash = listOf(storedHash(fixtures.unique("one")))
+        val twentyHashes = List(20) { index -> storedHash(fixtures.unique("twenty-$index")) }
 
         val (one, oneCodeStatements) = withStatementCount {
             repository.saveToCompetition(competition.id, oneHash) { participantId -> "named-${participantId.value}" }
@@ -179,7 +183,7 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     @Test
     fun `should return saved participants whose version allows a later update`() {
         val competition = fixtures.competition()
-        val saved = repository.saveToCompetition(competition.id, listOf(identityHash(fixtures.unique("token")))) { participantId ->
+        val saved = repository.saveToCompetition(competition.id, listOf(storedHash(fixtures.unique("token")))) { participantId ->
             "named-${participantId.value}"
         }.single()
 
@@ -218,7 +222,7 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         repository.save(
             participantData {
                 competition(competition.id.value)
-                accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                accessToken(fixtures.unique("token"), accessTokenHasher)
                 name = fixtures.unique("Participant")
             },
         )
@@ -242,7 +246,7 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
                             haveRead.countDown()
                             check(haveRead.await(10, TimeUnit.SECONDS))
                             if (count < limit) {
-                                val hashes = listOf(identityHash(fixtures.unique("concurrent-$index")))
+                                val hashes = listOf(storedHash(fixtures.unique("concurrent-$index")))
                                 repository.saveToCompetition(competition.id, hashes) { participantId -> "named-${participantId.value}" }
                             }
                         }
@@ -265,7 +269,7 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     }
 
     @Test
-    fun `should find user by its access code`() {
+    fun `should find user by its access code stored as its HMAC-SHA-256 hash`() {
         val token = fixtures.unique("token")
         val saved = repository.save(newData(token))
 
@@ -274,6 +278,7 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         assertNotNull(found)
         assertEquals(saved.id, found.id)
         assertSameData(saved, found)
+        assertEquals(accessTokenHasher.hash(token).value, userJpaEntityRepository.findById(saved.id.value).orElseThrow().accessToken)
     }
 
     @Test
@@ -309,5 +314,5 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         assertEquals(oneIdStatements, twentyIdsStatements)
     }
 
-    private fun identityHash(value: String) = AccessTokenHash(value = value, algorithm = HashAlgorithm.Identity)
+    private fun storedHash(value: String) = AccessTokenHash(value = value, algorithm = HashAlgorithm.HmacSha256)
 }

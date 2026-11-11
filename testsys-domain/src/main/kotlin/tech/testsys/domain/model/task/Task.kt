@@ -13,7 +13,7 @@ import java.time.Instant
 /**
  * Identifier of a [Task].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class TaskId(
@@ -24,7 +24,7 @@ value class TaskId(
  * Versioned content of a [Task]. A task keeps at most two revisions: the last committed one, which is complete
  * and usable in contests, and the work-in-progress one being edited by the developer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface TaskContent {
 
@@ -32,7 +32,7 @@ sealed interface TaskContent {
      * Content that has never been committed: only a work-in-progress revision exists.
      *
      * @property wip the work-in-progress revision.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class New(
         val wip: WipTaskContent,
@@ -43,7 +43,7 @@ sealed interface TaskContent {
      *
      * @property wip the work-in-progress revision.
      * @property lastCommitted the last committed revision.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Uncommitted(
         val wip: WipTaskContent,
@@ -54,7 +54,7 @@ sealed interface TaskContent {
      * Content whose latest changes are committed: no work-in-progress revision exists.
      *
      * @property lastCommitted the last committed revision.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Committed(
         val lastCommitted: CommittedTaskContent,
@@ -69,7 +69,7 @@ sealed interface TaskContent {
  * @property statement the statement (PDF/TXT document) describing the task.
  * @property developerSolutions the developer's reference solutions.
  * @property supportedTrikStudioVersions the TRIK Studio versions the task can be run with.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommittedTaskContent(
     val tests: LazyEntityList<TestId, Test>,
@@ -87,7 +87,7 @@ data class CommittedTaskContent(
  * @property statement the statement describing the task, or `null` if not attached yet.
  * @property developerSolutions the developer's reference solutions.
  * @property supportedTrikStudioVersions the TRIK Studio versions the task can be run with.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class WipTaskContent(
     val tests: LazyEntityList<TestId, Test>,
@@ -106,7 +106,7 @@ data class WipTaskContent(
  * @property sharedTo the communities the task is shared to.
  * @property content the versioned content of the task.
  * @property uploadedResources the version chains uploaded to the task, including unattached resources.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
@@ -121,7 +121,7 @@ data class TaskData(
  * A problem to be solved in TRIK Studio, authored by a developer and graded against its tests.
  *
  * @property data the data of the task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Task(
     id: TaskId,

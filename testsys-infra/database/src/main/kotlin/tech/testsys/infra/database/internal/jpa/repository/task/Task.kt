@@ -28,7 +28,7 @@ import java.util.UUID
 /**
  * Spring Data repository for [ExerciseToTaskContentJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -38,7 +38,7 @@ interface ExerciseToTaskContentJpaEntityRepository :
     /**
      * Finds the association rows of the exercise [exerciseId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.exerciseId = :exerciseId")
     fun findAllByExerciseId(@Param("exerciseId") exerciseId: Long): List<ExerciseToTaskContentJpaEntity>
@@ -46,7 +46,7 @@ interface ExerciseToTaskContentJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the exercise [exerciseId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.exerciseId = :exerciseId")
     fun findAllByExerciseId(@Param("exerciseId") exerciseId: Long, pageable: Pageable): Page<ExerciseToTaskContentJpaEntity>
@@ -54,7 +54,7 @@ interface ExerciseToTaskContentJpaEntityRepository :
     /**
      * Finds the association rows of the task content revision [taskContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<ExerciseToTaskContentJpaEntity>
@@ -62,7 +62,7 @@ interface ExerciseToTaskContentJpaEntityRepository :
     /**
      * Finds the ids of the task content revisions [taskContentIds] paired with the ids of their exercises in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.taskContentId, e.id.exerciseId) " +
@@ -73,7 +73,7 @@ interface ExerciseToTaskContentJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long, pageable: Pageable): Page<ExerciseToTaskContentJpaEntity>
@@ -82,7 +82,7 @@ interface ExerciseToTaskContentJpaEntityRepository :
 /**
  * Spring Data repository for [TestToTaskContentJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -92,7 +92,7 @@ interface TestToTaskContentJpaEntityRepository :
     /**
      * Finds the association rows of the polygon [testId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TestToTaskContentJpaEntity e where e.id.testId = :testId")
     fun findAllByTestId(@Param("testId") testId: Long): List<TestToTaskContentJpaEntity>
@@ -100,7 +100,7 @@ interface TestToTaskContentJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the polygon [testId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TestToTaskContentJpaEntity e where e.id.testId = :testId")
     fun findAllByTestId(@Param("testId") testId: Long, pageable: Pageable): Page<TestToTaskContentJpaEntity>
@@ -108,7 +108,7 @@ interface TestToTaskContentJpaEntityRepository :
     /**
      * Finds the association rows of the task content revision [taskContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TestToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<TestToTaskContentJpaEntity>
@@ -116,7 +116,7 @@ interface TestToTaskContentJpaEntityRepository :
     /**
      * Finds the ids of the task content revisions [taskContentIds] paired with the ids of their polygons in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.taskContentId, e.id.testId) " +
@@ -127,7 +127,7 @@ interface TestToTaskContentJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TestToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long, pageable: Pageable): Page<TestToTaskContentJpaEntity>
@@ -136,7 +136,7 @@ interface TestToTaskContentJpaEntityRepository :
 /**
  * Spring Data repository for [DeveloperSolutionToTaskContentJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -146,7 +146,7 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository :
     /**
      * Finds the association rows of the developer solution [developerSolutionId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.developerSolutionId = :developerSolutionId")
     fun findAllByDeveloperSolutionId(@Param("developerSolutionId") developerSolutionId: Long): List<DeveloperSolutionToTaskContentJpaEntity>
@@ -154,7 +154,7 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the developer solution [developerSolutionId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.developerSolutionId = :developerSolutionId")
     fun findAllByDeveloperSolutionId(
@@ -165,7 +165,7 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository :
     /**
      * Finds the association rows of the task content revision [taskContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<DeveloperSolutionToTaskContentJpaEntity>
@@ -174,7 +174,7 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository :
      * Finds the ids of the task content revisions [taskContentIds] paired with the ids of their developer solutions
      * in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(" +
@@ -186,7 +186,7 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(
@@ -198,7 +198,7 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository :
 /**
  * Spring Data repository for [TrikStudioVersionToTaskContentJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -208,7 +208,7 @@ interface TrikStudioVersionToTaskContentJpaEntityRepository :
     /**
      * Finds the association rows of the TRIK Studio version [trikStudioVersionId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.trikStudioVersionId = :trikStudioVersionId")
     fun findAllByTrikStudioVersionId(@Param("trikStudioVersionId") trikStudioVersionId: Long): List<TrikStudioVersionToTaskContentJpaEntity>
@@ -216,7 +216,7 @@ interface TrikStudioVersionToTaskContentJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the TRIK Studio version [trikStudioVersionId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.trikStudioVersionId = :trikStudioVersionId")
     fun findAllByTrikStudioVersionId(
@@ -227,7 +227,7 @@ interface TrikStudioVersionToTaskContentJpaEntityRepository :
     /**
      * Finds the association rows of the task content revision [taskContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<TrikStudioVersionToTaskContentJpaEntity>
@@ -236,7 +236,7 @@ interface TrikStudioVersionToTaskContentJpaEntityRepository :
      * Finds the ids of the task content revisions [taskContentIds] paired with the ids of their supported TRIK Studio
      * versions in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(" +
@@ -248,7 +248,7 @@ interface TrikStudioVersionToTaskContentJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(
@@ -260,7 +260,7 @@ interface TrikStudioVersionToTaskContentJpaEntityRepository :
 /**
  * Spring Data repository for [CommunityToTaskJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -270,14 +270,14 @@ interface CommunityToTaskJpaEntityRepository :
     /**
      * Finds the association rows of any community in the nonempty [communityIds].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByIdCommunityIdIn(communityIds: Set<Long>): List<CommunityToTaskJpaEntity>
 
     /**
      * Finds the association rows of the community [communityId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from CommunityToTaskJpaEntity e where e.id.communityId = :communityId")
     fun findAllByCommunityId(@Param("communityId") communityId: Long): List<CommunityToTaskJpaEntity>
@@ -285,7 +285,7 @@ interface CommunityToTaskJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the community [communityId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from CommunityToTaskJpaEntity e where e.id.communityId = :communityId")
     fun findAllByCommunityId(@Param("communityId") communityId: Long, pageable: Pageable): Page<CommunityToTaskJpaEntity>
@@ -293,7 +293,7 @@ interface CommunityToTaskJpaEntityRepository :
     /**
      * Finds the association rows of the task [taskId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from CommunityToTaskJpaEntity e where e.id.taskId = :taskId")
     fun findAllByTaskId(@Param("taskId") taskId: Long): List<CommunityToTaskJpaEntity>
@@ -301,7 +301,7 @@ interface CommunityToTaskJpaEntityRepository :
     /**
      * Finds the ids of the tasks [taskIds] paired with the ids of the communities they are shared to in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.taskId, e.id.communityId) " +
@@ -312,7 +312,7 @@ interface CommunityToTaskJpaEntityRepository :
     /**
      * Finds one [pageable] page of the association rows of the task [taskId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from CommunityToTaskJpaEntity e where e.id.taskId = :taskId")
     fun findAllByTaskId(@Param("taskId") taskId: Long, pageable: Pageable): Page<CommunityToTaskJpaEntity>
@@ -321,7 +321,7 @@ interface CommunityToTaskJpaEntityRepository :
 /**
  * Spring Data repository for [TaskContentJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -330,7 +330,7 @@ interface TaskContentJpaEntityRepository : SnowflakeJpaEntityRepository<TaskCont
 /**
  * Spring Data repository for [TaskJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -339,7 +339,7 @@ interface TaskJpaEntityRepository : SnowflakeJpaEntityRepository<TaskJpaEntity> 
     /**
      * Finds the ids of the users [ownerIds] paired with the ids of the tasks they own in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.ownerId, e.id) " +
@@ -351,7 +351,7 @@ interface TaskJpaEntityRepository : SnowflakeJpaEntityRepository<TaskJpaEntity> 
 /**
  * Spring Data repository for [VersionBucketToTaskJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -361,7 +361,7 @@ interface VersionBucketToTaskJpaEntityRepository :
     /**
      * Finds the uploaded resource associations of the task [taskId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from VersionBucketToTaskJpaEntity e where e.id.taskId = :taskId")
     fun findAllByTaskId(@Param("taskId") taskId: Long): List<VersionBucketToTaskJpaEntity>
@@ -369,14 +369,14 @@ interface VersionBucketToTaskJpaEntityRepository :
     /**
      * Finds the uploaded resource associations of any of the tasks [taskIds] in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByIdTaskIdIn(taskIds: Collection<Long>): List<VersionBucketToTaskJpaEntity>
 
     /**
      * Finds the id of the task the resource chain [versionBucket] is uploaded to, or `null` if it is not uploaded.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e.id.taskId from VersionBucketToTaskJpaEntity e where e.id.versionBucket = :versionBucket")
     fun findTaskIdByVersionBucket(@Param("versionBucket") versionBucket: UUID): Long?

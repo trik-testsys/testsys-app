@@ -23,13 +23,14 @@ import tech.testsys.infra.database.internal.utils.findIdsByTagOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
+import tech.testsys.infra.database.internal.utils.toDomain
 import java.time.Instant
 
 /**
  * Persistence adapter of [TaskValidationRequest] entities backed by [TaskValidationRequestJpaEntity].
  * [findOrCreateActive] guards the task version to prevent concurrent creation of identical active snapshots.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)
@@ -348,8 +349,8 @@ class TaskValidationRequestPersistenceAdapter(
                         }
                     }.toMutableList()
                 supportedTrikStudioVersions = versionIds.getValue(requestId)
-                    .map { versionId -> TrikStudioVersion(studioVersionRows.getValue(versionId).tag) }
-                    .sortedBy { version -> version.version }
+                    .map { versionId -> studioVersionRows.getValue(versionId).toDomain() }
+                    .sortedBy { version -> version.tag }
                     .toMutableList()
             }
         }
@@ -409,7 +410,7 @@ class TaskValidationRequestPersistenceAdapter(
                     expectedScore = solution.data.expectedScore
                 }
             }.toMutableList()
-            supportedTrikStudioVersions = content.supportedTrikStudioVersions.sortedBy { it.version }.toMutableList()
+            supportedTrikStudioVersions = content.supportedTrikStudioVersions.sortedBy { it.tag }.toMutableList()
         }
     }
 
@@ -423,8 +424,8 @@ class TaskValidationRequestPersistenceAdapter(
     private fun persistSnapshot(requestId: Long, snapshot: TaskValidationSnapshot) {
         tests.saveAll(TaskValidationRequestMapping.toTestAssociations(requestId, snapshot.tests.ids))
         solutions.saveAll(TaskValidationRequestMapping.toDeveloperSolutionAssociations(requestId, snapshot.developerSolutions))
-        val idsByTag = studioVersions.findIdsByTagOrError(snapshot.supportedTrikStudioVersions.map { version -> version.version })
-        val versionIds = snapshot.supportedTrikStudioVersions.map { version -> idsByTag.getValue(version.version) }
+        val idsByTag = studioVersions.findIdsByTagOrError(snapshot.supportedTrikStudioVersions)
+        val versionIds = snapshot.supportedTrikStudioVersions.map { version -> idsByTag.getValue(version.tag) }
         versions.saveAll(TaskValidationRequestMapping.toTrikStudioVersionAssociations(requestId, versionIds))
     }
 

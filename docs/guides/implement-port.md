@@ -45,6 +45,7 @@
 | `FileContentReader` | `contract/File.kt` | Явное чтение байтов `FileData`; реализован `FileDataStorage` в `testsys-infra:database` |
 | `Grader`                               | `contract/Grading.kt`                | Реализован в [grpc/README.md](../../testsys-infra/grpc/README.md)          |
 | `UserMailSender`                       | `contract/Mail.kt`                   | Реализован в [mail/README.md](../../testsys-infra/mail/README.md)          |
+| `PasswordHasher`                       | `contract/Password.kt`               | Реализован в [crypto/README.md](../../testsys-infra/crypto/README.md)      |
 | `Pagination` / `Sort` / `Page`         | `contract/persistence/Pagination.kt` | Используются в портах и адаптерах `Task`, `Contest`, `Verdict`, `Class`, `Competition` и `User` |
 
 Порт без реализации — нормальное состояние: интерфейс фиксирует потребность домена раньше, чем появляется
@@ -80,8 +81,9 @@
 попасть в остальные модули. Тогда:
 
 1. Модуль добавляется в `settings.gradle.kts`.
-2. `build.gradle.kts` модуля — минимальный: плагин `testsys.conventions`, зависимость на `:testsys-domain`
-   и тестовые bundles. Правила сборочных скриптов — в разделе «Сборка» в [structure.md](../project/structure.md).
+2. `build.gradle.kts` модуля — минимальный: плагины `testsys.conventions` и `kotlin("plugin.spring")`,
+   зависимость на `:testsys-domain` и тестовые bundles. `plugin.spring` открывает бины модуля для прокси
+   advisor-ов приложения. Правила сборочных скриптов — в разделе «Сборка» в [structure.md](../project/structure.md).
 
 ## 4. Реализация
 
@@ -110,6 +112,9 @@
 - Настройки по умолчанию кладутся в `.properties` модуля и подключаются `@PropertySource`, а не хардкодятся.
 - Если реализация создаётся не сканированием (внешний клиент, объект из библиотеки), она объявляется
   `@Bean`-методом в конфигурации модуля.
+- Вызовы реализации порта из пакетов `tech.testsys.infra.*` пишет в лог advisor приложения, отдельно подключать
+  ничего не нужно. Если класс закрыт для наследования, условие объявления бина — в разделе
+  [«Вызовы»](../../testsys-web/app/README.md#вызовы) app/README.md.
 - Приложение подключает конфигурации модулей через `@Import` в `InfraConfiguration`,
   см. [app/README.md](../../testsys-web/app/README.md).
 

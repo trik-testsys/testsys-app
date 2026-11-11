@@ -13,7 +13,7 @@ import tech.testsys.infra.grpc.internal.InternalGrpcApi
 /**
  * Asynchronous gRPC grading adapter implementing testsys.dev.grading.balancing.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalGrpcApi::class)
 @Component

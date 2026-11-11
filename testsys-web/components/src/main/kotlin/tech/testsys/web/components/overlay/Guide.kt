@@ -12,7 +12,7 @@ import tech.testsys.web.components.core.setAttribute
 /**
  * Additional page-guide steps shown after the explanation of their block, in declaration order.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class GuideStepsScope internal constructor() {
@@ -22,7 +22,7 @@ class GuideStepsScope internal constructor() {
      * Explains [target] with plain [title] and [description]; the target must belong to this block when it is built.
      *
      * @throws IllegalArgumentException if either text is blank or the target is repeated.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun step(target: ElementHandle, title: String, description: String) {
         require(steps.none { step -> step.target === target.component }) { "Guide target '$title' is already configured" }

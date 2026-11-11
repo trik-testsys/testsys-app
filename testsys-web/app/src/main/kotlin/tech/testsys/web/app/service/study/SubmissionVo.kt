@@ -25,7 +25,7 @@ import java.time.Instant
  * @property status the grading status.
  * @property kind the purpose of the submission.
  * @property judgmentOrders the identifiers of the judgment orders of the submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionVo(
     val id: SubmissionId,
@@ -41,20 +41,20 @@ data class SubmissionVo(
 /**
  * Grading status of a [SubmissionVo].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface SubmissionStatusVo {
     /**
      * The submission waits for grading.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object Queued : SubmissionStatusVo
 
     /**
      * The submission is being graded.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object InProgress : SubmissionStatusVo
 
@@ -62,7 +62,7 @@ sealed interface SubmissionStatusVo {
      * Grading has finished.
      *
      * @property grade the result of grading.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Graded(val grade: GradingResultVo) : SubmissionStatusVo
 }
@@ -70,14 +70,14 @@ sealed interface SubmissionStatusVo {
 /**
  * Result of grading a [SubmissionVo].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface GradingResultVo {
     /**
      * Grading produced a verdict.
      *
      * @property verdict the identifier of the verdict.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Success(val verdict: VerdictId) : GradingResultVo
 
@@ -85,14 +85,14 @@ sealed interface GradingResultVo {
      * Grading failed.
      *
      * @property description the description of the failure.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class GradingError(val description: String) : GradingResultVo
 
     /**
      * Grading did not finish in time.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object Timeout : GradingResultVo
 }
@@ -100,14 +100,14 @@ sealed interface GradingResultVo {
 /**
  * Purpose of a [SubmissionVo].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface SubmissionKindVo {
     /**
      * Run of a developer solution during task validation.
      *
      * @property trikStudioVersion the TRIK Studio version of the run.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class DeveloperSolutionTest(val trikStudioVersion: TrikStudioVersion) : SubmissionKindVo
 
@@ -115,7 +115,7 @@ sealed interface SubmissionKindVo {
      * Graded solution sent in a contest.
      *
      * @property contest the identifier of the contest.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Grading(val contest: ContestId) : SubmissionKindVo
 }

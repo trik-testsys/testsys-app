@@ -3,7 +3,7 @@ import org.gradle.api.Project
 /**
  * Builds the production frontend only for runs that package the application.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Project.configureWebFrontend() {
     gradle.taskGraph.whenReady {

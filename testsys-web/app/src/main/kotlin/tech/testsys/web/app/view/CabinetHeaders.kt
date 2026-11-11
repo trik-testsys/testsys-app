@@ -1,6 +1,7 @@
 package tech.testsys.web.app.view
 
 import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.spring.annotation.SpringComponent
 import com.vaadin.flow.spring.security.AuthenticationContext
@@ -18,6 +19,7 @@ import tech.testsys.domain.model.user.User
 import tech.testsys.infra.localization.PageCabinet
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.web.app.security.CabinetPrincipal
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.AdministratorRoleVo
 import tech.testsys.web.app.service.CurrentUser
@@ -40,7 +42,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * Returns the start page of a user of [kind]: the main page for a user with non-fixed roles, the page of the fixed role
  * for the others.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun startPageOf(kind: UserKind): Class<out Component> = when (kind) {
     UserKind.MULTIPLE_ROLE -> MultiMainView::class.java
@@ -52,7 +54,7 @@ fun startPageOf(kind: UserKind): Class<out Component> = when (kind) {
 /**
  * Returns the label of [role] for pages in the region of the current UI.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun labelOf(role: RoleVo): String = currentLocalization().pageCabinet.roleName(
     role = when (role) {
@@ -67,7 +69,7 @@ fun labelOf(role: RoleVo): String = currentLocalization().pageCabinet.roleName(
 /**
  * Returns the page of [role].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun rolePageOf(role: RoleVo): Class<out Component> = when (role) {
     is AdministratorRoleVo -> AdminView::class.java
@@ -78,31 +80,26 @@ fun rolePageOf(role: RoleVo): Class<out Component> = when (role) {
 }
 
 /**
- * Builds the headers of the pages: the guest header and the Cabinet header of the signed-in user (testsys.web.component.header).
+ * Builds the Cabinet header of the signed-in user (testsys.web.component.header).
  * Its companion holds the keys of the sections «Главная», active on the start pages, and «Меню», active on the role pages.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @SpringComponent
 class CabinetHeaders(private val currentUser: CurrentUser, private val authenticationContext: AuthenticationContext) {
     /**
-     * Returns the header of a guest with the sign-in link if [hasSignIn].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun guest(hasSignIn: Boolean = true): CabinetHeader =
-        CabinetHeader(signIn = HeaderDestination.Route(AuthenticationView::class.java).takeIf { hasSignIn })
-
-    /**
      * Returns the Cabinet header of the signed-in user with the [active] section: the start page, the menu of the roles
-     * with search and the nickname menu with the profile, unless the role is fixed, and signing out.
+     * with search and the nickname menu with the profile, unless the role is fixed, the return of a supervisor signed in
+     * as the user, and signing out.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun cabinet(active: String? = null): CabinetHeader {
         val user = currentUser.user()
         val texts = currentLocalization().pageCabinet
         val home = HeaderDestination.Route(startPageOf(CabinetPrincipal.of(user).kind))
+        val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
+        val name = if (isImpersonated) texts.impersonationName(name = nameOf(user)) else nameOf(user)
 
         return CabinetHeader(
             items = listOf(
@@ -110,11 +107,18 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
                 MegaMenuItem(key = MENU_SECTION, label = texts.menu(), menu = HeaderMegaMenu(columnsOf(user, texts)), isSearchable = true),
             ),
             active = active,
-            user = HeaderUser(name = nameOf(user)) {
+            user = HeaderUser(name = name) {
                 if (user is MultipleRoleUser) link(texts.profile(), ProfileView::class.java)
+                if (isImpersonated) item(texts.impersonationReturn()) { returnToSupervisor() }
                 destructiveItem(texts.signOut()) { authenticationContext.logout() }
             },
         )
+    }
+
+    /** Signs the supervisor back in and opens their details of the user they leave (testsys.user.single.supervisor.impersonate). */
+    private fun returnToSupervisor() {
+        val userId = CabinetSignIn.returnToSupervisor() ?: return
+        UI.getCurrent().navigate(SupervisorUserView::class.java, RouteParameters(USER_ID_PARAMETER, userId.toString()))
     }
 
     private fun columnsOf(user: User<*>, texts: PageCabinet): List<HeaderMegaColumn> = when (user) {

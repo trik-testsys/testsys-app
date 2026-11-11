@@ -45,6 +45,7 @@ import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
+import tech.testsys.infra.database.internal.utils.toDomain
 import org.springframework.data.domain.Sort as JpaSort
 
 /**
@@ -52,7 +53,7 @@ import org.springframework.data.domain.Sort as JpaSort
  * Content revisions are replaced wholesale as task content rows on save and update and dropped together with the
  * shared-community and uploaded-resource join rows on remove; update and remove increment the task version first.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)
@@ -275,7 +276,7 @@ class TaskPersistenceAdapter(
                 exerciseIds = exerciseIds.getValue(contentId),
                 testIds = testIds.getValue(contentId),
                 developerSolutionIds = developerSolutionIds.getValue(contentId),
-                supportedVersions = versionIds.getValue(contentId).map { versionId -> TrikStudioVersion(versions.getValue(versionId).tag) },
+                supportedVersions = versionIds.getValue(contentId).map { versionId -> versions.getValue(versionId).toDomain() },
             )
         }
     }
@@ -345,8 +346,8 @@ class TaskPersistenceAdapter(
         developerSolutionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toDeveloperSolutionAssociations(contentId, developerSolutionIds),
         )
-        val idsByTag = trikStudioVersionJpaEntityRepository.findIdsByTagOrError(versions.map { version -> version.version })
-        val versionIds = versions.map { version -> idsByTag.getValue(version.version) }
+        val idsByTag = trikStudioVersionJpaEntityRepository.findIdsByTagOrError(versions)
+        val versionIds = versions.map { version -> idsByTag.getValue(version.tag) }
         trikStudioVersionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toTrikStudioVersionAssociations(contentId, versionIds),
         )

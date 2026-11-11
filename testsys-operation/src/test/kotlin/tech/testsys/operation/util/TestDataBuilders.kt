@@ -6,6 +6,7 @@ import tech.testsys.domain.builder.group.ClassDataBuilder
 import tech.testsys.domain.builder.group.CompetitionDataBuilder
 import tech.testsys.domain.builder.task.ContestDataBuilder
 import tech.testsys.domain.builder.task.TaskValidationRequestDataBuilder
+import tech.testsys.domain.builder.user.AccessRestorationRequestDataBuilder
 import tech.testsys.domain.builder.user.AdministratorBuilder
 import tech.testsys.domain.builder.user.DeveloperBuilder
 import tech.testsys.domain.builder.user.EmailChangeRequestDataBuilder
@@ -31,12 +32,14 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.EmailChangeRequest
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.config.CommunityConfig
@@ -50,7 +53,7 @@ fun testMultipleRoleUser(builder: MultipleRoleUserDataBuilder.() -> Unit): Multi
     data = multipleRoleUserData {
         name = "Name"
         email = "email"
-        accessToken("token", algorithm = HashAlgorithm.Identity)
+        passwordHash = PasswordHash("password-hash")
         builder()
     }
 }
@@ -124,6 +127,8 @@ fun testSavedTask(updatedTask: Task): Task = task {
     data = updatedTask.data
 }
 
+fun testTrikStudioVersion(version: String = "3.0.0"): TrikStudioVersion = TrikStudioVersion(tag = "trik-studio:$version", version = version)
+
 fun testContest(builder: ContestDataBuilder.() -> Unit = {}): Contest = contest {
     id = 19L
     createdAt = Instant.parse("2019-01-01T00:00:00Z")
@@ -132,7 +137,7 @@ fun testContest(builder: ContestDataBuilder.() -> Unit = {}): Contest = contest 
         owner = MultipleRoleUserId(0)
         name = "Contest"
         description = "Description"
-        trikStudioVersion = TrikStudioVersion("3.0.0")
+        trikStudioVersion = testTrikStudioVersion("3.0.0")
         builder()
     }
 }
@@ -169,11 +174,13 @@ fun testStatement(statementId: Long = 0L): Statement = statement {
     }
 }
 
+val testAccessTokenHasher = AccessTokenHasher("0123456789abcdef".repeat(4))
+
 fun testParticipant(builder: ParticipantDataBuilder.() -> Unit = {}): Participant = participant {
     id = 17
     createdAt = Instant.EPOCH
     data = participantData {
-        accessToken("participant", algorithm = HashAlgorithm.Identity)
+        accessToken("participant", testAccessTokenHasher)
         name = "Participant"
         competition(23)
         builder()
@@ -184,7 +191,7 @@ fun testObserver(builder: ObserverDataBuilder.() -> Unit = {}): Observer = obser
     id = 18
     createdAt = Instant.EPOCH
     data = observerData {
-        accessToken("observer", algorithm = HashAlgorithm.Identity)
+        accessToken("observer", testAccessTokenHasher)
         name = "Observer"
         community(29)
         builder()
@@ -195,7 +202,7 @@ fun testSupervisor(builder: SupervisorDataBuilder.() -> Unit = {}): Supervisor =
     id = 19
     createdAt = Instant.EPOCH
     data = supervisorData {
-        accessToken("supervisor", algorithm = HashAlgorithm.Identity)
+        accessToken("supervisor", testAccessTokenHasher)
         name = "Supervisor"
         builder()
     }
@@ -227,6 +234,20 @@ fun testEmailChangeRequest(builder: EmailChangeRequestDataBuilder.() -> Unit = {
         builder()
     }
 }
+
+fun testAccessRestorationRequest(builder: AccessRestorationRequestDataBuilder.() -> Unit = {}): AccessRestorationRequest =
+    accessRestorationRequest {
+        id = 43
+        createdAt = Instant.EPOCH
+        version = EntityVersion(0)
+        data = accessRestorationRequestData {
+            user(0)
+            confirmationCode = "12345678"
+            expiresAt = Instant.parse("2026-01-01T00:15:00Z")
+            attemptsLeft = 3
+            builder()
+        }
+    }
 
 fun testCompetition(builder: CompetitionDataBuilder.() -> Unit = {}): Competition = competition {
     id = 23

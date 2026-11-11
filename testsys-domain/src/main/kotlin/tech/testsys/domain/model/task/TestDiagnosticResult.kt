@@ -3,27 +3,27 @@ package tech.testsys.domain.model.task
 /**
  * Severity of a polygon diagnostic message.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class DiagnosticSeverity {
     /**
      * An informational message.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Info,
 
     /**
      * A warning message.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Warning,
 
     /**
      * An error message.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     Error,
 }
@@ -33,7 +33,7 @@ enum class DiagnosticSeverity {
  *
  * @property tag the element tag.
  * @property index the one-based index among same-tag siblings.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DiagnosticPathSegment(val tag: String, val index: Int)
 
@@ -42,21 +42,21 @@ data class DiagnosticPathSegment(val tag: String, val index: Int)
  *
  * @property path the indexed element path.
  * @property attribute the attribute name, or `null` for an element.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DiagnosticLocation(val path: List<DiagnosticPathSegment>, val attribute: String?)
 
 /**
  * Typed reasons and parameters of polygon diagnostic messages.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface DiagnosticData {
     /**
      * The unknown element diagnostic reason.
      *
      * @property tag the unknown tag.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class UnknownElement(val tag: String) : DiagnosticData
 
@@ -64,7 +64,7 @@ sealed interface DiagnosticData {
      * The malformed XML diagnostic reason.
      *
      * @property details the XML syntax error.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class MalformedXml(val details: String) : DiagnosticData
 
@@ -72,7 +72,7 @@ sealed interface DiagnosticData {
      * The missing child diagnostic reason.
      *
      * @property tag the required child tag.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class MissingChild(val tag: String) : DiagnosticData
 
@@ -80,7 +80,7 @@ sealed interface DiagnosticData {
      * The missing attribute diagnostic reason.
      *
      * @property attribute the required attribute.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class MissingAttribute(val attribute: String) : DiagnosticData
 
@@ -90,7 +90,7 @@ sealed interface DiagnosticData {
      * @property attribute the attribute.
      * @property expected the required value type.
      * @property actual the supplied value.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class InvalidAttributeValue(val attribute: String, val expected: String, val actual: String) : DiagnosticData
 
@@ -99,14 +99,14 @@ sealed interface DiagnosticData {
      *
      * @property expected the required child count.
      * @property actual the supplied count.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class InvalidChildCount(val expected: Int, val actual: Int) : DiagnosticData
 
     /**
      * The missing time limit diagnostic reason.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object MissingTimeLimit : DiagnosticData
 
@@ -114,7 +114,7 @@ sealed interface DiagnosticData {
      * The multiple time limits diagnostic reason.
      *
      * @property count the number of limits.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class MultipleTimeLimits(val count: Int) : DiagnosticData
 
@@ -122,7 +122,7 @@ sealed interface DiagnosticData {
      * The negative time limit diagnostic reason.
      *
      * @property value the negative limit.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class NegativeTimeLimit(val value: Long) : DiagnosticData
 
@@ -131,7 +131,7 @@ sealed interface DiagnosticData {
      *
      * @property value the limit.
      * @property maximum the configured maximum.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class ExcessiveTimeLimit(val value: Long, val maximum: Long) : DiagnosticData
 
@@ -139,14 +139,14 @@ sealed interface DiagnosticData {
      * The invalid event id diagnostic reason.
      *
      * @property id the unresolved event identifier.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class InvalidEventId(val id: String) : DiagnosticData
 
     /**
      * The missing score output diagnostic reason.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object MissingScoreOutput : DiagnosticData
 }
@@ -157,7 +157,7 @@ sealed interface DiagnosticData {
  * @property severity the message severity.
  * @property data the reason and its parameters.
  * @property location the XML location, or `null` for a whole-file message.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DiagnosticReport(
     val severity: DiagnosticSeverity,
@@ -170,6 +170,6 @@ data class DiagnosticReport(
  *
  * @property testId the concrete polygon version.
  * @property reports the messages, including an empty list after successful analysis.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TestDiagnosticResult(val testId: TestId, val reports: List<DiagnosticReport>)

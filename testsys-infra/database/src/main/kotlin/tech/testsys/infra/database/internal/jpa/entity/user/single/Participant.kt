@@ -9,7 +9,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property userId id of the user holding the role.
  * @property competitionId id of the competition the participant takes part in.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

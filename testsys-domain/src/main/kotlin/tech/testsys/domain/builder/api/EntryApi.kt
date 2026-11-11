@@ -15,7 +15,7 @@ import tech.testsys.domain.model.entry.StudentContestEntryData
 /**
  * Builds [ParticipantContestEntryData] with a [ParticipantContestEntryDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun participantContestEntryData(builder: ParticipantContestEntryDataBuilder.() -> Unit) =
     ParticipantContestEntryDataBuilder().apply(builder).build()
@@ -23,7 +23,7 @@ inline fun participantContestEntryData(builder: ParticipantContestEntryDataBuild
 /**
  * Builds a [ParticipantContestEntry] with a [ParticipantContestEntryBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun participantContestEntry(builder: ParticipantContestEntryBuilder.() -> Unit) =
     ParticipantContestEntryBuilder().apply(builder).build()
@@ -41,7 +41,7 @@ private fun ParticipantContestEntryData.toBuilder(): ParticipantContestEntryData
 /**
  * Returns a copy of this entry with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ParticipantContestEntry.withData(builder: ParticipantContestEntryDataBuilder.() -> Unit): ParticipantContestEntry {
     return ParticipantContestEntry(
@@ -54,7 +54,7 @@ fun ParticipantContestEntry.withData(builder: ParticipantContestEntryDataBuilder
 /**
  * Builds [StudentContestEntryData] with a [StudentContestEntryDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun studentContestEntryData(builder: StudentContestEntryDataBuilder.() -> Unit) =
     StudentContestEntryDataBuilder().apply(builder).build()
@@ -62,7 +62,7 @@ inline fun studentContestEntryData(builder: StudentContestEntryDataBuilder.() ->
 /**
  * Builds a [StudentContestEntry] with a [StudentContestEntryBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun studentContestEntry(builder: StudentContestEntryBuilder.() -> Unit) = StudentContestEntryBuilder().apply(builder).build()
 
@@ -79,7 +79,7 @@ private fun StudentContestEntryData.toBuilder(): StudentContestEntryDataBuilder 
 /**
  * Returns a copy of this entry with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun StudentContestEntry.withData(builder: StudentContestEntryDataBuilder.() -> Unit): StudentContestEntry {
     return StudentContestEntry(

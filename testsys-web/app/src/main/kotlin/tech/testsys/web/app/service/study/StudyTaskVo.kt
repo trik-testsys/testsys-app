@@ -17,7 +17,7 @@ import tech.testsys.web.app.service.toVo
  * @property languages the languages a solution can be sent in.
  * @property submissions the submissions of the user.
  * @property best the submission with the highest final score, or `null` if none has a successful verdict.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StudyTaskVo(
     val task: TaskVo,
@@ -34,7 +34,7 @@ data class StudyTaskVo(
  * @property submission the submission.
  * @property filename the uploaded file name of the solution.
  * @property score the final score, or `null` without a successful verdict.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StudySubmissionVo(
     val submission: SubmissionVo,

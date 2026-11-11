@@ -1,15 +1,23 @@
 package tech.testsys.operation.config
 
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.operation.annotation.OperationConfig
+
+/**
+ * Identity of the technical owner of the public community.
+ *
+ * @property EMAIL the address reserved for that owner.
+ * @since 1.0.0-beta.1
+ */
+object PublicCommunityOwner {
+    const val EMAIL = "public-community-owner@testsys.invalid"
+}
 
 /**
  * Configuration of the communities operations rely on.
  *
  * @property publicCommunityId the id of the public community every self-registered user joins.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
-@OperationConfig("community")
 interface CommunityConfig {
 
     val publicCommunityId: CommunityId

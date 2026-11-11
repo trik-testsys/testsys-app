@@ -21,7 +21,6 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -545,7 +544,27 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             content.committed {
                 exercises(listOf(exerciseId))
                 statement(statementId)
-                supportedTrikStudioVersions = mutableListOf(TrikStudioVersion(fixtures.unique("unregistered")))
+                supportedTrikStudioVersions = mutableListOf(fixtures.unregisteredTrikStudioVersion())
+            }
+        }
+
+        assertFailsWith<IllegalArgumentException> { repository.save(data) }
+    }
+
+    @Test
+    fun `should fail to save a task with a registered tag of another version number`() {
+        val ownerId = fixtures.developer().id.value
+        val exerciseId = fixtures.exercise().id.value
+        val statementId = fixtures.statement().id.value
+        val stale = fixtures.trikStudioVersion().copy(version = fixtures.unique("stale-version"))
+        val data = taskData {
+            owner(ownerId)
+            name = fixtures.unique("Task")
+            description = "Task description"
+            content.committed {
+                exercises(listOf(exerciseId))
+                statement(statementId)
+                supportedTrikStudioVersions = mutableListOf(stale)
             }
         }
 
@@ -678,7 +697,7 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             owner(ownerId)
             name = fixtures.unique("Task")
             description = "Task description"
-            content.new { supportedTrikStudioVersions = mutableListOf(registered, TrikStudioVersion(fixtures.unique("unregistered"))) }
+            content.new { supportedTrikStudioVersions = mutableListOf(registered, fixtures.unregisteredTrikStudioVersion()) }
         }
 
         assertFailsWith<IllegalArgumentException> { repository.save(data) }

@@ -36,7 +36,7 @@ private const val CONTEST_DETAILS_COLUMNS = 16
  * Contest of a Participant or a Student (testsys.web.page.study.contest): its details, starting it, the time left and its
  * tasks, which open after the start. Each kind of user has its own page with its own route and texts.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class StudyContestView(private val headers: CabinetHeaders, private val clock: Clock) :
     TestSysView(),
@@ -120,14 +120,14 @@ abstract class StudyContestView(private val headers: CabinetHeaders, private val
         block(size = CONTEST_DETAILS_COLUMNS, title = texts.detailsTitle()) {
             guide(texts.contestDetailsGuide())
             load({ loaded.value.second }) { contest ->
-                row { codeInput(texts.id(), labelSize = 6, size = 10) { value = contest.id.value.toString() } }
-                row { textInput(texts.name(), labelSize = 6, size = 18) { value = contest.name } }
-                row { textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) { value = contest.description } }
+                row { codeInput(texts.id(), labelSize = 5, size = 6) { value = contest.id.value.toString() } }
+                row { textInput(texts.name(), labelSize = 5, size = 19) { value = contest.name } }
+                row { textArea(texts.description(), labelSize = 5, size = 19, maxLines = 4) { value = contest.description } }
                 row {
-                    dateTimeInput(texts.startsAt(), labelSize = 6, size = 6) { value = contest.startsAt?.toUserDateTime() }
-                    dateTimeInput(texts.endsAt(), labelSize = 6, size = 6) { value = contest.endsAt?.toUserDateTime() }
+                    dateTimeInput(texts.startsAt(), labelSize = 5, size = 7) { value = contest.startsAt?.toUserDateTime() }
+                    dateTimeInput(texts.endsAt(), labelSize = 5, size = 7) { value = contest.endsAt?.toUserDateTime() }
                 }
-                row { textInput(texts.attemptDuration(), labelSize = 6, size = 6) { value = studyDurationText(contest.attemptDuration) } }
+                row { textInput(texts.attemptDuration(), labelSize = 5, size = 7) { value = studyDurationText(contest.attemptDuration) } }
             }
         }.isEditable = false
     }
@@ -136,7 +136,7 @@ abstract class StudyContestView(private val headers: CabinetHeaders, private val
 /**
  * Contest of a class of a Student (testsys.web.page.study.contest).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("student/classes/:classId([0-9]+)/contests/:contestId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -155,7 +155,7 @@ class StudentContestView(
 /**
  * Contest of the competition of a Participant (testsys.web.page.study.contest).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("participant/contests/:contestId([0-9]+)")
 @RolesAllowed("PARTICIPANT")

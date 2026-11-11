@@ -21,6 +21,7 @@ internal enum class ElementRole(internal val attribute: String) {
     Image("img"),
     Menu("menu"),
     MenuItem("menuitem"),
+    ProgressBar("progressbar"),
     Region("region"),
     SearchBox("searchbox"),
     Separator("separator"),

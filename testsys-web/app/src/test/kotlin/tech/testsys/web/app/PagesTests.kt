@@ -6,6 +6,7 @@ import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.router.InternalServerError
@@ -36,6 +37,7 @@ import tech.testsys.web.app.view.AdminCommunityView
 import tech.testsys.web.app.view.AdminUserSection
 import tech.testsys.web.app.view.AdminUserView
 import tech.testsys.web.app.view.AdminView
+import tech.testsys.web.app.view.AuthenticationView
 import tech.testsys.web.app.view.CLASSES_SECTION
 import tech.testsys.web.app.view.COMMUNITY_ID_PARAMETER
 import tech.testsys.web.app.view.COMPETITIONS_SECTION
@@ -48,6 +50,7 @@ import tech.testsys.web.app.view.DeveloperTestingView
 import tech.testsys.web.app.view.DeveloperView
 import tech.testsys.web.app.view.JudgeSolutionView
 import tech.testsys.web.app.view.JudgeView
+import tech.testsys.web.app.view.MainView
 import tech.testsys.web.app.view.ManagerClassView
 import tech.testsys.web.app.view.ManagerCompetitionView
 import tech.testsys.web.app.view.ManagerContestView
@@ -64,6 +67,9 @@ import tech.testsys.web.app.view.StudentClassView
 import tech.testsys.web.app.view.StudentContestView
 import tech.testsys.web.app.view.StudentTaskView
 import tech.testsys.web.app.view.StudentView
+import tech.testsys.web.app.view.SupervisorCommunityView
+import tech.testsys.web.app.view.SupervisorUserView
+import tech.testsys.web.app.view.SupervisorView
 import tech.testsys.web.app.view.TASKS_SECTION
 import tech.testsys.web.app.view.USER_ID_PARAMETER
 import tech.testsys.web.app.view.classContestParameters
@@ -100,12 +106,17 @@ class PagesTests : MockSpringVaadinTests() {
 
         UI.getCurrent().navigate(page, parameters(fixtures, user))
 
-        assertEquals(page, currentView) {
+        assertEquals(forwardedPages.getOrDefault(page, page), currentView) {
             UI.getCurrent().internals.activeRouterTargetsChain
                 .filterIsInstance<InternalServerError>()
                 .joinToString { error -> error._errorMessage }
         }
         val buttons = _find<NativeButton> { classes = "ts-guide-button" }
+        if (_find<Div> { classes = "ts-app--guest" }.isNotEmpty()) {
+            assertEquals(emptyList<NativeButton>(), buttons)
+            assertEquals(1, _find<Section> { classes = "ts-guest-card" }.size)
+            return
+        }
         assertEquals(1, buttons.count { button -> button.element.getAttribute("data-guide-start") == "page" })
         val blocks = _find<Section> { classes = "ts-block" }
         assertTrue(blocks.isNotEmpty())
@@ -114,6 +125,10 @@ class PagesTests : MockSpringVaadinTests() {
     }
 
     companion object {
+        /** Pages without content of their own that forward a guest to another page. */
+        private val forwardedPages: Map<Class<out Component>, Class<out Component>> =
+            mapOf(MainView::class.java to AuthenticationView::class.java)
+
         private val signedInUsers: Map<UserKind, (AppFixtures) -> User<*>> =
             UserKind.entries.associateWith { kind -> { fixtures: AppFixtures -> fixtures.userOf(kind) } } +
                 (UserKind.MULTIPLE_ROLE to AppFixtures::administrator)
@@ -144,7 +159,43 @@ class PagesTests : MockSpringVaadinTests() {
                     RouteParameters(OBSERVER_ID_PARAMETER, observer.id.value.toString())
                 },
             ) + AdminUserSection.entries.associate { section ->
-                section.value to parametersOf { fixtures, user -> userParameters(memberWithAllSections(fixtures, user).id, section) }
+                section.value to parametersOf { fixtures, user ->
+                    userParameters(memberWithAllSections(fixtures, fixtures.community(owner = administrator(user)).id.value).id, section)
+                }
+            },
+            SupervisorView::class.java to mapOf(
+                "" to parametersOf { _, _ -> RouteParameters.empty() },
+                "users" to parametersOf { _, _ -> RouteParameters(ADMIN_SECTION_PARAMETER, "users") },
+                "communities" to parametersOf { _, _ -> RouteParameters(ADMIN_SECTION_PARAMETER, "communities") },
+            ),
+            SupervisorCommunityView::class.java to mapOf(
+                "community" to parametersOf { fixtures, _ ->
+                    RouteParameters(COMMUNITY_ID_PARAMETER, fixtures.community().id.value.toString())
+                },
+            ),
+            SupervisorUserView::class.java to mapOf(
+                "user" to parametersOf { fixtures, _ ->
+                    val community = fixtures.community()
+                    val member = fixtures.multipleRoleUser {
+                        roles {
+                            developer {
+                                memberOf(listOf(community.id.value))
+                                data = developerData {}
+                            }
+                        }
+                    }
+                    RouteParameters(USER_ID_PARAMETER, member.id.value.toString())
+                },
+                "observer" to parametersOf { fixtures, _ ->
+                    RouteParameters(USER_ID_PARAMETER, fixtures.observer(fixtures.community()).id.value.toString())
+                },
+                "participant" to parametersOf { _, _ ->
+                    RouteParameters(USER_ID_PARAMETER, study().participant(emptyList()).id.value.toString())
+                },
+            ) + AdminUserSection.entries.associate { section ->
+                section.value to parametersOf { fixtures, _ ->
+                    userParameters(memberWithAllSections(fixtures, fixtures.community().id.value).id, section)
+                }
             },
             ManagerView::class.java to mapOf(
                 "" to parametersOf { fixtures, user ->
@@ -291,9 +342,9 @@ class PagesTests : MockSpringVaadinTests() {
             parameters(developers)
         }
 
-        /** Returns a member of a community of the signed-in administrator [user] with the roles of all user page tabs. */
-        private fun memberWithAllSections(fixtures: AppFixtures, user: User<*>?): MultipleRoleUser {
-            val communityId = listOf(fixtures.community(owner = administrator(user)).id.value)
+        /** Returns a member of the community [communityValue] with the roles of all user page tabs. */
+        private fun memberWithAllSections(fixtures: AppFixtures, communityValue: Long): MultipleRoleUser {
+            val communityId = listOf(communityValue)
             return fixtures.multipleRoleUser {
                 roles {
                     developer {

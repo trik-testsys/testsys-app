@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [JudgmentOrder] and [JudgmentOrderJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntity> {
@@ -21,7 +21,7 @@ object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntit
     /**
      * Assembles a [JudgmentOrder] from [jpaEntity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: JudgmentOrderJpaEntity) = judgmentOrder {
         populateFields(jpaEntity)
@@ -37,7 +37,7 @@ object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntit
     /**
      * Creates a new [JudgmentOrderJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: JudgmentOrderData) = JudgmentOrderJpaEntity(
         judgeId = data.judge.id.value,
@@ -50,7 +50,7 @@ object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntit
      * Creates the [JudgmentOrderJpaEntity] row replacing [current] from [entity],
      * keeping `judgeId`, `submissionId`, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: JudgmentOrder, current: JudgmentOrderJpaEntity) = JudgmentOrderJpaEntity(
         judgeId = current.judgeId,

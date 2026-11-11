@@ -31,7 +31,7 @@ class ContestMappingTests : EntityMappingTests<ContestMapping>() {
 
         val row = withId(mapping.toJpaEntity(data = data, trikStudioVersionId = 3))
 
-        val restored = mapping.toDomain(row, TrikStudioVersion("3.0.0"), emptyList(), emptyList())
+        val restored = mapping.toDomain(row, TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0"), emptyList(), emptyList())
         assertEquals(1234L.takeIf { hasTotal }, row.contestDurationMillis)
         assertEquals(567L.takeIf { hasAttempt }, row.attemptDurationMillis)
         assertEquals(total, restored.data.contestDuration)
@@ -67,7 +67,7 @@ class ContestMappingTests : EntityMappingTests<ContestMapping>() {
 
         val row = withId(mapping.toJpaEntity(data = data, trikStudioVersionId = 3))
 
-        val restored = mapping.toDomain(row, TrikStudioVersion("3.0.0"), emptyList(), emptyList())
+        val restored = mapping.toDomain(row, TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0"), emptyList(), emptyList())
         assertEquals(millis, row.contestDurationMillis)
         assertEquals(millis, row.attemptDurationMillis)
         assertEquals(duration, restored.data.contestDuration)
@@ -121,7 +121,7 @@ class ContestMappingTests : EntityMappingTests<ContestMapping>() {
         owner(1)
         name = "Contest"
         description = "Description"
-        trikStudioVersion("3.0.0")
+        trikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0")
         contestDuration = total
         attemptDuration = attempt
     }

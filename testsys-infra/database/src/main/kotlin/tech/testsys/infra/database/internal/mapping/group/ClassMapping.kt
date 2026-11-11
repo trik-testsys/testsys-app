@@ -17,7 +17,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [Class] and [ClassJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
@@ -25,7 +25,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
     /**
      * Assembles a [Class] from [jpaEntity] and the ids of its students and contests.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: ClassJpaEntity, studentIds: List<MultipleRoleUserId>, contestIds: List<ContestId>) = `class` {
         populateFields(jpaEntity)
@@ -43,7 +43,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
     /**
      * Creates a new [ClassJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: ClassData) = ClassJpaEntity(
         name = data.name,
@@ -55,7 +55,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
     /**
      * Creates the [ClassJpaEntity] row replacing [current] from [entity], keeping `ownerId`, `inviteId`, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Class, current: ClassJpaEntity) = ClassJpaEntity(
         name = entity.data.name,
@@ -71,7 +71,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
     /**
      * Creates the [StudentToClassJpaEntity] rows linking the class [classId] with [studentIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toStudentAssociations(classId: Long, studentIds: List<MultipleRoleUserId>) = studentIds.distinct().map {
         StudentToClassJpaEntity(
@@ -83,7 +83,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
     /**
      * Creates the [ContestToClassJpaEntity] rows linking the class [classId] with [contestIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toContestAssociations(classId: Long, contestIds: List<ContestId>) = contestIds.distinct().map {
         ContestToClassJpaEntity(

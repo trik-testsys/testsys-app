@@ -23,6 +23,7 @@ import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.LogsId
 import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.RecordingId
+import tech.testsys.domain.model.task.RegradeData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
@@ -118,7 +119,9 @@ class TaskApiTests {
                 solution = LazyEntity(SolutionId(15)),
                 task = LazyEntity(TaskId(9)),
                 status = SubmissionStatus.InProgress,
-                kind = SubmissionKind.DeveloperSolutionTest(trikStudioVersion = TrikStudioVersion("3.0.0")),
+                kind = SubmissionKind.DeveloperSolutionTest(
+                    trikStudioVersion = TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0"),
+                ),
                 judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32))),
             )
         }
@@ -143,14 +146,14 @@ class TaskApiTests {
 
         @Test
         fun `should change TRIK Studio version if withData sets version`() {
-            val copy = origin.withData { kind.developerSolutionTest { trikStudioVersion("4.0.0") } }
+            val copy = origin.withData { kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:4.0.0", version = "4.0.0") } }
 
             Assertions.assertEquals(
-                TrikStudioVersion("4.0.0"),
+                TrikStudioVersion(tag = "trik-studio:4.0.0", version = "4.0.0"),
                 (copy.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
             )
             Assertions.assertEquals(
-                TrikStudioVersion("3.0.0"),
+                TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0"),
                 (origin.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
             )
             Assertions.assertEquals(origin.version, copy.version)
@@ -191,10 +194,10 @@ class TaskApiTests {
         fun `should change grading to developer solution test through withData`() {
             val grading = origin.withData { kind.grading { contest(12) } }
 
-            val copy = grading.withData { kind.developerSolutionTest { trikStudioVersion("4.0.0") } }
+            val copy = grading.withData { kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:4.0.0", version = "4.0.0") } }
 
             Assertions.assertEquals(
-                TrikStudioVersion("4.0.0"),
+                TrikStudioVersion(tag = "trik-studio:4.0.0", version = "4.0.0"),
                 (copy.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
             )
             Assertions.assertEquals(grading.version, copy.version)
@@ -216,7 +219,7 @@ class TaskApiTests {
                 startsAt = Instant.ofEpochSecond(5000),
                 contestDuration = Duration.ofHours(2),
                 attemptDuration = Duration.ofMinutes(30),
-                trikStudioVersion = TrikStudioVersion("3.0.0"),
+                trikStudioVersion = TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0"),
                 sharedTo = LazyEntityList(listOf(CommunityId(50))),
             )
         }
@@ -606,6 +609,42 @@ class TaskApiTests {
     }
 
     @Nested
+    inner class RegradeTests {
+
+        private val origin = regrade {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = RegradeData(
+                task = LazyEntity(TaskId(10)),
+                tests = LazyEntityList(listOf(TestId(20), TestId(21))),
+                submissions = LazyEntityList(listOf(SubmissionId(30))),
+            )
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
+            Assertions.assertEquals(origin.data.tests.ids, copy.data.tests.ids)
+            Assertions.assertEquals(origin.data.submissions.ids, copy.data.submissions.ids)
+        }
+
+        @Test
+        fun `should change submissions if withData sets them`() {
+            val copy = origin.withData { submissions(listOf(31L, 32L)) }
+
+            Assertions.assertEquals(listOf(SubmissionId(31), SubmissionId(32)), copy.data.submissions.ids)
+            Assertions.assertEquals(origin.data.tests.ids, copy.data.tests.ids)
+            Assertions.assertEquals(origin.version, copy.version)
+        }
+    }
+
+    @Nested
     inner class VerdictTests {
 
         private val origin = verdict {
@@ -696,7 +735,7 @@ class TaskApiTests {
                         exercises = LazyEntityList(listOf(ExerciseId(30), ExerciseId(32))),
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(50))),
-                        supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
+                        supportedTrikStudioVersions = listOf(TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0")),
                     ),
                 ),
             )
@@ -771,7 +810,7 @@ class TaskApiTests {
                         exercises = LazyEntityList(listOf(ExerciseId(30), ExerciseId(32))),
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(50))),
-                        supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
+                        supportedTrikStudioVersions = listOf(TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0")),
                     ),
                 ),
             )
@@ -841,14 +880,14 @@ class TaskApiTests {
                         exercises = LazyEntityList(listOf(ExerciseId(30), ExerciseId(32))),
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(emptyList()),
-                        supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
+                        supportedTrikStudioVersions = listOf(TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0")),
                     ),
                     lastCommitted = CommittedTaskContent(
                         tests = LazyEntityList(listOf(TestId(21))),
                         exercises = LazyEntityList(listOf(ExerciseId(31), ExerciseId(33))),
                         statement = LazyEntity(StatementId(41)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(51))),
-                        supportedTrikStudioVersions = listOf(TrikStudioVersion("2.0.0")),
+                        supportedTrikStudioVersions = listOf(TrikStudioVersion(tag = "trik-studio:2.0.0", version = "2.0.0")),
                     ),
                 ),
             )

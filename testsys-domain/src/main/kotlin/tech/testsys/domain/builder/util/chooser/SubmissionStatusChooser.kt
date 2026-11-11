@@ -10,14 +10,14 @@ import tech.testsys.domain.model.task.VerdictId
 /**
  * DSL chooser of a [SubmissionStatus].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SubmissionStatusChooser : Chooser<SubmissionStatus>() {
 
     /**
      * Selects [SubmissionStatus.Graded] configured by [builder]; repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun graded(builder: GradingSubmissionStatusBuilder.() -> Unit) {
         val currentBuilder = choice as? GradingSubmissionStatusBuilder ?: GradingSubmissionStatusBuilder()
@@ -27,7 +27,7 @@ class SubmissionStatusChooser : Chooser<SubmissionStatus>() {
     /**
      * Selects [SubmissionStatus.Queued].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun queued() = makeChoice(object : Builder<SubmissionStatus> {
         override fun build() = SubmissionStatus.Queued
@@ -36,7 +36,7 @@ class SubmissionStatusChooser : Chooser<SubmissionStatus>() {
     /**
      * Selects [SubmissionStatus.InProgress].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun inProgress() = makeChoice(object : Builder<SubmissionStatus> {
         override fun build() = SubmissionStatus.InProgress
@@ -47,7 +47,7 @@ class SubmissionStatusChooser : Chooser<SubmissionStatus>() {
  * Builder of [SubmissionStatus.Graded]. Required: a choice in [status].
  *
  * @property status the chooser of the [GradingResult].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class GradingSubmissionStatusBuilder : Builder<SubmissionStatus> {
 
@@ -61,14 +61,14 @@ class GradingSubmissionStatusBuilder : Builder<SubmissionStatus> {
 /**
  * DSL chooser of a [GradingResult].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class GradingResultStatusChooser : Chooser<GradingResult>() {
 
     /**
      * Selects [GradingResult.Timeout].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun timeout() = makeChoice(object : Builder<GradingResult> {
         override fun build() = GradingResult.Timeout
@@ -77,7 +77,7 @@ class GradingResultStatusChooser : Chooser<GradingResult>() {
     /**
      * Selects [GradingResult.Success] configured by [builder]; repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun success(builder: SuccessGradingResultBuilder.() -> Unit) {
         val currentBuilder = choice as? SuccessGradingResultBuilder ?: SuccessGradingResultBuilder()
@@ -87,7 +87,7 @@ class GradingResultStatusChooser : Chooser<GradingResult>() {
     /**
      * Selects [GradingResult.GradingError] configured by [builder]; repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun error(builder: ErrorGradingResultBuilder.() -> Unit) {
         val currentBuilder = choice as? ErrorGradingResultBuilder ?: ErrorGradingResultBuilder()
@@ -99,7 +99,7 @@ class GradingResultStatusChooser : Chooser<GradingResult>() {
  * Builder of [GradingResult.Success]. Required: [verdict].
  *
  * @property verdict the id of the produced verdict, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SuccessGradingResultBuilder : Builder<GradingResult> {
 
@@ -108,7 +108,7 @@ class SuccessGradingResultBuilder : Builder<GradingResult> {
     /**
      * Sets [verdict] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun verdict(verdictId: Long) {
         verdict = VerdictId(verdictId)
@@ -124,7 +124,7 @@ class SuccessGradingResultBuilder : Builder<GradingResult> {
  * Builder of [GradingResult.GradingError]. Required: [description].
  *
  * @property description the human-readable description of the failure, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ErrorGradingResultBuilder : Builder<GradingResult> {
 

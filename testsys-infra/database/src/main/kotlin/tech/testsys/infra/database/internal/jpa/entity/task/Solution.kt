@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property fileDataId id of the [FileDataJpaEntity] holding the source.
  * @property language programming language of the source.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

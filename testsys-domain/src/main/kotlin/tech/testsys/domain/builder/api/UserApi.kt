@@ -1,5 +1,7 @@
 package tech.testsys.domain.builder.api
 
+import tech.testsys.domain.builder.user.AccessRestorationRequestBuilder
+import tech.testsys.domain.builder.user.AccessRestorationRequestDataBuilder
 import tech.testsys.domain.builder.user.DeveloperDataBuilder
 import tech.testsys.domain.builder.user.EmailChangeRequestBuilder
 import tech.testsys.domain.builder.user.EmailChangeRequestDataBuilder
@@ -17,6 +19,8 @@ import tech.testsys.domain.builder.user.StudentDataBuilder
 import tech.testsys.domain.builder.user.SupervisorBuilder
 import tech.testsys.domain.builder.user.SupervisorDataBuilder
 import tech.testsys.domain.builder.util.applyVersion
+import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessRestorationRequestData
 import tech.testsys.domain.model.user.DeveloperData
 import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.EmailChangeRequestData
@@ -37,63 +41,63 @@ import tech.testsys.domain.model.user.SupervisorData
 /**
  * Builds [MultipleRoleUserData] with a [MultipleRoleUserDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun multipleRoleUserData(builder: MultipleRoleUserDataBuilder.() -> Unit) = MultipleRoleUserDataBuilder().apply(builder).build()
 
 /**
  * Builds a [MultipleRoleUser] with a [MultipleRoleUserBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun multipleRoleUser(builder: MultipleRoleUserBuilder.() -> Unit) = MultipleRoleUserBuilder().apply(builder).build()
 
 /**
  * Builds [ObserverData] with an [ObserverDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun observerData(builder: ObserverDataBuilder.() -> Unit) = ObserverDataBuilder().apply(builder).build()
 
 /**
  * Builds an [Observer] with an [ObserverBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun observer(builder: ObserverBuilder.() -> Unit) = ObserverBuilder().apply(builder).build()
 
 /**
  * Builds [ParticipantData] with a [ParticipantDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun participantData(builder: ParticipantDataBuilder.() -> Unit) = ParticipantDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Participant] with a [ParticipantBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun participant(builder: ParticipantBuilder.() -> Unit) = ParticipantBuilder().apply(builder).build()
 
 /**
  * Builds [SupervisorData] with a [SupervisorDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun supervisorData(builder: SupervisorDataBuilder.() -> Unit) = SupervisorDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Supervisor] with a [SupervisorBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun supervisor(builder: SupervisorBuilder.() -> Unit) = SupervisorBuilder().apply(builder).build()
 
 /**
  * Builds [RegistrationRequestData] with a [RegistrationRequestDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun registrationRequestData(builder: RegistrationRequestDataBuilder.() -> Unit) =
     RegistrationRequestDataBuilder().apply(builder).build()
@@ -101,14 +105,14 @@ inline fun registrationRequestData(builder: RegistrationRequestDataBuilder.() ->
 /**
  * Builds a [RegistrationRequest] with a [RegistrationRequestBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun registrationRequest(builder: RegistrationRequestBuilder.() -> Unit) = RegistrationRequestBuilder().apply(builder).build()
 
 /**
  * Builds [EmailChangeRequestData] with an [EmailChangeRequestDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun emailChangeRequestData(builder: EmailChangeRequestDataBuilder.() -> Unit) =
     EmailChangeRequestDataBuilder().apply(builder).build()
@@ -116,35 +120,51 @@ inline fun emailChangeRequestData(builder: EmailChangeRequestDataBuilder.() -> U
 /**
  * Builds an [EmailChangeRequest] with an [EmailChangeRequestBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun emailChangeRequest(builder: EmailChangeRequestBuilder.() -> Unit) = EmailChangeRequestBuilder().apply(builder).build()
 
 /**
+ * Builds [AccessRestorationRequestData] with an [AccessRestorationRequestDataBuilder] block.
+ *
+ * @since 1.0.0-beta.1
+ */
+inline fun accessRestorationRequestData(builder: AccessRestorationRequestDataBuilder.() -> Unit) =
+    AccessRestorationRequestDataBuilder().apply(builder).build()
+
+/**
+ * Builds an [AccessRestorationRequest] with an [AccessRestorationRequestBuilder] block.
+ *
+ * @since 1.0.0-beta.1
+ */
+inline fun accessRestorationRequest(builder: AccessRestorationRequestBuilder.() -> Unit) =
+    AccessRestorationRequestBuilder().apply(builder).build()
+
+/**
  * Builds [DeveloperData] with a [DeveloperDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun developerData(builder: DeveloperDataBuilder.() -> Unit) = DeveloperDataBuilder().apply(builder).build()
 
 /**
  * Builds [StudentData] with a [StudentDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun studentData(builder: StudentDataBuilder.() -> Unit) = StudentDataBuilder().apply(builder).build()
 
 /**
  * Builds [JudgeData] with a [JudgeDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun judgeData(builder: JudgeDataBuilder.() -> Unit) = JudgeDataBuilder().apply(builder).build()
 
 /**
  * Builds [ManagerData] with a [ManagerDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun managerData(builder: ManagerDataBuilder.() -> Unit) = ManagerDataBuilder().apply(builder).build()
 
@@ -160,7 +180,7 @@ private fun ParticipantData.toBuilder(): ParticipantDataBuilder {
 /**
  * Returns a copy of this participant with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Participant.withData(builder: ParticipantDataBuilder.() -> Unit): Participant {
     return Participant(
@@ -183,7 +203,7 @@ private fun ObserverData.toBuilder(): ObserverDataBuilder {
 /**
  * Returns a copy of this observer with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Observer.withData(builder: ObserverDataBuilder.() -> Unit): Observer {
     return Observer(
@@ -196,7 +216,7 @@ fun Observer.withData(builder: ObserverDataBuilder.() -> Unit): Observer {
 private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
     val thisData = this
     return MultipleRoleUserDataBuilder().apply {
-        storedAccessToken(thisData.accessTokenHash)
+        passwordHash = thisData.passwordHash
         name = thisData.name
         email = thisData.email
         roles { addAll(thisData.roles) }
@@ -206,7 +226,7 @@ private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
 /**
  * Returns a copy of this user with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun MultipleRoleUser.withData(builder: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser {
     return MultipleRoleUser(
@@ -227,7 +247,7 @@ private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
 /**
  * Returns a copy of this supervisor with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Supervisor.withData(builder: SupervisorDataBuilder.() -> Unit): Supervisor {
     return Supervisor(
@@ -250,7 +270,7 @@ private fun RegistrationRequestData.toBuilder(): RegistrationRequestDataBuilder 
 /**
  * Returns a copy of this registration request with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun RegistrationRequest.withData(builder: RegistrationRequestDataBuilder.() -> Unit): RegistrationRequest {
     return RegistrationRequest(
@@ -274,10 +294,33 @@ private fun EmailChangeRequestData.toBuilder(): EmailChangeRequestDataBuilder {
 /**
  * Returns a copy of this e-mail change request with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun EmailChangeRequest.withData(builder: EmailChangeRequestDataBuilder.() -> Unit): EmailChangeRequest {
     return EmailChangeRequest(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
+}
+
+private fun AccessRestorationRequestData.toBuilder(): AccessRestorationRequestDataBuilder {
+    val thisData = this
+    return AccessRestorationRequestDataBuilder().apply {
+        user = thisData.user.id
+        confirmationCode = thisData.confirmationCode
+        expiresAt = thisData.expiresAt
+        attemptsLeft = thisData.attemptsLeft
+    }
+}
+
+/**
+ * Returns a copy of this access restoration request with its data modified by [builder].
+ *
+ * @since 1.0.0-beta.1
+ */
+fun AccessRestorationRequest.withData(builder: AccessRestorationRequestDataBuilder.() -> Unit): AccessRestorationRequest {
+    return AccessRestorationRequest(
         id = this.id,
         createdAt = this.createdAt,
         data = this.data.toBuilder().apply(builder).build(),

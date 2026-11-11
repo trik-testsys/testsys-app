@@ -54,6 +54,7 @@ import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -190,15 +191,15 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should show the access code of an observer at its own address without role granting`() {
+    fun `should show an observer at its own address without its access code and role granting`() {
         val community = fixtures.community(owner = signInAdministrator())
         val observer = fixtures.observer(community, rawAccessToken = "observer-code")
 
         UI.getCurrent().navigate(AdminUserView::class.java, RouteParameters(OBSERVER_ID_PARAMETER, observer.id.value.toString()))
 
-        val accessToken = textField("Код-доступа")
-        assertEquals("observer-code", accessToken.value)
-        assertTrue(accessToken.isReadOnly)
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Код-доступа" })
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.value == "observer-code" })
+        assertEquals(observer.data.name, textField("Псевдоним").value)
         assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Включить в Сообщество" })
     }
 
@@ -299,7 +300,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                 owner(member.id.value)
                 name = "Весенний тур"
                 description = ""
-                trikStudioVersion(trikStudioVersion())
+                trikStudioVersion = trikStudioVersion()
                 tasks(listOf(task.id.value))
             },
         )
@@ -524,18 +525,21 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     private fun tableText(title: String): String =
         UI.getCurrent()._find<Table>().first { table -> title in table.element.textRecursively }.element.textRecursively
 
-    /** Adds a TRIK Studio version and returns its tag. */
-    private fun trikStudioVersion(): String {
-        // Versions come from the grader; no port stores them, so the test adds the row the contest refers to.
+    /** Adds a TRIK Studio version row and returns it. */
+    private fun trikStudioVersion(): TrikStudioVersion {
+        // No domain port stores versions, so the test adds the row the contest refers to.
         val tag = fixtures.unique("tsv")
+        val version = fixtures.unique("tsv-version")
         dataSource.connection.use { connection ->
-            val insert = "insert into ts_trik_studio_version (id, tag) select coalesce(max(id), 0) + 1, ? from ts_trik_studio_version"
+            val insert = "insert into ts_trik_studio_version (id, tag, studio_version) " +
+                "select coalesce(max(id), 0) + 1, ?, ? from ts_trik_studio_version"
             connection.prepareStatement(insert).use { statement ->
                 statement.setString(1, tag)
+                statement.setString(2, version)
                 statement.executeUpdate()
             }
         }
-        return tag
+        return TrikStudioVersion(tag = tag, version = version)
     }
 
     /** Returns the empty-state titles of the role section tables, in the order of the sections. */
@@ -590,7 +594,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.StoppedByDiagnostics(diagnostics = emptyList(), completedAt = Instant.EPOCH),
-                    "Неуспех" to Tone.Danger,
+                    "Не пройдена" to Tone.Danger,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.Completed(
@@ -599,7 +603,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         failures = emptyList(),
                         completedAt = Instant.EPOCH,
                     ),
-                    "Успех" to Tone.Success,
+                    "Пройдена" to Tone.Success,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.Completed(
@@ -608,12 +612,12 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         failures = listOf(AuthorSubmissionFailure.GradingFailed(SubmissionId(1))),
                         completedAt = Instant.EPOCH,
                     ),
-                    "Неуспех" to Tone.Danger,
+                    "Не пройдена" to Tone.Danger,
                 ),
-                Arguments.of(TaskValidationExecutionVo.IncompleteDiagnostics(failure), "Техническая остановка" to Tone.Warning),
+                Arguments.of(TaskValidationExecutionVo.IncompleteDiagnostics(failure), "Прервана из-за сбоя" to Tone.Warning),
                 Arguments.of(
                     TaskValidationExecutionVo.CompletedDiagnostics(diagnostics = emptyList(), failure = failure),
-                    "Техническая остановка" to Tone.Warning,
+                    "Прервана из-за сбоя" to Tone.Warning,
                 ),
                 Arguments.of(
                     TaskValidationExecutionVo.CreatedSubmissions(
@@ -621,7 +625,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
                         submissions = listOf(SubmissionId(1)),
                         failure = failure,
                     ),
-                    "Техническая остановка" to Tone.Warning,
+                    "Прервана из-за сбоя" to Tone.Warning,
                 ),
             )
         }

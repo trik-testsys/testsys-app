@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [Statement] and [StatementJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
@@ -23,7 +23,7 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
     /**
      * Assembles a [Statement] from [jpaEntity] and its [file].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: StatementJpaEntity, file: FileData) = statement {
         populateFields(jpaEntity)
@@ -40,7 +40,7 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
     /**
      * Creates a new [StatementJpaEntity] row from [data] referencing the stored file [fileDataId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: StatementData, fileDataId: Long) = StatementJpaEntity(
         name = data.name,
@@ -53,7 +53,7 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
      * Creates the [StatementJpaEntity] row replacing [current] from [entity], keeping `fileDataId`, `versionBucket`,
      * `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Statement, current: StatementJpaEntity) = StatementJpaEntity(
         name = entity.data.name,

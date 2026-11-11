@@ -24,7 +24,7 @@ import java.time.Instant
  * @property trikStudioVersion the TRIK Studio version of the contest.
  * @property sharedTo the identifiers of the communities the contest is shared to.
  * @property endsAt the end of the contest, or `null` if the start or the duration is not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestVo(
     val id: ContestId,

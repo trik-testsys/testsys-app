@@ -15,7 +15,7 @@ import tech.testsys.web.components.texts.UiLocalization
 /**
  * Meaning of a counter; the colour of the counter follows it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class CounterKind(internal val cssClass: CssClass) {
     Attention(CssClass.CounterDanger),
@@ -25,7 +25,7 @@ enum class CounterKind(internal val cssClass: CssClass) {
 /**
  * Adds a small round counter, e.g. of unread messages.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.counter(value: Int, kind: CounterKind = CounterKind.Attention): TextHandle =
     counterHandle(buildCounter(value, kind, texts).also { counter -> add(counter) })
@@ -33,7 +33,7 @@ fun ContentScope.counter(value: Int, kind: CounterKind = CounterKind.Attention):
 /**
  * Adds a small round counter on [size] columns of the row, or on the rest of it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.counter(value: Int, kind: CounterKind = CounterKind.Attention, size: Int? = null): TextHandle =
     counterHandle(place(size, buildCounter(value, kind, texts)))

@@ -53,7 +53,7 @@ private const val FILE_CONTENT_TYPE = "application/octet-stream"
  * Submission viewed by a Judge (testsys.web.page.judge.solution): its details with the solution file, the scores of the
  * verdict per test with the logs and recordings, the judgment orders and issuing a new one.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("judge/submissions/:submissionId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -201,7 +201,7 @@ class JudgeSolutionView(
         val draft = Binder<JudgmentDraft>()
         val issuing = dialog(title = texts.solutionDialogTitle()) {
             row {
-                integerInput(texts.solutionScore(), labelSize = 6, size = 18, min = 0) {
+                integerInput(texts.solutionScore(), labelSize = 6, size = 6, min = 0) {
                     draft.forField(this)
                         .asRequired(texts.solutionDialogScoreRequired())
                         .bind({ values -> values.score }, { values, score -> values.score = score })

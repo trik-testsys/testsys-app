@@ -12,7 +12,7 @@ import java.time.Instant
 /**
  * Role granted by a [CommunityInviteJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class CommunityInviteRoleJpaEnum {
@@ -28,7 +28,7 @@ enum class CommunityInviteRoleJpaEnum {
  * @property code the stored invite-code representation.
  * @property codeHashAlgorithm the algorithm used to produce the stored invite-code representation.
  * @property expiresAt the moment the invite stops being valid.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

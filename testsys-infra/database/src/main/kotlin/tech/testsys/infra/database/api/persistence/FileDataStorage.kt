@@ -21,7 +21,7 @@ import java.util.HexFormat
 /**
  * Append-only storage of file metadata and blobs. Loading metadata never reads blob contents.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)
@@ -41,7 +41,7 @@ class FileDataStorage(
      *
      * @return the id of the inserted metadata row.
      * @throws IllegalArgumentException if the uploaded file name exceeds its limit, before any blob I/O.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun store(file: FileData, kind: FileStorageKind): Long {
         require(TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
@@ -63,7 +63,7 @@ class FileDataStorage(
     /**
      * Compares [file] with [fileDataId] by name and either stored reference or inline content hash, without blob I/O.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun matches(fileDataId: Long, file: FileData, kind: FileStorageKind): Boolean {
         val stored = fileDataJpaEntityRepository.findByIdOrError(fileDataId)
@@ -79,7 +79,7 @@ class FileDataStorage(
      * @param fileDataId the metadata row identifier.
      * @param kind the directory kind containing the blob.
      * @return the file with a reference usable outside a transaction.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun load(fileDataId: Long, kind: FileStorageKind): FileData = fileDataJpaEntityRepository.findByIdOrError(fileDataId).toFile(kind)
 
@@ -89,7 +89,7 @@ class FileDataStorage(
      * @param fileDataIds metadata identifiers; duplicates are ignored and empty input performs no I/O.
      * @param kind the directory kind containing the blobs.
      * @return files indexed by metadata identifier.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun loadAll(fileDataIds: Collection<Long>, kind: FileStorageKind): Map<Long, FileData> =
         fileDataJpaEntityRepository.findAllByIdOrError(fileDataIds).mapValues { (_, row) -> row.toFile(kind) }

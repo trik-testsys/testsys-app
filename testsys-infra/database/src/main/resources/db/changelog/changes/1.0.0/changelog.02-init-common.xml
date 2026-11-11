@@ -48,6 +48,9 @@
             <column name="tag" type="VARCHAR(512)">
                 <constraints nullable="false" unique="true" uniqueConstraintName="uk_ts_trik_studio_version_tag"/>
             </column>
+            <column name="studio_version" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_ts_trik_studio_version_studio_version"/>
+            </column>
         </createTable>
     </changeSet>
 

@@ -30,7 +30,7 @@ private const val GLYPH_SIZE = 20
 /**
  * Width of a dialog card; on a narrow screen every card fits the screen.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class DialogSize(internal val cssClass: CssClass?) {
     /** 440 px: a confirmation or a short message. */

@@ -1,6 +1,6 @@
 package tech.testsys.infra.database.api.transaction
 
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import org.springframework.core.retry.RetryException
 import org.springframework.core.retry.RetryListener
 import org.springframework.core.retry.RetryPolicy
@@ -18,12 +18,14 @@ import java.time.Duration
  * @param maxRetries how many times a conflicting transaction is repeated after the first attempt.
  * @param delay the base pause before the first repeat, doubled for each next one.
  * @param jitter the random deviation of the first pause, doubled together with it.
- * @since %CURRENT_VERSION%
+ * @param onRetry called before every repeat, for example to count repeats.
+ * @since 1.0.0-beta.1
  */
 class TransactionRetry(
     maxRetries: Long = DEFAULT_MAX_RETRIES,
     delay: Duration = DEFAULT_DELAY,
     jitter: Duration = DEFAULT_JITTER,
+    onRetry: () -> Unit = {},
 ) {
 
     private val template = RetryTemplate(
@@ -34,14 +36,14 @@ class TransactionRetry(
             .multiplier(MULTIPLIER)
             .predicate(TransactionConflicts::isConflict)
             .build(),
-    ).apply { retryListener = ConflictLogger }
+    ).apply { retryListener = ConflictListener(onRetry) }
 
     /**
      * Runs [attempt] and repeats it while it fails with a transaction conflict; [name] identifies the transaction
      * in the log. Each call of [attempt] must open its own transaction.
      *
      * @param T the result type.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun <T> run(name: String, attempt: () -> T): T {
         if (TransactionSynchronizationManager.isActualTransactionActive()) return attempt()
@@ -59,13 +61,14 @@ class TransactionRetry(
     }
 
     /**
-     * Logs every repeat at DEBUG and a conflict that remains after the last repeat at WARN.
+     * Reports every repeat to [onRetry] and logs it at DEBUG; logs a conflict that remains after the last repeat at WARN.
      */
-    private object ConflictLogger : RetryListener {
+    private class ConflictListener(private val onRetry: () -> Unit) : RetryListener {
 
-        private val log = LogFactory.getLog(TransactionRetry::class.java)
+        private val log = LoggerFactory.getLogger(TransactionRetry::class.java)
 
         override fun beforeRetry(retryPolicy: RetryPolicy, retryable: Retryable<*>, retryState: RetryState) {
+            onRetry()
             if (log.isDebugEnabled) {
                 log.debug("Repeating transaction ${retryable.name} after a conflict: ${retryState.lastException}")
             }

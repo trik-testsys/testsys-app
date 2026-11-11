@@ -10,7 +10,7 @@ private const val MAX_EMAIL_LENGTH = 255
 /**
  * Returns [email] without surrounding whitespace in lower case, the form in which e-mail addresses are stored and compared.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun normalizeEmail(email: String): String = email.trim().lowercase()
@@ -18,7 +18,7 @@ fun normalizeEmail(email: String): String = email.trim().lowercase()
 /**
  * Checks that [email] has at most 255 Unicode code points and exactly one `@` with non-empty parts around it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun isValidEmail(email: String): Boolean {
@@ -29,7 +29,7 @@ fun isValidEmail(email: String): Boolean {
 /**
  * Returns the moment a confirmation code issued at [now] expires, truncated to microseconds.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun EmailConfirmationConfig.confirmationCodeExpiresAt(now: Instant): Instant =
@@ -38,7 +38,7 @@ fun EmailConfirmationConfig.confirmationCodeExpiresAt(now: Instant): Instant =
 /**
  * Checks whether a confirmation code expiring at [expiresAt] with [attemptsLeft] remaining attempts is still accepted at [now].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun isConfirmationActive(expiresAt: Instant, attemptsLeft: Int, now: Instant): Boolean = now.isBefore(expiresAt) && attemptsLeft > 0

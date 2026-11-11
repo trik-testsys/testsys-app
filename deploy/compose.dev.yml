@@ -1,0 +1,87 @@
+# Development environment over deploy/compose.yml and deploy/compose.monitoring.yml: application, PostgreSQL,
+# Prometheus, Grafana, Loki, Grafana Alloy, Mailpit and the optional seed script.
+# Start it with deploy/testsys.sh, which reads deploy/env/dev.env and deploy/env/dev.local.env:
+#   sh deploy/testsys.sh dev up [--node]
+# --node adds deploy/compose.grading-node.yml as the last file to run a grading node in this project.
+# Runs alongside the e2e environment: project name, volumes and published ports differ.
+name: testsys-dev
+
+services:
+  app:
+    # The same block in every environment override: the variables of the application under their own names, with
+    # the values from the variable files of the environment.
+    environment:
+      TESTSYS_DB_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+      TESTSYS_MAIL_PASSWORD: ${TESTSYS_MAIL_PASSWORD?set TESTSYS_MAIL_PASSWORD to the SMTP password or to an empty value}
+      TESTSYS_SUPERVISOR_ACCESS_TOKEN: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN:?set TESTSYS_SUPERVISOR_ACCESS_TOKEN}
+      TESTSYS_SERVICE_SECRET: ${TESTSYS_SERVICE_SECRET:?set TESTSYS_SERVICE_SECRET}
+      TESTSYS_ACCESS_TOKEN_SECRET: ${TESTSYS_ACCESS_TOKEN_SECRET:?set TESTSYS_ACCESS_TOKEN_SECRET}
+      TESTSYS_GRAFANA_URL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL}
+      TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES:-}
+      TESTSYS_GRADING_IMPORT_NODES: ${TESTSYS_GRADING_IMPORT_NODES:-false}
+    volumes:
+      - type: bind
+        source: ./config/application-dev.yml
+        target: /etc/testsys/application-environment.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      # Application log files; deploy/testsys.sh creates the directory before starting.
+      - type: bind
+        source: ./logs/dev
+        target: /var/log/testsys
+        bind:
+          create_host_path: false
+
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:${TESTSYS_DB_PORT:-5433}:5432"
+
+  grafana:
+    environment:
+      # The address of this Grafana, also opened from the service cabinet; its port is TESTSYS_GRAFANA_PORT.
+      GF_SERVER_ROOT_URL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL to the Grafana address}
+
+  # Accepts all mail on the internal SMTP port 1025 without relaying it; messages are shown in the web UI.
+  mailpit:
+    image: axllent/mailpit:v1.31.5
+    logging:
+      driver: local
+    ports:
+      - "127.0.0.1:${TESTSYS_MAIL_UI_PORT:-8025}:8025"
+
+  # Applies the SQL script from TESTSYS_DB_SEED_SCRIPT once per database, after the application is ready and
+  # therefore after the Liquibase migrations; see deploy/db-seed/entrypoint.sh. Exits after every start.
+  db-seed:
+    image: postgres:17-alpine
+    depends_on:
+      app:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/opt/testsys/db-seed-entrypoint.sh"]
+    logging:
+      driver: local
+    environment:
+      PGHOST: postgres
+      PGDATABASE: testsys
+      PGUSER: testsys
+      PGPASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+    # Replaces the anonymous volume that the image declares for server data; the service runs only psql.
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      # Without the variable /dev/null is mounted and the script reports that there is nothing to apply.
+      # A relative path is resolved from deploy/.
+      - type: bind
+        source: ${TESTSYS_DB_SEED_SCRIPT:-/dev/null}
+        target: /opt/testsys/db-seed.sql
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./db-seed/entrypoint.sh
+        target: /opt/testsys/db-seed-entrypoint.sh
+        read_only: true
+        bind:
+          create_host_path: false

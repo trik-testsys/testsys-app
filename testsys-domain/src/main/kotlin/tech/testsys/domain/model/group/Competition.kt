@@ -15,7 +15,7 @@ import java.time.Instant
 /**
  * Identifier of a [Competition].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class CompetitionId(
@@ -31,7 +31,7 @@ value class CompetitionId(
  * @property participants the participants registered in the competition; a projection of each participant's `competition`
  *   maintained by persistence and ignored on save and update.
  * @property contests the contests held within the competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CompetitionData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
@@ -46,7 +46,7 @@ data class CompetitionData(
  * competition.
  *
  * @property data the data of the competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Competition(
     id: CompetitionId,

@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRep
 /**
  * Spring Data repository for [MultipleRoleToUserJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -21,7 +21,7 @@ interface MultipleRoleToUserJpaEntityRepository :
     /**
      * Finds the (role, community) membership rows of the user [userId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e from MultipleRoleToUserJpaEntity e where e.id.userId = :userId")
     fun findAllByUserId(@Param("userId") userId: Long): List<MultipleRoleToUserJpaEntity>
@@ -29,7 +29,7 @@ interface MultipleRoleToUserJpaEntityRepository :
     /**
      * Finds the (role, community) membership rows of any of the users [userIds] in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByIdUserIdIn(userIds: Collection<Long>): List<MultipleRoleToUserJpaEntity>
 }

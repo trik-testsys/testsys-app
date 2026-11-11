@@ -10,7 +10,7 @@ import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntit
 /**
  * Removes unowned file metadata in separate transactions and checks persisted blob keys.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 class FileStorageCleanupRepository(
@@ -25,7 +25,7 @@ class FileStorageCleanupRepository(
     /**
      * Removes at most [limit] file metadata rows without any of the six file owners, regardless of creation time.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun deleteFileData(limit: Int): Int = transactions.execute {
         val ids = fileData.findOrphanIds(PageRequest.of(0, limit))
@@ -35,7 +35,7 @@ class FileStorageCleanupRepository(
     /**
      * Returns the persisted subset of [keys]; empty input performs no database access.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findStoredKeys(keys: List<String>): Set<String> {
         if (keys.isEmpty()) return emptySet()

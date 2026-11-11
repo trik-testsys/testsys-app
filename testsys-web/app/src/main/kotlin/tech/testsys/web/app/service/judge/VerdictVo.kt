@@ -19,7 +19,7 @@ import java.time.Instant
  * @property task the identifier of the graded task.
  * @property submission the identifier of the graded submission.
  * @property testVerdicts the outcomes of the tests.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class VerdictVo(
     val id: VerdictId,
@@ -36,7 +36,7 @@ data class VerdictVo(
  * @property test the identifier of the test.
  * @property logs the identifier of the grading logs.
  * @property recording the identifier of the video recording, or `null` if there is none.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TestVerdictVo(
     val score: Score,

@@ -23,11 +23,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="access_token" type="VARCHAR(255)">
-                <constraints nullable="false" unique="true" uniqueConstraintName="uk_ts_user_access_token"/>
+                <constraints unique="true" uniqueConstraintName="uk_ts_user_access_token"/>
             </column>
-            <column name="access_token_hash_algorithm" type="VARCHAR(64)">
-                <constraints nullable="false"/>
-            </column>
+            <column name="access_token_hash_algorithm" type="VARCHAR(64)"/>
+            <column name="password_hash" type="VARCHAR(255)"/>
             <column name="email" type="VARCHAR(255)">
                 <constraints unique="true" uniqueConstraintName="uk_ts_user_email"/>
             </column>
@@ -237,10 +236,16 @@
     <changeSet id="1.0.0-03-init-user-checks" author="testsys">
         <sql><![CDATA[
             ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_access_token_hash_algorithm CHECK (
-                access_token_hash_algorithm IN ('IDENTITY')
+                access_token_hash_algorithm IN ('HMAC_SHA256')
             );
             ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_type_email CHECK (
                 (type = 'MULTIPLE_ROLE' AND email IS NOT NULL) OR (type = 'SINGLE_ROLE' AND email IS NULL)
+            );
+            ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_type_credentials CHECK (
+                (type <> 'MULTIPLE_ROLE'
+                    OR (password_hash IS NOT NULL AND access_token IS NULL AND access_token_hash_algorithm IS NULL))
+                AND (type <> 'SINGLE_ROLE'
+                    OR (password_hash IS NULL AND access_token IS NOT NULL AND access_token_hash_algorithm IS NOT NULL))
             );
             ALTER TABLE ts_single_role_to_user ADD CONSTRAINT ck_ts_single_role_to_user_single_role CHECK (
                 single_role IN ('PARTICIPANT', 'OBSERVER', 'SUPERVISOR')
@@ -249,6 +254,7 @@
         <rollback>
             <sql>
                 ALTER TABLE ts_single_role_to_user DROP CONSTRAINT ck_ts_single_role_to_user_single_role;
+                ALTER TABLE ts_user DROP CONSTRAINT ck_ts_user_type_credentials;
                 ALTER TABLE ts_user DROP CONSTRAINT ck_ts_user_type_email;
                 ALTER TABLE ts_user DROP CONSTRAINT ck_ts_user_access_token_hash_algorithm;
             </sql>

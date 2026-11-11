@@ -16,7 +16,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  * @property requestedBy the initiator identifier, or `null` if not set.
  * @property snapshot the inputs, or `null` if not set.
  * @property execution the stage chooser.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskValidationRequestDataBuilder : Builder<TaskValidationRequestData> {
     var task: TaskId? = null
@@ -27,7 +27,7 @@ class TaskValidationRequestDataBuilder : Builder<TaskValidationRequestData> {
     /**
      * Sets [task] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun task(task: Long) {
         this.task = TaskId(task)
@@ -36,7 +36,7 @@ class TaskValidationRequestDataBuilder : Builder<TaskValidationRequestData> {
     /**
      * Sets [requestedBy] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun requestedBy(requestedBy: Long) {
         this.requestedBy = MultipleRoleUserId(requestedBy)
@@ -53,7 +53,7 @@ class TaskValidationRequestDataBuilder : Builder<TaskValidationRequestData> {
 /**
  * Builder of [TaskValidationRequest] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskValidationRequestBuilder :
     DomainEntityWithDataBuilder<TaskValidationRequest, TaskValidationRequestData, TaskValidationRequestDataBuilder>() {

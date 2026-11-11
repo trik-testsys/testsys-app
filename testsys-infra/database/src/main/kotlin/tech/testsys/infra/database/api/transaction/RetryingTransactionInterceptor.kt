@@ -10,7 +10,7 @@ import org.springframework.aop.ProxyMethodInvocation
  * one reported at commit.
  *
  * @property retry the policy that repeats conflicting transactions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RetryingTransactionInterceptor(private val retry: TransactionRetry) : MethodInterceptor {
 

@@ -15,7 +15,7 @@ import java.time.Instant
  * Runs [StudentOperations] for the current user in one transaction per call.
  * A failed operation throws `OperationException`, which rolls the transaction back.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -23,7 +23,7 @@ class StudentService(private val operations: StudentOperations, private val curr
     /**
      * Runs [StudentOperations.viewContests].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewContests(classId: ClassId): List<Pair<Instant?, ContestVo>> = operations.viewContests(currentUser.multipleRoleUser(), classId)
@@ -32,7 +32,7 @@ class StudentService(private val operations: StudentOperations, private val curr
     /**
      * Runs [StudentOperations.enterContest].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun enterContest(classId: ClassId, contestId: ContestId): StudentContestEntryVo =
         operations.enterContest(currentUser.multipleRoleUser(), classId, contestId).getOrThrow().toVo()
@@ -40,14 +40,14 @@ class StudentService(private val operations: StudentOperations, private val curr
     /**
      * Runs [StudentOperations.joinClass].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun joinClass(inviteCode: String): ClassVo = operations.joinClass(currentUser.multipleRoleUser(), inviteCode).getOrThrow().toVo()
 
     /**
      * Runs [StudentOperations.viewClasses].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewClasses(): List<ClassVo> =

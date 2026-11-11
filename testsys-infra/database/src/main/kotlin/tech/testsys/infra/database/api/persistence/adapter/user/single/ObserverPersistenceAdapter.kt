@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.SingleRoleUserId
@@ -29,16 +30,17 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
  * Persistence adapter of [Observer] entities backed by [UserJpaEntity] rows having an observer data row.
  * Watched contests are synced through the join table; update and remove increment the user version first.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class ObserverPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
+    accessTokenHasher: AccessTokenHasher,
     private val observerDataJpaEntityRepository: ObserverDataJpaEntityRepository,
     private val contestToObserverJpaEntityRepository: ContestToObserverJpaEntityRepository,
     private val singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository,
-) : AbstractUserPersistenceAdapter<ObserverData, SingleRoleUserId, Observer>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<ObserverData, SingleRoleUserId, Observer>(jpaEntityRepository, accessTokenHasher),
     ObserverRepository {
 
     @Transactional

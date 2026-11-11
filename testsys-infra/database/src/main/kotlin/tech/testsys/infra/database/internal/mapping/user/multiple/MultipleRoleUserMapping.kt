@@ -9,16 +9,14 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.utils.populateFields
 import tech.testsys.infra.database.internal.utils.requireVersion
-import tech.testsys.infra.database.internal.utils.toDomain
-import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
  * Role rows of a [MultipleRoleUser] collected from the per-role tables; a `null` role is not held by the user.
@@ -28,7 +26,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
  * @property student the student role, or `null` if not held.
  * @property judge the judge role, or `null` if not held.
  * @property manager the manager role, or `null` if not held.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 data class MultipleRoleUserRoles(
@@ -43,7 +41,7 @@ data class MultipleRoleUserRoles(
      * Administrator role of a user.
      *
      * @property memberOf ids of the communities the role is held in.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class AdministratorRoleInfo(val memberOf: List<CommunityId>)
 
@@ -53,7 +51,7 @@ data class MultipleRoleUserRoles(
      * @property memberOf ids of the communities the role is held in.
      * @property tasks ids of the tasks owned by the user.
      * @property contests ids of the contests owned by the user.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class DeveloperRoleInfo(
         val memberOf: List<CommunityId>,
@@ -67,7 +65,7 @@ data class MultipleRoleUserRoles(
      * @property memberOf ids of the communities the role is held in.
      * @property classes ids of the classes the user is enrolled in.
      * @property submissions ids of the submissions authored by the user.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class StudentRoleInfo(
         val memberOf: List<CommunityId>,
@@ -80,7 +78,7 @@ data class MultipleRoleUserRoles(
      *
      * @property memberOf ids of the communities the role is held in.
      * @property judgmentOrders ids of the judgment orders issued by the user.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class JudgeRoleInfo(
         val memberOf: List<CommunityId>,
@@ -93,7 +91,7 @@ data class MultipleRoleUserRoles(
      * @property memberOf ids of the communities the role is held in.
      * @property classes ids of the classes owned by the user.
      * @property competitions ids of the competitions owned by the user.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class ManagerRoleInfo(
         val memberOf: List<CommunityId>,
@@ -105,24 +103,24 @@ data class MultipleRoleUserRoles(
 /**
  * Mapping between [MultipleRoleUser] and [UserJpaEntity] with its [MultipleRoleUserRoles].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object MultipleRoleUserMapping {
 
     /**
-     * Assembles a [MultipleRoleUser] from [userJpaEntity] and its collected [roles]; fails when the e-mail is missing.
+     * Assembles a [MultipleRoleUser] from [userJpaEntity] and its collected [roles]; fails when the e-mail or the
+     * password hash is missing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(userJpaEntity: UserJpaEntity, roles: MultipleRoleUserRoles) = multipleRoleUser {
         populateFields(userJpaEntity)
         data {
-            storedAccessToken(
-                AccessTokenHash(
-                    value = userJpaEntity.accessToken,
-                    algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
-                ),
+            passwordHash = PasswordHash(
+                requireNotNull(userJpaEntity.passwordHash) {
+                    "User ${userJpaEntity.id} is MULTIPLE_ROLE but password_hash is null"
+                },
             )
             name = userJpaEntity.name
             email = requireNotNull(userJpaEntity.email) {
@@ -174,12 +172,13 @@ object MultipleRoleUserMapping {
     /**
      * Creates a new multiple-role [UserJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toUserJpaEntity(data: MultipleRoleUserData) = UserJpaEntity(
         name = data.name,
-        accessToken = data.accessTokenHash.value,
-        accessTokenHashAlgorithm = data.accessTokenHash.algorithm.toJpaEnum(),
+        accessToken = null,
+        accessTokenHashAlgorithm = null,
+        passwordHash = data.passwordHash.value,
         email = data.email,
         type = UserTypeJpaEnum.MULTIPLE_ROLE,
     )
@@ -187,12 +186,13 @@ object MultipleRoleUserMapping {
     /**
      * Creates the [UserJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toUserJpaEntity(entity: MultipleRoleUser, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
-        accessToken = entity.data.accessTokenHash.value,
-        accessTokenHashAlgorithm = entity.data.accessTokenHash.algorithm.toJpaEnum(),
+        accessToken = null,
+        accessTokenHashAlgorithm = null,
+        passwordHash = entity.data.passwordHash.value,
         email = entity.data.email,
         type = UserTypeJpaEnum.MULTIPLE_ROLE,
         id = entity.id.value,

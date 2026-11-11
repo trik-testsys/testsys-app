@@ -19,7 +19,7 @@ import java.time.Duration
 /**
  * Mapping between [Contest] and [ContestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
@@ -29,7 +29,7 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
     /**
      * Assembles a [Contest] from [jpaEntity], its resolved [trikStudioVersion] and the ids of its tasks and shared-to communities.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(
         jpaEntity: ContestJpaEntity,
@@ -55,7 +55,7 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
     /**
      * Creates a new [ContestJpaEntity] row from [data] referencing the version row [trikStudioVersionId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: ContestData, trikStudioVersionId: Long) = ContestJpaEntity(
         name = data.name,
@@ -71,7 +71,7 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
      * Creates the [ContestJpaEntity] row replacing [current] from [entity] and [trikStudioVersionId],
      * keeping `ownerId`, `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Contest, current: ContestJpaEntity, trikStudioVersionId: Long) = ContestJpaEntity(
         name = entity.data.name,
@@ -90,7 +90,7 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
     /**
      * Creates the [TaskToContestJpaEntity] rows linking the contest [contestId] with [taskIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toTaskAssociations(contestId: Long, taskIds: List<TaskId>) = taskIds.distinct().map {
         TaskToContestJpaEntity(
@@ -102,7 +102,7 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
     /**
      * Creates the [CommunityToContestJpaEntity] rows linking the contest [contestId] with [communityIds], one row per distinct id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toCommunityAssociations(contestId: Long, communityIds: List<CommunityId>) = communityIds.distinct().map {
         CommunityToContestJpaEntity(

@@ -7,7 +7,7 @@ import java.time.Instant
 /**
  * Identifier of a [CommunityInvite].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class CommunityInviteId(
@@ -19,7 +19,7 @@ value class CommunityInviteId(
  *
  * @property codeHash the stored invite-code representation together with its hashing algorithm.
  * @property expiresAt the moment the invite stops being valid; the invite is valid strictly before it.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityInviteData(
     val codeHash: InviteCodeHash,
@@ -31,7 +31,7 @@ data class CommunityInviteData(
  *
  * @property data the data of the invite.
  * @property kind the role granted by the invite.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed class CommunityInvite(
     id: CommunityInviteId,
@@ -44,21 +44,21 @@ sealed class CommunityInvite(
     /**
      * Selector of a [CommunityInvite] variant by the role it grants.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     sealed interface Kind {
 
         /**
          * Selects [CommunityInvite.Manager].
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data object Manager : Kind
 
         /**
          * Selects [CommunityInvite.Developer].
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         data object Developer : Kind
     }
@@ -66,7 +66,7 @@ sealed class CommunityInvite(
     /**
      * Invite code granting the manager role in the community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     class Manager(
         id: CommunityInviteId,
@@ -79,7 +79,7 @@ sealed class CommunityInvite(
     /**
      * Invite code granting the developer role in the community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     class Developer(
         id: CommunityInviteId,

@@ -14,7 +14,7 @@ import com.vaadin.flow.data.binder.Binder
  * @param TARGET the converted model type, independent of the field value type.
  * @return this binding.
  * @throws IllegalArgumentException if the bound field is not a [ValueInput].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Suppress("VERBOSE_DOC")
 fun <BEAN, TARGET> Binder.Binding<BEAN, TARGET>.skipWhenHidden(): Binder.Binding<BEAN, TARGET> {

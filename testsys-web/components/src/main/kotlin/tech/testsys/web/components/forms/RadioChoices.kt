@@ -2,19 +2,26 @@
 
 package tech.testsys.web.components.forms
 
+import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.data.renderer.ComponentRenderer
+import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.layout.BlockRowScope
+import tech.testsys.web.components.layout.GuestCardScope
+
+private const val MAX_SEGMENTED_CHOICES = 4
+private const val SEGMENTED_CHOICE_MODULE = "./testsys-ui/segmented-choice.ts"
 
 /**
  * Adds one radio choice from [items] shown by [itemLabel] on [size] columns, beside [labelSize] label columns.
  *
  * @param T the type of the choices.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> BlockRowScope.radio(
     label: String,
@@ -34,33 +41,60 @@ fun <T : Any> BlockRowScope.radio(
     configure,
 )
 
+/**
+ * Adds a segmented choice of [items] across the width of a guest card; [label] is only its accessible name.
+ *
+ * @param T the type of the choices.
+ * @since 1.0.0-beta.1
+ */
+fun <T : Any> GuestCardScope.segmentedControl(
+    label: String,
+    items: List<T>,
+    itemLabel: (T) -> String,
+    configure: ValueInput<T?>.() -> Unit = {},
+): ValueInput<T?> {
+    val field = ChoiceField(label, items, itemLabel, itemMeta = null, isSegmented = true)
+    return body.placeLabelLessInput(label, field, configure)
+}
+
+@JsModule(SEGMENTED_CHOICE_MODULE)
 internal class ChoiceField<T : Any>(
     label: String,
     private val choices: List<T>,
     itemLabel: (T) -> String,
     itemMeta: ((T) -> String)?,
+    isSegmented: Boolean = false,
 ) : RadioButtonGroup<T?>() {
     init {
+        require(
+            !isSegmented || choices.size in 2..MAX_SEGMENTED_CHOICES,
+        ) { "Segmented controls require two to four choices, got ${choices.size}" }
+
         val duplicates = choices.groupBy { choice -> choice }.filterValues { same -> same.size > 1 }.keys
         require(duplicates.isEmpty()) { "Choice items of '$label' must be unique, repeated: $duplicates" }
 
         setAriaLabel(label)
-        addClassName(CssClass.RadioGroup)
+        addClassName(if (isSegmented) CssClass.Seg else CssClass.RadioGroup)
         setItemLabelGenerator { item -> itemLabel(requireNotNull(item) { "Choice of '$label' has no item to render" }) }
 
-        if (itemMeta != null) {
+        if (isSegmented || itemMeta != null) {
             setRenderer(
                 ComponentRenderer<Span, T?> { item ->
                     val choice = requireNotNull(item) { "Choice of '$label' has no item to render" }
                     Span(Span(itemLabel(choice))).apply {
                         addClassName(CssClass.ChoiceLabel)
-                        add(Span(itemMeta(choice)).apply { addClassName(CssClass.OptionMeta) })
+                        itemMeta?.let { meta -> add(Span(meta(choice)).apply { addClassName(CssClass.OptionMeta) }) }
                     }
                 },
             )
         }
 
         setItems(choices)
+
+        if (isSegmented) {
+            addAttachListener { element.attachSegmentedChoice() }
+            addDetachListener { element.detachSegmentedChoice() }
+        }
     }
 
     override fun setValue(value: T?) {
@@ -68,3 +102,7 @@ internal class ChoiceField<T : Any>(
         super.setValue(value)
     }
 }
+
+private fun Element.attachSegmentedChoice(): PendingJavaScriptResult = executeJs("window.testsysSegmentedChoice.attach(this)")
+
+private fun Element.detachSegmentedChoice(): PendingJavaScriptResult = executeJs("window.testsysSegmentedChoice.detach(this)")

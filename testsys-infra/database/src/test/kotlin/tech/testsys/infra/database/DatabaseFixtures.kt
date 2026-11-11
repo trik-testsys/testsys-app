@@ -1,6 +1,7 @@
 package tech.testsys.infra.database
 
 import org.springframework.boot.test.context.TestComponent
+import tech.testsys.domain.builder.api.accessRestorationRequestData
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.communityData
@@ -21,6 +22,7 @@ import tech.testsys.domain.builder.api.participantContestEntryData
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.recordingData
 import tech.testsys.domain.builder.api.registrationRequestData
+import tech.testsys.domain.builder.api.regradeData
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.studentContestEntryData
@@ -33,6 +35,7 @@ import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
+import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -51,6 +54,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantContestEnt
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
+import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
@@ -75,6 +79,7 @@ import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.Logs
 import tech.testsys.domain.model.task.Recording
+import tech.testsys.domain.model.task.Regrade
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.Submission
@@ -84,11 +89,14 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.UserId
@@ -130,12 +138,15 @@ class DatabaseFixtures(
     private val contests: ContestRepository,
     private val submissions: SubmissionRepository,
     private val verdicts: VerdictRepository,
+    private val regrades: RegradeRepository,
     private val judgmentOrders: JudgmentOrderRepository,
     private val logs: LogsRepository,
     private val recordings: RecordingRepository,
     private val trikStudioVersionJpaEntityRepository: TrikStudioVersionJpaEntityRepository,
     private val registrationRequests: RegistrationRequestRepository,
     private val emailChangeRequests: EmailChangeRequestRepository,
+    private val accessRestorationRequests: AccessRestorationRequestRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
 
     fun participantContestEntry(
@@ -171,7 +182,7 @@ class DatabaseFixtures(
 
     fun multipleRoleUser(roles: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser = multipleRoleUsers.save(
         multipleRoleUserData {
-            accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash(unique("password-hash"))
             name = unique("User")
             email = email("user")
             roles()
@@ -193,7 +204,7 @@ class DatabaseFixtures(
         return participants.save(
             participantData {
                 competition(competitionId)
-                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+                accessToken(rawAccessToken, accessTokenHasher)
                 name = unique("Participant")
             },
         )
@@ -208,7 +219,7 @@ class DatabaseFixtures(
         return observers.save(
             observerData {
                 community(communityId)
-                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+                accessToken(rawAccessToken, accessTokenHasher)
                 name = unique("Observer")
                 this.contests = contests.map { contest -> contest.id }.toMutableList()
             },
@@ -226,6 +237,15 @@ class DatabaseFixtures(
             },
         )
 
+    fun accessRestorationRequest(user: MultipleRoleUser = student()): AccessRestorationRequest = accessRestorationRequests.save(
+        accessRestorationRequestData {
+            this.user = user.id
+            confirmationCode = "12345678"
+            expiresAt = Instant.EPOCH
+            attemptsLeft = 5
+        },
+    )
+
     fun registrationRequest(email: String = email("registration")): RegistrationRequest = registrationRequests.save(
         registrationRequestData {
             this.email = email
@@ -237,7 +257,7 @@ class DatabaseFixtures(
 
     fun supervisor(rawAccessToken: String = unique("token")): Supervisor = supervisors.save(
         supervisorData {
-            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, accessTokenHasher)
             name = unique("Supervisor")
         },
     )
@@ -258,13 +278,15 @@ class DatabaseFixtures(
         }
     }
 
-    fun competition(owner: MultipleRoleUser = manager()): Competition {
+    fun competition(owner: MultipleRoleUser = manager(), contests: List<Contest> = emptyList()): Competition {
         val ownerId = owner.id.value
+        val contestIds = contests.map { contest -> contest.id.value }
         return competitions.save(
             competitionData {
                 owner(ownerId)
                 name = unique("Competition")
                 description = "Competition description"
+                contests(contestIds)
             },
         )
     }
@@ -302,9 +324,12 @@ class DatabaseFixtures(
         this.expiresAt = expiresAt
     }
 
-    fun trikStudioVersion(tag: String = unique("tsv")): TrikStudioVersion {
-        trikStudioVersionJpaEntityRepository.save(TrikStudioVersionJpaEntity(tag))
-        return TrikStudioVersion(tag)
+    fun unregisteredTrikStudioVersion(): TrikStudioVersion =
+        TrikStudioVersion(tag = unique("unregistered"), version = unique("unregistered-version"))
+
+    fun trikStudioVersion(tag: String = unique("tsv"), version: String = unique("tsv-version")): TrikStudioVersion {
+        trikStudioVersionJpaEntityRepository.save(TrikStudioVersionJpaEntity(tag = tag, studioVersion = version))
+        return TrikStudioVersion(tag = tag, version = version)
     }
 
     fun solution(language: TrikSupportedLanguage = TrikSupportedLanguage.Python): Solution = solutions.save(
@@ -441,20 +466,36 @@ class DatabaseFixtures(
         return verdict
     }
 
-    fun verdict(submission: Submission = submission(), polygon: Polygon = polygon()): Verdict {
+    fun verdict(submission: Submission = submission(), polygons: List<Polygon> = listOf(polygon())): Verdict {
         val submissionId = submission.id.value
         val taskId = submission.data.task.id.value
-        val polygonId = polygon.id.value
-        val logsId = logs().id.value
+        val polygonLogIds = polygons.map { polygon -> polygon.id.value to logs().id.value }
         return verdicts.save(
             verdictData {
                 task(taskId)
                 submission(submissionId)
-                testVerdict {
-                    score = 100
-                    test(polygonId)
-                    logs(logsId)
+                polygonLogIds.forEach { (polygonId, logsId) ->
+                    testVerdict {
+                        score = 100
+                        test(polygonId)
+                        logs(logsId)
+                    }
                 }
+            },
+        )
+    }
+
+    fun regrade(
+        task: Task = task(),
+        polygons: List<Polygon> = listOf(polygon()),
+        regraded: List<Submission> = listOf(gradingSubmission(task = task)),
+    ): Regrade {
+        val taskId = task.id.value
+        return regrades.save(
+            regradeData {
+                task(taskId)
+                tests(polygons.map { polygon -> polygon.id.value })
+                submissions(regraded.map { submission -> submission.id.value })
             },
         )
     }

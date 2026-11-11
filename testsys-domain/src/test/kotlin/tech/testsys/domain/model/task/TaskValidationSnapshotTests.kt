@@ -7,16 +7,19 @@ import tech.testsys.domain.builder.api.taskValidationSnapshot
 
 class TaskValidationSnapshotTests {
     @Test
-    fun `should order author runs by author solution identifier then by version string`() {
+    fun `should order author runs by author solution identifier then by Docker image tag`() {
         val snapshot = taskValidationSnapshot {
             developerSolutions = mutableListOf(input(authorId = 20, solutionId = 7), input(authorId = 10, solutionId = 7))
-            supportedTrikStudioVersions = mutableListOf(TrikStudioVersion("v2"), TrikStudioVersion("v1"))
+            supportedTrikStudioVersions = mutableListOf(
+                TrikStudioVersion(tag = "image:b", version = "v1"),
+                TrikStudioVersion(tag = "image:a", version = "v2"),
+            )
         }
 
         val runs = TaskValidationSnapshot.authorRuns(snapshot)
 
         assertEquals(
-            listOf(10L to "v1", 10L to "v2", 20L to "v1", 20L to "v2"),
+            listOf(10L to "v2", 10L to "v1", 20L to "v2", 20L to "v1"),
             runs.map { run -> run.input.developerSolution.id.value to run.trikStudioVersion.version },
         )
     }

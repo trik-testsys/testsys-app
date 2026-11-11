@@ -16,7 +16,7 @@ import tech.testsys.web.components.layout.placeField
  * Adds a field of [label] whose value is display [content] in a line, e.g. tags or a badge.
  * The label takes [labelSize] columns and the value [size] columns of the row.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.field(label: String, labelSize: Int, size: Int, content: ContentScope.() -> Unit): FieldHandle {
     val value = Div().apply { addClassName(CssClass.FieldContent) }

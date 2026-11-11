@@ -45,7 +45,7 @@ internal sealed interface MenuEntry {
  * Scope of an action menu or a header user menu: its items in order. Destructive items come last; the menu separates
  * them from ordinary items itself.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class MenuScope internal constructor() {
@@ -58,7 +58,7 @@ class MenuScope internal constructor() {
      * Adds an item named [label] that runs [onSelect]; an item that is not [isEnabled] is shown but cannot be chosen.
      *
      * @throws IllegalStateException if a destructive item is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun item(label: String, isEnabled: Boolean = true, onSelect: () -> Unit) {
         checkOrdinary(label)
@@ -80,7 +80,7 @@ class MenuScope internal constructor() {
      * Adds an item named [label] that deletes or cancels something and runs [onSelect]; an item that is not
      * [isEnabled] is shown but cannot be chosen.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun destructiveItem(label: String, isEnabled: Boolean = true, onSelect: () -> Unit) {
         collected += MenuEntry.Action(label, isEnabled, isDestructive = true, onSelect)
@@ -108,7 +108,7 @@ internal fun List<MenuEntry>.hasSeparatorBefore(index: Int): Boolean =
  * Adds a "⋯" button named for screen readers that opens an action menu filled by [content].
  *
  * @throws IllegalStateException if the menu has no items or an item follows a destructive one.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.menu(content: MenuScope.() -> Unit): ElementHandle = iconMenu(texts.messages.uiOverlay.menuActions(), content)
 

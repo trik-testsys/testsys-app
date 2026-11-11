@@ -1,12 +1,19 @@
 package tech.testsys.web.app.config
 
+import org.springframework.beans.factory.SmartInitializingSingleton
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
+import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.contract.FileContentReader
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
+import tech.testsys.domain.contract.persistence.SupervisorCommunityReadPort
+import tech.testsys.domain.contract.persistence.SupervisorUserReadPort
+import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -25,6 +32,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantContestEnt
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
+import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
@@ -35,8 +43,13 @@ import tech.testsys.domain.contract.persistence.repository.TaskValidationRequest
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
-import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.user.AccessTokenHasher
+import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.infra.grpc.api.BalancingGrader
+import tech.testsys.infra.monitoring.api.TechnicalFailures
+import tech.testsys.infra.settings.api.RuntimeSettings
+import tech.testsys.infra.settings.api.Settings
+import tech.testsys.infra.settings.api.settingsOf
 import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.TaskValidationOperations
 import tech.testsys.operation.config.ClassInviteConfig
@@ -49,9 +62,11 @@ import tech.testsys.operation.user.DeveloperOperations
 import tech.testsys.operation.user.JudgeOperations
 import tech.testsys.operation.user.ManagerOperations
 import tech.testsys.operation.user.MultipleRoleUserOperations
+import tech.testsys.operation.user.ObserverOperations
 import tech.testsys.operation.user.ParticipantOperations
 import tech.testsys.operation.user.StudentOperations
 import tech.testsys.operation.user.StudyOperations
+import tech.testsys.operation.user.SupervisorOperations
 import tech.testsys.operation.user.UserOperations
 import java.security.SecureRandom
 import java.time.Clock
@@ -64,14 +79,36 @@ import java.util.random.RandomGenerator
 /**
  * Assembles the operation classes from the ports supplied by the infrastructure modules.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Configuration
 class OperationsConfiguration {
     /**
+     * Supervisor operations over all users and communities.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Bean
+    fun supervisorOperations(
+        users: SupervisorUserReadPort,
+        communities: SupervisorCommunityReadPort,
+        communityRepository: CommunityRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        userRepository: UserRepository,
+        communityConfig: CommunityConfig,
+        administratorOperations: AdministratorOperations,
+        contests: ContestRepository,
+        observers: ObserverRepository,
+        accessTokenHasher: AccessTokenHasher,
+    ): SupervisorOperations = SupervisorOperations(
+        users, communities, communityRepository, multipleRoleUsers, userRepository, communityConfig, administratorOperations,
+        contests, observers, accessTokenHasher,
+    )
+
+    /**
      * Clock of the operations that check time.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun clock(): Clock = Clock.systemUTC()
@@ -79,50 +116,109 @@ class OperationsConfiguration {
     /**
      * Cryptographically strong generator of confirmation and access codes.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun randomGenerator(): RandomGenerator = SecureRandom()
 
     /**
-     * Public community from the required property `testsys.operation.community.public-community-id`.
+     * Creates or verifies the public community with the required configured id before supplying it to operations.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
-    fun communityConfig(environment: Environment): CommunityConfig {
-        val id = environment.getRequiredProperty("$CONFIG_PREFIX.community.public-community-id", Long::class.java)
+    fun communityConfig(
+        environment: Environment,
+        communities: CommunityRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        managerInvites: ManagerCommunityInviteRepository,
+        developerInvites: DeveloperCommunityInviteRepository,
+        transactions: TransactionOperations,
+        inviteConfig: CommunityInviteConfig,
+        clock: Clock,
+        randomGenerator: RandomGenerator,
+        passwordHasher: PasswordHasher,
+    ): CommunityConfig {
+        val id = PublicCommunityBootstrap(
+            communities,
+            multipleRoleUsers,
+            managerInvites,
+            developerInvites,
+            transactions,
+            inviteConfig,
+            clock,
+            randomGenerator,
+            passwordHasher,
+        ).ensure(environment)
         return object : CommunityConfig {
-            override val publicCommunityId = CommunityId(id)
+            override val publicCommunityId = id
         }
     }
 
     /**
-     * Confirmation code lifetime and attempts from the required properties under `testsys.operation.email-confirmation`.
+     * Creates the single Supervisor or sets its name and access code from the required properties under
+     * `testsys.operation.supervisor` after all singletons of the shared infrastructure are created, before the web
+     * contexts start.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
-    fun emailConfirmationConfig(environment: Environment): EmailConfirmationConfig {
-        val lifetime = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.email-confirmation.confirmation-code-lifetime"))
-        val attempts = environment.getRequiredProperty("$CONFIG_PREFIX.email-confirmation.max-confirmation-attempts", Int::class.java)
+    fun supervisorBootstrap(
+        environment: Environment,
+        supervisors: SupervisorRepository,
+        participants: ParticipantRepository,
+        observers: ObserverRepository,
+        transactions: TransactionOperations,
+        accessTokenHasher: AccessTokenHasher,
+        signIns: CabinetSignInStore,
+    ): SmartInitializingSingleton = SmartInitializingSingleton {
+        SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher, signIns).ensure(environment)
+    }
+
+    /**
+     * Email confirmation settings from the current snapshot of [runtime], retained for the transaction that reads them
+     * first so that the lifetime and attempts form one pair.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Bean
+    fun emailConfirmationSettings(environment: Environment, runtime: RuntimeSettings): Settings<EmailConfirmationProperties> {
+        val type = EmailConfirmationProperties::class.java
+        return TransactionSettings(type, settingsOf(type, environment, runtime))
+    }
+
+    /**
+     * Confirmation code lifetime and attempts from [settings].
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Bean
+    fun emailConfirmationConfig(settings: Settings<EmailConfirmationProperties>): EmailConfirmationConfig {
         return object : EmailConfirmationConfig {
-            override val confirmationCodeLifetime = lifetime
-            override val maxConfirmationAttempts = attempts
+            override val confirmationCodeLifetime get() = settings.current().confirmationCodeLifetime
+            override val maxConfirmationAttempts get() = settings.current().maxConfirmationAttempts
         }
     }
 
     /**
-     * Community invite validity and refresh period from the required properties under `testsys.operation.community-invite`.
+     * Community invite settings from the current snapshot of [runtime].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
-    fun communityInviteConfig(environment: Environment): CommunityInviteConfig {
-        val ttl = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.ttl"))
-        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.refresh-period"))
+    fun communityInviteSettings(environment: Environment, runtime: RuntimeSettings): Settings<CommunityInviteProperties> =
+        settingsOf(CommunityInviteProperties::class.java, environment, runtime)
+
+    /**
+     * Community invite validity from [settings] and a static refresh period from [environment].
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Bean
+    fun communityInviteConfig(environment: Environment, settings: Settings<CommunityInviteProperties>): CommunityInviteConfig {
+        val refreshPeriod = environment.requiredDuration("$CONFIG_PREFIX.community-invite.refresh-period")
         return object : CommunityInviteConfig {
-            override val ttl = ttl
+            override val ttl get() = settings.current().ttl
             override val refreshPeriod = refreshPeriod
         }
     }
@@ -130,7 +226,7 @@ class OperationsConfiguration {
     /**
      * Operations of Administrators.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun administratorOperations(
@@ -151,6 +247,7 @@ class OperationsConfiguration {
         submissions: SubmissionRepository,
         judgmentOrders: JudgmentOrderRepository,
         verdicts: VerdictRepository,
+        accessTokenHasher: AccessTokenHasher,
     ): AdministratorOperations = AdministratorOperations(
         communityRepository = communities,
         managerInviteRepository = managerInvites,
@@ -169,12 +266,13 @@ class OperationsConfiguration {
         submissionRepository = submissions,
         judgmentOrderRepository = judgmentOrders,
         verdictRepository = verdicts,
+        accessTokenHasher = accessTokenHasher,
     )
 
     /**
      * Operations of any user without a fixed role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun multipleRoleUserOperations(
@@ -183,7 +281,9 @@ class OperationsConfiguration {
         managerInvites: ManagerCommunityInviteRepository,
         developerInvites: DeveloperCommunityInviteRepository,
         emailChangeRequests: EmailChangeRequestRepository,
+        accessRestorationRequests: AccessRestorationRequestRepository,
         mailSender: UserMailSender,
+        passwordHasher: PasswordHasher,
         emailConfirmationConfig: EmailConfirmationConfig,
         clock: Clock,
         randomGenerator: RandomGenerator,
@@ -194,7 +294,9 @@ class OperationsConfiguration {
         managerInviteRepository = managerInvites,
         developerInviteRepository = developerInvites,
         emailChangeRequestRepository = emailChangeRequests,
+        accessRestorationRequestRepository = accessRestorationRequests,
         mailSender = mailSender,
+        passwordHasher = passwordHasher,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
         randomGenerator = randomGenerator,
@@ -204,7 +306,7 @@ class OperationsConfiguration {
     /**
      * Operations of any user, including login and registration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun userOperations(
@@ -215,6 +317,7 @@ class OperationsConfiguration {
         users: UserRepository,
         registrationRequests: RegistrationRequestRepository,
         mailSender: UserMailSender,
+        passwordHasher: PasswordHasher,
         communityConfig: CommunityConfig,
         emailConfirmationConfig: EmailConfirmationConfig,
         clock: Clock,
@@ -227,6 +330,7 @@ class OperationsConfiguration {
         userRepository = users,
         registrationRequestRepository = registrationRequests,
         mailSender = mailSender,
+        passwordHasher = passwordHasher,
         communityConfig = communityConfig,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
@@ -236,7 +340,7 @@ class OperationsConfiguration {
     /**
      * Grader for operations running in a service transaction.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun afterCommitGrader(grader: BalancingGrader): AfterCommitGrader = AfterCommitGrader(grader)
@@ -244,7 +348,7 @@ class OperationsConfiguration {
     /**
      * Processing of saved task validation requests; it runs outside service transactions and grades at once.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun taskValidationOperations(
@@ -259,7 +363,7 @@ class OperationsConfiguration {
     /**
      * Single-thread executor of the task validation dispatcher, shut down by [TaskValidationDispatcherLifecycle].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean(destroyMethod = "", defaultCandidate = false)
     fun taskValidationExecutor(): ThreadPoolExecutor =
@@ -272,8 +376,9 @@ class OperationsConfiguration {
 
     /**
      * Dispatcher of task validation requests; a request scheduled in a transaction is processed after it completes.
+     * Its technical failures are counted in [failures].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun taskValidationDispatcher(
@@ -281,12 +386,19 @@ class OperationsConfiguration {
         operations: TaskValidationOperations,
         grader: BalancingGrader,
         @Qualifier("taskValidationExecutor") executor: ThreadPoolExecutor,
-    ): TaskValidationDispatcher = TaskValidationDispatcher(requests, operations, grader, AfterTransactionExecutor(executor))
+        failures: TechnicalFailures,
+    ): TaskValidationDispatcher = TaskValidationDispatcher(
+        requests = requests,
+        operations = operations,
+        grader = grader,
+        executor = AfterTransactionExecutor(executor),
+        onTechnicalFailure = { exception -> failures.record(source = "validation", stage = "processing", failure = exception) },
+    )
 
     /**
      * Starts the task validation dispatcher with the context and stops its executor before the grader closes.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun taskValidationDispatcherLifecycle(
@@ -297,7 +409,7 @@ class OperationsConfiguration {
     /**
      * Operations of Developers.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun developerOperations(
@@ -312,6 +424,7 @@ class OperationsConfiguration {
         requests: TaskValidationRequestRepository,
         dispatcher: TaskValidationDispatcher,
         submissions: SubmissionRepository,
+        regrades: RegradeRepository,
         grader: AfterCommitGrader,
     ): DeveloperOperations = DeveloperOperations(
         tasks,
@@ -325,13 +438,14 @@ class OperationsConfiguration {
         requests,
         dispatcher,
         submissions,
+        regrades,
         grader,
     )
 
     /**
      * Operations of Judges.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun judgeOperations(
@@ -363,7 +477,7 @@ class OperationsConfiguration {
     /**
      * Operations of Participants.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun participantOperations(
@@ -374,9 +488,23 @@ class OperationsConfiguration {
     ): ParticipantOperations = ParticipantOperations(competitions, contests, entries, clock)
 
     /**
+     * Operations of Observers.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Bean
+    fun observerOperations(
+        contests: ContestRepository,
+        competitions: CompetitionRepository,
+        participants: ParticipantRepository,
+        tasks: TaskRepository,
+        submissions: SubmissionRepository,
+    ): ObserverOperations = ObserverOperations(contests, competitions, participants, tasks, submissions)
+
+    /**
      * Operations of Students.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun studentOperations(
@@ -390,7 +518,7 @@ class OperationsConfiguration {
     /**
      * Operations of Participants and Students in a Contest.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun studyOperations(
@@ -428,29 +556,45 @@ class OperationsConfiguration {
     )
 
     /**
-     * Participant limit of competitions from the required property `testsys.operation.competition.max-participants`.
+     * Competition settings from the current snapshot of [runtime].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
-    fun competitionConfig(environment: Environment): CompetitionConfig {
-        val maxParticipants = environment.getRequiredProperty("$CONFIG_PREFIX.competition.max-participants", Int::class.java)
+    fun competitionSettings(environment: Environment, runtime: RuntimeSettings): Settings<CompetitionProperties> =
+        settingsOf(CompetitionProperties::class.java, environment, runtime)
+
+    /**
+     * Participant limit of competitions from [settings].
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Bean
+    fun competitionConfig(settings: Settings<CompetitionProperties>): CompetitionConfig {
         return object : CompetitionConfig {
-            override val maxParticipants = maxParticipants
+            override val maxParticipants get() = settings.current().maxParticipants
         }
     }
 
     /**
-     * Class invite validity and refresh period from the required properties under `testsys.operation.class-invite`.
+     * Class invite settings from the current snapshot of [runtime].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
-    fun classInviteConfig(environment: Environment): ClassInviteConfig {
-        val ttl = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.ttl"))
-        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.refresh-period"))
+    fun classInviteSettings(environment: Environment, runtime: RuntimeSettings): Settings<ClassInviteProperties> =
+        settingsOf(ClassInviteProperties::class.java, environment, runtime)
+
+    /**
+     * Class invite validity from [settings] and a static refresh period from [environment].
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Bean
+    fun classInviteConfig(environment: Environment, settings: Settings<ClassInviteProperties>): ClassInviteConfig {
+        val refreshPeriod = environment.requiredDuration("$CONFIG_PREFIX.class-invite.refresh-period")
         return object : ClassInviteConfig {
-            override val ttl = ttl
+            override val ttl get() = settings.current().ttl
             override val refreshPeriod = refreshPeriod
         }
     }
@@ -458,7 +602,7 @@ class OperationsConfiguration {
     /**
      * Operations of Managers.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Bean
     fun managerOperations(
@@ -474,6 +618,7 @@ class OperationsConfiguration {
         multipleRoleUsers: MultipleRoleUserRepository,
         users: UserRepository,
         tasks: TaskRepository,
+        accessTokenHasher: AccessTokenHasher,
     ): ManagerOperations = ManagerOperations(
         classRepository = classes,
         competitionRepository = competitions,
@@ -487,9 +632,14 @@ class OperationsConfiguration {
         multipleRoleUserRepository = multipleRoleUsers,
         userRepository = users,
         taskRepository = tasks,
+        accessTokenHasher = accessTokenHasher,
     )
 }
 
 private val DISPATCHER_STOP_TIMEOUT: Duration = Duration.ofSeconds(30)
 
 private const val CONFIG_PREFIX = "testsys.operation"
+
+/** Binds the required duration [key]; a value that is not a duration fails with a `BindException`. */
+private fun Environment.requiredDuration(key: String): Duration =
+    checkNotNull(Binder.get(this).bind(key, Duration::class.java).orElse(null)) { "$key is required" }

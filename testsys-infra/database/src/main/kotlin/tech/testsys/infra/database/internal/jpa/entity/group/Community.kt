@@ -14,7 +14,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  * @property ownerId id of the user owning the community.
  * @property managerInviteId id of the manager-role invite code of the community.
  * @property developerInviteId id of the developer-role invite code of the community.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

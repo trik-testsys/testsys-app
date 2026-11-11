@@ -7,7 +7,7 @@ package tech.testsys.domain.contract.persistence
  * @property page the zero-based index of the requested page.
  * @property size the maximum number of elements on the page.
  * @property sort the ordering to apply before slicing; [Sort.UNSORTED] by default.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class Pagination(
     val page: Int,
@@ -26,7 +26,7 @@ data class Pagination(
  * [UNSORTED] is the empty ordering: results come in the storage's natural order.
  *
  * @property orders the ordering criteria, most significant first.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class Sort(val orders: List<Order>) {
 
@@ -35,7 +35,7 @@ data class Sort(val orders: List<Order>) {
      *
      * @property field the name of the field to order by, as understood by the persistence adapter.
      * @property direction the sort direction; [Direction.ASC] by default.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Order(
         val field: String,
@@ -45,7 +45,7 @@ data class Sort(val orders: List<Order>) {
     /**
      * Sort direction.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     enum class Direction {
         ASC,
@@ -66,7 +66,7 @@ data class Sort(val orders: List<Order>) {
  * @property totalElements the total number of elements across all pages.
  * @property totalPages the total number of pages; `0` when there are no elements.
  * @property hasNext whether there is at least one element after this page.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class Page<T>(
     val content: List<T>,

@@ -6,6 +6,7 @@ import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
@@ -30,6 +31,9 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
     override lateinit var repository: ObserverRepository
 
     @Autowired
+    private lateinit var accessTokenHasher: AccessTokenHasher
+
+    @Autowired
     private lateinit var userJpaEntityRepository: UserJpaEntityRepository
 
     @Autowired
@@ -48,7 +52,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val contestIds = listOf(fixtures.contest().id.value, fixtures.contest().id.value)
         return observerData {
             community(communityId)
-            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, accessTokenHasher)
             name = fixtures.unique("Observer")
             contests(contestIds)
         }
@@ -60,7 +64,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val newContest = fixtures.contest().id
         return entity.withData {
             community(newCommunityId)
-            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+            accessToken(fixtures.unique("token"), accessTokenHasher)
             name = fixtures.unique("Renamed observer")
             contests = mutableListOf(keptContest, newContest)
         }
@@ -89,7 +93,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val saved = repository.save(
             observerData {
                 community(communityId)
-                accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                accessToken(fixtures.unique("token"), accessTokenHasher)
                 name = fixtures.unique("Observer")
                 contests(listOf(contestId, contestId))
             },
@@ -158,11 +162,11 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
 
         assertEquals(data.accessTokenHash.value, saved.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHash.algorithm)
+        assertEquals(HashAlgorithm.HmacSha256, saved.data.accessTokenHash.algorithm)
         assertEquals(modified.data.accessTokenHash.value, found.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHash.algorithm)
+        assertEquals(HashAlgorithm.HmacSha256, found.data.accessTokenHash.algorithm)
         assertEquals(modified.data.accessTokenHash.value, row.accessToken)
-        assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
+        assertEquals(HashAlgorithmJpaEnum.HMAC_SHA256, row.accessTokenHashAlgorithm)
     }
 
     @Test
@@ -191,7 +195,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
     }
 
     @Test
-    fun `should find user by its access code`() {
+    fun `should find user by its access code stored as its HMAC-SHA-256 hash`() {
         val token = fixtures.unique("token")
         val saved = repository.save(newData(token))
 
@@ -200,6 +204,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         assertNotNull(found)
         assertEquals(saved.id, found.id)
         assertSameData(saved, found)
+        assertEquals(accessTokenHasher.hash(token).value, userJpaEntityRepository.findById(saved.id.value).orElseThrow().accessToken)
     }
 
     @Test
@@ -229,7 +234,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
             repository.save(
                 observerData {
                     community(communityId)
-                    accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                    accessToken(fixtures.unique("token"), accessTokenHasher)
                     name = fixtures.unique("Observer")
                     contests(contestIds)
                 },

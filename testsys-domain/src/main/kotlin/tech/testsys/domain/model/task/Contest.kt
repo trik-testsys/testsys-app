@@ -14,7 +14,7 @@ import java.time.Instant
 /**
  * Identifier of a [Contest].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class ContestId(
@@ -34,7 +34,7 @@ value class ContestId(
  * @property trikStudioVersion the TRIK Studio version used to run and grade solutions.
  * @property sharedTo the communities the contest is shared to.
  * @property endsAt [startsAt] plus [contestDuration], or `null` if either value is absent.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ContestData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
@@ -55,7 +55,7 @@ data class ContestData(
  * A set of tasks with time limits, authored by a developer and solved by students and participants.
  *
  * @property data the data of the contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Contest(
     id: ContestId,

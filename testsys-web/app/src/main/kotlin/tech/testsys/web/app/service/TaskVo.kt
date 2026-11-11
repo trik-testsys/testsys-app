@@ -27,7 +27,7 @@ import java.time.Instant
  * @property wip the working revision, or `null` if the task has no uncommitted changes.
  * @property lastCommitted the last committed revision, or `null` if the task was never committed.
  * @property uploadedResources the version buckets of the resources uploaded to the task.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskVo(
     val id: TaskId,
@@ -49,7 +49,7 @@ data class TaskVo(
  * @property statement the identifier of the statement, or `null` if a working revision has none yet.
  * @property developerSolutions the identifiers of the developer solutions.
  * @property supportedTrikStudioVersions the supported TRIK Studio versions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskRevisionVo(
     val tests: List<TestId>,

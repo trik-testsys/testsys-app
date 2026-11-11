@@ -7,7 +7,7 @@ import java.util.UUID
 /**
  * JPA entity of [tech.testsys.domain.model.task.Test], a single polygon the grader runs submissions against.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

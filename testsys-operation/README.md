@@ -17,7 +17,7 @@
 | `tech.testsys.operation.user`          | Классы операций `<Actor>Operations`, см. раздел «Операции»                    |
 | `tech.testsys.operation.config`        | Интерфейсы конфигурации операций, см. раздел «Конфигурация»                   |
 | `tech.testsys.operation.error`         | Модель результата и ошибок операций                                           |
-| `tech.testsys.operation.annotation`    | Аннотации `@Feature`, `@OperationConfig`, `@ConfigProperty` и opt-in-маркер `@InternalOperationsApi` |
+| `tech.testsys.operation.annotation`    | Аннотация `@Feature` и opt-in-маркер `@InternalOperationsApi`                 |
 | `tech.testsys.operation.util`          | Вспомогательные функции для операций                                          |
 
 ## Публичный и внутренний API
@@ -40,9 +40,10 @@
 - Зависимости операций — порты из `tech.testsys.domain.contract` и интерфейсы конфигурации из
   `tech.testsys.operation.config` (см. раздел «Конфигурация») — передаются через конструктор класса.
 - Первый параметр операции — Пользователь, который её выполняет; остальные — входные данные фичи.
-  Исключения — `UserOperations.authenticate`, `UserOperations.requestRegistration` и
-  `UserOperations.confirmRegistration`: до входа Пользователь неизвестен, поэтому операции принимают только
-  входные данные фичи (см. разделы «Вход в Систему» и «Регистрация»).
+  Исключения — `UserOperations.authenticate`, `UserOperations.authenticateByPassword`, `UserOperations.requestRegistration`,
+  `UserOperations.confirmRegistration`, `MultipleRoleUserOperations.requestAccessRestoration` и
+  `MultipleRoleUserOperations.confirmAccessRestoration`: до входа Пользователь неизвестен, поэтому операции
+  принимают только входные данные фичи (см. разделы «Вход в Систему», «Регистрация» и «Восстановление доступа»).
 - Операция возвращает `OperationResult<T, <Operation>Error>`.
 
 | Префикс кодификатора                | Класс                        |
@@ -88,7 +89,7 @@
 - Действия вне БД выполняются после фиксации транзакции: Посылку грейдеру передаёт `AfterCommitGrader`
   в `testsys-web`, письма отправляет адаптер почты (см. [mail/README.md](../testsys-infra/mail/README.md)).
 
-`ObserverOperations` и `InviteRefresher` пока не подключены к приложению, и транзакционного сервиса у них нет.
+`InviteRefresher` пока не подключён к приложению, и транзакционного сервиса у него нет.
 
 ## Обработка запросов валидации
 
@@ -117,8 +118,8 @@
 Завершённые запросы и запросы с завершёнными Диагностиками не анализируются повторно.
 
 На Авторском этапе `TaskValidationRequestRepository.createSubmissions` атомарно сохраняет отдельную Посылку
-для каждого элемента `TaskValidationSnapshot.authorRuns`: по идентификатору Авторского Решения, затем по строке версии
-TRIK Studio. Затем `proceed` отправляет Посылки грейдеру.
+для каждого элемента `TaskValidationSnapshot.authorRuns`: по идентификатору Авторского Решения, затем по тегу
+Docker-образа версии TRIK Studio. Затем `proceed` отправляет Посылки грейдеру.
 Пока хотя бы одна Посылка без результата, `proceed` возвращает активный запрос.
 Когда результат есть у всех, `completeTesting` сохраняет все проваленные Посылки в том же порядке
 как список `AuthorSubmissionFailure`. Пустой список означает успех.
@@ -140,7 +141,12 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   и для каждого активного запроса вызывает `resendUnfinishedSubmissions`, а затем ставит запрос в очередь.
   Результат Авторской Посылки ставит в очередь её активный запрос.
 
-Исключение на любом шаге диспетчер записывает как техническую остановку через `recordTechnicalFailure`.
+Исключение на любом шаге диспетчер записывает как техническую остановку через `recordTechnicalFailure`,
+а затем передаёт его необязательному обработчику `onTechnicalFailure`. Исключение записи остановки, поиска
+активных запросов и поиска запроса по Посылке тоже передаётся `onTechnicalFailure` и записывается в лог,
+а следующие задачи `Executor` продолжают выполняться. Модуль операций не зависит от библиотеки
+метрик: приложение передаёт обработчик, который учитывает технический сбой, см.
+[monitoring/README.md](../testsys-infra/monitoring/README.md#учёт-технических-сбоев).
 Приложение создаёт `Executor` и вызывает `start()`, см. раздел
 [Прокси-сервисы](../testsys-web/app/README.md#прокси-сервисы) в app/README.md.
 
@@ -175,7 +181,7 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 - Проход находит Коды-приглашения с истёкшим сроком через `findExpired` в `ClassInviteRepository` или
   в `ManagerCommunityInviteRepository` и `DeveloperCommunityInviteRepository` и заменяет каждый отдельно.
   Ошибка операции (например, `MissedManagerRoleError`, если владелец потерял Роль) и исключение записываются
-  в `System.Logger` с уровнем `WARNING` и не останавливают ни проход, ни следующие проходы.
+  в лог SLF4J с уровнем `WARN` и не останавливают ни проход, ни следующие проходы.
 - `close()` останавливает `ScheduledExecutorService` через `shutdownNow()`; повторный вызов безопасен.
 
 Приложение создаёт `ScheduledExecutorService` и вызывает `start()`; в `testsys-web` это пока не реализовано.
@@ -186,27 +192,15 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 например предельное общее число Участников в Соревновании. Модуль не зависит от фреймворка приложения, поэтому
 конфигурация объявляется в нём интерфейсом, а реализации живут снаружи модуля.
 
-- Интерфейс конфигурации лежит в `tech.testsys.operation.config` и помечается `@OperationConfig("<имя конфигурации>")`.
+- Интерфейс конфигурации лежит в `tech.testsys.operation.config`.
 - Интерфейс содержит только `val`-свойства без параметров.
 - Конфигурации маленькие и разделены по областям; единой конфигурации на весь модуль нет.
 - Интерфейс передаётся в `<Actor>Operations` через конструктор рядом с портами.
 
-Ключ свойства складывается из сегментов: `testsys.operation.<имя конфигурации>.<имя свойства>`, где
-`<имя конфигурации>` — значение `@OperationConfig`, а `<имя свойства>` по умолчанию — имя Kotlin-свойства
-в kebab-case: `maxParticipants` → `max-participants`.
+Интерфейс не задаёт ключи свойств и не различает статические и динамические значения: это решает реализация.
+Значение свойства может меняться между вызовами операции, пока приложение работает.
 
-`@ConfigProperty(name, isDynamic)` ставится на свойство интерфейса конфигурации и уточняет ключ и способ получения
-значения:
-
-- `name` — сегмент ключа вместо выведенного из имени свойства; пустое значение (по умолчанию) означает kebab-case
-  от имени свойства;
-- `isDynamic = false` (по умолчанию) — значение фиксировано на всё время работы приложения и разрешается один раз
-  при старте;
-- `isDynamic = true` — значение может меняться от вызова к вызову, пока приложение работает.
-
-Аннотация необязательна: свойство без неё — статическое, с выведенным именем сегмента.
-
-**Динамическое свойство читается один раз за вызов операции**, в локальную переменную. Иначе два чтения внутри
+**Свойство читается один раз за вызов операции**, в локальную переменную. Иначе два чтения внутри
 одного вызова могут дать разные значения, и операция проверит ограничение по одному значению, а сообщит о другом.
 
 Конфигурацией операций **не является**:
@@ -217,7 +211,10 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 Образец — [CompetitionConfig.kt](src/main/kotlin/tech/testsys/operation/config/CompetitionConfig.kt).
 
 Реализации `CommunityConfig`, `EmailConfirmationConfig`, `CommunityInviteConfig`, `CompetitionConfig`
-и `ClassInviteConfig` создаёт `testsys-web:app` из обязательных свойств с этими ключами, см. раздел
+и `ClassInviteConfig` предоставляет `testsys-web:app`. Ключи свойств имеют вид
+`testsys.operation.<область>.<свойство>`. Динамические значения берутся из общего снимка;
+порядок источников описан в [settings/README.md](../testsys-infra/settings/README.md#значения-и-источники).
+Статические параметры разрешаются при запуске, см. раздел
 «Запуск и проверка» в [app/README.md](../testsys-web/app/README.md#запуск-и-проверка).
 
 ## Ошибки
@@ -378,43 +375,55 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 ## Вход в Систему
 
 [UserOperations](src/main/kotlin/tech/testsys/operation/user/UserOperations.kt) предоставляет
-`authenticate(accessToken)`. Требования входа определены в `testsys.user.authentication`
-в [features.md](../docs/domain/features.md).
+`authenticate(accessToken)` и `authenticateByPassword(email, password)`. Требования входа определены
+в `testsys.user.authentication` в [features.md](../docs/domain/features.md).
 
-Операция ищет Пользователя по Коду-доступа в портах хранения всех четырёх видов Пользователей и возвращает
-найденного Пользователя как `User<*>`. Если КД не присвоен ни одному Пользователю, операция возвращает
-`InvalidAccessTokenError`. Данные Пользователей операция не изменяет: она только записывает момент входа через
-`UserRepository.recordLogin`. `UserOperations` получает `UserRepository` через конструктор; вызов читает время
-один раз и усекает его до микросекунд.
+- `authenticate` ищет Пользователя по Коду-доступа в портах хранения Участников, Наблюдателей и Супервайзера
+  и возвращает найденного Пользователя как `User<*>`. Если КД не присвоен Пользователю с Фиксированной Ролью,
+  операция возвращает `InvalidAccessTokenError`. Число попыток операция не ограничивает: это делает вызывающий код,
+  в `testsys-web:app` — `AccessCodeSignIn`.
+- `authenticateByPassword` ищет Пользователя по приведённой почте через `MultipleRoleUserRepository.findByEmail`
+  и сравнивает Пароль через порт `PasswordHasher`. Сравнение выполняется и для непривязанной почты, с хешем `null`,
+  чтобы время ответа не показывало, привязана ли почта. Непривязанная почта, неверный Пароль и технический владелец
+  Публичного Сообщества дают одну ошибку `InvalidCredentialsError`. Число попыток операция не ограничивает:
+  это делает вызывающий код, в `testsys-web:app` — `PasswordSignIn`.
+
+Данные Пользователей операции не изменяют: они записывают момент входа через `UserRepository.recordLogin`.
+`UserOperations` получает `UserRepository` через конструктор. Вызов читает время один раз и усекает его
+до микросекунд.
 
 ## Регистрация
 
 [UserOperations](src/main/kotlin/tech/testsys/operation/user/UserOperations.kt) предоставляет
-`requestRegistration(email)` и `confirmRegistration(registrationRequestId, confirmationCode, name, role)`.
+`requestRegistration(email)` и `confirmRegistration(registrationRequestId, confirmationCode, name, password)`.
 Обе операции помечены кодификатором `testsys.user.registration`; требования определены в этой фиче
 в [features.md](../docs/domain/features.md).
 
 - `requestRegistration` ищет запрос через `RegistrationRequestRepository.findByEmail` и возвращает идентификатор
   `RegistrationRequest`. Действующий запрос операция не сохраняет заново, а недействующий перезаписывает через
   `update`, поэтому идентификатор не меняется.
-- `confirmRegistration` принимает Роль как `RegistrationRole` и возвращает `Pair<MultipleRoleUser, String>`:
-  сохранённого Пользователя и исходный Код-доступа. До сравнения кода операция сохраняет запрос с уменьшенным
+- `confirmRegistration` проверяет Псевдоним и Пароль до поиска запроса, создаёт Пользователя в Роли Ученика
+  с хешем Пароля от порта `PasswordHasher` и возвращает сохранённого Пользователя. Писем операция не отправляет.
+  До сравнения кода операция сохраняет запрос с уменьшенным
   `attemptsLeft` через `update` с токеном `version`. Если версия устарела, `update` бросает исключение и код
   не сравнивается. Неверный код возвращает `InvalidConfirmationCodeError`. Вызывающий код должен зафиксировать
   транзакцию и при этой ошибке, иначе попытка не будет потрачена; в `testsys-web:app` это делает
   `UserService.confirmRegistration`. После сохранения Пользователя операция удаляет запрос.
-- Письма отправляет порт `UserMailSender`; обе операции вызывают его последним шагом. Исключения порта,
-  как и исключения хранения, выходят из операций; уже сохранённые изменения операция не откатывает.
+- Письмо с кодом отправляет порт `UserMailSender`; `requestRegistration` вызывает его последним шагом. Исключения
+  порта, как и исключения хранения, выходят из операций; уже сохранённые изменения операция не откатывает.
 - Момент отправки письма и обработка сбоев после фиксации транзакции — в
   [mail/README.md](../testsys-infra/mail/README.md).
 
-`UserOperations` получает через конструктор `CommunityConfig` с Публичным Сообществом, `EmailConfirmationConfig`
-со сроком действия кода и числом попыток, `Clock` и `RandomGenerator`. Вызов читает время не более одного раза;
-момент окончания срока нормализуется до микросекунд. Код подтверждения и КД генерируют функции из
-[Credentials.kt](src/main/kotlin/tech/testsys/operation/util/Credentials.kt) с этим `RandomGenerator`. Приложение
-должно передать криптостойкий генератор, например `SecureRandom`. Приведение и проверку почты, момент окончания
-срока кода и проверку, действует ли запрос, выполняют функции из
-[Email.kt](src/main/kotlin/tech/testsys/operation/util/Email.kt).
+`UserOperations` получает через конструктор `PasswordHasher`, `CommunityConfig` с Публичным Сообществом,
+`EmailConfirmationConfig` со сроком действия кода и числом попыток, `Clock` и `RandomGenerator`. Вызов читает время
+не более одного раза; момент окончания срока нормализуется до микросекунд. Код подтверждения и КД генерируют функции
+из [Credentials.kt](src/main/kotlin/tech/testsys/operation/util/Credentials.kt) с этим `RandomGenerator`. Приложение
+должно передать криптостойкий генератор, например `SecureRandom`. Там же функция `isAccessToken` проверяет, что
+строка записана в формате выдаваемого КД, а `isValidPassword` — что Пароль отвечает требованиям
+из [testsys.user.registration](../docs/domain/features.md#testsysuserregistration-implemented). Пароль проверяется без
+удаления пробелов. Все допустимые символы занимают по одному байту, поэтому Пароль укладывается в 72 байта, которые
+читает bcrypt. Приведение и проверку почты, момент окончания срока кода и проверку,
+действует ли запрос, выполняют функции из [Email.kt](src/main/kotlin/tech/testsys/operation/util/Email.kt).
 
 ## Смена почты
 
@@ -434,7 +443,7 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   `InvalidConfirmationCodeError`. Вызывающий код должен зафиксировать транзакцию и при этой ошибке, иначе попытка
   не будет потрачена. В `testsys-web` это делает `MultipleRoleUserService.confirmEmailChange`.
 - При совпадении кода операция перечитывает Пользователя через `findById` и меняет почту у сохранённой версии,
-  поэтому Код-доступа, Псевдоним и Роли берутся из хранилища, а не из переданного Пользователя. Затем операция
+  поэтому Пароль, Псевдоним и Роли берутся из хранилища, а не из переданного Пользователя. Затем операция
   удаляет запрос и возвращает обновлённого Пользователя.
 - `requestEmailChange` последним шагом отправляет код на новую почту, `confirmEmailChange` — уведомление
   на прежнюю почту через `UserMailSender`. Исключения порта и хранения выходят из операций так же, как
@@ -447,9 +456,37 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 не содержит ни одной ошибки.
 
 `MultipleRoleUserOperations` получает через конструктор `MultipleRoleUserRepository`, `CommunityRepository`,
-`ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock`, `RandomGenerator`
-и `CommunityConfig` с Публичным Сообществом.
-Код подтверждения, срок его действия и чтение времени — те же, что в регистрации.
+`ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`,
+`AccessRestorationRequestRepository`, `UserMailSender`, `PasswordHasher`, `EmailConfirmationConfig`, `Clock`,
+`RandomGenerator` и `CommunityConfig` с Публичным Сообществом.
+Код подтверждения, проверка Пароля, срок действия кода и чтение времени — те же, что в регистрации.
+
+## Смена Пароля
+
+`MultipleRoleUserOperations` предоставляет `changePassword(user, currentPassword, newPassword)` с кодификатором
+`testsys.user.multi.changePassword`; требования определены в этой фиче в [features.md](../docs/domain/features.md).
+Операция перечитывает Пользователя через `findById`, проверяет новый Пароль (`InvalidPasswordError`), затем
+сравнивает текущий Пароль с сохранённым через `PasswordHasher` (`InvalidCurrentPasswordError`) и сохраняет хеш
+нового Пароля. Возвращается обновлённый Пользователь. Отказ при входе Супервайзера под Пользователем
+и завершение других сеансов выполняет `testsys-web:app`.
+
+## Восстановление доступа
+
+`MultipleRoleUserOperations` предоставляет `requestAccessRestoration(email)` и
+`confirmAccessRestoration(email, confirmationCode, password)`. Обе операции помечены кодификатором
+`testsys.user.multi.restoreAccess`; требования определены в этой фиче в [features.md](../docs/domain/features.md).
+
+- Обе операции находят Пользователя по приведённой почте через `MultipleRoleUserRepository.findByEmail`, а его
+  запрос — через `AccessRestorationRequestRepository.findByUser`. Формат почты операции не проверяют.
+- `requestAccessRestoration` ничего не возвращает, и у `RequestAccessRestorationError` нет ни одной ошибки.
+  Если почта не привязана или принадлежит владельцу Публичного Сообщества (`PublicCommunityOwner.EMAIL`),
+  операция ничего не записывает и не отправляет. Действующий запрос операция не сохраняет заново,
+  а недействующий перезаписывает через `update`. Последним шагом она отправляет код на почту Пользователя.
+- `confirmAccessRestoration` сначала проверяет новый Пароль (`InvalidPasswordError`), не тратя попытку. Если почта
+  не привязана или у Пользователя нет запроса, операция возвращает `AccessRestorationRequestNotExistsError`.
+  Попытку она тратит так же, как `confirmEmailChange`; в `testsys-web` транзакцию при отказе фиксирует
+  `UserService.confirmAccessRestoration`. При совпадении кода операция сохраняет хеш нового Пароля, удаляет запрос
+  и возвращает обновлённого Пользователя. Письма она не отправляет.
 
 ## Первое получение Роли
 
@@ -457,8 +494,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 в Сообщество в Роли через `MultipleRoleUserRepository.addCommunityMembership`. Если у переданного Пользователя
 этой Роли ещё нет, функция сначала включает его в Публичное Сообщество в той же Роли. Правило определено
 в `testsys.entity.multi.role` в [features.md](../docs/domain/features.md). Функцию вызывают
-`MultipleRoleUserOperations.joinCommunity` и `AdministratorOperations.grantRole`. Вызывающий код выполняет оба
-включения в одной транзакции, чтобы исключение откатило их вместе; в `testsys-web:app` её открывает прокси-сервис.
+`MultipleRoleUserOperations.joinCommunity`, `AdministratorOperations.grantRole` и `SupervisorOperations.addToCommunity`.
+Вызывающий код выполняет необходимые включения в одной транзакции, чтобы исключение откатило их вместе;
+в `testsys-web:app` её открывает прокси-сервис.
 
 ## Кабинет Организатора
 
@@ -471,9 +509,18 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   через `UserRepository.findLastLogins` одним вызовом.
 - `viewClassContest` и `viewCompetitionContest` возвращают `ContestResults`: Тур, его Задачи в порядке Тура,
   Учеников или Участников и результаты пар автора и Задачи с Посылками.
-- `deleteParticipant` проверяет Посылки Участника в Турах Соревнования через `SubmissionRepository.countGrading`
-  и отклоняет удаление ошибкой `ParticipantHasSubmissionsError`, если они есть. Иначе операция удаляет Участника
-  через `ParticipantRepository.removeById` и возвращает его загруженное состояние.
+- `createParticipants` возвращает `IssuedParticipant`: сохранённого Участника и его исходный Код-доступа. Сохранённое
+  значение КД восстанавливать нельзя, поэтому исходный КД есть только в этом ответе. Так же `createObserver`
+  Администратора и Супервайзера возвращает `IssuedObserver`. Оба типа объявлены в
+  [IssuedUsers.kt](src/main/kotlin/tech/testsys/operation/user/IssuedUsers.kt). Новые КД хеширует
+  `AccessTokenHasher`, который `ManagerOperations`, `AdministratorOperations` и `SupervisorOperations` получают через
+  конструктор.
+- `deleteParticipants` загружает Участников одним вызовом `findByIdsAsMap` и проверяет Посылки всех выбранных
+  Участников в Турах Соревнования одним вызовом `SubmissionRepository.findGradingAuthorIds`. Первый в порядке набора
+  отсутствующий Участник или Участник с Посылками отклоняет удаление ошибкой `CompetitionParticipantNotExistsError`
+  или `ParticipantHasSubmissionsError`. Операция
+  удаляет Участников через `ParticipantRepository.removeById` только после всех проверок и возвращает их
+  загруженные состояния в порядке набора.
 - `viewAvailableContests` помечена кодификатором `addContest`. Она возвращает страницу Туров, открытых Сообществам
   Пользователя в Роли Организатора, через `ContestRepository.findSharedTo`; из них выбирается добавляемый Тур.
 - Операции `check*` проверяют доступ до загрузки блоков страницы. Их отказы и результат определяет правило из раздела
@@ -526,6 +573,20 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 | `checkCommunityAccess` | `viewInvites` | Сообщество |
 | `checkUserAccess` | `viewUser` | Пользователь без момента последнего входа и идентификаторы Сообществ, созданных Администратором |
 
+## Кабинет Супервайзера
+
+[SupervisorOperations](src/main/kotlin/tech/testsys/operation/user/SupervisorOperations.kt) читает всех Пользователей,
+кроме Супервайзеров, и все Сообщества. `addToCommunity` выдаёт любую Нефиксированную Роль, кроме
+Администратора в Публичном Сообществе. При первой выдаче Администратора
+`AdministratorOperations.createFirstCommunity` создаёт ему Сообщество с Кодами-приглашениями.
+`grantAdministrator` выдаёт Роль Администратора без выбора Сообщества: если этой Роли у Пользователя нет,
+`AdministratorOperations.createFirstCommunity` создаёт ему первое Сообщество, и Пользователь становится его членом
+в этой Роли. Иначе Пользователь возвращается без изменений.
+`impersonate` возвращает любого Пользователя, кроме Супервайзера, без изменений и не вызывает
+`UserRepository.recordLogin`; для технического владельца Публичного Сообщества она возвращает
+`ImpersonationDeniedError`.
+Операции изменения Сообществ используют общие действия `AdministratorOperations`.
+
 ## Кабинет Судьи
 
 [JudgeOperations](src/main/kotlin/tech/testsys/operation/user/JudgeOperations.kt) реализует фичи
@@ -563,6 +624,10 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 - `viewTrikStudioVersions` помечена кодификатором `createContest`. Она возвращает версии TRIK Studio,
   зарегистрированные в Системе, через `ContestRepository.findTrikStudioVersions`; из них выбираются версия Тура
   и поддерживаемые версии Задачи.
+- `countRegradeSubmissions` возвращает число Посылок, которые фиксация с повторной проверкой отправит на проверку,
+  или `null`, если повторная проверка неприменима. `viewRegrades` возвращает Перепроверки в порядке создания парами
+  `Pair<Regrade, Int>`: второй элемент — прогресс. Прогресс всех Перепроверок считается одним вызовом
+  `RegradeRepository.countGraded`.
 - Операции `check*` проверяют доступ до загрузки блоков страницы и возвращают данные, перечисленные в своём разделе.
   Отказы у каждой те же, что у просмотра, кодификатором которого она помечена.
 
@@ -573,3 +638,11 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 | `checkResourceAccess` | `viewResource` | Задача и последняя версия цепочки Ресурса |
 | `checkTaskValidationRequestAccess` | `testTask` | Задача и её запрос тестирования; запрос другой Задачи отклоняется ошибкой `TaskValidationRequestNotExistsError` |
 | `checkContestAccess` | `viewContest` | Тур |
+
+## Динамическая конфигурация
+
+Приложение реализует существующие конфигурации через общий снимок
+[служебных настроек](../testsys-infra/settings/README.md). Оба параметра подтверждения почты динамические;
+приложение закрепляет их согласованную пару на текущую транзакцию. Повтор получает новый снимок,
+вложенная независимая транзакция — собственный. Существующие запросы и приглашения не переписываются
+при сохранении настроек. Новые значения получают их создание, перезапись и продление.

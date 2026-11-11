@@ -40,6 +40,7 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.CompatibleUserRole
@@ -50,7 +51,6 @@ import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
@@ -122,7 +122,7 @@ private const val MAX_COMMUNITY_NAME_CODE_POINTS = 255
 /**
  * Operations of a user with the [Administrator] role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class AdministratorOperations(
@@ -143,24 +143,25 @@ class AdministratorOperations(
     private val submissionRepository: SubmissionRepository,
     private val judgmentOrderRepository: JudgmentOrderRepository,
     private val verdictRepository: VerdictRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
 
     private val random = SecureRandom()
 
     /**
      * Creates an observer named [observerName] in [communityId] owned by [user], assigning exactly [contestIds].
-     * Only contests shared to that community are allowed; a fresh access code is returned with the saved observer.
+     * Only contests shared to that community or the public community are allowed; the original fresh access code is
+     * returned with the saved observer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.createObserver")
-    @RawAccessTokenDependency(reason = "Returns the issued access code in the saved observer's stored value with Identity.")
     fun createObserver(
         user: MultipleRoleUser,
         communityId: CommunityId,
         observerName: String,
         contestIds: Set<ContestId>,
-    ): OperationResult<Observer, CreateObserverError> = operation<Observer, CreateObserverError> {
+    ): OperationResult<IssuedObserver, CreateObserverError> = operation<IssuedObserver, CreateObserverError> {
         ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
@@ -171,33 +172,32 @@ class AdministratorOperations(
             contest
         }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
+        val grantedTo = setOf(communityId, communityConfig.publicCommunityId)
         contests.forEach { contest ->
-            ensure(communityId in contest.data.sharedTo.ids) { ContestAccessDeniedError(contest.id) }
+            ensure(contest.data.sharedTo.ids.any { it in grantedTo }) { ContestAccessDeniedError(contest.id) }
         }
         ensure(observerName.isNotBlank(), ObserverNameBlankError)
         ensure(observerName.codePointCount(0, observerName.length) <= MAX_OBSERVER_NAME_CODE_POINTS) {
             ObserverNameTooLongError(observerName)
         }
         ensure(contestIds.isNotEmpty(), ObserverContestsEmptyError)
+        val accessToken = UUID.randomUUID().toString()
         val data = observerData {
             this.community = communityId
             name = observerName
             this.contests = contestIds.toMutableList()
-            accessToken(UUID.randomUUID().toString(), algorithm = HashAlgorithm.Identity)
+            accessToken(accessToken, accessTokenHasher)
         }
-        return observerRepository.save(data).asSuccess()
+        return IssuedObserver(observer = observerRepository.save(data), accessToken = accessToken).asSuccess()
     }
 
     /**
      * Returns a [pagination] page matching [filter] of users of communities created by [user], preserving stored state.
      * Missing administrator role is an expected failure; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUsers")
-    @RawAccessTokenDependency(
-        reason = "Returned users carry stored access codes that the administrator sees as the original codes only with Identity.",
-    )
     fun viewUsers(
         user: MultipleRoleUser,
         pagination: Pagination,
@@ -217,9 +217,6 @@ class AdministratorOperations(
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.admin.viewUser")
-    @RawAccessTokenDependency(
-        reason = "The returned user carries the stored access code that the administrator sees as the original code only with Identity.",
-    )
     fun checkUserAccess(user: MultipleRoleUser, userId: UserId): OperationResult<Pair<User<*>, Set<CommunityId>>, CheckUserAccessError> =
         operation<Pair<User<*>, Set<CommunityId>>, CheckUserAccessError> {
             ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
@@ -236,12 +233,9 @@ class AdministratorOperations(
      * Returns [userId] with all its stored data and its last login, or `null` without one, if it is available to [user],
      * preserving stored state. Missing role, user and access are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
-    @RawAccessTokenDependency(
-        reason = "The returned user carries the stored access code that the administrator sees as the original code only with Identity.",
-    )
     fun viewUser(user: MultipleRoleUser, userId: UserId): OperationResult<Pair<User<*>, Instant?>, ViewUserError> =
         operation<Pair<User<*>, Instant?>, ViewUserError> {
             ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
@@ -258,7 +252,7 @@ class AdministratorOperations(
      * Returns the tasks created by [userId] viewed as in [viewUser], each with its latest validation request, or `null`
      * if never validated, and the communities it is shared to; empty if the viewed user is not a developer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserTasks(
@@ -291,7 +285,7 @@ class AdministratorOperations(
      * Returns the contests created by [userId] viewed as in [viewUser], each with its tasks and the number of grading
      * submissions of every task in the contest; empty if the viewed user is not a developer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserContests(
@@ -321,7 +315,7 @@ class AdministratorOperations(
      * Returns the classes created by [userId] viewed as in [viewUser], each with the grading submissions of its current
      * students in its current contests; empty if the viewed user is not a manager.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserClasses(
@@ -347,7 +341,7 @@ class AdministratorOperations(
      * Returns the competitions created by [userId] viewed as in [viewUser], each with the grading submissions of its
      * current participants in its contests; empty if the viewed user is not a manager.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserCompetitions(
@@ -376,7 +370,7 @@ class AdministratorOperations(
      * Returns the judgment orders issued by [userId] viewed as in [viewUser], each with the solution of its submission and
      * the previous result of the submission, or `null` without one; empty if the viewed user is not a judge.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserJudgments(
@@ -403,7 +397,7 @@ class AdministratorOperations(
      * Returns the contests assigned to the observer [userId] viewed as in [viewUser], each with the competitions it is
      * currently part of; empty if the viewed user is not an observer.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun viewUserAssignedContests(
@@ -427,6 +421,72 @@ class AdministratorOperations(
             }.asSuccess()
         }
 
+    /** Reads developer tasks after the caller has authorized [viewed]. */
+    internal fun userTasks(viewed: User<*>): List<Triple<Task, TaskValidationRequest?, List<Community>>> {
+        val developer = (viewed as? MultipleRoleUser)?.data?.roles?.filterIsInstance<Developer>()?.singleOrNull()
+            ?: return emptyList()
+        val tasks = taskRepository.findByIds(developer.data.tasks.ids)
+        val communities = communityRepository.findByIds(tasks.flatMap { it.data.sharedTo.ids }.distinct()).associateBy { it.id }
+        return tasks.map { task ->
+            Triple(
+                task,
+                taskValidationRequestRepository.findHistory(task.id).lastOrNull(),
+                task.data.sharedTo.ids.mapNotNull(communities::get),
+            )
+        }
+    }
+
+    /** Reads developer contests after the caller has authorized [viewed]. */
+    internal fun userContests(viewed: User<*>): List<Pair<Contest, List<Pair<Task, Long>>>> {
+        val developer = (viewed as? MultipleRoleUser)?.data?.roles?.filterIsInstance<Developer>()?.singleOrNull()
+            ?: return emptyList()
+        val contests = contestRepository.findByIds(developer.data.contests.ids)
+        val tasks = taskRepository.findByIds(contests.flatMap { it.data.tasks.ids }.distinct()).associateBy { it.id }
+        return contests.map { contest ->
+            val counts = submissionRepository.countGradingByTask(contest.id)
+            contest to contest.data.tasks.ids.map { id -> tasks.getValue(id) to (counts[id] ?: 0L) }
+        }
+    }
+
+    /** Reads manager classes after the caller has authorized [viewed]. */
+    internal fun userClasses(viewed: User<*>): List<Pair<Class, SubmissionCount>> {
+        val manager = (viewed as? MultipleRoleUser)?.data?.roles?.filterIsInstance<Manager>()?.singleOrNull()
+            ?: return emptyList()
+        return classRepository.findByIds(manager.data.classes.ids).map { group ->
+            group to submissionRepository.countGrading(group.data.students.ids.toSet(), group.data.contests.ids.toSet())
+        }
+    }
+
+    /** Reads manager competitions after the caller has authorized [viewed]. */
+    internal fun userCompetitions(viewed: User<*>): List<Pair<Competition, SubmissionCount>> {
+        val manager = (viewed as? MultipleRoleUser)?.data?.roles?.filterIsInstance<Manager>()?.singleOrNull()
+            ?: return emptyList()
+        return competitionRepository.findByIds(manager.data.competitions.ids).map { competition ->
+            competition to submissionRepository.countGrading(
+                competition.data.participants.ids.toSet(),
+                competition.data.contests.ids.toSet(),
+            )
+        }
+    }
+
+    /** Reads judge orders after the caller has authorized [viewed]. */
+    internal fun userJudgments(viewed: User<*>): List<Triple<JudgmentOrder, SolutionId, Long?>> {
+        val judge = (viewed as? MultipleRoleUser)?.data?.roles?.filterIsInstance<Judge>()?.singleOrNull()
+            ?: return emptyList()
+        return judgmentOrderRepository.findByIds(judge.data.judgmentOrders.ids).map { order ->
+            val submission = submissionOf(order)
+            Triple(order, submission.data.solution.id, previousScore(order, submission))
+        }
+    }
+
+    /** Reads observer assignments after the caller has authorized [viewed]. */
+    internal fun userAssignedContests(viewed: User<*>): List<Pair<Contest, List<Competition>>> {
+        val observer = viewed as? Observer ?: return emptyList()
+        val contests = contestRepository.findByIds(observer.data.contests.ids)
+        val competitions = competitionRepository.findByContestIds(contests.map { it.id }.toSet())
+        return contests.map { contest -> contest to competitions.filter { contest.id in it.data.contests.ids } }
+    }
+
     /**
      * Returns the communities created by [user] without their user counts, so that a page checks the role and builds its
      * community filter before it loads its lists. Missing role is an expected failure; nothing is written.
@@ -444,7 +504,7 @@ class AdministratorOperations(
      * Returns the communities created by [user] in ascending id order, each with the number of users available to [user]
      * through it, the administrator included. Missing role is an expected failure; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewCommunities")
     fun viewCommunities(user: MultipleRoleUser): OperationResult<List<Pair<Community, Long>>, ViewCommunitiesError> =
@@ -465,7 +525,7 @@ class AdministratorOperations(
      * administrator role and new manager and developer invite codes. The name must be nonblank and contain at most 255
      * Unicode code points; storage exceptions, including an invite code collision, propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.createCommunity")
     fun createCommunity(
@@ -479,27 +539,70 @@ class AdministratorOperations(
             CommunityNameTooLongError(communityName)
         }
 
+        return saveCommunityWithInvites(user.id, communityName, description).asSuccess()
+    }
+
+    /** Creates the first community when [user] newly receives the administrator role from a supervisor. */
+    internal fun createFirstCommunity(user: MultipleRoleUser): Community {
+        val prefix = "Сообщество "
+        val fullName = prefix + user.data.name
+        val end = fullName.offsetByCodePoints(0, minOf(fullName.codePointCount(0, fullName.length), MAX_COMMUNITY_NAME_CODE_POINTS))
+        return saveCommunityWithInvites(user.id, fullName.substring(0, end), "")
+    }
+
+    /** Persists a community and both invites, then joins its owner in the administrator role. */
+    private fun saveCommunityWithInvites(ownerId: MultipleRoleUserId, name: String, description: String): Community {
         val expiresAt = inviteExpiresAt(now = clock.instant(), ttl = communityInviteConfig.ttl)
-        val managerInviteData = newInvite(expiresAt)
-        val developerInviteData = newInvite(expiresAt)
         val community = communityRepository.saveWithInvites(
-            managerInvite = managerInviteData,
-            developerInvite = developerInviteData,
+            managerInvite = newInvite(expiresAt),
+            developerInvite = newInvite(expiresAt),
         ) { managerInviteId, developerInviteId ->
             communityData {
-                owner = user.id
-                name = communityName
+                owner = ownerId
+                this.name = name
                 this.description = description
                 managerInvite = managerInviteId
                 developerInvite = developerInviteId
             }
         }
-        multipleRoleUserRepository.addCommunityMembership(
-            userId = user.id,
-            communityId = community.id,
-            role = CommunityRole.Administrator,
-        )
-        return community.asSuccess()
+        multipleRoleUserRepository.addCommunityMembership(ownerId, community.id, CommunityRole.Administrator)
+        return community
+    }
+
+    /** Updates the editable fields of a community already authorized by its caller. */
+    internal fun updateCommunity(community: Community, name: String, description: String): Community {
+        val edited = community.withData {
+            this.name = name
+            this.description = description
+        }
+        return communityRepository.update(edited)
+    }
+
+    /** Returns both invites of a community already authorized by its caller. */
+    internal fun communityInvites(community: Community): List<CommunityInvite> = listOf(
+        loadInvite(community, CommunityInvite.Kind.Manager),
+        loadInvite(community, CommunityInvite.Kind.Developer),
+    )
+
+    /** Replaces the code of a community invite already authorized by its caller. */
+    internal fun replaceCommunityInvite(community: Community, kind: CommunityInvite.Kind): CommunityInvite {
+        val expiresAt = inviteExpiresAt(clock.instant(), communityInviteConfig.ttl)
+        return replaceCode(loadInvite(community, kind), expiresAt)
+    }
+
+    /** Extends the code of a community invite already authorized by its caller. */
+    internal fun extendCommunityInvite(community: Community, kind: CommunityInvite.Kind): CommunityInvite =
+        update(loadInvite(community, kind)) { expiresAt = inviteExpiresAt(clock.instant(), communityInviteConfig.ttl) }
+
+    /** Replaces an expired community invite, retaining a valid one. */
+    internal fun refreshCommunityInvite(community: Community, kind: CommunityInvite.Kind): CommunityInvite {
+        val invite = loadInvite(community, kind)
+        val now = clock.instant()
+        return if (now < invite.data.expiresAt) {
+            invite
+        } else {
+            replaceCode(invite, inviteExpiresAt(now, communityInviteConfig.ttl))
+        }
     }
 
     /**
@@ -507,7 +610,7 @@ class AdministratorOperations(
      * keeping its owner, invite codes and members. Name rules match [createCommunity]; missing role, community and access
      * are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.editCommunity")
     fun editCommunity(
@@ -525,11 +628,7 @@ class AdministratorOperations(
             CommunityNameTooLongError(communityName)
         }
 
-        val edited = community.withData {
-            name = communityName
-            this.description = description
-        }
-        return communityRepository.update(edited).asSuccess()
+        return updateCommunity(community, communityName, description).asSuccess()
     }
 
     /**
@@ -537,7 +636,7 @@ class AdministratorOperations(
      * and of the public community if the role is new; a member already in that role is returned unchanged. Missing role,
      * user, community, access, a fixed role of the user and the judge role are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.grantRole")
     fun grantRole(
@@ -570,7 +669,7 @@ class AdministratorOperations(
      * Removes the membership of [userId] in [communityId] owned by [user] in [role], keeping the role and its data.
      * Missing role, user, community, access, the public community and a missing membership are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.removeFromCommunity")
     fun removeFromCommunity(
@@ -599,7 +698,7 @@ class AdministratorOperations(
      * Deletes [observerId] of a community owned by [user], so that its access code stops working, and returns the observer
      * as it was before the deletion. Missing role, observer and access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.deleteObserver")
     fun deleteObserver(user: MultipleRoleUser, observerId: SingleRoleUserId): OperationResult<Observer, DeleteObserverError> =
@@ -617,10 +716,11 @@ class AdministratorOperations(
         }
 
     /**
-     * Returns a [pagination] page of the contests shared to [communityId] owned by [user] whose names contain [name],
-     * from which an observer of the community is assigned. Missing role, community and access are expected failures.
+     * Returns a [pagination] page of the contests shared to [communityId] owned by [user] or to the public community
+     * whose names contain [name], from which an observer of the community is assigned. Missing role, community and
+     * access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.createObserver")
     fun viewCommunityContests(
@@ -634,11 +734,10 @@ class AdministratorOperations(
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
 
-        val contests = contestRepository.findAvailableToDeveloper(
-            ownerId = user.id,
-            communityIds = setOf(communityId),
+        val contests = contestRepository.findSharedTo(
+            communityIds = setOf(communityId, communityConfig.publicCommunityId),
             pagination = pagination,
-            filter = ContestFilter(name = name, communityId = communityId),
+            filter = ContestFilter(name = name),
         )
         return contests.asSuccess()
     }
@@ -647,7 +746,7 @@ class AdministratorOperations(
      * Replaces the invite code for [kind] in [communityId] owned by [user] with a new code and a fresh expiration moment.
      * Missing role, community and access are expected failures; storage exceptions, including a code collision, propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.inviteUser")
     @RawInviteCodeDependency(reason = "Returns the issued invite code from the stored value.")
@@ -660,15 +759,14 @@ class AdministratorOperations(
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
-        val expiresAt = inviteExpiresAt(now = clock.instant(), ttl = communityInviteConfig.ttl)
-        return replaceCode(invite = loadInvite(community, kind), expiresAt = expiresAt).asSuccess()
+        return replaceCommunityInvite(community, kind).asSuccess()
     }
 
     /**
      * Restarts the validity period of the invite code for [kind] in [communityId] owned by [user] without changing
      * the code, including an expired code. Missing role, community and access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.extendInvite")
     @RawInviteCodeDependency(reason = "Returns the issued invite code from the stored value.")
@@ -681,9 +779,7 @@ class AdministratorOperations(
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
-        val existing = loadInvite(community, kind)
-        val expiresAt = inviteExpiresAt(now = clock.instant(), ttl = communityInviteConfig.ttl)
-        return update(existing) { this.expiresAt = expiresAt }.asSuccess()
+        return extendCommunityInvite(community, kind).asSuccess()
     }
 
     /**
@@ -706,7 +802,7 @@ class AdministratorOperations(
      * Returns both invite codes of [communityId] owned by [user] as issued, the manager code before the developer one.
      * Expired codes are returned unchanged; missing role, community and access are expected failures; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.viewInvites")
     @RawInviteCodeDependency(reason = "Returns the issued invite codes from the stored values.")
@@ -718,16 +814,14 @@ class AdministratorOperations(
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
-        val manager = community.data.managerInvite.load(managerInviteRepository)
-        val developer = community.data.developerInvite.load(developerInviteRepository)
-        return listOf(manager, developer).asSuccess()
+        return communityInvites(community).asSuccess()
     }
 
     /**
      * Replaces the expired invite code for [kind] in [communityId] owned by [user] with a new code and a fresh expiration
      * moment; a still valid code is returned unchanged. Missing role, community and access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.admin.inviteUser")
     fun refreshCommunityInvite(
@@ -739,11 +833,7 @@ class AdministratorOperations(
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
-        val existing = loadInvite(community, kind)
-        val now = clock.instant()
-        if (now < existing.data.expiresAt) return existing.asSuccess()
-        val expiresAt = inviteExpiresAt(now = now, ttl = communityInviteConfig.ttl)
-        return replaceCode(invite = existing, expiresAt = expiresAt).asSuccess()
+        return refreshCommunityInvite(community, kind).asSuccess()
     }
 
     /** Returns the role [R] of [userId] viewed by [user] as in [viewUser], or `null` if the viewed user does not hold it. */

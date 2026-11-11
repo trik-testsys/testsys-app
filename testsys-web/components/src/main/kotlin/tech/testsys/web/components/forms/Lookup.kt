@@ -17,7 +17,7 @@ import tech.testsys.web.components.texts.UiLocalization
  * an entity by them, as domain entities do by id.
  * @throws IllegalArgumentException if [pageSize] is below one, or [columns] declares no columns, sets its own empty
  * state or row click, which the lookup owns, or adds a menu column.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> BlockRowScope.lookup(
     label: String,

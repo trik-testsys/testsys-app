@@ -6,6 +6,7 @@ import tech.testsys.domain.builder.api.supervisor
 import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
@@ -17,6 +18,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SupervisorDataJpaEntityRepository
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -26,6 +28,9 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
 
     @Autowired
     override lateinit var repository: SupervisorRepository
+
+    @Autowired
+    private lateinit var accessTokenHasher: AccessTokenHasher
 
     @Autowired
     private lateinit var userJpaEntityRepository: UserJpaEntityRepository
@@ -39,12 +44,12 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     override fun newData() = newData(fixtures.unique("token"))
 
     private fun newData(rawAccessToken: String) = supervisorData {
-        accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+        accessToken(rawAccessToken, accessTokenHasher)
         name = fixtures.unique("Supervisor")
     }
 
     override fun modified(entity: Supervisor) = entity.withData {
-        accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+        accessToken(fixtures.unique("token"), accessTokenHasher)
         name = fixtures.unique("Renamed supervisor")
     }
 
@@ -82,11 +87,11 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
 
         assertEquals(data.accessTokenHash.value, saved.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHash.algorithm)
+        assertEquals(HashAlgorithm.HmacSha256, saved.data.accessTokenHash.algorithm)
         assertEquals(modified.data.accessTokenHash.value, found.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHash.algorithm)
+        assertEquals(HashAlgorithm.HmacSha256, found.data.accessTokenHash.algorithm)
         assertEquals(modified.data.accessTokenHash.value, row.accessToken)
-        assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
+        assertEquals(HashAlgorithmJpaEnum.HMAC_SHA256, row.accessTokenHashAlgorithm)
     }
 
     @Test
@@ -114,7 +119,7 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
-    fun `should find user by its access code`() {
+    fun `should find user by its access code stored as its HMAC-SHA-256 hash`() {
         val token = fixtures.unique("token")
         val saved = repository.save(newData(token))
 
@@ -123,6 +128,7 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         assertNotNull(found)
         assertEquals(saved.id, found.id)
         assertSameData(saved, found)
+        assertEquals(accessTokenHasher.hash(token).value, userJpaEntityRepository.findById(saved.id.value).orElseThrow().accessToken)
     }
 
     @Test
@@ -140,6 +146,43 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         repository.save(newData())
 
         val found = repository.findByAccessToken(fixtures.unique("unknown"))
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should find no single supervisor if none is stored`() {
+        fixtures.participant()
+
+        val found = repository.findSingle()
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should find the single stored supervisor`() {
+        fixtures.participant()
+        val saved = repository.save(newData())
+
+        val found = assertNotNull(repository.findSingle())
+
+        assertSameEntity(saved, found)
+    }
+
+    @Test
+    fun `should fail to find the single supervisor if two are stored`() {
+        repository.save(newData())
+        repository.save(newData())
+
+        assertFailsWith<IllegalStateException> { repository.findSingle() }
+    }
+
+    @Test
+    fun `should find no single supervisor after it is removed`() {
+        val saved = repository.save(newData())
+        repository.remove(saved)
+
+        val found = repository.findSingle()
 
         assertNull(found)
     }

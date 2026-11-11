@@ -24,7 +24,7 @@ import java.time.Instant
  * A failed operation throws `OperationException`, which rolls the transaction back.
  * A sent solution is passed to grading after the transaction commits.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -36,7 +36,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.viewContest] for a participant.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewContest(contestId: ContestId): Triple<Instant?, ContestVo, List<StudyContestTaskVo>> =
@@ -45,7 +45,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.viewContest] for a student of [classId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewContest(classId: ClassId, contestId: ContestId): Triple<Instant?, ContestVo, List<StudyContestTaskVo>> =
@@ -54,7 +54,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.viewTask] for a participant.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewTask(contestId: ContestId, taskId: TaskId): StudyTaskVo =
@@ -63,7 +63,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.viewTask] for a student of [classId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewTask(classId: ClassId, contestId: ContestId, taskId: TaskId): StudyTaskVo =
@@ -108,7 +108,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.downloadTaskResource] for a participant.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun downloadTaskResource(contestId: ContestId, taskId: TaskId, resourceId: DomainId): FileData =
@@ -117,7 +117,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.downloadTaskResource] for a student of [classId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun downloadTaskResource(classId: ClassId, contestId: ContestId, taskId: TaskId, resourceId: DomainId): FileData =
@@ -126,7 +126,7 @@ class StudyService(
     /**
      * Downloads an owned submission in the participant's contest.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun downloadSolution(contestId: ContestId, taskId: TaskId, submissionId: SubmissionId): FileData =
@@ -135,7 +135,7 @@ class StudyService(
     /**
      * Downloads an owned submission in the student's selected class and contest.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun downloadSolution(classId: ClassId, contestId: ContestId, taskId: TaskId, submissionId: SubmissionId): FileData =
@@ -144,7 +144,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.sendSolution] for a participant and grades the submission after commit.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun sendSolution(contestId: ContestId, taskId: TaskId, file: FileData, language: TrikSupportedLanguage): SubmissionVo =
         grade(operations.sendSolution(currentUser.singleRoleUser(), contestId, taskId, file, language).getOrThrow())
@@ -152,7 +152,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.sendSolution] for a student of [classId] and grades the submission after commit.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun sendSolution(
         classId: ClassId,

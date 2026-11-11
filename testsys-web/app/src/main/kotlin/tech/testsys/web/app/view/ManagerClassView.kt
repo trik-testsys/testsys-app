@@ -37,7 +37,7 @@ private const val DETAILS_COLUMNS = 12
  * Class of a Manager (testsys.web.page.manager.class): its details, invite code with replacement and extension, students
  * and contests with adding a contest; a contest opens its results in the class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("manager/classes/:classId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -93,28 +93,28 @@ class ManagerClassView(private val headers: CabinetHeaders, private val managerS
         val entity = details.studyClass
         val draft = Binder<DetailsDraft>()
         row {
-            codeInput(texts.id(), labelSize = 6, size = 18) {
+            codeInput(texts.id(), labelSize = 4, size = 7) {
                 value = entity.id.value.toString()
                 isEditable = false
             }
         }
         row {
-            textInput(texts.name(), labelSize = 6, size = 18) {
+            textInput(texts.name(), labelSize = 4, size = 20) {
                 draft.forField(this).nameRules(texts.nameRequired())
                     .bind({ values -> values.name }, { values, name -> values.name = name })
             }
         }
         row {
-            textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
+            textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) {
                 draft.forField(this).bind({ values -> values.description }, { values, description -> values.description = description })
             }
         }
         row {
-            codeInput(texts.studentCount(), labelSize = 6, size = 6) {
+            codeInput(texts.studentCount(), labelSize = 4, size = 4) {
                 value = details.students.size.toString()
                 isEditable = false
             }
-            codeInput(texts.contestCount(), labelSize = 6, size = 6) {
+            codeInput(texts.contestCount(), labelSize = 4, size = 4) {
                 value = details.contests.size.toString()
                 isEditable = false
             }
@@ -167,12 +167,12 @@ class ManagerClassView(private val headers: CabinetHeaders, private val managerS
             }
             load({ loaded.value.invite }) { invite ->
                 row {
-                    codeInput(texts.classInviteCode(), labelSize = 8, size = 16) {
+                    codeInput(texts.classInviteCode(), labelSize = 5, size = 6) {
                         value = invite.codeHash.value
                         isObscured = true
                     }
                 }
-                row { dateTimeInput(texts.classInviteExpires(), labelSize = 8, size = 16) { value = invite.expiresAt.toUserDateTime() } }
+                row { dateTimeInput(texts.classInviteExpires(), labelSize = 5, size = 10) { value = invite.expiresAt.toUserDateTime() } }
                 copy.isEnabled = true
             }
         }.isEditable = false

@@ -12,7 +12,6 @@ import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.MultipleRoleUserId
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.localization.PageAdministrator.UserHeadKind
@@ -27,6 +26,7 @@ import tech.testsys.web.app.service.JudgeRoleVo
 import tech.testsys.web.app.service.ManagerRoleVo
 import tech.testsys.web.app.service.MultipleRoleUserVo
 import tech.testsys.web.app.service.ObserverVo
+import tech.testsys.web.app.service.ParticipantVo
 import tech.testsys.web.app.service.RoleVo
 import tech.testsys.web.app.service.StudentRoleVo
 import tech.testsys.web.app.service.administrator.AdministratorService
@@ -83,7 +83,7 @@ private val GRANTED_ROLE_NAMES: Map<CommunityRole, RoleNameRole> = mapOf(
  * administrator with granting and removal, and the sections of its roles on tabs with their own addresses. An observer
  * has its own address, shows its section below the common data and can be deleted.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("admin/users/:userId([0-9]+)/:section?(developer|manager|judge)")
 @RouteAlias("admin/observers/:observerId([0-9]+)")
@@ -156,7 +156,6 @@ class AdminUserView(
     }
 
     /** Loads the common data of [user]; the deletion of an observer needs only the checked [user]. */
-    @RawAccessTokenDependency(reason = "Shows the stored access code of an observer as the issued one.")
     private fun PageScope.detailsBlock(user: AdminUserVo) {
         val texts = currentLocalization().pageAdministrator
         row {
@@ -164,18 +163,10 @@ class AdminUserView(
                 guide(texts.userDetailsGuide())
                 load({ administratorService.viewUser(user.id) }) { (viewed, lastLogin) ->
                     row {
-                        codeInput(texts.id(), labelSize = 3, size = 6) { value = viewed.id.value.toString() }
+                        codeInput(texts.id(), labelSize = 3, size = 4) { value = viewed.id.value.toString() }
                         textInput(texts.nickname(), labelSize = 3, size = 8) { value = viewed.name }
                     }
-                    row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 6) { value = lastLogin?.toUserDateTime() } }
-                    if (viewed is ObserverVo) {
-                        row {
-                            codeInput(texts.accessCode(), labelSize = 3, size = 6) {
-                                value = viewed.accessTokenHash.value
-                                isObscured = true
-                            }
-                        }
-                    }
+                    row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) { value = lastLogin?.toUserDateTime() } }
                 }
                 if (user is ObserverVo) {
                     actions { destructiveAction(texts.userObserverDelete()) { onClick { deleteObserver(user) } } }
@@ -223,6 +214,7 @@ class AdminUserView(
                     .takeIf { roles -> roles.isNotEmpty() }
                     ?.let { roles -> Membership(community, roles.map(::labelOf), roles) }
                 is ObserverVo -> Membership(community, listOf(observerLabel), emptyList()).takeIf { user.community == community.id }
+                is ParticipantVo -> null
             }
         }
     }
@@ -304,6 +296,7 @@ class AdminUserView(
         }
     }
 
+    // The role sections stay here with background loading; the shared blocks of UserRoleDetails.kt load synchronously.
     private fun PageScope.tasksBlock(userId: UserId) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
@@ -490,7 +483,7 @@ class AdminUserView(
 }
 
 /** Returns the community role of [role], or `null` for the administrator role, which an administrator does not remove. */
-private fun communityRoleOf(role: RoleVo): CommunityRole? = when (role) {
+internal fun communityRoleOf(role: RoleVo): CommunityRole? = when (role) {
     is AdministratorRoleVo -> null
     is DeveloperRoleVo -> CommunityRole.Developer
     is ManagerRoleVo -> CommunityRole.Manager

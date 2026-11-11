@@ -7,7 +7,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
  *
  * @property ownerId the id of the row the query selects by.
  * @property linkedId the id of the related row.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 data class LinkedIdRow(val ownerId: Long, val linkedId: Long)

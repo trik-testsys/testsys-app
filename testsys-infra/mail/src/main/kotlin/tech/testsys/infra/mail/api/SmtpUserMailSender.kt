@@ -1,6 +1,6 @@
 package tech.testsys.infra.mail.api
 
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import org.springframework.mail.MailException
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
@@ -11,18 +11,21 @@ import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.infra.localization.Localization
 import tech.testsys.infra.mail.internal.InternalMailApi
 import tech.testsys.infra.mail.internal.MailSettings
+import tech.testsys.infra.monitoring.api.TechnicalFailures
 
 /**
  * Sends letters to users as plain-text e-mails through [JavaMailSender], rendered in the configured region;
- * within active transaction synchronization a letter is sent after the commit and a failure is only logged.
+ * within active transaction synchronization a letter is sent after the commit and a failure is logged and counted
+ * in [failures].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalMailApi::class)
 class SmtpUserMailSender(
     private val mailSender: JavaMailSender,
     private val settings: MailSettings,
+    private val failures: TechnicalFailures = TechnicalFailures.NONE,
 ) : UserMailSender {
 
     override fun sendRegistrationConfirmationCode(email: String, confirmationCode: String) {
@@ -31,15 +34,6 @@ class SmtpUserMailSender(
             to = email,
             subject = messages.registrationConfirmationCodeSubject(),
             text = messages.registrationConfirmationCodeBody(confirmationCode = confirmationCode),
-        )
-    }
-
-    override fun sendAccessToken(email: String, name: String, accessToken: String) {
-        val messages = Localization.forRegion(settings.region, settings.timeZone).user
-        send(
-            to = email,
-            subject = messages.registrationAccessCodeSubject(),
-            text = messages.registrationAccessCodeBody(name = name, accessCode = accessToken),
         )
     }
 
@@ -58,6 +52,15 @@ class SmtpUserMailSender(
             to = email,
             subject = messages.emailChangeNoticeSubject(),
             text = messages.emailChangeNoticeBody(name = name),
+        )
+    }
+
+    override fun sendAccessRestorationCode(email: String, confirmationCode: String) {
+        val messages = Localization.forRegion(settings.region, settings.timeZone).user
+        send(
+            to = email,
+            subject = messages.accessRestorationConfirmationCodeSubject(),
+            text = messages.accessRestorationConfirmationCodeBody(confirmationCode = confirmationCode),
         )
     }
 
@@ -88,10 +91,11 @@ class SmtpUserMailSender(
             mailSender.send(message)
         } catch (exception: MailException) {
             log.error("Failed to send letter to $to after transaction commit", exception)
+            failures.record(source = "mail", stage = "after_commit", failure = exception)
         }
     }
 
     private companion object {
-        private val log = LogFactory.getLog(SmtpUserMailSender::class.java)
+        private val log = LoggerFactory.getLogger(SmtpUserMailSender::class.java)
     }
 }

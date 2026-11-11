@@ -19,7 +19,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  * @property submission the id of the submission the order applies to, or `null` if not set yet.
  * @property score the score awarded by the judge, or `null` if not set yet.
  * @property reason the justification of the ruling, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
 
@@ -34,7 +34,7 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
     /**
      * Sets [judge] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun judge(id: Long) {
         this.judge = MultipleRoleUserId(id)
@@ -43,7 +43,7 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
     /**
      * Sets [submission] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun submission(id: Long) {
         this.submission = SubmissionId(id)
@@ -67,7 +67,7 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
 /**
  * Builder of [JudgmentOrder] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class JudgmentOrderBuilder : DomainEntityWithDataBuilder<JudgmentOrder, JudgmentOrderData, JudgmentOrderDataBuilder>() {
 

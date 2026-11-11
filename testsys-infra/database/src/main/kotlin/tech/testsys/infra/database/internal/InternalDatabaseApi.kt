@@ -3,7 +3,7 @@ package tech.testsys.infra.database.internal
 /**
  * Opt-in marker for declarations internal to the database module; callers outside it must opt in explicitly.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @RequiresOptIn
 @Target(

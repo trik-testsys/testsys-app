@@ -25,7 +25,7 @@ import java.time.Instant
  * @property name the name of the resource.
  * @property description the description of the resource.
  * @property versionBucket the chain of versions the resource belongs to.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface ResourceVo {
     val id: DomainId
@@ -39,7 +39,7 @@ sealed interface ResourceVo {
  * Statement version for pages.
  *
  * @property fileName the uploaded name of the statement file.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StatementVo(
     override val id: StatementId,
@@ -55,7 +55,7 @@ data class StatementVo(
  *
  * @property fileName the uploaded name of the exercise file.
  * @property language the language of the exercise.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ExerciseVo(
     override val id: ExerciseId,
@@ -71,7 +71,7 @@ data class ExerciseVo(
  * Test version for pages.
  *
  * @property fileName the uploaded name of the polygon file.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TestVo(
     override val id: TestId,
@@ -87,7 +87,7 @@ data class TestVo(
  *
  * @property solution the identifier of the solution.
  * @property expectedScore the score the solution is expected to get.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperSolutionVo(
     override val id: DeveloperSolutionId,
@@ -106,7 +106,7 @@ data class DeveloperSolutionVo(
  * @property createdAt the moment the solution was uploaded.
  * @property fileName the uploaded name of the program file.
  * @property language the programming language of the program.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SolutionVo(val id: SolutionId, val createdAt: Instant, val fileName: String, val language: TrikSupportedLanguage)
 

@@ -14,7 +14,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository of completed polygon results.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -23,21 +23,21 @@ interface TestDiagnosticResultJpaEntityRepository :
     /**
      * Finds the saved progress of a request.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByIdRequestId(requestId: Long): List<TestDiagnosticResultJpaEntity>
 
     /**
      * Finds the saved progress of any of the requests [requestIds] in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByIdRequestIdIn(requestIds: Collection<Long>): List<TestDiagnosticResultJpaEntity>
 
     /**
      * Deletes the saved progress of the request [requestId] in one statement.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from TestDiagnosticResultJpaEntity e where e.id.requestId = :requestId")
@@ -47,7 +47,7 @@ interface TestDiagnosticResultJpaEntityRepository :
 /**
  * Spring Data repository of polygon diagnostic messages.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -55,7 +55,7 @@ interface DiagnosticReportJpaEntityRepository : SnowflakeJpaEntityRepository<Dia
     /**
      * Finds a polygon's messages in their original order.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByRequestIdAndTestIdOrderByPositionAsc(requestId: Long, testId: Long): List<DiagnosticReportJpaEntity>
 
@@ -63,14 +63,14 @@ interface DiagnosticReportJpaEntityRepository : SnowflakeJpaEntityRepository<Dia
      * Finds the messages of every polygon of any of the requests [requestIds] in one query, ordered by request, polygon
      * and original position.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByRequestIdInOrderByRequestIdAscTestIdAscPositionAsc(requestIds: Collection<Long>): List<DiagnosticReportJpaEntity>
 
     /**
      * Deletes the messages of every polygon of the request [requestId] in one statement.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from DiagnosticReportJpaEntity e where e.requestId = :requestId")

@@ -12,7 +12,7 @@ import java.time.Instant
  * Builder of [ClassInviteData]. Required: [code] or [storedCode], [expiresAt].
  *
  * @property expiresAt the moment the invite stops being valid, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ClassInviteDataBuilder : InviteCodeDataBuilder<ClassInviteData>() {
 
@@ -32,7 +32,7 @@ class ClassInviteDataBuilder : InviteCodeDataBuilder<ClassInviteData>() {
 /**
  * Builder of [ClassInvite] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ClassInviteBuilder : DomainEntityWithDataBuilder<ClassInvite, ClassInviteData, ClassInviteDataBuilder>() {
 

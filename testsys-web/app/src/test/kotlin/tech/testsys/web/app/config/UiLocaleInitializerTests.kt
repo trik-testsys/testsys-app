@@ -6,8 +6,10 @@ import io.mockk.mockk
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.mock.env.MockEnvironment
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import java.time.ZoneId
@@ -48,8 +50,19 @@ class UiLocaleInitializerTests {
             .withProperty("testsys.web.localization.default-region", "RU")
             .withProperty("testsys.web.localization.default-time-zone", "Asia/Novosibirsk")
 
-        assertEquals(SupportedRegion.RU, environment.defaultRegion())
-        assertEquals(ZoneId.of("Asia/Novosibirsk"), environment.defaultTimeZone())
+        val localization = environment.localization()
+
+        assertEquals(SupportedRegion.RU, localization.defaultRegion)
+        assertEquals(ZoneId.of("Asia/Novosibirsk"), localization.defaultTimeZone)
+    }
+
+    @Test
+    fun `should reject an unknown default time zone`() {
+        val environment = MockEnvironment()
+            .withProperty("testsys.web.localization.default-region", "RU")
+            .withProperty("testsys.web.localization.default-time-zone", "Nowhere/City")
+
+        assertThrows<BindException> { environment.localization() }
     }
 
     private fun request(cookies: Array<Cookie>?, acceptLanguage: String?): VaadinRequest = mockk {

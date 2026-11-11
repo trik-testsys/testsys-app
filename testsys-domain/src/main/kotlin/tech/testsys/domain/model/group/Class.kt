@@ -13,7 +13,7 @@ import java.time.Instant
 /**
  * Identifier of a [Class].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class ClassId(
@@ -29,7 +29,7 @@ value class ClassId(
  * @property students the students enrolled in the class.
  * @property contests the contests assigned to the class.
  * @property invite the invite code of the class; fixed on creation and ignored on update.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
@@ -44,7 +44,7 @@ data class ClassData(
  * A study group of students that takes part in contests, owned by a manager.
  *
  * @property data the data of the class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Class(
     id: ClassId,

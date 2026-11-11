@@ -10,7 +10,7 @@ import java.time.Instant
 /**
  * Identifier of a [Community].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class CommunityId(
@@ -25,7 +25,7 @@ value class CommunityId(
  * @property description the description of the community.
  * @property managerInvite the invite code for the manager role; fixed on creation and ignored on update.
  * @property developerInvite the invite code for the developer role; fixed on creation and ignored on update.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
@@ -39,7 +39,7 @@ data class CommunityData(
  * A named set of users: the unit of role membership and the target that tasks and contests are shared to.
  *
  * @property data the data of the community.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Community(
     id: CommunityId,

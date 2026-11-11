@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property contestId id of the contest.
  * @property observerId id of the observer.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -25,7 +25,7 @@ data class ContestToObserverId(
 /**
  * Join row: an observer may watch a contest.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor
@@ -37,7 +37,7 @@ class ContestToObserverJpaEntity(id: ContestToObserverId) : CompositeJpaEntity<C
  *
  * @property userId id of the user holding the role.
  * @property communityId id of the community the observer belongs to.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

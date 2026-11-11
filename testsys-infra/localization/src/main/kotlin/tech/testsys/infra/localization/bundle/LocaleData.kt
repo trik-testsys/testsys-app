@@ -97,7 +97,7 @@ import com.ibm.icu.util.TimeZone as IcuTimeZone
  *       add(Calendar.DAY_OF_MONTH, 7)
  *   }.time
  *   ```
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Suppress("VERBOSE_DOC")
 data class LocaleData(
@@ -113,7 +113,7 @@ data class LocaleData(
         /**
          * Builds the [LocaleData] of [region] whose interval formatter and calendar work in [timeZone].
          *
-         * @since %CURRENT_VERSION%
+         * @since 1.0.0-beta.1
          */
         @OptIn(InternalLocalizationApi::class)
         fun forRegion(region: SupportedRegion, timeZone: ZoneId): LocaleData {

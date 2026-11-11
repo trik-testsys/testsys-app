@@ -1,6 +1,7 @@
 package tech.testsys.infra.database.internal.utils
 
 import org.springframework.data.repository.CrudRepository
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
@@ -34,27 +35,45 @@ internal fun <Association, K> syncJoinTable(
  *
  * @param T the JPA entity type.
  * @param ID the primary key type.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 fun <T : JpaEntity, ID : Any> CrudRepository<T, ID>.findByIdOrError(id: ID) = findById(id).orElse(null).requireById(id)
 
 /**
- * Returns the id of the [TrikStudioVersionJpaEntity] with [tag] or throws [IllegalArgumentException] if the tag is
- * not registered; versions are registered outside the domain and never created on the fly.
+ * Returns the id of the [TrikStudioVersionJpaEntity] with the tag and the version number of [version] or throws
+ * [IllegalArgumentException] if no such version is registered; versions are registered outside the domain and never
+ * created on the fly.
  */
 @InternalDatabaseApi
-internal fun TrikStudioVersionJpaEntityRepository.findIdByTagOrError(tag: String): Long =
-    requireNotNull(findByTag(tag)) { "TRIK Studio version with tag=$tag is not registered" }.requireId()
+internal fun TrikStudioVersionJpaEntityRepository.findIdByTagOrError(version: TrikStudioVersion): Long =
+    findByTag(version.tag).requireRegistered(version).requireId()
 
 /**
- * Maps each of [tags] to the id of its [TrikStudioVersionJpaEntity], reading them through [findAllInChunks];
- * throws [IllegalArgumentException] for the first tag that is not registered.
+ * Maps the tag of each of [versions] to the id of its [TrikStudioVersionJpaEntity], reading them through
+ * [findAllInChunks]; throws [IllegalArgumentException] for the first version whose tag and version number are not
+ * registered together.
  */
 @InternalDatabaseApi
-internal fun TrikStudioVersionJpaEntityRepository.findIdsByTagOrError(tags: Collection<String>): Map<String, Long> {
-    val idsByTag = findAllInChunks(ids = tags, find = ::findAllByTagIn).associate { row -> row.tag to row.requireId() }
-    val unknownTag = tags.firstOrNull { tag -> tag !in idsByTag }
-    require(unknownTag == null) { "TRIK Studio version with tag=$unknownTag is not registered" }
-    return idsByTag
+internal fun TrikStudioVersionJpaEntityRepository.findIdsByTagOrError(versions: Collection<TrikStudioVersion>): Map<String, Long> {
+    val rowsByTag = findAllInChunks(ids = versions.map { version -> version.tag }, find = ::findAllByTagIn)
+        .associateBy { row -> row.tag }
+    return versions.associate { version ->
+        version.tag to rowsByTag[version.tag].requireRegistered(version).requireId()
+    }
 }
+
+@InternalDatabaseApi
+private fun TrikStudioVersionJpaEntity?.requireRegistered(version: TrikStudioVersion): TrikStudioVersionJpaEntity {
+    requireNotNull(this) { "TRIK Studio version with tag=${version.tag} is not registered" }
+    require(studioVersion == version.version) {
+        "TRIK Studio version with tag=${version.tag} is registered with version=$studioVersion, not ${version.version}"
+    }
+    return this
+}
+
+/**
+ * Converts this row to the domain [TrikStudioVersion].
+ */
+@InternalDatabaseApi
+internal fun TrikStudioVersionJpaEntity.toDomain(): TrikStudioVersion = TrikStudioVersion(tag = tag, version = studioVersion)

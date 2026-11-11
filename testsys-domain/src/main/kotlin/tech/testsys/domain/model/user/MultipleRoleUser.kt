@@ -18,14 +18,26 @@ import tech.testsys.domain.model.task.TaskId
 import java.time.Instant
 
 /**
+ * Stored password representation of a [MultipleRoleUser]; only the password hashing port interprets it.
+ *
+ * @property value the salted slow hash together with what the hashing port needs to verify it.
+ * @since 1.0.0-beta.1
+ */
+@JvmInline
+value class PasswordHash(
+    val value: String,
+)
+
+/**
  * Data of a [MultipleRoleUser].
  *
+ * @property passwordHash the stored password representation of the user.
  * @property email the e-mail address of the user.
  * @property roles the roles held by the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class MultipleRoleUserData(
-    override val accessTokenHash: AccessTokenHash,
+    val passwordHash: PasswordHash,
     override val name: String,
     val email: String,
     val roles: List<CompatibleUserRole>,
@@ -34,7 +46,7 @@ data class MultipleRoleUserData(
 /**
  * Identifier of a [MultipleRoleUser].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class MultipleRoleUserId(
@@ -46,7 +58,7 @@ value class MultipleRoleUserId(
  * Owners of groups, tasks and contests are always users of this kind.
  *
  * @property data the data of the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class MultipleRoleUser(
     id: MultipleRoleUserId,
@@ -58,7 +70,7 @@ class MultipleRoleUser(
  * A non-fixed role of a [MultipleRoleUser]: one that can be held together with other roles of this kind.
  *
  * @property memberOf the communities the user is a member of in this role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed class CompatibleUserRole(
     val memberOf: LazyEntityList<CommunityId, Community>,
@@ -69,7 +81,7 @@ sealed class CompatibleUserRole(
  *
  * @property tasks the tasks authored by the developer.
  * @property contests the contests authored by the developer.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperData(
     val tasks: LazyEntityList<TaskId, Task>,
@@ -80,7 +92,7 @@ data class DeveloperData(
  * The developer role: grants the right to create tasks and contests.
  *
  * @property data the data of the role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Developer(
     memberOf: LazyEntityList<CommunityId, Community>,
@@ -92,7 +104,7 @@ class Developer(
  *
  * @property classes the classes the student is enrolled in.
  * @property submissions the submissions made by the student.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StudentData(
     val classes: LazyEntityList<ClassId, Class>,
@@ -103,7 +115,7 @@ data class StudentData(
  * The student role: grants the right to be enrolled in classes and take part in their contests.
  *
  * @property data the data of the role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Student(
     memberOf: LazyEntityList<CommunityId, Community>,
@@ -113,7 +125,7 @@ class Student(
 /**
  * The administrator role: grants the right to create and manage communities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Administrator(
     memberOf: LazyEntityList<CommunityId, Community>,
@@ -123,7 +135,7 @@ class Administrator(
  * Data of the [Judge] role.
  *
  * @property judgmentOrders the rulings issued by the judge.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class JudgeData(
     val judgmentOrders: LazyEntityList<JudgmentOrderId, JudgmentOrder>,
@@ -133,7 +145,7 @@ data class JudgeData(
  * The judge role: grants the right to review solutions and change their verdicts.
  *
  * @property data the data of the role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Judge(
     memberOf: LazyEntityList<CommunityId, Community>,
@@ -145,7 +157,7 @@ class Judge(
  *
  * @property classes the classes owned by the manager.
  * @property competitions the competitions owned by the manager.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ManagerData(
     val classes: LazyEntityList<ClassId, Class>,
@@ -156,7 +168,7 @@ data class ManagerData(
  * The manager role: grants the right to create and manage classes and competitions.
  *
  * @property data the data of the role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Manager(
     memberOf: LazyEntityList<CommunityId, Community>,

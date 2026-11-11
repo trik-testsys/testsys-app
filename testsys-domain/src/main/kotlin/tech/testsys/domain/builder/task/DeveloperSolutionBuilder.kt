@@ -20,7 +20,7 @@ import tech.testsys.domain.model.task.VersionBucket
  * @property solution the id of the reference program, or `null` if not set yet.
  * @property expectedScore the expected score, or `null` if not set yet.
  * @property versionBucket the version chain shared by all versions of the developer solution, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
 
@@ -37,7 +37,7 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
     /**
      * Sets [solution] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun solution(solution: Long) {
         this.solution = SolutionId(solution)
@@ -46,7 +46,7 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
     /**
      * Sets [expectedScore] from a raw score.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun expectedScore(expectedScore: Int) {
         this.expectedScore = Score(expectedScore)
@@ -72,7 +72,7 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
 /**
  * Builder of [DeveloperSolution] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DeveloperSolutionBuilder :
     DomainEntityWithDataBuilder<DeveloperSolution, DeveloperSolutionData, DeveloperSolutionDataBuilder>() {

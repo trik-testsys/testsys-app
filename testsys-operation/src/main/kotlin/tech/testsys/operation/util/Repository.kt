@@ -13,7 +13,7 @@ import tech.testsys.operation.annotation.InternalOperationsApi
  *
  * @param Id the identifier type of the entities.
  * @param Entity the type of the entities.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun <Id : DomainId, Entity : DomainEntity<Id>> EntityFinder<Id, Entity>.findByIdsAsMap(ids: Collection<Id>): Map<Id, Entity> {
@@ -27,7 +27,7 @@ fun <Id : DomainId, Entity : DomainEntity<Id>> EntityFinder<Id, Entity>.findById
  * @param Id the identifier type of the entities.
  * @param Entity the type of the entities.
  * @throws IllegalArgumentException if an entity with one of [ids] does not exist.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun <Id : DomainId, Entity : DomainEntity<Id>> EntityLoader<Id, Entity>.loadByIdsAsMap(ids: Collection<Id>): Map<Id, Entity> {

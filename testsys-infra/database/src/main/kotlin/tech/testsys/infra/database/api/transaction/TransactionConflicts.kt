@@ -12,7 +12,7 @@ import java.util.IdentityHashMap
  * transaction, any other failure is not. Conflicts are optimistic lock failures, serialization failures (SQLSTATE
  * `40001`), deadlocks (`40P01`) and unique key violations (`23505`), found anywhere in the cause chain.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 object TransactionConflicts {
 
@@ -21,7 +21,7 @@ object TransactionConflicts {
     /**
      * Returns whether [throwable] or one of its causes reports a conflict with a concurrent transaction.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun isConflict(throwable: Throwable): Boolean {
         val visited = Collections.newSetFromMap(IdentityHashMap<Throwable, Boolean>())

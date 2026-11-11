@@ -66,16 +66,18 @@ class DeveloperFixtures(
         CabinetSignIn.signIn(CabinetPrincipal.of(developer))
     }
 
-    /** Registers a new TRIK Studio version; versions come from the grader, so no port stores them. */
-    fun trikStudioVersion(tag: String = fixtures.unique("tsv")): TrikStudioVersion {
+    /** Registers a new TRIK Studio version row; no domain port stores versions. */
+    fun trikStudioVersion(tag: String = fixtures.unique("tsv"), version: String = fixtures.unique("tsv-version")): TrikStudioVersion {
         dataSource.connection.use { connection ->
-            val insert = "insert into ts_trik_studio_version (id, tag) select coalesce(max(id), 0) + 1, ? from ts_trik_studio_version"
+            val insert = "insert into ts_trik_studio_version (id, tag, studio_version) " +
+                "select coalesce(max(id), 0) + 1, ?, ? from ts_trik_studio_version"
             connection.prepareStatement(insert).use { statement ->
                 statement.setString(1, tag)
+                statement.setString(2, version)
                 statement.executeUpdate()
             }
         }
-        return TrikStudioVersion(tag)
+        return TrikStudioVersion(tag = tag, version = version)
     }
 
     /** Creates a new task of the signed-in developer. */

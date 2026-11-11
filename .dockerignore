@@ -1,0 +1,36 @@
+# Version control and IDE state
+.git
+.github
+.idea
+
+# Local build results and caches; Gradle rebuilds them inside the image
+**/.kotlin
+**/.gradle
+**/build/
+!**/src/**/build/
+**/node_modules
+testsys-web/app/src/main/frontend/generated/
+*.log
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+
+# Working plans, AI client setup and documentation are not build inputs
+workspace/
+.claude
+.codex
+.agents
+.veai
+.testsys-agents
+docs/
+scripts/
+**/*.md
+
+# Container definitions and deployment files mounted by Compose
+Dockerfile
+.dockerignore
+deploy/

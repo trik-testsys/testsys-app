@@ -3,6 +3,8 @@ package tech.testsys.infra.mail.api
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.StandardEnvironment
 import org.springframework.core.io.support.ResourcePropertySource
@@ -22,12 +24,17 @@ class MailConfigurationTests {
         propertySources.addFirst(ResourcePropertySource("classpath:mail-defaults.properties"))
     }
 
+    private fun sender(): JavaMailSenderImpl {
+        val properties = configuration.mailProperties(environment)
+        return assertIs<JavaMailSenderImpl>(configuration.javaMailSender(properties, environment))
+    }
+
     @Nested
     inner class JavaMailSenderTests {
 
         @Test
         fun `should connect to the local server without credentials by default`() {
-            val sender = assertIs<JavaMailSenderImpl>(configuration.javaMailSender(environment))
+            val sender = sender()
 
             assertEquals("localhost", sender.host)
             assertEquals(25, sender.port)
@@ -39,7 +46,7 @@ class MailConfigurationTests {
 
         @Test
         fun `should apply the timeout to connecting, reading and writing`() {
-            val sender = assertIs<JavaMailSenderImpl>(configuration.javaMailSender(environment))
+            val sender = sender()
 
             assertEquals("10000", sender.javaMailProperties["mail.smtp.connectiontimeout"])
             assertEquals("10000", sender.javaMailProperties["mail.smtp.timeout"])
@@ -62,7 +69,7 @@ class MailConfigurationTests {
                 ),
             )
 
-            val sender = assertIs<JavaMailSenderImpl>(configuration.javaMailSender(environment))
+            val sender = sender()
 
             assertEquals("smtp.example.com", sender.host)
             assertEquals(587, sender.port)
@@ -71,6 +78,28 @@ class MailConfigurationTests {
             assertEquals("true", sender.javaMailProperties["mail.smtp.auth"])
             assertEquals("false", sender.javaMailProperties["mail.smtp.ssl.enable"])
             assertEquals("true", sender.javaMailProperties["mail.smtp.starttls.enable"])
+        }
+
+        @ParameterizedTest
+        @CsvSource("'', secret", "robot, ''")
+        fun `should reject authorization without a user name or a password`(username: String, password: String) {
+            environment.propertySources.addFirst(
+                MapPropertySource(
+                    "override",
+                    mapOf(
+                        "testsys.mail.username" to username,
+                        "testsys.mail.password" to password,
+                        "testsys.mail.smtp-auth" to "true",
+                    ),
+                ),
+            )
+
+            val failure = assertFailsWith<IllegalArgumentException> { sender() }
+
+            assertEquals(
+                "testsys.mail.username and testsys.mail.password must not be empty when testsys.mail.smtp-auth is true",
+                failure.message,
+            )
         }
 
         @Test
@@ -86,7 +115,7 @@ class MailConfigurationTests {
                 ),
             )
 
-            val sender = assertIs<JavaMailSenderImpl>(configuration.javaMailSender(environment))
+            val sender = sender()
 
             assertEquals(1127, sender.port)
             assertEquals("true", sender.javaMailProperties["mail.smtp.ssl.enable"])
@@ -99,7 +128,7 @@ class MailConfigurationTests {
 
         @Test
         fun `should render letters in the Russian region and Moscow time zone by default`() {
-            val settings = configuration.mailSettings(environment)
+            val settings = configuration.mailSettings(configuration.mailProperties(environment))
 
             assertEquals(SupportedRegion.RU, settings.region)
             assertEquals(ZoneId.of("Europe/Moscow"), settings.timeZone)
@@ -110,7 +139,7 @@ class MailConfigurationTests {
         fun `should reject a blank sender address`() {
             environment.propertySources.addFirst(MapPropertySource("override", mapOf("testsys.mail.from" to " ")))
 
-            assertFailsWith<IllegalArgumentException> { configuration.mailSettings(environment) }
+            assertFailsWith<IllegalArgumentException> { configuration.mailSettings(configuration.mailProperties(environment)) }
         }
     }
 }

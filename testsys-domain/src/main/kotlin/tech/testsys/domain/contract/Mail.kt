@@ -5,7 +5,7 @@ package tech.testsys.domain.contract
  * Every call sends a new letter after the caller's active transaction commits, nothing on its rollback, and at once
  * without a transaction.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface UserMailSender {
 
@@ -15,20 +15,9 @@ interface UserMailSender {
      *
      * @param email the e-mail address to send the letter to.
      * @param confirmationCode the code the user enters to confirm [email].
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun sendRegistrationConfirmationCode(email: String, confirmationCode: String)
-
-    /**
-     * Sends [accessToken] assigned to the user who has just registered with [email].
-     * Technical exceptions of the adapter are propagated, except those of delivery after the commit.
-     *
-     * @param email the e-mail address to send the letter to.
-     * @param name the nickname of the user.
-     * @param accessToken the original access code of the user.
-     * @since %CURRENT_VERSION%
-     */
-    fun sendAccessToken(email: String, name: String, accessToken: String)
 
     /**
      * Sends [confirmationCode] for confirming the new e-mail address [email] of a user changing it; the letter has no
@@ -36,7 +25,7 @@ interface UserMailSender {
      *
      * @param email the new e-mail address to send the letter to.
      * @param confirmationCode the code the user enters to confirm [email].
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun sendEmailChangeConfirmationCode(email: String, confirmationCode: String)
 
@@ -47,7 +36,17 @@ interface UserMailSender {
      *
      * @param email the previous e-mail address to send the letter to.
      * @param name the nickname of the user.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun sendEmailChangedNotice(email: String, name: String)
+
+    /**
+     * Sends [confirmationCode] for restoring access of the user whose e-mail address is [email]; the letter has no
+     * nickname. Technical exceptions of the adapter are propagated, except those of delivery after the commit.
+     *
+     * @param email the e-mail address of the user to send the letter to.
+     * @param confirmationCode the code the user enters to restore access.
+     * @since 1.0.0-beta.1
+     */
+    fun sendAccessRestorationCode(email: String, confirmationCode: String)
 }

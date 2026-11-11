@@ -19,7 +19,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  * @property description the description of the community, or `null` if not set yet.
  * @property managerInvite the id of the manager-role invite code, or `null` if not set yet.
  * @property developerInvite the id of the developer-role invite code, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CommunityDataBuilder : Builder<CommunityData> {
 
@@ -36,7 +36,7 @@ class CommunityDataBuilder : Builder<CommunityData> {
     /**
      * Sets [managerInvite] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun managerInvite(managerInvite: Long) {
         this.managerInvite = CommunityInviteId(managerInvite)
@@ -45,7 +45,7 @@ class CommunityDataBuilder : Builder<CommunityData> {
     /**
      * Sets [developerInvite] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun developerInvite(developerInvite: Long) {
         this.developerInvite = CommunityInviteId(developerInvite)
@@ -54,7 +54,7 @@ class CommunityDataBuilder : Builder<CommunityData> {
     /**
      * Sets [owner] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun owner(owner: Long) {
         this.owner = MultipleRoleUserId(owner)
@@ -80,7 +80,7 @@ class CommunityDataBuilder : Builder<CommunityData> {
 /**
  * Builder of [Community] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CommunityBuilder : DomainEntityWithDataBuilder<Community, CommunityData, CommunityDataBuilder>() {
 

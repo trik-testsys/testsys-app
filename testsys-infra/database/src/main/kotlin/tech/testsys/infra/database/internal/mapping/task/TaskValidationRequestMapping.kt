@@ -22,14 +22,14 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [TaskValidationRequest] and [TaskValidationRequestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskValidationRequestJpaEntity> {
     /**
      * Assembles a request from [jpaEntity] and its resolved [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: TaskValidationRequestJpaEntity, data: TaskValidationRequestData): TaskValidationRequest =
         taskValidationRequest {
@@ -40,7 +40,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
     /**
      * Creates a new request row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: TaskValidationRequestData): TaskValidationRequestJpaEntity = TaskValidationRequestJpaEntity(
         taskId = data.task.id.value,
@@ -56,7 +56,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
     /**
      * Creates a replacement request row retaining fixed fields, creation time and [entity]'s version.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: TaskValidationRequest, current: TaskValidationRequestJpaEntity): TaskValidationRequestJpaEntity =
         TaskValidationRequestJpaEntity(
@@ -78,7 +78,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
      * Restores the state from [row], completed [diagnostics], stored [submissionIds] and their [failures] into [builder].
      * Inconsistent storage flags or missing required payload cause an exception.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun decodeExecution(
         row: TaskValidationRequestJpaEntity,
@@ -134,7 +134,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
     /**
      * Creates the pinned polygon associations of [requestId] from [testIds].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toTestAssociations(requestId: Long, testIds: List<TestId>) = testIds.distinct().map {
         TestToTaskValidationRequestJpaEntity(testId = it.value, requestId = requestId)
@@ -144,7 +144,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
      * Creates the pinned author inputs of [requestId] from [inputs], one row per distinct developer solution: a repeated
      * one keeps the position of its first input and the values of its last.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDeveloperSolutionAssociations(
         requestId: Long,
@@ -160,7 +160,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
     /**
      * Creates the pinned version associations of [requestId] from resolved [versionIds].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toTrikStudioVersionAssociations(requestId: Long, versionIds: List<Long>) = versionIds.distinct().map {
         TrikStudioVersionToTaskValidationRequestJpaEntity(trikStudioVersionId = it, requestId = requestId)
@@ -170,7 +170,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
      * Creates ordered submission references of [requestId] from [submissionIds], each with its entry of [failures].
      *
      * @throws IllegalArgumentException if [failures] do not name distinct linked submissions in [submissionIds] order.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toSubmissionAssociations(
         requestId: Long,
@@ -196,7 +196,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
      * Restores the failure stored in [link], or `null` for a submission without one.
      * A score is required for a mismatch and forbidden otherwise.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toFailure(link: SubmissionToTaskValidationRequestJpaEntity): AuthorSubmissionFailure? {
         val submission = SubmissionId(link.id.submissionId)

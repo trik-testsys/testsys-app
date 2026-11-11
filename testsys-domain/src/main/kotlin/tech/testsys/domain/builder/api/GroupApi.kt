@@ -28,70 +28,70 @@ import tech.testsys.domain.model.group.CompetitionData
 /**
  * Builds [ClassData] with a [ClassDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun classData(builder: ClassDataBuilder.() -> Unit) = ClassDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Class] with a [ClassBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun `class`(builder: ClassBuilder.() -> Unit) = ClassBuilder().apply(builder).build()
 
 /**
  * Builds [CommunityData] with a [CommunityDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun communityData(builder: CommunityDataBuilder.() -> Unit) = CommunityDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Community] with a [CommunityBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun community(builder: CommunityBuilder.() -> Unit) = CommunityBuilder().apply(builder).build()
 
 /**
  * Builds [CompetitionData] with a [CompetitionDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun competitionData(builder: CompetitionDataBuilder.() -> Unit) = CompetitionDataBuilder().apply(builder).build()
 
 /**
  * Builds a [Competition] with a [CompetitionBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun competition(builder: CompetitionBuilder.() -> Unit) = CompetitionBuilder().apply(builder).build()
 
 /**
  * Builds [ClassInviteData] with a [ClassInviteDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun classInviteData(builder: ClassInviteDataBuilder.() -> Unit) = ClassInviteDataBuilder().apply(builder).build()
 
 /**
  * Builds a [ClassInvite] with a [ClassInviteBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun classInvite(builder: ClassInviteBuilder.() -> Unit) = ClassInviteBuilder().apply(builder).build()
 
 /**
  * Builds [CommunityInviteData] with a [CommunityInviteDataBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun communityInviteData(builder: CommunityInviteDataBuilder.() -> Unit) = CommunityInviteDataBuilder().apply(builder).build()
 
 /**
  * Builds a [CommunityInvite.Manager] with a [ManagerCommunityInviteBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun managerCommunityInvite(builder: ManagerCommunityInviteBuilder.() -> Unit) =
     ManagerCommunityInviteBuilder().apply(builder).build()
@@ -99,7 +99,7 @@ inline fun managerCommunityInvite(builder: ManagerCommunityInviteBuilder.() -> U
 /**
  * Builds a [CommunityInvite.Developer] with a [DeveloperCommunityInviteBuilder] block.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun developerCommunityInvite(builder: DeveloperCommunityInviteBuilder.() -> Unit) =
     DeveloperCommunityInviteBuilder().apply(builder).build()
@@ -119,7 +119,7 @@ private fun ClassData.toBuilder(): ClassDataBuilder {
 /**
  * Returns a copy of this class with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Class.withData(builder: ClassDataBuilder.() -> Unit): Class {
     return Class(
@@ -143,7 +143,7 @@ private fun CommunityData.toBuilder(): CommunityDataBuilder {
 /**
  * Returns a copy of this community with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Community.withData(builder: CommunityDataBuilder.() -> Unit): Community {
     return Community(
@@ -167,7 +167,7 @@ private fun CompetitionData.toBuilder(): CompetitionDataBuilder {
 /**
  * Returns a copy of this competition with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun Competition.withData(builder: CompetitionDataBuilder.() -> Unit): Competition {
     return Competition(
@@ -188,7 +188,7 @@ private fun ClassInviteData.toBuilder(): ClassInviteDataBuilder {
 /**
  * Returns a copy of this class invite with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ClassInvite.withData(builder: ClassInviteDataBuilder.() -> Unit): ClassInvite {
     return ClassInvite(
@@ -209,7 +209,7 @@ private fun CommunityInviteData.toBuilder(): CommunityInviteDataBuilder {
 /**
  * Returns a copy of this manager-role community invite with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun CommunityInvite.Manager.withData(builder: CommunityInviteDataBuilder.() -> Unit): CommunityInvite.Manager {
     return CommunityInvite.Manager(
@@ -222,7 +222,7 @@ fun CommunityInvite.Manager.withData(builder: CommunityInviteDataBuilder.() -> U
 /**
  * Returns a copy of this developer-role community invite with its data modified by [builder].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun CommunityInvite.Developer.withData(builder: CommunityInviteDataBuilder.() -> Unit): CommunityInvite.Developer {
     return CommunityInvite.Developer(

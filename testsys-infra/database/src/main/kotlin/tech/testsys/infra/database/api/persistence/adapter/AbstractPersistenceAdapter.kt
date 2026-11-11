@@ -32,7 +32,7 @@ import tech.testsys.infra.database.internal.utils.touchAggregateRoot
  * @param Entity the domain entity type.
  * @param JpaEntity the JPA entity type the entity is stored as.
  * @property jpaEntityRepository the repository of [JpaEntity] rows.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Suppress("CallBeanMethodFromSameClass")
 @InternalDatabaseApi

@@ -12,7 +12,7 @@ import tech.testsys.web.components.texts.currentLocalization
 /**
  * Handler of a page closed to the signed-in user of another kind: shows the forbidden screen with 403.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @AnonymousAllowed
 class AccessDeniedView : ErrorPage(), HasErrorParameter<AccessDeniedException> {

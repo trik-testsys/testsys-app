@@ -76,10 +76,10 @@ import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
@@ -95,6 +95,7 @@ import tech.testsys.operation.error.SubmissionNotSuccessfullyGradedError
 import tech.testsys.operation.error.TestNotInVerdictError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
+import tech.testsys.operation.util.testAccessTokenHasher
 import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testJudge
@@ -102,6 +103,7 @@ import tech.testsys.operation.util.testMultipleRoleUser
 import tech.testsys.operation.util.testNewTask
 import tech.testsys.operation.util.testParticipant
 import tech.testsys.operation.util.testStudent
+import tech.testsys.operation.util.testTrikStudioVersion
 import java.time.Instant
 import java.util.UUID
 import tech.testsys.domain.builder.api.test as polygon
@@ -530,7 +532,11 @@ class JudgeOperationsTests {
 
             @Test
             fun `should deny access to a developer solution test`() {
-                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+                arrangeSubmission(
+                    gradedSubmission(studentAuthor.id) {
+                        kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion("3.0.0") }
+                    },
+                )
 
                 assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
                     operations.checkSubmissionAccess(user = judge, submissionId = SUBMISSION_ID)
@@ -618,7 +624,7 @@ class JudgeOperationsTests {
                     createdAt = Instant.MIN
                     data = participantData {
                         name = "Participant"
-                        accessToken("token", algorithm = HashAlgorithm.Identity)
+                        accessToken("token", testAccessTokenHasher)
                         competition(1)
                     }
                 }
@@ -739,7 +745,7 @@ class JudgeOperationsTests {
                 every { userRepository.findById(author.id) } returns author
                 every { submissionRepository.findById(submissionId) } returns testSubmission {
                     this.author = author.id
-                    kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+                    kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion("3.0.0") }
                 }
 
                 assertRefusal(SubmissionIsDeveloperSolutionTestError(submissionId))
@@ -751,7 +757,7 @@ class JudgeOperationsTests {
                 every { userRepository.findById(author.id) } returns author
                 every { submissionRepository.findById(submissionId) } returns testSubmission {
                     this.author = author.id
-                    kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+                    kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion("3.0.0") }
                 }
 
                 assertRefusal(SubmissionAccessDeniedError(submissionId))
@@ -1018,7 +1024,9 @@ class JudgeOperationsTests {
 
             @Test
             fun `should deny access to a developer solution test`() {
-                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+                arrangeSubmission(
+                    gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion() } },
+                )
 
                 assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
                     operations.viewSolution(user = judge, submissionId = SUBMISSION_ID)
@@ -1107,7 +1115,9 @@ class JudgeOperationsTests {
 
             @Test
             fun `should deny access to a developer solution test`() {
-                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+                arrangeSubmission(
+                    gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion() } },
+                )
 
                 assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
                     operations.downloadSolution(user = judge, submissionId = SUBMISSION_ID)
@@ -1240,7 +1250,9 @@ class JudgeOperationsTests {
 
             @Test
             fun `should deny access to a developer solution test`() {
-                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+                arrangeSubmission(
+                    gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion() } },
+                )
 
                 assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
                     operations.downloadRecording(user = judge, submissionId = SUBMISSION_ID, testId = TestId(11))
@@ -1337,7 +1349,7 @@ class JudgeOperationsTests {
         data = multipleRoleUserData {
             name = "Judge $judgeId"
             email = "judge-$judgeId"
-            accessToken("judge-$judgeId", algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash("judge-$judgeId")
             roles { judge { data = judgeData {} } }
         }
     }

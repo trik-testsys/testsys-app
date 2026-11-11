@@ -44,6 +44,7 @@ import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.ContestVo
@@ -75,6 +76,9 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var headers: CabinetHeaders
+
+    @Autowired
+    private lateinit var communityConfig: CommunityConfig
 
     @Test
     fun `should show the not found screen for a missing community`() {
@@ -195,6 +199,81 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should create an observer of a contest shared to the public community`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(checkNotNull(communities.findById(communityConfig.publicCommunityId)))
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        val observer = observers.findByAccessToken(textField("Код-доступа").value)
+        assertEquals(community.id, observer?.data?.community?.id)
+        assertEquals(listOf(contest.id), observer?.data?.contests?.ids)
+    }
+
+    @Test
+    fun `should show the created observer and its access code in a dialog only until it is closed`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(community)
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+        val created = UI.getCurrent()._get<Dialog>()
+        assertTrue("Наблюдатель «Наблюдатель Анна» создан" in created.element.textRecursively)
+
+        created._get<Button> { text = "Закрыть" }._click()
+
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Код-доступа" })
+        assertFalse("Наблюдатель «Наблюдатель Анна» создан" in UI.getCurrent().element.textRecursively)
+    }
+
+    @Test
+    fun `should offer only closing in the dialog of the created observer`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(community)
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        val actions = UI.getCurrent()._get<Dialog>()._find<Button>().map { button -> button.text }.filter { text -> text.isNotEmpty() }
+        assertEquals(listOf("Закрыть"), actions)
+    }
+
+    @Test
+    fun `should close the dialog of the created observer with a destructive action after a cooldown`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(community)
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        // Read before the next lookup: every Karibu lookup runs a round trip that drops the pending calls.
+        val calls = UI.getCurrent().internals.let { internals ->
+            internals.stateTree.runExecutionsBeforeClientResponse()
+            internals.dumpPendingJavaScriptInvocations()
+        }
+        val close = UI.getCurrent()._get<Dialog>()._get<Button> { text = "Закрыть" }
+        val cooldowns = calls.filter { call -> call.owner == close.element.node && "data-ts-cooldown" in call.invocation.expression }
+        assertEquals("destructive", close.element.getAttribute("data-ts-role"))
+        assertEquals(listOf<Any?>(3), cooldowns.map { call -> call.invocation.parameters.first() })
+    }
+
+    @Test
     fun `should show the name and description of the community in read-only fields`() {
         val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
 
@@ -295,12 +374,15 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     }
 
     private fun sharedContest(community: Community) {
-        // Versions come from the grader; no port stores them, so the test adds the row the contest refers to.
+        // No domain port stores versions, so the test adds the row the contest refers to.
         val tag = fixtures.unique("tsv")
+        val version = fixtures.unique("tsv-version")
         dataSource.connection.use { connection ->
-            val insert = "insert into ts_trik_studio_version (id, tag) select coalesce(max(id), 0) + 1, ? from ts_trik_studio_version"
+            val insert = "insert into ts_trik_studio_version (id, tag, studio_version) " +
+                "select coalesce(max(id), 0) + 1, ?, ? from ts_trik_studio_version"
             connection.prepareStatement(insert).use { statement ->
                 statement.setString(1, tag)
+                statement.setString(2, version)
                 statement.executeUpdate()
             }
         }
@@ -309,7 +391,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
                 owner(community.data.owner.id.value)
                 name = "Весенний тур"
                 description = ""
-                trikStudioVersion(tag)
+                trikStudioVersion(tag = tag, version = version)
                 sharedTo(listOf(community.id.value))
             },
         )

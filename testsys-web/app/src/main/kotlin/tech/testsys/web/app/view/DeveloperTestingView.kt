@@ -7,6 +7,7 @@ import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.task.AuthorSubmissionFailure
+import tech.testsys.domain.model.task.DiagnosticSeverity
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequestId
@@ -33,7 +34,7 @@ import tech.testsys.web.components.texts.currentLocalization
 /**
  * Results of one testing request owned by the Developer (testsys.web.page.developer.testing).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("developer/tasks/:taskId([0-9]+)/testing/:testingId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -87,17 +88,17 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
     private fun BlockScope.detailsRows(request: TaskValidationRequestVo) {
         val texts = currentLocalization().pageDeveloper
         row {
-            codeInput(texts.startedAt(), labelSize = 6, size = 18) {
+            codeInput(texts.startedAt(), labelSize = 2, size = 4) {
                 value = texts.testingStartedAtValue(startedAt = request.createdAt)
                 isEditable = false
             }
         }
         row {
             val (label, tone) = validationStatusOf(request.execution)
-            field(texts.state(), labelSize = 6, size = 18) { badge(label, tone) }
+            field(texts.state(), labelSize = 2, size = 22) { badge(label, tone) }
         }
         row {
-            textInput(texts.summary(), labelSize = 6, size = 18) {
+            textInput(texts.summary(), labelSize = 2, size = 22) {
                 value = summaryOf(request.execution)
                 isEditable = false
             }
@@ -112,9 +113,11 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
                 names[result.testId] ?: texts.testingUnknownResource(id = result.testId.value)
             }
             column(texts.testingDiagnosticsRemarks()) { result ->
+                // Info neither blocks author solutions nor needs action, so the page shows only Warning and Error.
+                val reports = result.reports.filter { report -> report.severity != DiagnosticSeverity.Info }
                 vertical {
-                    if (result.reports.isEmpty()) text(texts.testingDiagnosticsNoRemarks())
-                    result.reports.forEach { report -> text(diagnosticText(report)) }
+                    if (reports.isEmpty()) text(texts.testingDiagnosticsNoRemarks())
+                    reports.forEach { report -> text(diagnosticText(report)) }
                 }
             }
             empty(texts.testingDiagnosticsEmpty(), texts.testingDiagnosticsEmptyHint())
@@ -152,8 +155,8 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
             is TaskValidationExecutionVo.CompletedDiagnostics,
             -> emptyList<SubmissionId>() to null
         }
-        // The same order as TaskValidationSnapshot.authorRuns: by developer solution, then by version.
-        val versions = request.snapshot.supportedTrikStudioVersions.sortedBy { version -> version.version }
+        // The same order as TaskValidationSnapshot.authorRuns: by developer solution, then by Docker image tag.
+        val versions = request.snapshot.supportedTrikStudioVersions.sortedBy { version -> version.tag }
         val runs = request.snapshot.developerSolutions.sortedBy { input -> input.developerSolution.value }
             .flatMap { input -> versions.map { version -> input to version } }
         val rows = runs.zip(submissions)

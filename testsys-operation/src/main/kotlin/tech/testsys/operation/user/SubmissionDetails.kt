@@ -23,7 +23,7 @@ import tech.testsys.domain.model.user.User
  * @property finalScore the score of the last judgment order, or the total score of [verdict] without orders; `null`
  *   without a verdict.
  * @property judgmentOrders the judgment orders of the submission in the order they were issued, each with its judge.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionDetails(
     val submission: Submission,

@@ -3,6 +3,7 @@ package tech.testsys.infra.database.api.persistence.adapter.user.single
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
@@ -16,6 +17,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRol
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SupervisorDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.single.SupervisorMapping
 import tech.testsys.infra.database.internal.utils.findAllInChunks
+import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
@@ -24,15 +26,16 @@ import tech.testsys.infra.database.internal.utils.requireVersion
  * Persistence adapter of [Supervisor] entities backed by [UserJpaEntity] rows having a supervisor data row.
  * Update and remove increment the user version first.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class SupervisorPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
+    accessTokenHasher: AccessTokenHasher,
     private val supervisorDataJpaEntityRepository: SupervisorDataJpaEntityRepository,
     private val singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository,
-) : AbstractUserPersistenceAdapter<SupervisorData, SingleRoleUserId, Supervisor>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<SupervisorData, SingleRoleUserId, Supervisor>(jpaEntityRepository, accessTokenHasher),
     SupervisorRepository {
 
     @Transactional
@@ -59,6 +62,16 @@ class SupervisorPersistenceAdapter(
 
         val domainEntity = SupervisorMapping.toDomain(updatedUserJpaEntity, currentDataJpaEntity)
         return domainEntity
+    }
+
+    @Transactional(readOnly = true)
+    override fun findSingle(): Supervisor? {
+        val dataJpaEntities = supervisorDataJpaEntityRepository.findAll()
+        check(dataJpaEntities.size <= 1) { "Expected at most one supervisor, found ${dataJpaEntities.size}" }
+        val dataJpaEntity = dataJpaEntities.singleOrNull() ?: return null
+
+        val userJpaEntity = jpaEntityRepository.findByIdOrError(dataJpaEntity.userId)
+        return SupervisorMapping.toDomain(userJpaEntity, dataJpaEntity)
     }
 
     override fun removeRoot(id: SingleRoleUserId, expectedVersion: Long?) {

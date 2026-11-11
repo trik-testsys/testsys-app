@@ -27,7 +27,7 @@ import java.time.Instant
  *
  * @param Invite the stored variant.
  * @property kind the stored variant.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 abstract class AbstractCommunityInvitePersistenceAdapter<Invite : CommunityInvite>(
@@ -81,7 +81,7 @@ abstract class AbstractCommunityInvitePersistenceAdapter<Invite : CommunityInvit
 /**
  * Persistence adapter of [CommunityInvite.Manager] entities backed by manager-role [CommunityInviteJpaEntity] rows.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)
@@ -96,7 +96,7 @@ class ManagerCommunityInvitePersistenceAdapter(
 /**
  * Persistence adapter of [CommunityInvite.Developer] entities backed by developer-role [CommunityInviteJpaEntity] rows.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

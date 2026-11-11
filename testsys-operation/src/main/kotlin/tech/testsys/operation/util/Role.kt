@@ -16,7 +16,7 @@ import tech.testsys.operation.annotation.InternalOperationsApi
  * Checks whether this user holds the role [R].
  *
  * @param R the role to look for.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 inline fun <reified R : CompatibleUserRole> MultipleRoleUser.hasRole(): Boolean {
@@ -26,7 +26,7 @@ inline fun <reified R : CompatibleUserRole> MultipleRoleUser.hasRole(): Boolean 
 /**
  * Returns the held role of this user matching [role], or `null` if the user does not hold it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun MultipleRoleUser.heldRole(role: CommunityRole): CompatibleUserRole? = when (role) {
@@ -42,7 +42,7 @@ fun MultipleRoleUser.heldRole(role: CommunityRole): CompatibleUserRole? = when (
  * is not the administrator role, first makes it a member of [publicCommunityId] in that role, as testsys.entity.multi.role
  * requires.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun MultipleRoleUserRepository.joinCommunity(

@@ -29,6 +29,9 @@ import tech.testsys.domain.model.task.LogsId
 import tech.testsys.domain.model.task.Recording
 import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.RecordingId
+import tech.testsys.domain.model.task.Regrade
+import tech.testsys.domain.model.task.RegradeData
+import tech.testsys.domain.model.task.RegradeId
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
@@ -62,7 +65,7 @@ import tech.testsys.domain.model.user.UserId
 /**
  * Persistence port for [Contest] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> {
 
@@ -74,7 +77,7 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
      * @param filter conditions combined with AND before paging and counting; missing or inaccessible ids match nothing.
      * @return unique contests, original pagination and exact filtered total; missing pages are empty but retain the total.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToObserver(
         contestIds: Set<ContestId>,
@@ -87,7 +90,7 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
      * Repeated calls reflect current associations without changing state; technical storage exceptions propagate.
      *
      * @return the attached contests, or an empty list when no association exists.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByTaskId(taskId: TaskId): List<Contest>
 
@@ -100,7 +103,7 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
      * @param filter conditions combined with AND before paging and counting, including shared community; unknown ids match nothing.
      * @return distinct authorized contests, the original pagination and exact filtered total; missing pages are empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToDeveloper(
         ownerId: MultipleRoleUserId,
@@ -117,7 +120,7 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
      * @param filter conditions combined with AND before paging and counting, including shared community; unknown ids match nothing.
      * @return distinct shared contests, the original pagination and exact filtered total; missing pages are empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findSharedTo(communityIds: Set<CommunityId>, pagination: Pagination, filter: ContestFilter = ContestFilter()): Page<Contest>
 
@@ -126,7 +129,7 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
      * Repeated calls reflect current registrations; storage exceptions propagate to the caller.
      *
      * @return the registered versions ordered by tag, or an empty list when none is registered.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findTrikStudioVersions(): List<TrikStudioVersion>
 }
@@ -136,7 +139,7 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
  * with another value throws [UnsupportedOperationException], a new version is saved as a new developer solution in
  * the same version bucket.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution> {
 
@@ -146,7 +149,7 @@ interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, 
      *
      * @param versionBucket the resource version chain to search.
      * @return the latest version, or `null` if the chain has no versions.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findLatestByVersionBucket(versionBucket: VersionBucket): DeveloperSolution?
 
@@ -156,7 +159,7 @@ interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, 
      *
      * @param versionBucket the resource version chain to search.
      * @return existing versions, or an empty list for a missing chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<DeveloperSolution>
 
@@ -165,7 +168,7 @@ interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, 
      *
      * @param versionBucket the resource version chain to search.
      * @return whether any version exists in the chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun existsByVersionBucket(versionBucket: VersionBucket): Boolean
 
@@ -176,7 +179,7 @@ interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, 
      * @param versionBucket the chain the requested version must belong to.
      * @param id the typed version identifier.
      * @return the persisted reference, or `null` if the version is missing or belongs to another chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findFileRef(versionBucket: VersionBucket, id: DeveloperSolutionId): StoredBlobRef?
 }
@@ -185,7 +188,7 @@ interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, 
  * Persistence port for [Exercise] entities. The file and language are fixed on creation: `update` with another value
  * throws [UnsupportedOperationException], a new version is saved as a new exercise in the same version bucket.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exercise> {
 
@@ -195,7 +198,7 @@ interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exerci
      *
      * @param versionBucket the resource version chain to search.
      * @return the latest version, or `null` if the chain has no versions.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findLatestByVersionBucket(versionBucket: VersionBucket): Exercise?
 
@@ -205,7 +208,7 @@ interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exerci
      *
      * @param versionBucket the resource version chain to search.
      * @return existing versions, or an empty list for a missing chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<Exercise>
 
@@ -214,7 +217,7 @@ interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exerci
      *
      * @param versionBucket the resource version chain to search.
      * @return whether any version exists in the chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun existsByVersionBucket(versionBucket: VersionBucket): Boolean
 
@@ -225,7 +228,7 @@ interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exerci
      * @param versionBucket the chain the requested version must belong to.
      * @param id the typed version identifier.
      * @return the persisted reference, or `null` if the version is missing or belongs to another chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findFileRef(versionBucket: VersionBucket, id: ExerciseId): StoredBlobRef?
 }
@@ -233,28 +236,57 @@ interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exerci
 /**
  * Persistence port for [JudgmentOrder] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface JudgmentOrderRepository : EntityRepository<JudgmentOrderData, JudgmentOrderId, JudgmentOrder>
 
 /**
  * Persistence port for [Logs] entities. Logs are fixed on creation, so `update` is not supported.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface LogsRepository : EntityRepository<LogsData, LogsId, Logs>
 
 /**
  * Persistence port for [Recording] entities. A recording is fixed on creation, so `update` is not supported.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface RecordingRepository : EntityRepository<RecordingData, RecordingId, Recording>
 
 /**
+ * Persistence port for [Regrade] entities. A regrade is fixed on creation, so `update` is not supported.
+ *
+ * @since 1.0.0-beta.1
+ */
+interface RegradeRepository : EntityRepository<RegradeData, RegradeId, Regrade> {
+
+    /**
+     * Synchronously finds all regrades of [taskId], without changing stored state; storage exceptions propagate.
+     *
+     * @param taskId the regraded task.
+     * @return the regrades ordered by creation time and then by id, both ascending, or an empty list if none exist.
+     * @since 1.0.0-beta.1
+     */
+    fun findByTaskId(taskId: TaskId): List<Regrade>
+
+    /**
+     * Synchronously counts, for each of [regradeIds], its submissions that have a verdict created not earlier than the
+     * regrade with test verdicts exactly on the regrade's tests, on each of them and on no other; a submission with
+     * several such verdicts counts once. Storage exceptions propagate.
+     *
+     * @param regradeIds the regrades to count; an empty set returns an empty map without querying storage.
+     * @return the count of graded submissions by regrade; a regrade without graded submissions maps to `0`, a missing
+     * regrade is absent.
+     * @since 1.0.0-beta.1
+     */
+    fun countGraded(regradeIds: Set<RegradeId>): Map<RegradeId, Int>
+}
+
+/**
  * Persistence port for [Solution] entities. A solution is fixed on creation, so `update` is not supported.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface SolutionRepository : EntityRepository<SolutionData, SolutionId, Solution>
 
@@ -262,7 +294,7 @@ interface SolutionRepository : EntityRepository<SolutionData, SolutionId, Soluti
  * Persistence port for [Statement] entities. The file is fixed on creation: `update` with another file
  * throws [UnsupportedOperationException], a new version is saved as a new statement in the same version bucket.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface StatementRepository : EntityRepository<StatementData, StatementId, Statement> {
 
@@ -272,7 +304,7 @@ interface StatementRepository : EntityRepository<StatementData, StatementId, Sta
      *
      * @param versionBucket the resource version chain to search.
      * @return the latest version, or `null` if the chain has no versions.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findLatestByVersionBucket(versionBucket: VersionBucket): Statement?
 
@@ -282,7 +314,7 @@ interface StatementRepository : EntityRepository<StatementData, StatementId, Sta
      *
      * @param versionBucket the resource version chain to search.
      * @return existing versions, or an empty list for a missing chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<Statement>
 
@@ -291,7 +323,7 @@ interface StatementRepository : EntityRepository<StatementData, StatementId, Sta
      *
      * @param versionBucket the resource version chain to search.
      * @return whether any version exists in the chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun existsByVersionBucket(versionBucket: VersionBucket): Boolean
 
@@ -302,7 +334,7 @@ interface StatementRepository : EntityRepository<StatementData, StatementId, Sta
      * @param versionBucket the chain the requested version must belong to.
      * @param id the typed version identifier.
      * @return the persisted reference, or `null` if the version is missing or belongs to another chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findFileRef(versionBucket: VersionBucket, id: StatementId): StoredBlobRef?
 }
@@ -310,7 +342,7 @@ interface StatementRepository : EntityRepository<StatementData, StatementId, Sta
 /**
  * Persistence port for [Submission] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, Submission> {
 
@@ -320,7 +352,7 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      *
      * @param taskId the task the submissions were made to.
      * @return the submissions of kind [SubmissionKind.Grading] ordered by identifier, or an empty list if none exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findGradingByTaskId(taskId: TaskId): List<Submission>
 
@@ -332,7 +364,7 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @param taskId the task the solutions were submitted to.
      * @param contestId the contest the solutions were submitted in.
      * @return matching submissions ordered by creation time and then by id, both ascending; an empty list if none match.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findGradingByContext(authorId: UserId, taskId: TaskId, contestId: ContestId): List<Submission>
 
@@ -344,7 +376,7 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @param contestId the exact contest of the submissions.
      * @param taskIds the tasks to include; an empty set yields an empty list.
      * @return matching submissions ordered by creation time and then identifier, both ascending.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findGradingByContest(authorId: UserId, contestId: ContestId, taskIds: Set<TaskId>): List<Submission>
 
@@ -357,7 +389,7 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @param taskIds the tasks to include; an empty set yields an empty list.
      * @return results of author and task pairs having submissions, ordered by author id and then task id; a submission
      * result is the score of its latest judgment order, otherwise the total of its verdict.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult>
 
@@ -367,7 +399,7 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      *
      * @param contestId the contest the submissions were made in.
      * @return the number of submissions of every task having submissions; tasks without submissions are absent.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun countGradingByTask(contestId: ContestId): Map<TaskId, Long>
 
@@ -378,15 +410,26 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @param authorIds the authors to include; an empty set counts nothing.
      * @param contestIds the contests to include; an empty set counts nothing.
      * @return the numbers of matching submissions and of their distinct authors, both zero if nothing matches.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun countGrading(authorIds: Set<UserId>, contestIds: Set<ContestId>): SubmissionCount
+
+    /**
+     * Synchronously finds which of [authorIds] made grading submissions in any of [contestIds] in any grading state,
+     * without changing stored state or loading submissions. Storage exceptions propagate to the caller.
+     *
+     * @param authorIds the authors to check; an empty set finds nothing.
+     * @param contestIds the contests to include; an empty set finds nothing.
+     * @return the authors from [authorIds] having at least one matching submission.
+     * @since 1.0.0-beta.1
+     */
+    fun findGradingAuthorIds(authorIds: Set<UserId>, contestIds: Set<ContestId>): Set<UserId>
 }
 
 /**
  * Persistence port for [Verdict] entities. A verdict is fixed on creation, so `update` is not supported.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict> {
 
@@ -397,7 +440,7 @@ interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict> 
      * @param pagination the requested page and ordering.
      * @param filter conjunctive author, submission and current group conditions applied before paging and counting.
      * @return verdicts with lazy references, requested pagination and exact total; unmatched filters or pages are empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToJudge(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<Verdict>
 }
@@ -405,7 +448,7 @@ interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict> 
 /**
  * Persistence port for [Task] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface TaskRepository : EntityRepository<TaskData, TaskId, Task> {
 
@@ -418,7 +461,7 @@ interface TaskRepository : EntityRepository<TaskData, TaskId, Task> {
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
      * @param filter conditions combined with AND before paging and counting, including shared community; unknown ids match nothing.
      * @return distinct authorized tasks, the original pagination and exact filtered total; missing pages are empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToDeveloper(
         ownerId: MultipleRoleUserId,
@@ -431,7 +474,7 @@ interface TaskRepository : EntityRepository<TaskData, TaskId, Task> {
 /**
  * Persistence port for [TaskValidationRequest] entities and their resumable diagnostic progress.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface TaskValidationRequestRepository :
     EntityRepository<TaskValidationRequestData, TaskValidationRequestId, TaskValidationRequest> {
@@ -445,7 +488,7 @@ interface TaskValidationRequestRepository :
      * @return the request whose links follow the order of the snapshot author runs.
      * @throws IllegalArgumentException if the request does not exist.
      * @throws IllegalStateException if the request neither awaits nor already has submissions.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createSubmissions(requestId: TaskValidationRequestId): TaskValidationRequest
 
@@ -458,7 +501,7 @@ interface TaskValidationRequestRepository :
      * @return the completed request.
      * @throws IllegalArgumentException if the request does not exist or a failure names a submission of another request.
      * @throws IllegalStateException if the request is in another state.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun completeTesting(requestId: TaskValidationRequestId, failures: List<AuthorSubmissionFailure>): TaskValidationRequest
 
@@ -466,7 +509,7 @@ interface TaskValidationRequestRepository :
      * Synchronously reads every active request, ordered by identifier, without changing state.
      *
      * @return the requests whose processing may continue.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findActive(): List<TaskValidationRequest>
 
@@ -476,7 +519,7 @@ interface TaskValidationRequestRepository :
      *
      * @return the linked request, or `null` for an unlinked submission.
      * @throws IllegalStateException if several requests reference the same submission.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findBySubmissionId(submissionId: SubmissionId): TaskValidationRequest?
 
@@ -489,7 +532,7 @@ interface TaskValidationRequestRepository :
      * @return the persisted matching or new request.
      * @throws IllegalArgumentException if the task does not exist.
      * @throws IllegalStateException if the task has no working revision at creation time.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findOrCreateActive(taskId: TaskId, requestedBy: MultipleRoleUserId): TaskValidationRequest
 
@@ -498,7 +541,7 @@ interface TaskValidationRequestRepository :
      *
      * @param taskId the task whose requests are read.
      * @return existing requests ordered by creation time and identifier.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findHistory(taskId: TaskId): List<TaskValidationRequest>
 
@@ -507,7 +550,7 @@ interface TaskValidationRequestRepository :
      *
      * @param requestId the request selected exclusively by the application.
      * @return the unfinished request, or `null` if missing or no longer eligible for diagnostics.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun startDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest?
 
@@ -516,7 +559,7 @@ interface TaskValidationRequestRepository :
      *
      * @param requestId the request whose progress is read.
      * @return the saved polygon results.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findDiagnosticProgress(requestId: TaskValidationRequestId): List<TestDiagnosticResult>
 
@@ -528,7 +571,7 @@ interface TaskValidationRequestRepository :
      * @return the persisted result, including an earlier result if already present.
      * @throws IllegalArgumentException if the request or polygon input does not exist.
      * @throws IllegalStateException if the request is ineligible for diagnostics.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun saveDiagnosticProgress(requestId: TaskValidationRequestId, result: TestDiagnosticResult): TestDiagnosticResult
 
@@ -539,7 +582,7 @@ interface TaskValidationRequestRepository :
      * @param requestId the request to complete.
      * @return the request whose execution contains completed diagnostics, awaiting submissions or stopped by errors.
      * @throws IllegalStateException if results are missing or execution is ineligible.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun completeDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest
 
@@ -549,7 +592,7 @@ interface TaskValidationRequestRepository :
      * @param requestId the request known by the external exception boundary.
      * @param failure the technical failure details.
      * @return the stopped request retaining the payload of every completed stage in its execution state.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun recordTechnicalFailure(requestId: TaskValidationRequestId, failure: TaskValidationTechnicalFailure): TaskValidationRequest
 }
@@ -558,7 +601,7 @@ interface TaskValidationRequestRepository :
  * Persistence port for [Test] entities. The file is fixed on creation: `update` with another file
  * throws [UnsupportedOperationException], a new version is saved as a new test in the same version bucket.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface TestRepository : EntityRepository<TestData, TestId, Test> {
 
@@ -568,7 +611,7 @@ interface TestRepository : EntityRepository<TestData, TestId, Test> {
      *
      * @param versionBucket the resource version chain to search.
      * @return the latest version, or `null` if the chain has no versions.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findLatestByVersionBucket(versionBucket: VersionBucket): Test?
 
@@ -578,7 +621,7 @@ interface TestRepository : EntityRepository<TestData, TestId, Test> {
      *
      * @param versionBucket the resource version chain to search.
      * @return existing versions, or an empty list for a missing chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<Test>
 
@@ -587,7 +630,7 @@ interface TestRepository : EntityRepository<TestData, TestId, Test> {
      *
      * @param versionBucket the resource version chain to search.
      * @return whether any version exists in the chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun existsByVersionBucket(versionBucket: VersionBucket): Boolean
 
@@ -598,7 +641,7 @@ interface TestRepository : EntityRepository<TestData, TestId, Test> {
      * @param versionBucket the chain the requested version must belong to.
      * @param id the typed version identifier.
      * @return the persisted reference, or `null` if the version is missing or belongs to another chain.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findFileRef(versionBucket: VersionBucket, id: TestId): StoredBlobRef?
 }

@@ -32,6 +32,9 @@ import tech.testsys.web.components.texts.currentLocalization
 /** Columns of the identifier and nickname of a member in the results table. */
 private const val MEMBER_COLUMNS = 8
 
+/** Columns of the identifier of a member in the results table: an 18-digit id fits on one line. */
+private const val ID_COLUMNS = 4
+
 /** Columns of one task in the results table. */
 private const val TASK_COLUMNS = 3
 
@@ -42,7 +45,7 @@ private const val MIN_RESULT_COLUMNS = 24
  * Contest in a class or competition of a Manager (testsys.web.page.manager.contest): the contest details and the table of
  * the best results and submission counts of the students or participants by task, with its download as a CSV file.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("manager/classes/:classId([0-9]+)/contests/:contestId([0-9]+)")
 @RouteAlias("manager/competitions/:competitionId([0-9]+)/contests/:contestId([0-9]+)")
@@ -103,15 +106,15 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
                 guide(texts.contestDetailsGuide())
                 load({ loaded.value.contest }) { contest ->
                     row {
-                        codeInput(texts.id(), labelSize = 4, size = 8) { value = contest.id.value.toString() }
-                        textInput(texts.name(), labelSize = 4, size = 8) { value = contest.name }
+                        codeInput(texts.id(), labelSize = 3, size = 9) { value = contest.id.value.toString() }
+                        textInput(texts.name(), labelSize = 3, size = 9) { value = contest.name }
                     }
                     row {
-                        dateTimeInput(texts.startsAt(), labelSize = 4, size = 8) { value = contest.startsAt?.toUserDateTime() }
-                        dateTimeInput(texts.endsAt(), labelSize = 4, size = 8) { value = contest.endsAt?.toUserDateTime() }
+                        dateTimeInput(texts.startsAt(), labelSize = 3, size = 9) { value = contest.startsAt?.toUserDateTime() }
+                        dateTimeInput(texts.endsAt(), labelSize = 3, size = 9) { value = contest.endsAt?.toUserDateTime() }
                     }
                     row {
-                        codeInput(texts.attemptDuration(), labelSize = 4, size = 8) {
+                        codeInput(texts.attemptDuration(), labelSize = 3, size = 9) {
                             value = formatDuration(contest.attemptDuration).orEmpty()
                         }
                     }
@@ -128,13 +131,17 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
                 guide(texts.contestResultsGuide())
                 load({ loaded.value }) { results ->
                     val byMemberAndTask = results.results.associateBy { result -> result.authorId to result.taskId }
+                    val taskColumns = TASK_COLUMNS * results.tasks.size
+                    // With few tasks the nickname takes the rest, so the table fills the block.
+                    val nicknameColumns =
+                        maxOf(MEMBER_COLUMNS - ID_COLUMNS, MIN_RESULT_COLUMNS - ID_COLUMNS - taskColumns)
                     table(
                         key = { (memberId, _): Pair<UserId, String> -> memberId },
-                        gridColumns = maxOf(MIN_RESULT_COLUMNS, MEMBER_COLUMNS + TASK_COLUMNS * results.tasks.size),
+                        gridColumns = maxOf(MIN_RESULT_COLUMNS, MEMBER_COLUMNS + taskColumns),
                         fetch = { request -> pageOf(results.members, request) },
                     ) {
-                        codeColumn(texts.id(), size = TASK_COLUMNS) { (memberId, _) -> memberId.value.toString() }
-                        textColumn(texts.nickname(), size = MEMBER_COLUMNS - TASK_COLUMNS) { (_, name) -> name }
+                        codeColumn(texts.id(), size = ID_COLUMNS) { (memberId, _) -> memberId.value.toString() }
+                        textColumn(texts.nickname(), size = nicknameColumns) { (_, name) -> name }
                         results.tasks.forEach { task ->
                             val header = texts.contestResultsTask(name = task.name, id = task.id.value)
                             codeColumn(header, size = TASK_COLUMNS) { (memberId, _) ->

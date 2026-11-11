@@ -12,7 +12,7 @@ import tech.testsys.domain.model.task.LogsId
 /**
  * Builder of [LogsData]. Required: [file].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LogsDataBuilder : Builder<LogsData> {
 
@@ -23,7 +23,7 @@ class LogsDataBuilder : Builder<LogsData> {
      *
      * @param uploadedFilename the original name of the uploaded file.
      * @param content the raw binary content of the file.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
@@ -32,7 +32,7 @@ class LogsDataBuilder : Builder<LogsData> {
     /**
      * Sets [file] without reading its contents.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(file: FileData) {
         _file = file
@@ -50,7 +50,7 @@ class LogsDataBuilder : Builder<LogsData> {
 /**
  * Builder of [Logs] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LogsBuilder : DomainEntityWithDataBuilder<Logs, LogsData, LogsDataBuilder>() {
 

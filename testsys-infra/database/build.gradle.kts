@@ -10,8 +10,11 @@ group = "tech.testsys.infra"
 dependencies {
     implementation(platform(libs.spring.boot.bom))
     implementation(project(":testsys-domain"))
+    implementation(project(":testsys-infra:settings"))
+    implementation(project(":testsys-infra:monitoring"))
     implementation(project(":testsys-infra:database:codegen-api"))
     implementation(libs.bundles.database.implementation)
+    implementation(libs.jackson.databind)
     runtimeOnly(libs.postgresql)
 
     ksp(project(":testsys-infra:database:codegen"))

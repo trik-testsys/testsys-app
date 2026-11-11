@@ -14,7 +14,7 @@ import tech.testsys.infra.database.internal.utils.populateFields
 /**
  * Mapping between [Verdict] and [VerdictJpaEntity]; the outcome of every test run is kept in [TestVerdictJpaEntity] rows.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
@@ -22,7 +22,7 @@ object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
     /**
      * Assembles a [Verdict] from [jpaEntity] and the rows [testVerdictJpaEntities] holding the outcome of its test runs.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: VerdictJpaEntity, testVerdictJpaEntities: List<TestVerdictJpaEntity>) = verdict {
         populateFields(jpaEntity)
@@ -46,7 +46,7 @@ object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
     /**
      * Creates a new [VerdictJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: VerdictData) = VerdictJpaEntity(
         taskId = data.task.id.value,
@@ -56,7 +56,7 @@ object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
     /**
      * Creates the [TestVerdictJpaEntity] rows holding [testVerdicts] of the verdict [verdictId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toTestVerdictAssociations(verdictId: Long, testVerdicts: List<TestVerdict>) = testVerdicts.map {
         TestVerdictJpaEntity(

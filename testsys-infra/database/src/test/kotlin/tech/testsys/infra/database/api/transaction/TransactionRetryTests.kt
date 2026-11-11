@@ -61,6 +61,40 @@ class TransactionRetryTests {
     }
 
     @Test
+    fun `should report each repeat after a conflict`() {
+        var repeats = 0
+        val counted = TransactionRetry(
+            maxRetries = 2,
+            delay = Duration.ZERO,
+            jitter = Duration.ZERO,
+            onRetry = { repeats++ },
+        )
+
+        assertThrows(CannotAcquireLockException::class.java) {
+            counted.run("test") { throw CannotAcquireLockException("locked") }
+        }
+
+        assertEquals(2, repeats)
+    }
+
+    @Test
+    fun `should not report a repeat for a failure that is not a conflict`() {
+        var repeats = 0
+        val counted = TransactionRetry(
+            maxRetries = 2,
+            delay = Duration.ZERO,
+            jitter = Duration.ZERO,
+            onRetry = { repeats++ },
+        )
+
+        assertThrows(IllegalStateException::class.java) {
+            counted.run("test") { throw IllegalStateException("broken") }
+        }
+
+        assertEquals(0, repeats)
+    }
+
+    @Test
     fun `should not repeat a conflict inside an active transaction`() {
         TransactionSynchronizationManager.setActualTransactionActive(true)
         var attempts = 0

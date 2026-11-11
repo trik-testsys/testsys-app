@@ -24,7 +24,7 @@ import tech.testsys.operation.util.loadByIdsAsMap
  * Application-invoked processing of saved task validation requests: polygon diagnostics, then author testing.
  * The caller provides exclusive execution per request; technical exceptions propagate with saved progress retained.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class TaskValidationOperations(
@@ -40,7 +40,7 @@ class TaskValidationOperations(
      * Error messages do not interrupt other polygons; technical exceptions propagate with saved progress retained.
      *
      * @return the request with completed diagnostics, or `null` when the request is missing or no longer eligible.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.runDiagnostics")
     fun runDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest? {
@@ -65,7 +65,7 @@ class TaskValidationOperations(
      * Repeated calls neither recreate nor resend submissions; terminal requests are returned unchanged.
      *
      * @return the current request, or `null` when it does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.testTask")
     fun proceed(requestId: TaskValidationRequestId): TaskValidationRequest? {
@@ -89,7 +89,7 @@ class TaskValidationOperations(
      * lost the grader's unfinished work. The grader reuses a submission that is still pending.
      *
      * @return the current request, or `null` when it does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.developer.task.testTask")
     fun resendUnfinishedSubmissions(requestId: TaskValidationRequestId): TaskValidationRequest? {

@@ -30,7 +30,7 @@ import java.time.temporal.ChronoUnit
 /**
  * Operations performed by participants in their competition.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class ParticipantOperations(
@@ -44,7 +44,7 @@ class ParticipantOperations(
      * Returns pairs of first entry time and contest for [user], including future and completed contests.
      * The time is null until the user enters that contest in their competition; listing does not create entries.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.participant.viewContests")
     fun viewContests(user: SingleRoleUser): OperationResult<List<Pair<Instant?, Contest>>, ViewParticipantContestsError> =
@@ -66,7 +66,7 @@ class ParticipantOperations(
      * Returns the first entry of [user] into [contestId] in their competition.
      * A new entry requires the current start-inclusive, end-exclusive interval; a repeat keeps its first time.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.single.participant.enterContest")
     fun enterContest(user: SingleRoleUser, contestId: ContestId): OperationResult<ParticipantContestEntry, EnterParticipantContestError> =

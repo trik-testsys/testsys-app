@@ -38,7 +38,7 @@ import tech.testsys.web.components.texts.UiLocalization
  * Accepted values show as at most [maxChips] chips, or only as their count if it is `null`.
  *
  * @param T the type of the selectable items.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <T : Any> BlockRowScope.multiSelect(
     label: String,

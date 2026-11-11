@@ -12,7 +12,7 @@ import java.time.Instant
  * Builder of [CommunityInviteData]. Required: [code] or [storedCode], [expiresAt].
  *
  * @property expiresAt the moment the invite stops being valid, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CommunityInviteDataBuilder : InviteCodeDataBuilder<CommunityInviteData>() {
 
@@ -33,7 +33,7 @@ class CommunityInviteDataBuilder : InviteCodeDataBuilder<CommunityInviteData>() 
  * Base class of builders of [CommunityInvite] variants. Required: [id], [createdAt], [data].
  *
  * @param Invite the type of the built variant.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class CommunityInviteBuilder<Invite : CommunityInvite> :
     DomainEntityWithDataBuilder<Invite, CommunityInviteData, CommunityInviteDataBuilder>() {
@@ -54,7 +54,7 @@ abstract class CommunityInviteBuilder<Invite : CommunityInvite> :
 /**
  * Builder of [CommunityInvite.Manager] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ManagerCommunityInviteBuilder : CommunityInviteBuilder<CommunityInvite.Manager>() {
 
@@ -65,7 +65,7 @@ class ManagerCommunityInviteBuilder : CommunityInviteBuilder<CommunityInvite.Man
 /**
  * Builder of [CommunityInvite.Developer] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DeveloperCommunityInviteBuilder : CommunityInviteBuilder<CommunityInvite.Developer>() {
 

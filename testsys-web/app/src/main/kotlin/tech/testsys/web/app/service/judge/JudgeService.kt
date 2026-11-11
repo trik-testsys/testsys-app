@@ -20,7 +20,7 @@ import tech.testsys.web.app.service.study.toVo
  * Runs [JudgeOperations] for the current user in one transaction per call.
  * A failed operation throws `OperationException`, which rolls the transaction back.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Service
 @Transactional
@@ -28,7 +28,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     /**
      * Runs [JudgeOperations.viewResults].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewResults(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<JudgeResultVo> =
@@ -57,7 +57,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     /**
      * Runs [JudgeOperations.changeVerdict].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun changeVerdict(submissionId: SubmissionId, score: Score, reason: String): JudgmentOrderVo =
         operations.changeVerdict(currentUser.multipleRoleUser(), submissionId, score, reason).getOrThrow().toVo()
@@ -65,7 +65,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     /**
      * Runs [JudgeOperations.viewSolution].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun viewSolution(submissionId: SubmissionId): SubmissionDetailsVo =
@@ -74,7 +74,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     /**
      * Runs [JudgeOperations.downloadSolution].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun downloadSolution(submissionId: SubmissionId): FileData =
@@ -83,7 +83,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     /**
      * Runs [JudgeOperations.downloadLogs].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun downloadLogs(submissionId: SubmissionId, testId: TestId): FileData =
@@ -92,7 +92,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     /**
      * Runs [JudgeOperations.downloadRecording].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun downloadRecording(submissionId: SubmissionId, testId: TestId): FileData =

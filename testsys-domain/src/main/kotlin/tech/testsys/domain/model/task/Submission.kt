@@ -11,7 +11,7 @@ import java.time.Instant
 /**
  * Identifier of a [Recording].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class RecordingId(
@@ -22,7 +22,7 @@ value class RecordingId(
  * Data of a [Recording].
  *
  * @property file the recording file; fixed on creation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class RecordingData(
     val file: FileData,
@@ -32,7 +32,7 @@ class RecordingData(
  * A video captured while a graded solution was running in the TRIK Studio world.
  *
  * @property data the data of the recording.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Recording(
     id: RecordingId,
@@ -43,7 +43,7 @@ class Recording(
 /**
  * Identifier of [Logs].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class LogsId(
@@ -54,7 +54,7 @@ value class LogsId(
  * Data of [Logs].
  *
  * @property file the log file; fixed on creation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LogsData(
     val file: FileData,
@@ -64,7 +64,7 @@ class LogsData(
  * The log output produced by the grader while checking a solution.
  *
  * @property data the data of the logs.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Logs(
     id: LogsId,
@@ -75,7 +75,7 @@ class Logs(
 /**
  * Identifier of a [Verdict].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class VerdictId(
@@ -89,7 +89,7 @@ value class VerdictId(
  * @property test the test the solution was run on.
  * @property logs the grading logs of the run; every run produces them.
  * @property recording the recording of the run, or `null` if none was produced.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TestVerdict(
     val score: Score,
@@ -105,7 +105,7 @@ data class TestVerdict(
  * @property submission the submission the verdict was produced for; fixed on creation.
  * @property testVerdicts the non-empty list of outcomes of the runs on the task tests; fixed on creation.
  * @throws IllegalArgumentException if [testVerdicts] is empty.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class VerdictData(
     val task: LazyEntity<TaskId, Task>,
@@ -123,7 +123,7 @@ data class VerdictData(
  * The result of grading a submitted solution: a score and grading logs per test plus an optional recording.
  *
  * @property data the data of the verdict.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Verdict(
     id: VerdictId,
@@ -134,7 +134,7 @@ class Verdict(
 /**
  * Identifier of a [Submission].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class SubmissionId(
@@ -144,14 +144,14 @@ value class SubmissionId(
 /**
  * Outcome of grading a [Submission], available once grading has finished.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface GradingResult {
     /**
      * Grading completed and produced a verdict.
      *
      * @property verdict the produced verdict.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Success(val verdict: LazyEntity<VerdictId, Verdict>) : GradingResult
 
@@ -159,14 +159,14 @@ sealed interface GradingResult {
      * Grading failed; no verdict was produced.
      *
      * @property description a human-readable description of the failure.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class GradingError(val description: String) : GradingResult
 
     /**
      * Grading did not finish in the allotted time; no verdict was produced.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     object Timeout : GradingResult
 }
@@ -174,20 +174,20 @@ sealed interface GradingResult {
 /**
  * Position of a [Submission] in its grading lifecycle: queued, in progress, graded.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface SubmissionStatus {
     /**
      * The submission is waiting to be picked up by the grader.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     object Queued : SubmissionStatus
 
     /**
      * The grader is checking the submitted solution.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     object InProgress : SubmissionStatus
 
@@ -195,7 +195,7 @@ sealed interface SubmissionStatus {
      * Grading has finished.
      *
      * @property grade the outcome of the grading.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Graded(val grade: GradingResult) : SubmissionStatus
 }
@@ -203,14 +203,14 @@ sealed interface SubmissionStatus {
 /**
  * The context in which a [Submission] was made.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface SubmissionKind {
     /**
      * A test run of a developer's reference solution, made to validate the task itself; not bound to any contest.
      *
      * @property trikStudioVersion the TRIK Studio version used for the test run.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class DeveloperSolutionTest(val trikStudioVersion: TrikStudioVersion) : SubmissionKind
 
@@ -218,7 +218,7 @@ sealed interface SubmissionKind {
      * A regular submission made within a contest.
      *
      * @property contest the contest the solution was submitted in.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Grading(val contest: LazyEntity<ContestId, Contest>) : SubmissionKind
 }
@@ -232,7 +232,7 @@ sealed interface SubmissionKind {
  * @property status the position of the submission in the grading lifecycle.
  * @property kind the context of the submission; fixed on creation and ignored on update.
  * @property judgmentOrders the judges' rulings concerning the submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class SubmissionData(
     val author: LazyEntity<UserId, User<UserId>>,
@@ -247,7 +247,7 @@ data class SubmissionData(
  * A solution sent for grading against a task.
  *
  * @property data the data of the submission.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class Submission(
     id: SubmissionId,

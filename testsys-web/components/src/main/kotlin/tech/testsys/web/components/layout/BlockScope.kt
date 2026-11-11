@@ -5,7 +5,11 @@ package tech.testsys.web.components.layout
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
+import com.vaadin.flow.component.html.H3
+import com.vaadin.flow.component.html.Hr
+import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.TextHandle
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
@@ -17,9 +21,9 @@ import tech.testsys.web.components.texts.UiLocalization
 private const val TABLE_OWNER = "a table"
 
 /**
- * Scope of a block: the rows of its body, the head actions and the footer.
+ * Scope of a block: body rows, section titles and separators, head actions and the footer.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class BlockScope internal constructor(
@@ -62,7 +66,7 @@ class BlockScope internal constructor(
      *
      * @throws IllegalArgumentException if a text is blank or an untitled block has no explicit [title].
      * @throws IllegalStateException if called twice or inside loaded content.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun guide(description: String, title: String? = this.title, content: GuideStepsScope.() -> Unit = {}) {
         checkBlockLevel("guide()")
@@ -77,7 +81,7 @@ class BlockScope internal constructor(
      * Adds a row of the body; its elements take at most the block columns in total.
      *
      * @throws IllegalStateException if the block holds a table, an empty state or a load.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun row(content: BlockRowScope.() -> Unit) {
         check(wholeBody == null) { "Block holds $wholeBody; it takes the whole body" }
@@ -87,10 +91,36 @@ class BlockScope internal constructor(
     }
 
     /**
+     * Adds a full-width section heading with [title] to the body, independently of its edit mode.
+     *
+     * @throws IllegalStateException if the block holds a table, an empty state or a load.
+     * @since 1.0.0-beta.1
+     */
+    fun sectionTitle(title: String): TextHandle {
+        check(wholeBody == null) { "Block holds $wholeBody; it takes the whole body" }
+        val heading = H3(title).apply { addClassName(CssClass.BlockSectionTitle) }
+        body.add(heading)
+        return TextHandle(heading)
+    }
+
+    /**
+     * Adds a full-width neutral horizontal separator to the body, independently of its edit mode.
+     *
+     * @throws IllegalStateException if the block holds a table, an empty state or a load.
+     * @since 1.0.0-beta.1
+     */
+    fun separator(): ElementHandle {
+        check(wholeBody == null) { "Block holds $wholeBody; it takes the whole body" }
+        val line = Hr().apply { addClassName(CssClass.BlockSeparator) }
+        body.add(line)
+        return ElementHandle(line)
+    }
+
+    /**
      * Fills the right side of the block head: filters, badges and small actions.
      *
      * @throws IllegalStateException if this is the content of a load.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun actions(content: ContentScope.() -> Unit) {
         checkBlockLevel("actions { }")
@@ -101,7 +131,7 @@ class BlockScope internal constructor(
      * Fills the footer of the block, shown under the body on a sunken background.
      *
      * @throws IllegalStateException if this is the content of a load.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun footer(content: ContentScope.() -> Unit) {
         checkBlockLevel("footer { }")
@@ -113,7 +143,7 @@ class BlockScope internal constructor(
      * [onSave] returns whether the values were saved; otherwise the block stays in edit mode. [onCancel] restores the values.
      *
      * @throws IllegalStateException if the block already has an editing switch, or this is the content of a load.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun editing(onSave: () -> Boolean, onCancel: () -> Unit) {
         checkBlockLevel("editing()")

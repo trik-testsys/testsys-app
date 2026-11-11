@@ -35,7 +35,7 @@ import tech.testsys.web.components.core.svgIcon
  * Columns of a header section.
  *
  * @property columns the groups of links, in their displayed order.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class HeaderMegaMenu(val columns: List<HeaderMegaColumn>)
 
@@ -46,7 +46,7 @@ data class HeaderMegaMenu(val columns: List<HeaderMegaColumn>)
  * @property links the application-provided links.
  * @property destination the optional destination of the heading.
  * @property searchText additional searchable text of the group, without changing its caption.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class HeaderMegaColumn(
     val title: String,
@@ -61,7 +61,7 @@ data class HeaderMegaColumn(
  * @property label the title of the link.
  * @property destination the route or action to open.
  * @property description the optional explanation.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class HeaderMegaLink(val label: String, val destination: HeaderDestination, val description: String? = null)
 

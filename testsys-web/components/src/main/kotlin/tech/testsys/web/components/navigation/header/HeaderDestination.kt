@@ -18,7 +18,7 @@ import tech.testsys.web.components.core.setType
 /**
  * Application-provided destination of a header item.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface HeaderDestination {
     /**
@@ -26,7 +26,7 @@ sealed interface HeaderDestination {
      *
      * @property target the route to open.
      * @property parameters the parameters of the route.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Route(val target: Class<out Component>, val parameters: RouteParameters = RouteParameters()) : HeaderDestination
 
@@ -34,7 +34,7 @@ sealed interface HeaderDestination {
      * Action executed in the UI thread.
      *
      * @property onSelect the handler supplied by the application.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     class Action(val onSelect: () -> Unit) : HeaderDestination
 }

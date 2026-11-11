@@ -30,12 +30,11 @@ import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.Task
-import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.annotation.Feature
@@ -69,8 +68,7 @@ import tech.testsys.operation.error.CreateClassError
 import tech.testsys.operation.error.CreateClassInviteError
 import tech.testsys.operation.error.CreateCompetitionError
 import tech.testsys.operation.error.CreateParticipantsError
-import tech.testsys.operation.error.DeleteParticipantError
-import tech.testsys.operation.error.DownloadParticipantsError
+import tech.testsys.operation.error.DeleteParticipantsError
 import tech.testsys.operation.error.EditClassError
 import tech.testsys.operation.error.EditCompetitionError
 import tech.testsys.operation.error.ExtendClassInviteError
@@ -89,6 +87,8 @@ import tech.testsys.operation.error.ViewCompetitionsError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
+import tech.testsys.operation.error.raise
+import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.generateInviteCode
 import tech.testsys.operation.util.hasRole
 import tech.testsys.operation.util.inviteExpiresAt
@@ -103,7 +103,7 @@ private const val MAX_COMPETITION_NAME_CODE_POINTS = 255
 /**
  * Operations of a user with the [Manager] role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @OptIn(InternalOperationsApi::class)
 class ManagerOperations(
@@ -119,6 +119,7 @@ class ManagerOperations(
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val userRepository: UserRepository,
     private val taskRepository: TaskRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
 
     private val random = SecureRandom()
@@ -127,7 +128,7 @@ class ManagerOperations(
      * Creates a class owned by [user] with unchanged [className], an empty description, no students or contests and a new invite code.
      * The name must be nonblank and contain at most 255 Unicode code points; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.class.createClass")
     fun createClass(user: MultipleRoleUser, className: String): OperationResult<Class, CreateClassError> =
@@ -156,7 +157,7 @@ class ManagerOperations(
      * Creates a competition owned by [user] with unchanged [competitionName], an empty description and no participants or contests.
      * The name must be nonblank and contain at most 255 Unicode code points; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.competition.createCompetition")
     fun createCompetition(user: MultipleRoleUser, competitionName: String): OperationResult<Competition, CreateCompetitionError> =
@@ -181,7 +182,7 @@ class ManagerOperations(
      * Returns a [pagination] page matching [filter] of classes owned by [user], preserving stored state.
      * Missing manager role is an expected failure; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.class.viewClasses")
     fun viewClasses(
@@ -226,7 +227,7 @@ class ManagerOperations(
      * Returns [classId] owned by [user] with its invite, its students with their last logins and its contests, both in
      * stored order. Missing role, class and access are expected failures; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.class.viewClass")
     @RawInviteCodeDependency(reason = "Returns the class invite whose stored value is shown as the issued code.")
@@ -252,7 +253,7 @@ class ManagerOperations(
      * Replaces the name and description of [classId] owned by [user] with unchanged [className] and [description]; other class
      * data is kept. Missing role, class, access and a blank or longer than 255 code points name are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.class.editClass")
     fun editClass(
@@ -279,7 +280,7 @@ class ManagerOperations(
      * Replaces the invite code of [classId] owned by [user] with a new code and a fresh expiration moment.
      * Missing role, class and access are expected failures; storage exceptions, including a code collision, propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.class.createInvite")
     @RawInviteCodeDependency(reason = "Returns the issued invite code from the stored value.")
@@ -297,7 +298,7 @@ class ManagerOperations(
      * Restarts the validity period of the invite code of [classId] owned by [user] without changing the code,
      * including an expired code. Missing role, class and access are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.class.extendInvite")
     @RawInviteCodeDependency(reason = "Returns the issued invite code from the stored value.")
@@ -317,7 +318,7 @@ class ManagerOperations(
      * Replaces the expired invite code of [classId] owned by [user] with a new code and a fresh expiration moment;
      * a still valid code is returned unchanged. Missing role, class and access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.class.createInvite")
     fun refreshClassInvite(user: MultipleRoleUser, classId: ClassId): OperationResult<ClassInvite, RefreshClassInviteError> =
@@ -337,7 +338,7 @@ class ManagerOperations(
      * Returns a [pagination] page matching [filter] of competitions owned by [user], preserving stored state.
      * Missing manager role is an expected failure; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.competition.viewCompetitions")
     fun viewCompetitions(
@@ -372,10 +373,9 @@ class ManagerOperations(
      * Returns [competitionId] owned by [user] with its participants and their last logins and its contests, both in stored
      * order. Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.competition.viewCompetition")
-    @RawAccessTokenDependency(reason = "Returns participants whose stored access codes are shown as the issued ones.")
     fun viewCompetition(user: MultipleRoleUser, competitionId: CompetitionId): OperationResult<CompetitionDetails, ViewCompetitionError> =
         operation<CompetitionDetails, ViewCompetitionError> {
             ensure(user.hasRole<Manager>(), MissedManagerRoleError)
@@ -397,7 +397,7 @@ class ManagerOperations(
      * Replaces the name and description of [competitionId] owned by [user] with unchanged [competitionName] and [description];
      * other competition data is kept. Missing role, competition, access and a blank or too long name are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.competition.editCompetition")
     fun editCompetition(
@@ -423,61 +423,46 @@ class ManagerOperations(
     }
 
     /**
-     * Returns the participants of [competitionId] owned by [user] in stored order, for the file that hands out their access
-     * codes. Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
+     * Deletes [participantIds] of [competitionId] owned by [user] together with their contest entries and returns them as they
+     * were, in the order of [participantIds]. Every participant is checked before any deletion, so a failure deletes none.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.multi.manager.competition.downloadParticipants")
-    @RawAccessTokenDependency(reason = "Returns participants whose stored access codes are written as the issued ones.")
-    fun downloadParticipants(
+    @Feature("testsys.user.multi.manager.competition.deleteParticipants")
+    fun deleteParticipants(
         user: MultipleRoleUser,
         competitionId: CompetitionId,
-    ): OperationResult<List<Participant>, DownloadParticipantsError> = operation<List<Participant>, DownloadParticipantsError> {
+        participantIds: Set<SingleRoleUserId>,
+    ): OperationResult<List<Participant>, DeleteParticipantsError> = operation<List<Participant>, DeleteParticipantsError> {
         ensure(user.hasRole<Manager>(), MissedManagerRoleError)
         val competition = competitionRepository.findById(competitionId)
         ensure(competition != null) { CompetitionNotExistsError(competitionId) }
         ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
-
-        val participantIds = competition.data.participants.ids
-        return participantRepository.findByIds(participantIds).inOrderOf(participantIds).asSuccess()
-    }
-
-    /**
-     * Deletes [participantId] of [competitionId] owned by [user] together with its contest entries and returns it as it was.
-     * Missing role, competition, access, participant and existing submissions are expected failures; storage exceptions propagate.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    @Feature("testsys.user.multi.manager.competition.deleteParticipant")
-    fun deleteParticipant(
-        user: MultipleRoleUser,
-        competitionId: CompetitionId,
-        participantId: SingleRoleUserId,
-    ): OperationResult<Participant, DeleteParticipantError> = operation<Participant, DeleteParticipantError> {
-        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
-        val competition = competitionRepository.findById(competitionId)
-        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
-        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
-        val participant = participantRepository.findById(participantId)?.takeIf { found -> found.data.competition.id == competitionId }
-        ensure(participant != null) {
-            CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)
+        val participantsById = participantRepository.findByIdsAsMap(participantIds)
+        val participants = participantIds.map { participantId ->
+            val participant = participantsById[participantId]?.takeIf { found -> found.data.competition.id == competitionId }
+            ensure(participant != null) {
+                CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)
+            }
+            participant
         }
-        val submissions = submissionRepository.countGrading(
-            authorIds = setOf(participantId),
+
+        val withSubmissions = submissionRepository.findGradingAuthorIds(
+            authorIds = participantIds,
             contestIds = competition.data.contests.ids.toSet(),
         )
-        ensure(submissions.submissions == 0L) { ParticipantHasSubmissionsError(participantId) }
+        participantIds.firstOrNull { participantId -> participantId in withSubmissions }
+            ?.let { participantId -> ParticipantHasSubmissionsError(participantId).raise() }
 
-        participantRepository.removeById(participantId)
-        return participant.asSuccess()
+        participantIds.forEach(participantRepository::removeById)
+        return participants.asSuccess()
     }
 
     /**
      * Returns a [pagination] page of contests shared to the communities of the [Manager] role of [user] whose name contains
      * [name] ignoring case, or all of them without one. Missing manager role is an expected failure.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.addContest")
     fun viewAvailableContests(
@@ -495,7 +480,7 @@ class ManagerOperations(
      * Returns [contestId] added to [classId] owned by [user] with its tasks, the class students and their results by contest task.
      * Missing role, class, contest, access and contest assignment are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.viewContest")
     fun viewClassContest(
@@ -519,7 +504,7 @@ class ManagerOperations(
      * Returns [contestId] added to [competitionId] owned by [user] with its tasks, the participants and their results by task.
      * Missing role, competition, contest, access and contest assignment are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.viewContest")
     fun viewCompetitionContest(
@@ -592,7 +577,7 @@ class ManagerOperations(
      * Adds [contestId] shared to a community of the [Manager] role of [user] to [classId] they own and returns the updated class.
      * Missing role, class, contest, access and repeated addition are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.addContest")
     fun addClassContest(user: MultipleRoleUser, classId: ClassId, contestId: ContestId): OperationResult<Class, AddClassContestError> =
@@ -618,7 +603,7 @@ class ManagerOperations(
      * Adds [contestId] shared to a community of the [Manager] role of [user] to [competitionId] they own and returns the updated
      * competition. Missing role, competition, contest, access and repeated addition are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.addContest")
     fun addCompetitionContest(
@@ -644,17 +629,18 @@ class ManagerOperations(
     }
 
     /**
-     * Creates [participantCount] participants with random UUID access codes and `st<id>` names in [competitionId] owned by [user].
-     * Missing role, competition, access, a nonpositive count and exceeding the participant limit are expected failures.
+     * Creates [participantCount] participants with random UUID access codes and `st<id>` names in [competitionId] owned by [user]
+     * and returns them with their original access codes. Missing role, competition, access, a nonpositive count and exceeding
+     * the participant limit are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Feature("testsys.user.multi.manager.competition.createParticipants")
     fun createParticipants(
         user: MultipleRoleUser,
         competitionId: CompetitionId,
         participantCount: Int,
-    ): OperationResult<List<Participant>, CreateParticipantsError> = operation<List<Participant>, CreateParticipantsError> {
+    ): OperationResult<List<IssuedParticipant>, CreateParticipantsError> = operation<List<IssuedParticipant>, CreateParticipantsError> {
         ensure(user.hasRole<Manager>(), MissedManagerRoleError)
         val competition = competitionRepository.findById(competitionId)
         ensure(competition != null) { CompetitionNotExistsError(competitionId) }
@@ -672,18 +658,19 @@ class ManagerOperations(
             )
         }
 
-        val accessTokenHashes = generateSequence { UUID.randomUUID().toString() }
+        val accessTokens = generateSequence { UUID.randomUUID().toString() }
             .distinct()
             .take(participantCount)
-            .map { accessToken -> AccessTokenHash.hashAccessToken(rawAccessToken = accessToken, algorithm = HashAlgorithm.Identity) }
             .toList()
         val participants = participantRepository.saveToCompetition(
             competitionId = competitionId,
-            accessTokenHashes = accessTokenHashes,
+            accessTokenHashes = accessTokens.map { accessToken ->
+                accessTokenHasher.hash(accessToken)
+            },
         ) { participantId ->
             "st${participantId.value}"
         }
-        return participants.asSuccess()
+        return participants.zip(accessTokens) { participant, accessToken -> IssuedParticipant(participant, accessToken) }.asSuccess()
     }
 
     private fun replaceCode(invite: ClassInvite, expiresAt: Instant): ClassInvite {
@@ -724,7 +711,7 @@ class ManagerOperations(
      * @property invite the invite code of the class.
      * @property students the students in stored order, each with its last login, or `null` if never logged in.
      * @property contests the added contests in stored order.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class ClassDetails(
         val studyClass: Class,
@@ -739,7 +726,7 @@ class ManagerOperations(
      * @property competition the viewed competition.
      * @property participants the participants in stored order, each with its last login, or `null` if never logged in.
      * @property contests the added contests in stored order.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class CompetitionDetails(
         val competition: Competition,
@@ -754,7 +741,7 @@ class ManagerOperations(
      * @property tasks the tasks of the contest in stored order.
      * @property members the class students or competition participants in stored order.
      * @property results the results of member and task pairs having submissions, ordered by member id and then task id.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class ContestResults(
         val contest: Contest,

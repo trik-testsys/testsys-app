@@ -16,7 +16,7 @@ import java.time.Instant
  * @property description the description of the community.
  * @property managerInvite the identifier of the invite code for the manager role.
  * @property developerInvite the identifier of the invite code for the developer role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityVo(
     val id: CommunityId,

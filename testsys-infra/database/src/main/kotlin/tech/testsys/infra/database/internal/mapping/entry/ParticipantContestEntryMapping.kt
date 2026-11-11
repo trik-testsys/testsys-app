@@ -12,7 +12,7 @@ import tech.testsys.infra.database.internal.utils.populateFields
 /**
  * Mapping between [ParticipantContestEntry] and [ParticipantContestEntryJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object ParticipantContestEntryMapping : EntityMapping<ParticipantContestEntry, ParticipantContestEntryJpaEntity> {
@@ -20,7 +20,7 @@ object ParticipantContestEntryMapping : EntityMapping<ParticipantContestEntry, P
     /**
      * Assembles an entry from [jpaEntity].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: ParticipantContestEntryJpaEntity): ParticipantContestEntry = participantContestEntry {
         populateFields(jpaEntity)
@@ -35,7 +35,7 @@ object ParticipantContestEntryMapping : EntityMapping<ParticipantContestEntry, P
     /**
      * Creates a new row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: ParticipantContestEntryData): ParticipantContestEntryJpaEntity = ParticipantContestEntryJpaEntity(
         participantId = data.participant.id.value,

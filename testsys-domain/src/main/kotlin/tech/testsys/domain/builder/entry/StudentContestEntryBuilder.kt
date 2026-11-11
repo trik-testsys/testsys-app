@@ -20,7 +20,7 @@ import java.time.Instant
  * @property studyClass the context identifier, or null if not set yet.
  * @property contest the context identifier, or null if not set yet.
  * @property enteredAt the first entry moment, or null if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class StudentContestEntryDataBuilder : Builder<StudentContestEntryData> {
 
@@ -35,7 +35,7 @@ class StudentContestEntryDataBuilder : Builder<StudentContestEntryData> {
     /**
      * Sets [user] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun user(user: Long) {
         this.user = MultipleRoleUserId(user)
@@ -44,7 +44,7 @@ class StudentContestEntryDataBuilder : Builder<StudentContestEntryData> {
     /**
      * Sets [studyClass] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun studyClass(studyClass: Long) {
         this.studyClass = ClassId(studyClass)
@@ -53,7 +53,7 @@ class StudentContestEntryDataBuilder : Builder<StudentContestEntryData> {
     /**
      * Sets [contest] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun contest(contest: Long) {
         this.contest = ContestId(contest)
@@ -70,7 +70,7 @@ class StudentContestEntryDataBuilder : Builder<StudentContestEntryData> {
 /**
  * Builder of [StudentContestEntry] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class StudentContestEntryBuilder :
     DomainEntityWithDataBuilder<StudentContestEntry, StudentContestEntryData, StudentContestEntryDataBuilder>() {

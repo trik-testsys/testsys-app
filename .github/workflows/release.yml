@@ -1,0 +1,189 @@
+name: Release
+
+on:
+  release:
+    types: [ published ]
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare release commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write
+
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.commit.outputs.sha }}
+      dev: ${{ steps.commit.outputs.dev }}
+
+    steps:
+      # GITHUB_TOKEN cannot push to protected branches; RELEASE_TOKEN is a token allowed to push to `master` and `dev`.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      # The release tag `v1.2.3` or `1.2.3` becomes the version `1.2.3`.
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION="${TAG#v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Release tag $TAG is not a semantic version"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # The commit waits for the checks on a temporary branch, so master and dev stay untouched if they fail.
+      - name: Squash dev into master and set the version
+        id: commit
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          git checkout -B master origin/master
+          git merge --squash origin/dev
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" buildSrc/src/main/kotlin/testsys.conventions.gradle.kts
+          git grep -lz '%CURRENT_VERSION%' -- '*.kt' | xargs -0 -r sed -i "s/%CURRENT_VERSION%/$VERSION/g"
+          git add -A
+          git commit -m "Release $VERSION"
+          git push --force origin "HEAD:refs/heads/release/$VERSION"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "dev=$(git rev-parse origin/dev)" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build
+    needs: prepare
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+    permissions:
+      contents: read
+
+  test:
+    name: Test
+    needs: prepare
+    uses: ./.github/workflows/test.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+  lint:
+    name: Lint
+    needs: prepare
+    uses: ./.github/workflows/lint.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+  publish:
+    name: Publish release
+    needs: [ prepare, build, test, lint ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    permissions:
+      contents: write
+      # Publishes the image to GitHub Packages.
+      packages: write
+
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      SHA: ${{ needs.prepare.outputs.sha }}
+      DEV: ${{ needs.prepare.outputs.dev }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      # The release commit already holds all of dev, so the merge commit takes its tree as is: a textual merge of the
+      # two histories can keep a line added on both sides twice. A re-run reuses the merge it already pushed.
+      - name: Merge the release commit into dev
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          if git merge-base --is-ancestor "$SHA" origin/dev; then
+            merge=$(git rev-parse origin/dev)
+          else
+            merge=$(git commit-tree "$SHA^{tree}" -p "$DEV" -p "$SHA" -m "Merge release $VERSION into dev")
+          fi
+          echo "DEV_MERGE=$merge" >> "$GITHUB_ENV"
+          git tag -f "$TAG" "$SHA"
+
+      # One atomic push updates master, dev and the tag together or rejects all of them. Neither branch is forced, so
+      # the push fails if master or dev moved after the release commit was prepared.
+      - name: Push master, dev and the release tag
+        run: >-
+          git push --atomic origin "${SHA}:refs/heads/master" "${DEV_MERGE}:refs/heads/dev"
+          "+refs/tags/${TAG}:refs/tags/${TAG}"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      # The Dockerfile uses BuildKit cache mounts.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Prereleases do not move `latest`. The source label links the GitHub package to this repository.
+      - name: Collect image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{ env.VERSION }}
+            type=raw,value=latest,enable=${{ !github.event.release.prerelease }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  cleanup:
+    name: Delete temporary branch
+    needs: [ prepare, publish ]
+    if: always() && needs.prepare.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Delete release branch
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/release/${{ needs.prepare.outputs.version }}"

@@ -9,7 +9,7 @@ import java.util.UUID
 /**
  * Spring Data repository for [ExerciseJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -18,21 +18,21 @@ interface ExerciseJpaEntityRepository : SnowflakeJpaEntityRepository<ExerciseJpa
     /**
      * Finds the latest version in [versionBucket] by creation time and then id, both descending.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket: UUID): ExerciseJpaEntity?
 
     /**
      * Finds versions in [versionBucket] without loading file contents.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByVersionBucket(versionBucket: UUID): List<ExerciseJpaEntity>
 
     /**
      * Checks whether [versionBucket] contains a version, without loading file contents.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun existsByVersionBucket(versionBucket: UUID): Boolean
 }

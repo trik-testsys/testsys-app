@@ -7,13 +7,13 @@ import tech.testsys.domain.model.task.DiagnosticData
 /**
  * DSL chooser of a typed polygon diagnostic reason.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.UnknownElement] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun unknownElement(builder: UnknownElementDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? UnknownElementDiagnosticDataBuilder ?: UnknownElementDiagnosticDataBuilder()
@@ -23,7 +23,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.MalformedXml] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun malformedXml(builder: MalformedXmlDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? MalformedXmlDiagnosticDataBuilder ?: MalformedXmlDiagnosticDataBuilder()
@@ -33,7 +33,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.MissingChild] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun missingChild(builder: MissingChildDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? MissingChildDiagnosticDataBuilder ?: MissingChildDiagnosticDataBuilder()
@@ -43,7 +43,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.MissingAttribute] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun missingAttribute(builder: MissingAttributeDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? MissingAttributeDiagnosticDataBuilder ?: MissingAttributeDiagnosticDataBuilder()
@@ -53,7 +53,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.InvalidAttributeValue] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun invalidAttributeValue(builder: InvalidAttributeValueDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? InvalidAttributeValueDiagnosticDataBuilder ?: InvalidAttributeValueDiagnosticDataBuilder()
@@ -63,7 +63,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.InvalidChildCount] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun invalidChildCount(builder: InvalidChildCountDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? InvalidChildCountDiagnosticDataBuilder ?: InvalidChildCountDiagnosticDataBuilder()
@@ -73,7 +73,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.MissingTimeLimit].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun missingTimeLimit() = makeChoice(object : Builder<DiagnosticData> {
         override fun build() = DiagnosticData.MissingTimeLimit
@@ -82,7 +82,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.MultipleTimeLimits] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun multipleTimeLimits(builder: MultipleTimeLimitsDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? MultipleTimeLimitsDiagnosticDataBuilder ?: MultipleTimeLimitsDiagnosticDataBuilder()
@@ -92,7 +92,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.NegativeTimeLimit] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun negativeTimeLimit(builder: NegativeTimeLimitDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? NegativeTimeLimitDiagnosticDataBuilder ?: NegativeTimeLimitDiagnosticDataBuilder()
@@ -102,7 +102,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.ExcessiveTimeLimit] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun excessiveTimeLimit(builder: ExcessiveTimeLimitDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? ExcessiveTimeLimitDiagnosticDataBuilder ?: ExcessiveTimeLimitDiagnosticDataBuilder()
@@ -112,7 +112,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.InvalidEventId] configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun invalidEventId(builder: InvalidEventIdDiagnosticDataBuilder.() -> Unit) {
         val current = choice as? InvalidEventIdDiagnosticDataBuilder ?: InvalidEventIdDiagnosticDataBuilder()
@@ -122,7 +122,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
     /**
      * Selects [DiagnosticData.MissingScoreOutput].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun missingScoreOutput() = makeChoice(object : Builder<DiagnosticData> {
         override fun build() = DiagnosticData.MissingScoreOutput
@@ -133,7 +133,7 @@ class DiagnosticDataChooser : Chooser<DiagnosticData>() {
  * Builder of [DiagnosticData.UnknownElement]. Required: [tag].
  *
  * @property tag the unknown tag, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class UnknownElementDiagnosticDataBuilder : Builder<DiagnosticData> {
     var tag: String? = null
@@ -146,7 +146,7 @@ class UnknownElementDiagnosticDataBuilder : Builder<DiagnosticData> {
  * Builder of [DiagnosticData.MalformedXml]. Required: [details].
  *
  * @property details the XML syntax error, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class MalformedXmlDiagnosticDataBuilder : Builder<DiagnosticData> {
     var details: String? = null
@@ -159,7 +159,7 @@ class MalformedXmlDiagnosticDataBuilder : Builder<DiagnosticData> {
  * Builder of [DiagnosticData.MissingChild]. Required: [tag].
  *
  * @property tag the required child tag, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class MissingChildDiagnosticDataBuilder : Builder<DiagnosticData> {
     var tag: String? = null
@@ -172,7 +172,7 @@ class MissingChildDiagnosticDataBuilder : Builder<DiagnosticData> {
  * Builder of [DiagnosticData.MissingAttribute]. Required: [attribute].
  *
  * @property attribute the required attribute, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class MissingAttributeDiagnosticDataBuilder : Builder<DiagnosticData> {
     var attribute: String? = null
@@ -187,7 +187,7 @@ class MissingAttributeDiagnosticDataBuilder : Builder<DiagnosticData> {
  * @property attribute the attribute, or `null` if not set.
  * @property expected the required value type, or `null` if not set.
  * @property actual the supplied value, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class InvalidAttributeValueDiagnosticDataBuilder : Builder<DiagnosticData> {
     var attribute: String? = null
@@ -205,7 +205,7 @@ class InvalidAttributeValueDiagnosticDataBuilder : Builder<DiagnosticData> {
  *
  * @property expected the required child count, or `null` if not set.
  * @property actual the supplied count, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class InvalidChildCountDiagnosticDataBuilder : Builder<DiagnosticData> {
     var expected: Int? = null
@@ -220,7 +220,7 @@ class InvalidChildCountDiagnosticDataBuilder : Builder<DiagnosticData> {
  * Builder of [DiagnosticData.MultipleTimeLimits]. Required: [count].
  *
  * @property count the number of limits, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class MultipleTimeLimitsDiagnosticDataBuilder : Builder<DiagnosticData> {
     var count: Int? = null
@@ -233,7 +233,7 @@ class MultipleTimeLimitsDiagnosticDataBuilder : Builder<DiagnosticData> {
  * Builder of [DiagnosticData.NegativeTimeLimit]. Required: [value].
  *
  * @property value the negative limit, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class NegativeTimeLimitDiagnosticDataBuilder : Builder<DiagnosticData> {
     var value: Long? = null
@@ -247,7 +247,7 @@ class NegativeTimeLimitDiagnosticDataBuilder : Builder<DiagnosticData> {
  *
  * @property value the limit, or `null` if not set.
  * @property maximum the configured maximum, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ExcessiveTimeLimitDiagnosticDataBuilder : Builder<DiagnosticData> {
     var value: Long? = null
@@ -262,7 +262,7 @@ class ExcessiveTimeLimitDiagnosticDataBuilder : Builder<DiagnosticData> {
  * Builder of [DiagnosticData.InvalidEventId]. Required: [id].
  *
  * @property id the unresolved event identifier, or `null` if not set.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class InvalidEventIdDiagnosticDataBuilder : Builder<DiagnosticData> {
     var id: String? = null

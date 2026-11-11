@@ -25,7 +25,7 @@ import java.util.UUID
  * Persistence adapter of [DeveloperSolution] entities backed by [DeveloperSolutionJpaEntity].
  * [update] rejects changes to the solution or expected score with [UnsupportedOperationException].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

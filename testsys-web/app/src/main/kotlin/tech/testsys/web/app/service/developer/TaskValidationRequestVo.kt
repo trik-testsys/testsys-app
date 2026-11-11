@@ -28,7 +28,7 @@ import java.time.Instant
  * @property snapshot the validated content of the task.
  * @property execution the progress of the request.
  * @property isActive whether the request is still being processed.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskValidationRequestVo(
     val id: TaskValidationRequestId,
@@ -46,7 +46,7 @@ data class TaskValidationRequestVo(
  * @property tests the identifiers of the tests.
  * @property developerSolutions the developer solutions with their expected scores.
  * @property supportedTrikStudioVersions the TRIK Studio versions to run the solutions on.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class TaskValidationSnapshotVo(
     val tests: List<TestId>,
@@ -60,7 +60,7 @@ data class TaskValidationSnapshotVo(
  * @property developerSolution the identifier of the developer solution.
  * @property solution the identifier of its solution.
  * @property expectedScore the score the solution is expected to get.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class DeveloperSolutionInputVo(
     val developerSolution: DeveloperSolutionId,
@@ -71,13 +71,13 @@ data class DeveloperSolutionInputVo(
 /**
  * Progress of a [TaskValidationRequestVo]; mirrors the domain execution states with submissions as identifiers.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface TaskValidationExecutionVo {
     /**
      * Diagnostics have not finished yet.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data object PendingDiagnostics : TaskValidationExecutionVo
 
@@ -85,7 +85,7 @@ sealed interface TaskValidationExecutionVo {
      * Diagnostics passed; submissions are not created yet.
      *
      * @property diagnostics the diagnostic results of the tests.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class AwaitingSubmissions(val diagnostics: List<TestDiagnosticResult>) : TaskValidationExecutionVo
 
@@ -94,7 +94,7 @@ sealed interface TaskValidationExecutionVo {
      *
      * @property diagnostics the diagnostic results of the tests.
      * @property completedAt the moment the request was stopped.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class StoppedByDiagnostics(val diagnostics: List<TestDiagnosticResult>, val completedAt: Instant) :
         TaskValidationExecutionVo
@@ -104,7 +104,7 @@ sealed interface TaskValidationExecutionVo {
      *
      * @property diagnostics the diagnostic results of the tests.
      * @property submissions the identifiers of the author submissions.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class SubmissionsCreated(val diagnostics: List<TestDiagnosticResult>, val submissions: List<SubmissionId>) :
         TaskValidationExecutionVo
@@ -116,7 +116,7 @@ sealed interface TaskValidationExecutionVo {
      * @property submissions the identifiers of the author submissions.
      * @property failures the failed author submissions.
      * @property completedAt the moment the request was completed.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class Completed(
         val diagnostics: List<TestDiagnosticResult>,
@@ -129,7 +129,7 @@ sealed interface TaskValidationExecutionVo {
      * A technical failure stopped the request before diagnostics finished.
      *
      * @property failure the technical failure.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class IncompleteDiagnostics(val failure: TaskValidationTechnicalFailure) : TaskValidationExecutionVo
 
@@ -138,7 +138,7 @@ sealed interface TaskValidationExecutionVo {
      *
      * @property diagnostics the diagnostic results of the tests.
      * @property failure the technical failure.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class CompletedDiagnostics(val diagnostics: List<TestDiagnosticResult>, val failure: TaskValidationTechnicalFailure) :
         TaskValidationExecutionVo
@@ -149,7 +149,7 @@ sealed interface TaskValidationExecutionVo {
      * @property diagnostics the diagnostic results of the tests.
      * @property submissions the identifiers of the author submissions.
      * @property failure the technical failure.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     data class CreatedSubmissions(
         val diagnostics: List<TestDiagnosticResult>,

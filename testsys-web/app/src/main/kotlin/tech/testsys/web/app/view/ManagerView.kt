@@ -33,7 +33,7 @@ import java.time.Instant
  * Cabinet of a Manager (testsys.web.page.manager): the tabs with the classes and the competitions are the sections of the
  * route; without a section the page opens the classes.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("manager/:section?(classes|competitions)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -155,8 +155,8 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
             onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
-                name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.filterNameHint())
-                dates = dateRangeInput(texts.filterCreated(), labelSize = 4, size = 8)
+                name = textInput(texts.name(), labelSize = 3, size = 9, hint = texts.filterNameHint())
+                dates = dateRangeInput(texts.filterCreated(), labelSize = 3, size = 9)
             }
         }
 

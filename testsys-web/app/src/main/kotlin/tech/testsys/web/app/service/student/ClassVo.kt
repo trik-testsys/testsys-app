@@ -16,7 +16,7 @@ import java.time.Instant
  * @property description the description of the class.
  * @property students the identifiers of the students.
  * @property contests the identifiers of the contests of the class.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ClassVo(
     val id: ClassId,

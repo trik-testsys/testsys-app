@@ -7,7 +7,7 @@ import tech.testsys.web.components.overlay.MenuScope
  *
  * @property key the identifier compared with the active section.
  * @property label the shown name of the section.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 sealed interface HeaderItem {
     val key: String
@@ -18,7 +18,7 @@ sealed interface HeaderItem {
  * Section link of the Cabinet header.
  *
  * @property destination the route the link opens.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class NavItem(override val key: String, override val label: String, val destination: HeaderDestination.Route) : HeaderItem
 
@@ -27,7 +27,7 @@ data class NavItem(override val key: String, override val label: String, val des
  *
  * @property menu the columns of the section.
  * @property isSearchable whether the search field after the sections filters this menu, also for guests.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class MegaMenuItem(
     override val key: String,
@@ -41,7 +41,7 @@ data class MegaMenuItem(
  *
  * @property name the full name of the user.
  * @property menu the optional links and actions of the user, or `null` to show the user without a menu.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class HeaderUser(val name: String, val menu: (MenuScope.() -> Unit)? = null)
 
@@ -53,7 +53,7 @@ data class HeaderUser(val name: String, val menu: (MenuScope.() -> Unit)? = null
  * @property user the signed-in user, or `null` for a guest.
  * @property signIn the sign-in page shown to a guest, or `null` to hide the link; it cannot be set together with [user].
  * @property notifications the optional application-owned notifications; they require [user].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CabinetHeader(
     val items: List<HeaderItem> = emptyList(),

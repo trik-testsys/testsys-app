@@ -19,7 +19,7 @@ import tech.testsys.infra.database.internal.mapping.task.LogsMapping
  * The logs file is stored through [FileDataStorage] in [FileStorageKind.Logs];
  * logs are fixed on creation, so [update] always fails.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

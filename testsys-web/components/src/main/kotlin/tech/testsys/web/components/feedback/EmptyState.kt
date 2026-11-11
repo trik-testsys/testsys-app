@@ -50,7 +50,7 @@ internal fun buildEmptyState(content: EmptyContent, texts: UiLocalization, isErr
  * e.g. a way to where the missing things are made.
  *
  * @throws IllegalStateException if the block already holds rows, a table, an empty state or a load.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockScope.emptyState(
     title: String,

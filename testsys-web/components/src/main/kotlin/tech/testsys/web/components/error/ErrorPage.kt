@@ -30,7 +30,7 @@ import tech.testsys.web.components.texts.currentUiLocalization
  * Branded error screen available in every profile, with browser-history navigation only; [show] sets its texts, the
  * built-in texts come from the localization bound to the current UI.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 open class ErrorPage : Div(), HasDynamicTitle {
     private val texts = currentUiLocalization()
@@ -74,7 +74,7 @@ open class ErrorPage : Div(), HasDynamicTitle {
     /**
      * Shows the screen [title], its [description] and the browser [pageTitle] including the brand.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun show(title: String, description: String, pageTitle: String) {
         heading.text = title
@@ -88,7 +88,7 @@ open class ErrorPage : Div(), HasDynamicTitle {
      * Resets history navigation until the browser reports the completed navigation state; every error handler
      * calls it from `setErrorParameter`, otherwise the back action stays disabled.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun refreshHistoryNavigation() {
         back.isEnabled = false

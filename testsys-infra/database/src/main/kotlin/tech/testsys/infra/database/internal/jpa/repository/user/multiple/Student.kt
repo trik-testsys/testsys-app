@@ -10,7 +10,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [StudentDataJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -19,14 +19,14 @@ interface StudentDataJpaEntityRepository : SnowflakeJpaEntityRepository<StudentD
     /**
      * Finds the student data row of the user [userId], or `null` if the user does not hold the role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByUserId(userId: Long): StudentDataJpaEntity?
 
     /**
      * Finds which of the users [userIds] hold the role, in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e.userId from StudentDataJpaEntity e where e.userId in :userIds")
     fun findUserIdsByUserIdIn(@Param("userIds") userIds: Collection<Long>): List<Long>

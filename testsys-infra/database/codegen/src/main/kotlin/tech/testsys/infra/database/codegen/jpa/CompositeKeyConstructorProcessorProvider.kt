@@ -7,7 +7,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 /**
  * KSP service entry point of [CompositeKeyConstructorProcessor], registered in `META-INF/services`.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CompositeKeyConstructorProcessorProvider : SymbolProcessorProvider {
 

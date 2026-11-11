@@ -62,14 +62,14 @@ private fun skeleton(height: Int, width: Int? = null, unit: CssUnit = CssUnit.Pe
 /**
  * Semantic shapes available to a public loading placeholder.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 enum class SkeletonShape { Text, Circle, Badge, Rectangle }
 
 /**
  * Adds an accessible loading placeholder with [shape].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.skeleton(
     shape: SkeletonShape = SkeletonShape.Text,
@@ -92,7 +92,7 @@ fun ContentScope.skeleton(
 /**
  * Adds a loading placeholder on [size] columns, or the remaining columns.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.skeleton(
     shape: SkeletonShape = SkeletonShape.Text,
@@ -104,7 +104,7 @@ fun BlockRowScope.skeleton(
 /**
  * Adds [rows] loading rows, using one accessible status for the decorative shapes.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.skeletonRows(rows: Int = 5, configure: ElementHandle.() -> Unit = {}): ElementHandle {
     require(rows > 0) { "Skeleton row count must be positive, got $rows" }
@@ -128,7 +128,7 @@ fun ContentScope.skeletonRows(rows: Int = 5, configure: ElementHandle.() -> Unit
 /**
  * Adds loading rows on [size] columns, or the remaining columns.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun BlockRowScope.skeletonRows(rows: Int = 5, size: Int? = null, configure: ElementHandle.() -> Unit = {}): ElementHandle =
     placeContent(size, Div()).skeletonRows(rows, configure)

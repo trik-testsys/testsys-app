@@ -39,7 +39,7 @@ internal class ChoiceOption<V>(val value: V, val label: String, val count: Int?,
  * Scope of block tabs: the tabs in order.
  *
  * @param V the type of the tab values.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class TabsScope<V> internal constructor() {
@@ -49,7 +49,7 @@ class TabsScope<V> internal constructor() {
      * Adds a tab of [value] named [label]; a [count] above zero shows a counter of [countKind] next to the label.
      *
      * @throws IllegalArgumentException if [count] is negative.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun tab(value: V, label: String, count: Int? = null, countKind: CounterKind = CounterKind.Neutral) {
         require(count == null || count >= 0) { "Tab '$label' count must not be negative, got $count" }
@@ -62,7 +62,7 @@ class TabsScope<V> internal constructor() {
  *
  * @param V the type of the values.
  * @property value the chosen value; setting it does not run the listener.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 open class ChoiceHandle<V> internal constructor(private val group: ChoiceGroup<V>) : ElementHandle(group.root) {
     var value: V
@@ -75,7 +75,7 @@ open class ChoiceHandle<V> internal constructor(private val group: ChoiceGroup<V
      * Runs [listener] with the value a user chooses; a click on the chosen button does not run it. Replaces a
      * listener set by an earlier call.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun onChange(listener: (V) -> Unit) {
         group.onChange = listener
@@ -86,7 +86,7 @@ open class ChoiceHandle<V> internal constructor(private val group: ChoiceGroup<V
  * Handle of block tabs: the chosen value, the listener of choices and the counters.
  *
  * @param V the type of the tab values.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TabsHandle<V> internal constructor(private val tabs: ChoiceGroup<V>) : ChoiceHandle<V>(tabs) {
     private val counts = mutableMapOf<V, Bindable<Int?>>()
@@ -96,7 +96,7 @@ class TabsHandle<V> internal constructor(private val tabs: ChoiceGroup<V>) : Cho
      *
      * @throws IllegalArgumentException if no tab has [value] or [count] is negative.
      * @throws BindingActiveException if the counter of [value] is bound by [bindCount].
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun setCount(value: V, count: Int?) {
         counter(value).value = count
@@ -108,7 +108,7 @@ class TabsHandle<V> internal constructor(private val tabs: ChoiceGroup<V>) : Cho
      * [BindingActiveException]; the other tabs keep their own counters.
      *
      * @throws IllegalArgumentException if no tab has [value].
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun bindCount(value: V, signal: Signal<Int?>): SignalBinding<Int?> = counter(value).bind(signal)
 
@@ -124,7 +124,7 @@ class TabsHandle<V> internal constructor(private val tabs: ChoiceGroup<V>) : Cho
  * @param V the type of the tab values.
  * @throws IllegalArgumentException if there are fewer than two tabs, their values repeat or [initial] is not among them.
  * @throws IllegalStateException if the block already has tabs.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun <V> BlockScope.tabs(initial: V, content: TabsScope<V>.() -> Unit): TabsHandle<V> {
     val root = Div().apply { addClassNames(CssClass.Tabs, CssClass.TabsBare, CssClass.TabsLg) }

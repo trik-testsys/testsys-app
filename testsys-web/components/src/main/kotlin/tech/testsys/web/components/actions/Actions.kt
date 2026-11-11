@@ -13,6 +13,7 @@ import tech.testsys.web.components.core.setIconOnly
 import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GuestCardScope
 
 /** Role of an action; the look of the button follows it. */
 internal enum class ActionRole(val attribute: String) {
@@ -28,7 +29,7 @@ internal enum class ActionRole(val attribute: String) {
  * [label] becomes its accessible name and tooltip.
  *
  * @throws IllegalArgumentException if [iconOnly] is set without [icon] or with a blank [label].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.mainAction(
     label: String,
@@ -38,11 +39,19 @@ fun ContentScope.mainAction(
 ): ActionHandle = addAction(ActionRole.Main, label, icon, iconOnly, configure)
 
 /**
+ * Adds the main action of a guest card, as wide as the card, under its fields.
+ *
+ * @since 1.0.0-beta.1
+ */
+fun GuestCardScope.mainAction(label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
+    body.mainAction(label, configure = configure)
+
+/**
  * Adds a neutral action. With [iconOnly] the button shows only [icon], and [label] becomes its accessible name and
  * tooltip.
  *
  * @throws IllegalArgumentException if [iconOnly] is set without [icon] or with a blank [label].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.action(
     label: String,
@@ -56,7 +65,7 @@ fun ContentScope.action(
  * its accessible name and tooltip.
  *
  * @throws IllegalArgumentException if [iconOnly] is set without [icon] or with a blank [label].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.destructiveAction(
     label: String,
@@ -70,7 +79,7 @@ fun ContentScope.destructiveAction(
  * and tooltip.
  *
  * @throws IllegalArgumentException if [iconOnly] is set without [icon] or with a blank [label].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 fun ContentScope.linkAction(
     label: String,

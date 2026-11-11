@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [FileDataJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -22,7 +22,7 @@ interface FileDataJpaEntityRepository : SnowflakeJpaEntityRepository<FileDataJpa
     /**
      * Finds unowned file metadata ids in ascending order within [pageable], regardless of creation time.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select candidate.id from FileDataJpaEntity candidate " +
@@ -39,7 +39,7 @@ interface FileDataJpaEntityRepository : SnowflakeJpaEntityRepository<FileDataJpa
     /**
      * Deletes file metadata from [ids] still without owners, returning the deleted count.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(
@@ -56,7 +56,7 @@ interface FileDataJpaEntityRepository : SnowflakeJpaEntityRepository<FileDataJpa
     /**
      * Finds stored blob keys present in [keys] without loading file metadata entities.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query("select e.storedFileName from FileDataJpaEntity e where e.storedFileName in :keys")
     fun findStoredKeys(@Param("keys") keys: Collection<String>): List<String>
@@ -65,7 +65,7 @@ interface FileDataJpaEntityRepository : SnowflakeJpaEntityRepository<FileDataJpa
 /**
  * Spring Data repository for [TrikStudioVersionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -74,14 +74,41 @@ interface TrikStudioVersionJpaEntityRepository : SnowflakeJpaEntityRepository<Tr
     /**
      * Finds the version with [tag], or `null` if it is not stored.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByTag(tag: String): TrikStudioVersionJpaEntity?
 
     /**
      * Finds the stored versions with any of [tags] in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByTagIn(tags: Collection<String>): List<TrikStudioVersionJpaEntity>
+
+    /**
+     * Checks whether a version with the version number [studioVersion] is stored.
+     *
+     * @since 1.0.0-beta.1
+     */
+    fun existsByStudioVersion(studioVersion: String): Boolean
+
+    /**
+     * Finds the tags of the versions referenced by a contest, a submission, a task revision or a task validation
+     * request.
+     *
+     * @since 1.0.0-beta.1
+     */
+    @Query(
+        nativeQuery = true,
+        value = """
+            select v.tag from ts_trik_studio_version v
+            where exists (select 1 from ts_contest c where c.trik_studio_version_id = v.id)
+               or exists (select 1 from ts_submission s where s.trik_studio_version_id = v.id)
+               or exists (select 1 from ts_trik_studio_version_to_task_content t where t.trik_studio_version_id = v.id)
+               or exists (
+                   select 1 from ts_trik_studio_version_to_task_validation_request r where r.trik_studio_version_id = v.id
+               )
+        """,
+    )
+    fun findUsedTags(): List<String>
 }

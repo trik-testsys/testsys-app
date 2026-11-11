@@ -31,7 +31,7 @@ import tech.testsys.domain.model.user.UserId
  * @property test the id of the test the solution was run on, or `null` if not set yet.
  * @property logs the id of the grading logs of the run, or `null` if not set yet.
  * @property recording the id of the run recording, or `null` if there is none.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TestVerdictBuilder : Builder<TestVerdict> {
 
@@ -46,7 +46,7 @@ class TestVerdictBuilder : Builder<TestVerdict> {
     /**
      * Sets [test] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun test(test: Long) {
         this.test = TestId(test)
@@ -55,7 +55,7 @@ class TestVerdictBuilder : Builder<TestVerdict> {
     /**
      * Sets [logs] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun logs(logs: Long) {
         this.logs = LogsId(logs)
@@ -64,7 +64,7 @@ class TestVerdictBuilder : Builder<TestVerdict> {
     /**
      * Sets [recording] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun recording(recording: Long) {
         this.recording = RecordingId(recording)
@@ -90,7 +90,7 @@ class TestVerdictBuilder : Builder<TestVerdict> {
  * @property task the id of the graded task, or `null` if not set yet.
  * @property submission the id of the graded submission, or `null` if not set yet.
  * @property testVerdicts the outcomes of the runs on the task tests; at least one is required.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class VerdictDataBuilder : Builder<VerdictData> {
 
@@ -103,7 +103,7 @@ class VerdictDataBuilder : Builder<VerdictData> {
     /**
      * Sets [task] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun task(task: Long) {
         this.task = TaskId(task)
@@ -112,7 +112,7 @@ class VerdictDataBuilder : Builder<VerdictData> {
     /**
      * Sets [submission] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun submission(submission: Long) {
         this.submission = SubmissionId(submission)
@@ -121,7 +121,7 @@ class VerdictDataBuilder : Builder<VerdictData> {
     /**
      * Adds a [TestVerdict] built with a [TestVerdictBuilder] block to [testVerdicts].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun testVerdict(builder: TestVerdictBuilder.() -> Unit) {
         testVerdicts.add(TestVerdictBuilder().apply(builder).build())
@@ -142,7 +142,7 @@ class VerdictDataBuilder : Builder<VerdictData> {
 /**
  * Builder of [Verdict] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, VerdictDataBuilder>() {
 
@@ -170,7 +170,7 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
  * @property judgmentOrders the ids of the judgment orders concerning the submission.
  * @property status the chooser of the submission status.
  * @property kind the chooser of the submission kind.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SubmissionDataBuilder : Builder<SubmissionData> {
 
@@ -189,7 +189,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     /**
      * Sets [author] from a raw id as a [MultipleRoleUserId]; assign [author] directly for other [UserId] kinds.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun author(author: Long) {
         this.author = MultipleRoleUserId(author)
@@ -198,7 +198,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     /**
      * Sets [solution] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun solution(solution: Long) {
         this.solution = SolutionId(solution)
@@ -207,7 +207,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     /**
      * Sets [task] from a raw id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun task(task: Long) {
         this.task = TaskId(task)
@@ -216,7 +216,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     /**
      * Sets [judgmentOrders] from raw ids.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun judgmentOrders(orders: Iterable<Long>) {
         this.judgmentOrders = orders.map { JudgmentOrderId(it) }.toMutableList()
@@ -241,7 +241,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
 /**
  * Builder of [Submission] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class SubmissionBuilder : DomainEntityWithDataBuilder<Submission, SubmissionData, SubmissionDataBuilder>() {
 

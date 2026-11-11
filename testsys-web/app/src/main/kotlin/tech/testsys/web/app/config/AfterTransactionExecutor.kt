@@ -9,7 +9,7 @@ import java.util.concurrent.Executor
  * a transaction. A task of a rolled back transaction still runs: the dispatcher has already marked its request
  * as scheduled, and processing a request that was never saved finds nothing to do.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class AfterTransactionExecutor(private val delegate: Executor) : Executor {
     override fun execute(task: Runnable) {

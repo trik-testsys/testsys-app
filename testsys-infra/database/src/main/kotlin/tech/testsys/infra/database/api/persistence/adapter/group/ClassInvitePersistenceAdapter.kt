@@ -20,7 +20,7 @@ import java.time.Instant
 /**
  * Persistence adapter of [ClassInvite] entities backed by [ClassInviteJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

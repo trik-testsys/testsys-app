@@ -6,7 +6,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Locale
-import java.util.Random
+import java.util.random.RandomGenerator
 
 private const val INVITE_CODE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"
 private const val INVITE_CODE_LENGTH = 12
@@ -15,16 +15,16 @@ private const val INVITE_CODE_LENGTH = 12
  * Generates a raw invite code of 12 characters drawn by [random] from the lowercase invite-code alphabet.
  * The code is regenerated while it hashes, with the algorithm of [previous], to the replaced [previous] code.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
-fun generateInviteCode(random: Random, previous: InviteCodeHash?): String = generateSequence { randomInviteCode(random) }
+fun generateInviteCode(random: RandomGenerator, previous: InviteCodeHash?): String = generateSequence { randomInviteCode(random) }
     .first { code -> previous == null || InviteCodeHash.hashInviteCode(code, previous.algorithm) != previous }
 
 /**
  * Normalizes a user-entered invite code by lowercasing [input] with the root locale; other characters are kept.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun normalizeInviteCode(input: String): String = input.lowercase(Locale.ROOT)
@@ -34,7 +34,7 @@ fun normalizeInviteCode(input: String): String = input.lowercase(Locale.ROOT)
  * truncated to microseconds.
  *
  * @throws IllegalStateException if [ttl] is zero or negative.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalOperationsApi
 fun inviteExpiresAt(now: Instant, ttl: Duration): Instant {
@@ -42,6 +42,6 @@ fun inviteExpiresAt(now: Instant, ttl: Duration): Instant {
     return now.plus(ttl).truncatedTo(ChronoUnit.MICROS)
 }
 
-private fun randomInviteCode(random: Random): String = buildString(INVITE_CODE_LENGTH) {
+private fun randomInviteCode(random: RandomGenerator): String = buildString(INVITE_CODE_LENGTH) {
     repeat(INVITE_CODE_LENGTH) { append(INVITE_CODE_ALPHABET[random.nextInt(INVITE_CODE_ALPHABET.length)]) }
 }

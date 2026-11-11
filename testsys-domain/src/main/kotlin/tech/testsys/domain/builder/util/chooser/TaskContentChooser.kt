@@ -8,14 +8,14 @@ import tech.testsys.domain.model.task.TaskContent
 /**
  * DSL chooser of a [TaskContent] variant. Repeated calls of the same variant accumulate configuration.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class TaskContentChooser : Chooser<TaskContent>() {
 
     /**
      * Selects [TaskContent.New] with the work-in-progress revision configured by [wipBuilder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun new(wipBuilder: WipTaskContentBuilder.() -> Unit) {
         val currentBuilder = choice as? NewTaskContentBuilder ?: NewTaskContentBuilder()
@@ -28,7 +28,7 @@ class TaskContentChooser : Chooser<TaskContent>() {
      *
      * @param wipBuilder the configuration block of the work-in-progress revision.
      * @param lastCommittedBuilder the configuration block of the last committed revision.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun uncommitted(wipBuilder: WipTaskContentBuilder.() -> Unit, lastCommittedBuilder: CommittedTaskContentBuilder.() -> Unit) {
         val currentBuilder = choice as? UncommittedTaskContentBuilder ?: UncommittedTaskContentBuilder()
@@ -40,7 +40,7 @@ class TaskContentChooser : Chooser<TaskContent>() {
     /**
      * Selects [TaskContent.Committed] with the committed revision configured by [lastCommittedBuilder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun committed(lastCommittedBuilder: CommittedTaskContentBuilder.() -> Unit) {
         val currentBuilder = choice as? CommittedTaskContentVariantBuilder ?: CommittedTaskContentVariantBuilder()
@@ -53,7 +53,7 @@ class TaskContentChooser : Chooser<TaskContent>() {
  * Builder of [TaskContent.New].
  *
  * @property wip the builder of the work-in-progress revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class NewTaskContentBuilder : Builder<TaskContent> {
     val wip = WipTaskContentBuilder()
@@ -65,7 +65,7 @@ class NewTaskContentBuilder : Builder<TaskContent> {
  *
  * @property wip the builder of the work-in-progress revision.
  * @property lastCommitted the builder of the last committed revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class UncommittedTaskContentBuilder : Builder<TaskContent> {
     val wip = WipTaskContentBuilder()
@@ -78,7 +78,7 @@ class UncommittedTaskContentBuilder : Builder<TaskContent> {
  * Builder of [TaskContent.Committed].
  *
  * @property lastCommitted the builder of the last committed revision.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class CommittedTaskContentVariantBuilder : Builder<TaskContent> {
     val lastCommitted = CommittedTaskContentBuilder()

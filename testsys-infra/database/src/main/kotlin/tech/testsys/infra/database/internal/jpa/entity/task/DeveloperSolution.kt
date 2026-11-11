@@ -16,7 +16,7 @@ import java.util.UUID
  * @property versionBucket identity shared by all versions of the developer solution.
  * @property solutionId id of the [SolutionJpaEntity] holding the source.
  * @property expectedScore the score the solution is expected to reach.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

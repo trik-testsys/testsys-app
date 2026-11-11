@@ -1941,7 +1941,7 @@ class StudyOperationsTests {
                     prepareParticipantTask()
                     val submission = testSubmission(51).withData {
                         author = participant.id
-                        kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+                        kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion("3.0.0") }
                     }
                     every { submissionRepository.findById(submission.id) } returns submission
 
@@ -2206,7 +2206,7 @@ class StudyOperationsTests {
                     prepareStudentTask()
                     val submission = testSubmission(51).withData {
                         author = student.id
-                        kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+                        kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion("3.0.0") }
                     }
                     every { submissionRepository.findById(submission.id) } returns submission
 

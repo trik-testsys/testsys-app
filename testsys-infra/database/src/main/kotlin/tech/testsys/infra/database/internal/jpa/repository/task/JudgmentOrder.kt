@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [JudgmentOrderJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -20,14 +20,14 @@ interface JudgmentOrderJpaEntityRepository : SnowflakeJpaEntityRepository<Judgme
     /**
      * Finds the judgment orders issued for any of the submissions [submissionIds] in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllBySubmissionIdIn(submissionIds: Collection<Long>): List<JudgmentOrderJpaEntity>
 
     /**
      * Finds the ids of the judges [judgeIds] paired with the ids of the judgment orders they issued in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Query(
         "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.judgeId, e.id) " +

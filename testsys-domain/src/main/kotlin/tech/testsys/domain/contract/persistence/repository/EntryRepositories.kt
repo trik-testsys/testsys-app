@@ -15,7 +15,7 @@ import tech.testsys.domain.model.user.SingleRoleUserId
 /**
  * Persistence port for [ParticipantContestEntry]. Entries are immutable; update throws [UnsupportedOperationException].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ParticipantContestEntryRepository :
     EntityRepository<ParticipantContestEntryData, ParticipantContestEntryId, ParticipantContestEntry> {
@@ -27,7 +27,7 @@ interface ParticipantContestEntryRepository :
      * @param competitionId the selected competition context identifier.
      * @param contestId the selected contest context identifier.
      * @return the existing entry, or null when its context has not been entered.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByContext(participantId: SingleRoleUserId, competitionId: CompetitionId, contestId: ContestId): ParticipantContestEntry?
 
@@ -38,7 +38,7 @@ interface ParticipantContestEntryRepository :
      * @param competitionId the selected competition context identifier.
      * @param contestIds the requested contests; unrelated entries are excluded.
      * @return persisted entries in this context; unentered contests have no matching entry.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByContests(
         participantId: SingleRoleUserId,
@@ -52,7 +52,7 @@ interface ParticipantContestEntryRepository :
      *
      * @param data the required context and candidate first moment; existing entry fields are never replaced.
      * @return the persisted entry, shared by concurrent calls for the same context.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findOrCreate(data: ParticipantContestEntryData): ParticipantContestEntry
 }
@@ -60,7 +60,7 @@ interface ParticipantContestEntryRepository :
 /**
  * Persistence port for [StudentContestEntry]. Entries are immutable; update throws [UnsupportedOperationException].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface StudentContestEntryRepository :
     EntityRepository<StudentContestEntryData, StudentContestEntryId, StudentContestEntry> {
@@ -72,7 +72,7 @@ interface StudentContestEntryRepository :
      * @param studyClassId the selected studyClass context identifier.
      * @param contestId the selected contest context identifier.
      * @return the existing entry, or null when its context has not been entered.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByContext(userId: MultipleRoleUserId, studyClassId: ClassId, contestId: ContestId): StudentContestEntry?
 
@@ -83,7 +83,7 @@ interface StudentContestEntryRepository :
      * @param studyClassId the selected studyClass context identifier.
      * @param contestIds the requested contests; unrelated entries are excluded.
      * @return persisted entries in this context; unentered contests have no matching entry.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByContests(userId: MultipleRoleUserId, studyClassId: ClassId, contestIds: List<ContestId>): List<StudentContestEntry>
 
@@ -93,7 +93,7 @@ interface StudentContestEntryRepository :
      *
      * @param data the required context and candidate first moment; existing entry fields are never replaced.
      * @return the persisted entry, shared by concurrent calls for the same context.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findOrCreate(data: StudentContestEntryData): StudentContestEntry
 }

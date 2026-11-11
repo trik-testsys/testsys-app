@@ -13,7 +13,7 @@ import java.time.Instant
  * @property kind the role granted by the invite.
  * @property codeHash the stored invite code with its hashing algorithm.
  * @property expiresAt the moment the invite stops being valid.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class CommunityInviteVo(
     val id: CommunityInviteId,

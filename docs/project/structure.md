@@ -11,8 +11,12 @@
 
 ```
 testsys-app/
-├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR
+├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR, публикация образа
+├── .dockerignore             # Исключения из контекста Docker-образа (см. deployment.md)
+├── .gitattributes            # Окончания строк LF для скриптов и файлов переменных deploy/ (см. deployment.md)
 ├── buildSrc/                 # Convention-плагин testsys.conventions
+├── deploy/                   # Compose-файлы окружений, мониторинга (Prometheus, Grafana и сбор логов в Loki через Grafana Alloy) и Проверяющего узла, файлы переменных окружений, конфигурация приложения и мониторинга, скрипт запуска и очистки (см. deploy/README.md и deployment.md)
+├── Dockerfile                # Образ приложения testsys-web:app (см. deployment.md)
 ├── docs/                     # Документация проекта
 ├── gradle/
 │   ├── libs.versions.toml    # Каталог версий зависимостей (единственное место с версиями)
@@ -24,7 +28,7 @@ testsys-app/
 ├── testsys-infra/            # Реализации портов
 ├── testsys-web/              # Контейнер веб-модулей
 │   ├── components/           # Kotlin-DSL, общие тексты и экраны ошибок
-│   └── app/                  # Основное приложение
+│   └── app/                  # Основное и служебное приложения
 ├── detekt.yml                # Конфигурация Detekt
 ├── settings.gradle.kts       # Список модулей (корневого build.gradle.kts нет)
 └── gradlew, gradlew.bat
@@ -36,12 +40,15 @@ testsys-app/
 |--------------------------------------|------------------------------------------------------------------------------------------------------|-------------------|
 | `testsys-domain`                     | Доменные модели, порты (`contract`), DSL билдеров. Без Spring, JPA и любых внешних зависимостей.     | Реализован        |
 | `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
+| `testsys-infra:settings` | Общий инфраструктурный API служебных настроек, снимки и протокол применения; контракт хранения реестра Проверяющих узлов. | Реализован |
+| `testsys-infra:monitoring` | Учёт технических сбоев и каталог собственных метрик TestSys на Micrometer, см. [monitoring/README.md](../../testsys-infra/monitoring/README.md). | Реализован |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:diagnostics`          | Синхронный анализ XML одного Полигона через порт `PolygonDiagnostics`.                           | Реализован        |
 | `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-infra:mail` | Отправка писем Пользователям по SMTP (реализация порта `UserMailSender`). | Реализован |
-| `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация, безопасность, страницы, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | В разработке; состав страниц — в [app/README.md](../../testsys-web/app/README.md#страницы) |
+| `testsys-infra:crypto` | Хеширование и проверка Паролей (реализация порта `PasswordHasher`), см. [crypto/README.md](../../testsys-infra/crypto/README.md). | Реализован |
+| `testsys-web:app` | Основное и служебное приложения Vaadin Flow и сервер метрик в одном процессе: точка входа, конфигурация, безопасность, страницы, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | В разработке; состав страниц — в [app/README.md](../../testsys-web/app/README.md#страницы) |
 | `testsys-web:components` | Kotlin-DSL, привязка локализации `UI` (встроенные тексты из бандлов `ui_*`) и визуальная часть страниц ошибок, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 
 Отсутствующие маршруты веб-приложение обрабатывает само: см. раздел «Отсутствующие маршруты»
@@ -58,8 +65,14 @@ testsys-app/
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
   `database → codegen` (через `ksp`), `codegen → codegen-api`, `mail → domain`, `mail → localization`,
-  `grpc → domain`, `diagnostics → domain`, `components → localization` (через `api`), `app → components`,
-  `app → domain`, `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `app → mail`.
+  `grpc → domain`, `diagnostics → domain`, `crypto → domain`, `components → localization` (через `api`),
+  `app → components`, `app → domain`, `app → operation`, `app → grpc`, `app → database`, `app → diagnostics`,
+  `app → mail` и `app → crypto`.
+  Связи настроек: `settings → domain`, `database → settings`, `grpc → settings`, `diagnostics → settings`,
+  `app → settings`. Общий протокол принадлежит [settings/README.md](../../testsys-infra/settings/README.md).
+  Связи метрик: `settings → monitoring`, `database → monitoring`, `grpc → monitoring`, `mail → monitoring`,
+  `app → monitoring`; сам `monitoring` зависит только от внешних библиотек Micrometer и Spring Context, см.
+  [monitoring/README.md](../../testsys-infra/monitoring/README.md).
   Остальные связи — целевая архитектура.
 - Модуль `localization` подключает ICU4J как `implementation`, поэтому `components` и `app`, которые вызывают
   API ICU4J или `SupportedRegion.toULocale()`, сами подключают `libs.bundles.icu.implementation`.
@@ -79,9 +92,12 @@ testsys-app/
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
   Версия Spring Boot одна на весь проект. Модули со Spring подключают BOM `libs.spring.boot.bom` через
   `platform(...)`; версии стартеров, Hibernate, Liquibase, Testcontainers и драйвера PostgreSQL задаёт BOM,
-  в каталоге их нет.
+  в каталоге их нет. Модуль без Spring подключает BOM так же, если использует библиотеку каталога без версии,
+  например `libs.slf4j.api`.
 - `gradle.properties` — память Gradle-демона (`org.gradle.jvmargs`): значений Gradle по умолчанию полной сборке
-  с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры.
+  с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры. Там же включена параллельная сборка
+  (`org.gradle.parallel`): задачи независимых модулей, в том числе тесты, идут одновременно, и тестовая JVM
+  каждого модуля запускает свои контейнеры.
 - В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у веб-приложения
   `app` — ещё Spring Boot и Vaadin) и зависимостей, может быть и модуль-специфичная логика сборки — она остаётся
   в скрипте своего модуля. Так, в `testsys-infra/localization` это кодогенерация (см.
@@ -129,8 +145,10 @@ testsys-app/
 
 ### Сборка веб-приложений
 
-Запуск основного приложения (порт 8080; нужны PostgreSQL и каталоги файлов, см. раздел «Запуск и проверка»
-в [app/README.md](../../testsys-web/app/README.md#запуск-и-проверка)):
+Запуск одного процесса с основным и служебным интерфейсами (основной порт по умолчанию 8080) и сервером метрик,
+описанным в разделе [«Метрики»](../../testsys-web/app/README.md#метрики) app/README.md.
+Нужны PostgreSQL, каталоги файлов и обязательные служебные параметры из разделов «Запуск и проверка»
+и «Конфигурация запуска» в [app/README.md](../../testsys-web/app/README.md#конфигурация-запуска):
 
 ```bash
 ./gradlew :testsys-web:app:bootRun -Pdetekt.autoCorrect=false
@@ -154,7 +172,9 @@ dev-режим кладёт в `build/` — так задаёт `vaadin.build.fo
 Приложение обновляет открытые страницы без действия пользователя через push Vaadin по WebSocket (`/VAADIN/push`),
 см. раздел «Живые обновления» в [components/README.md](../../testsys-web/components/README.md). Реверс-прокси перед приложением
 должен пропускать заголовки `Upgrade`/`Connection` для этого пути. При нескольких экземплярах приложения нужны
-sticky sessions: сессия Vaadin и состояние её UI живут в памяти одного экземпляра. Живые обновления между
+sticky sessions: сессия Vaadin и состояние её UI живут в памяти одного экземпляра. Вход другой экземпляр
+восстанавливает из БД, а состояние UI — нет, см. раздел «Сохранённый вход» в
+[app/README.md](../../testsys-web/app/README.md#сохранённый-вход). Живые обновления между
 экземплярами не распространяются: фоновые `refresh`/`reload` и локальные сигналы действуют только на страницы
 своего экземпляра.
 
@@ -163,7 +183,9 @@ sticky sessions: сессия Vaadin и состояние её UI живут в
 в `build/generated/source/guide/main/kotlin`; компиляция Kotlin зависит от этой задачи.
 Vaadin устанавливает пакет и включает его вместе с CSS в сборку приложения.
 
-`bootJar` собирает приложение в production-режиме, включая собственные клиентские адаптеры из jar `components`.
+`bootJar` собирает оба интерфейса в одном production-артефакте с общим frontend,
+включая собственные клиентские адаптеры из jar `components`. Иерархия Spring-контекстов и пакеты запуска
+описаны в [app/README.md](../../testsys-web/app/README.md).
 Node.js плагин устанавливает в `~/.vaadin`; упаковка клиентских компонентов описана в
 [components/README.md](../../testsys-web/components/README.md), раздел «Клиентская реализация компонентов».
 
@@ -185,11 +207,11 @@ Workflow лежат в `.github/workflows`.
 
 | Workflow                  | Когда                          | Что делает                                                      |
 |---------------------------|--------------------------------|-----------------------------------------------------------------|
-| `build.yml`               | push/PR в `master`, `dev`      | `./gradlew assemble` — компиляция и сборка без тестов, jar-артефакты, аннотации ошибок компиляции в PR |
-| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon` — все тесты без Detekt, затем клиентские тесты `components` на Node 24 (`node --test`); отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
-| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon` — все source set всех модулей без правки файлов; таблица замечаний в Summary запуска, исходные и подготовленные SARIF-артефакты; отдельная загрузка в GitHub Security для каждого модуля с сохранением категории на модуль и задачу |
+| `build.yml`               | push/PR в `master`, `dev`, вызов из `release.yml` | `./gradlew assemble` — компиляция и сборка без тестов, jar-артефакты, аннотации ошибок компиляции в PR |
+| `test.yml`                | push/PR в `master`, `dev`, вызов из `release.yml` | `./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon` — все тесты без Detekt, затем клиентские тесты `components` на Node 24 (`node --test`); отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
+| `lint.yml`                | push/PR в `master`, `dev`, вызов из `release.yml` | `./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon` — все source set всех модулей без правки файлов; таблица замечаний в Summary запуска, исходные и подготовленные SARIF-артефакты; отдельная загрузка в GitHub Security для каждого модуля с сохранением категории на модуль и задачу |
 | `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
-| `release.yml`             | —                              | Пока пустой                                                     |
+| `release.yml`             | публикация релиза GitHub       | Сквошит изменения `dev`, которых ещё нет в `master`, в один коммит поверх `master`, ставит в нём версию релиза (`v1.2.3` → `1.2.3`) в `version` из `testsys.conventions.gradle.kts` и вместо `%CURRENT_VERSION%` в `.kt`-файлах и пушит его во временную ветку `release/<версия>`. На этом коммите вызывает `build.yml`, `test.yml` и `lint.yml`; SARIF в GitHub Security при этом не загружается. Если все проверки прошли, вливает этот коммит в `dev` merge-коммитом с тем же содержимым (в коммите релиза уже есть все изменения `dev`) и одним атомарным пушем переводит на него `master`, отправляет `dev` и переносит тег релиза: репозиторий принимает все три ссылки или ни одной. Затем публикует образ из `Dockerfile` в GitHub Packages как `ghcr.io/trik-testsys/testsys-app` с тегом версии и `latest` (пре-релиз не перемещает `latest`). Если `master` или `dev` сдвинулись после подготовки коммита релиза, пуш отклоняется. Если проверки не прошли или пуш отклонён, `master`, `dev`, тег и образ не меняются; если не опубликовался образ, повторный запуск упавших задач публикует его, не меняя ветки. Временная ветка удаляется в конце в любом случае. Секреты нужны, только если `master` или `dev` защищены: `RELEASE_TOKEN` с правом пуша в них |
 
 ## Куда класть новый код
 
@@ -202,7 +224,12 @@ Workflow лежат в `.github/workflows`.
 | Служебную обработку запроса валидации           | `TaskValidationOperations` в `testsys-operation`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Прокси-сервис операций                          | `testsys-web/app/.../service/<actor>/<Actor>Service.kt`, см. [app/README.md](../../testsys-web/app/README.md#прокси-сервисы) |
 | Служебную замену Кодов-приглашений с истёкшим сроком | `refreshClassInvite` в `ManagerOperations` и `refreshCommunityInvite` в `AdministratorOperations`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
+| Служебные чтение и запись данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
+| Хранение входов в основной и служебный интерфейсы | `testsys-infra:database`, пакет `api/session`, см. [database/README.md](../../testsys-infra/database/README.md#входы-в-интерфейсы) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
+| Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
+| Дашборд, настройку мониторинга или сбора логов | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/config/loki.yml`, `deploy/config/alloy.alloy`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |
+| Параметр конфигурации приложения | Умолчание — в `<тема>-defaults.properties` модуля-владельца, чтение — классом параметров, который привязывает `Binder` при запуске (обязательный параметр без умолчания — `strictBinder` из `testsys-infra:settings`), или `@SettingsProperties` для ключа кабинета; строка — в таблице раздела «Параметры приложения» в [deployment.md](deployment.md#параметры-приложения) |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |
 | Необходимая клиентская реализация компонента | `components/src/main/resources/META-INF/frontend/testsys-ui/`, API — components/README.md |

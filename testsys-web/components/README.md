@@ -22,7 +22,10 @@
   `styles/styles.css` импортирует единственные токены; `styles/vaadin.css` связывает Lumo с ними и оформляет
   специфичный DOM Vaadin. Шрифты с лицензиями находятся в `fonts/`, бренд — в `brand/`, иконки — в `icons.svg`,
   лицензия иконок — `LICENSE-Lucide.txt`. Стандартный `processResources` упаковывает эти ресурсы без дополнительного
-  копирования исходников.
+  копирования исходников и добавляет к каждому импорту токенов в `styles/styles.css` параметр `v-c` с началом
+  SHA-256 импортируемого файла. Vaadin версионирует только сам `@StyleSheet` и отдаёт файл с `v-c` с кэшем на год,
+  а без него — на час; поэтому изменённый файл токенов меняет и свой адрес, и версию `styles.css`, и браузер
+  получает его сразу после развёртывания.
 - jar модуля сохраняет даты изменения файлов (`isPreserveFileTimestamps = true`): Vaadin отдаёт стили с
   `Last-Modified` из jar, и с одинаковой датой воспроизводимой сборки браузер держал бы старый CSS после пересборки.
 - Приложение подключает стили через `@StyleSheet` на `AppShellConfigurator` в порядке: `Lumo.STYLESHEET`,
@@ -39,14 +42,16 @@
 пояс.
 Пакет `core` содержит внутренние средства работы с DOM, сигналами и фоновыми задачами.
 
-Radio реализован в `forms/RadioChoices.kt`, редактор кода — в `forms/CodeEditor.kt`. Раскладку подписей полей
-задаёт `layout/FieldLayout.kt`; публичное информационное поле остаётся в `display/Field.kt`.
+Radio и segmented control гостевой карточки реализованы в `forms/RadioChoices.kt`, редактор кода —
+в `forms/CodeEditor.kt`. Раскладку подписей полей задаёт `layout/FieldLayout.kt`; публичное информационное поле
+остаётся в `display/Field.kt`.
 Тестовые пакеты повторяют расположение проверяемого кода.
 
 ## Страница
 
 Страница — класс с `@Route`, унаследованный от `TestSysView`. Метод `page(header) { … }` собирает шапку
-`CabinetHeader`, тело и автоматический футер.
+`CabinetHeader`, тело и автоматический футер. Гостевую страницу без шапки строит `guestPage`, см.
+[Гостевая страница](#гостевая-страница).
 
 ```kotlin
 @Route("profile")
@@ -84,8 +89,8 @@ class ProfileView : TestSysView() {
 
 ## Футер страницы
 
-`Page` и `ErrorPage`, включая `NotFoundPage`, автоматически выводят футер после `main`. На короткой странице
-тело заполняет свободную высоту окна; на длинной футер следует после содержимого. Логотип, размеры и оформление принадлежат
+`Page`, гостевая страница и `ErrorPage`, включая `NotFoundPage`, автоматически выводят футер после `main`. На короткой странице
+тело заполняет свободную высоту окна; на длинной футер следует после содержимого. Состав, размеры и оформление принадлежат
 [ui-design.md](../../docs/project/ui-design.md), раздел «Футер страницы».
 
 `footer { }` в `PageScope` настраивает ссылки одной страницы. Без вызова список пуст, навигация не создаётся.
@@ -107,6 +112,32 @@ class ProfileView : TestSysView() {
 `ui_page.footer.year` форматирует год, `ui_page.footer.links` задаёт доступное имя навигации.
 Подписи ссылок передаёт страница. Футер страницы отличается от `footer { }` блока
 и диалога: это отдельный элемент общей оболочки.
+
+## Гостевая страница
+
+`guestPage(tagline) { … }` в `TestSysView` строит страницу для Пользователя, который не вошёл: бренд без ссылки
+с доступным именем `ui_page.brand.name`, подзаголовок `tagline`, тело и автоматический футер. Шапки, заголовка
+страницы и гайдов у неё нет. Повторный вызов заменяет страницу, вызов из строящегося тела, как и `page(...)`, —
+`IllegalStateException`. Оформление принадлежит [ui-design.md](../../docs/project/ui-design.md#гостевые-страницы).
+
+| Вызов в `GuestPageScope` | Что делает |
+|--------------------------|------------|
+| `card(title, description, step = null) { }` | Карточка: заголовок, одна поясняющая фраза с меткой шага `step` перед ней и содержимое `GuestCardScope` |
+| `links { }` | Строка под карточкой — `ContentScope`; соседние `linkAction` разделяет средняя точка |
+
+- `card` и `links` вызываются не больше одного раза каждый (`IllegalStateException`); строка ссылок всегда стоит
+  под карточкой. Пустые `title` или `description` — `IllegalArgumentException`.
+- Заголовок карточки — `h1` страницы с типографикой h2.
+- `GuestCardScope` размещает элементы друг под другом: `textInput`, `codeInput` и `passwordInput` с параметрами
+  `label`, `hint` и `aside`, `segmentedControl(label, items, itemLabel)` на всю ширину и широкий `mainAction(label)`.
+- Подпись поля карточки — `<label>` над контролом с тем же доступным именем и фокусом по клику, как у поля блока.
+  `aside` — `ContentScope` справа в строке подписи, например `linkAction`. `isVisible` скрывает поле вместе
+  с подписью и `aside`. У `segmentedControl` подпись — только доступное имя.
+- `segmentedControl` принимает от двух до четырёх вариантов и возвращает `ValueInput<T?>` на `RadioButtonGroup`;
+  стрелки, Home и End выбирают варианты. Выбор Home/End добавляет
+  `META-INF/frontend/testsys-ui/segmented-choice.ts`.
+
+Образец — [AuthenticationView.kt](../app/src/main/kotlin/tech/testsys/web/app/view/AuthenticationView.kt).
 
 ## Заголовок страницы
 
@@ -192,7 +223,7 @@ class ContestQuestionsView(private val contests: <ContestSource>) : TestSysView(
 в порядке объявления. `target` — существующая ручка `ElementHandle`, например поле или действие.
 К моменту завершения построения блока цель должна находиться внутри него. Селекторы и компоненты Vaadin
 в конфигурацию не передаются. Образец с полями —
-[RegistrationView.kt](../app/src/main/kotlin/tech/testsys/web/app/view/RegistrationView.kt).
+[ProfileView.kt](../app/src/main/kotlin/tech/testsys/web/app/view/ProfileView.kt).
 
 Пустые заголовки и пояснения, повтор цели и цель чужого блока дают `IllegalArgumentException`.
 Повторная настройка гайда страницы или блока даёт `IllegalStateException`.
@@ -237,7 +268,8 @@ Driver перемещает выделение и прокручивает ст�
 - `block` и `highlightBlock` по умолчанию имеют `stretch = true` и растягиваются до высоты ряда.
   При `stretch = false` высота отдельного блока определяется содержимым, его верх совпадает с верхом ряда.
   Ширина по `size` сохраняется; следующий ряд начинается после самого высокого блока. Промежутки фиксированы.
-- Строка блока без элементов не выводится; блок без непустых строк выводится без тела.
+- Строка блока без элементов не выводится; строка, все элементы которой скрыты, не показывается и не добавляет
+  промежутка. Блок без содержимого выводится без тела.
 - Скрытый элемент строки блока (`isVisible = false`) освобождает свои колонки: следующие элементы сдвигаются влево.
 - Размеры передаются именованным аргументом (`block(size = 16)`, `text(size = 8)`, `labelSize = 4`): Detekt
   `MagicNumber` не проверяет именованные аргументы.
@@ -252,11 +284,13 @@ Driver перемещает выделение и прокручивает ст�
 | Скоуп | Доступно |
 |-------|----------|
 | `PageScope` | `head` (до рядов и футера), `row`, `guide`, `footer` |
+| `GuestPageScope` | `card`, `links` (гостевая страница) |
+| `GuestCardScope` | `textInput`, `codeInput`, `passwordInput` с подписью сверху, `segmentedControl`, `mainAction` |
 | `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
 | `GuideStepsScope` | `step` (пояснение поля или действия блока) |
 | `PageRowScope` | `block`, `highlightBlock`, `space` |
-| `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)`, `guide` |
+| `BlockScope` | `row` (строка тела), `sectionTitle(title)`, `separator()`, `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)`, `guide` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `horizontal(size)`, `vertical(size)` |
 | `ContentScope` | `text`, действия, `menu`, `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
 | `TabsScope<V>` | `tab` |
@@ -265,8 +299,13 @@ Driver перемещает выделение и прокручивает ст�
 | `DialogScope` | `row` (строка на 24 колонках), `section(title)`, `footer { dialog -> }` |
 | `DialogSectionScope` | `row` (строка на собственной сетке из 24 колонок) |
 
-Содержимое тела блока кладётся только в строки, в таблицу или в пустое состояние: элемент прямо в `BlockScope`
-не компилируется. `ContentScope` — поток без размеров: шапка, подвал, группы `horizontal`/`vertical` строки блока, значение `field`,
+Содержимое тела блока кладётся в строки либо занимает всё тело через `table`, `emptyState` или `load`.
+`sectionTitle(title)` добавляет заметный заголовок группы на всю ширину тела и возвращает `TextHandle`.
+`separator()` добавляет тонкую нейтральную горизонтальную линию на всю ширину и возвращает `ElementHandle`.
+Оба элемента сохраняются при переключении режима редактирования. Они могут чередоваться со строками,
+в том числе в загруженном содержимом; сочетание с элементом, занимающим всё тело, в любом порядке
+вызывает `IllegalStateException`. Остальные элементы прямо в `BlockScope` не компилируются.
+`ContentScope` — поток без размеров: шапка, подвал, группы `horizontal`/`vertical` строки блока, значение `field`,
 ячейки `column` таблицы, подвал диалога, кнопки заголовка страницы и пустого состояния.
 
 Функции содержимого — расширения скоупов в пакетах `actions`, `forms`, `display`, `feedback`, `data`, `navigation`,
@@ -539,11 +578,14 @@ confirm(
 ) { deleteContest() }
 ```
 
-- `confirm(title, text = null, action, isDanger = false, typeToConfirm = null, onConfirm)` вызывается
-  из обработчиков, как `toast`, и открывает диалог шириной 440 px сразу.
+- `confirm(title, text = null, action, isDanger = false, typeToConfirm = null,
+  cooldownSeconds = if (isDanger) 3 else 0, onConfirm)` вызывается из обработчиков, как `toast`, и открывает диалог
+  шириной 440 px сразу.
 - Подвал: «Отменить» (`ui_overlay.dialog.cancel`) и кнопка действия. У обычного подтверждения она главная (`mainAction`).
   `isDanger` включает вид `.ts-dialog--alert` (предупреждающая иконка вместо шапки), а кнопка действия получает
   внутреннюю роль `danger` (см. [Оформление](#оформление)).
+- Кнопка действия первые `cooldownSeconds` секунд после открытия не реагирует на нажатие. Задержку задаёт
+  `ActionHandle.cooldownSeconds`, см. [Ручки и служебные свойства](#ручки-и-служебные-свойства).
 - `typeToConfirm` ставит между текстом и подвалом поле с подписью `ui_overlay.dialog.type_to_confirm` и фокусом
   после открытия. Кнопка действия включена, только когда значение поля без пробелов по краям в точности, с учётом
   регистра, совпадает с `typeToConfirm.trim()`.
@@ -805,7 +847,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `ElementHandle` | `isVisible`, `bindVisible(signal)` (в том числе у `emptyState` и `menu`) |
 | `FieldHandle` | всё из `ElementHandle` и `isObscured`, `bindObscured(signal)`, см. [Скрытые значения](#скрытые-значения) |
 | `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `counter`, `text`) |
-| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick`, `clickOnEnter()` — нажатие Enter на странице нажимает действие |
+| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick`, `clickOnEnter()` — нажатие Enter на странице нажимает действие, `cooldownSeconds` — задержка нажатия |
 | `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
 | `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает) |
 | `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)`, `bindCount(value, signal)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |
@@ -819,6 +861,15 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 накапливают слушателей; на них опирается `Binder`. `addValueChangeListener` возвращает `Registration`, через который
 слушателя снимают. `addValidationStatusChangeListener` добавляет слушателя только у `dateInput`, `timeInput`,
 `dateTimeInput` и `dateRangeInput`; у остальных полей он возвращает `null` и слушателя не добавляет.
+
+`ActionHandle.cooldownSeconds` (по умолчанию `0` — без задержки) задаёт, сколько секунд кнопка не реагирует на нажатие
+после каждого прикрепления к странице, например при каждом открытии диалога. Новое значение действует со следующего
+прикрепления; отрицательное — `IllegalArgumentException`. На время задержки клиент делает кнопку `inert` и ставит
+атрибут `data-ts-cooldown` с оставшимися секундами и свойство стиля `--ts-cooldown-duration` со всей задержкой.
+`vaadin.css` рисует кнопку выключенной с обратным отсчётом и полосой у нижнего края, которая линейно убывает за время
+задержки. При `prefers-reduced-motion: reduce` полосы нет, остаётся отсчёт.
+Серверное состояние кнопки не меняется, поэтому тесты Karibu нажимают её сразу. Задержка не распространяется на
+`clickOnEnter()`, поэтому их сочетание в любом порядке — `IllegalStateException`.
 
 `ValueInput` привязывается к `Binder` как обычное поле: `binder.forField(input)`. Ручка не является компонентом
 Vaadin, поэтому `Binder` не пропускает скрытое поле сам. Явный хелпер `binding.skipWhenHidden()` исключает привязку
@@ -998,6 +1049,7 @@ Escape и закрытие снаружи отменяют черновик. У�
 | Функция | Данные и ручка |
 |---------|----------------|
 | `verdict` | Нейтральный числовой балл `Double` (включая 0), необязательная подпись; `DataHandle<Double>`, configure и размещение в строке через `size` |
+| `progressBar` | `ProgressValue.Determinate` (0–100) или `Indeterminate`; доступное имя обязательно |
 | `timer` | `TimerValue.Static(Duration)` либо `Until(Instant)`, варианты `Chip`, `Hero`, `Tiles`, `Text`; `TimerHandle.remainingSeconds` — сигнал только для чтения |
 | `skeleton`, `skeletonRows` | Геометрия в ядре; страница выбирает форму, число строк и `size`. Декоративные формы `Text`, `Circle`, `Badge`, `Rectangle` и строки внутри одного доступного статуса загрузки |
 
@@ -1144,8 +1196,8 @@ Detach закрывает карточку и освобождает её тай
 
 ## Ресурсы бренда
 
-`TestSysBrand.HEADER` задает путь выбранного горизонтального PNG для шапки и `ErrorPage`;
-`TestSysBrand.FOOTER` — путь прозрачного SVG для футера страницы;
+`TestSysBrand.ICON` задает путь кремовой эмблемы на синем квадрате, которую шапка, `ErrorPage` и гостевая страница
+показывают рядом с `WORDMARK`;
 `TestSysBrand.FAVICON` — к синей эмблеме на бежевом фоне со скругленными углами.
 `EMBLEM` и `WORDMARK` сохраняют публичные пути к отдельным прозрачным векторным вариантам.
 `AppShell` каждого приложения подключает `TestSysBrand.FAVICON_URL` через `AppShellSettings.addFavIcon`;

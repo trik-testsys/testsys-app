@@ -18,7 +18,7 @@ import tech.testsys.domain.model.task.VersionBucket
  * @property description the description of the exercise, or `null` if not set yet.
  * @property versionBucket the version chain shared by all versions of the exercise, or `null` if not set yet.
  * @property language the chooser of the programming language.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ExerciseDataBuilder : Builder<ExerciseData> {
 
@@ -37,7 +37,7 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
      *
      * @param uploadedFilename the original name of the uploaded file.
      * @param content the raw binary content of the file.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
@@ -46,7 +46,7 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
     /**
      * Sets [file] without reading its contents.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun file(file: FileData) {
         _file = file
@@ -71,7 +71,7 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
 /**
  * Builder of [Exercise] entities. Required: [id], [createdAt], [data].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class ExerciseBuilder : DomainEntityWithDataBuilder<Exercise, ExerciseData, ExerciseDataBuilder>() {
 

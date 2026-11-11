@@ -10,7 +10,7 @@ import tech.testsys.web.app.service.toVo
  * @property task the task data without lazy references.
  * @property bestScore the highest final score, or `null` without successful grading.
  * @property lastSubmission the latest submission, or `null` without submissions.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class StudyContestTaskVo(val task: TaskVo, val bestScore: Int?, val lastSubmission: SubmissionVo?)
 

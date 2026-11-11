@@ -6,7 +6,7 @@ import java.time.Instant
 /**
  * DSL marker of the domain entity builder DSL; prevents implicit access to outer receivers in nested blocks.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @DslMarker
 @Target(AnnotationTarget.CLASS)
@@ -16,7 +16,7 @@ annotation class DomainEntityBuilderDsl
  * Builds instances of [T]. Builders check that required fields are set but not the integrity of the data.
  *
  * @param T the type of the built object.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @DomainEntityBuilderDsl
 interface Builder<out T> {
@@ -25,7 +25,7 @@ interface Builder<out T> {
      *
      * @return the built instance.
      * @throws IllegalArgumentException if a required field is not set.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun build(): T
 }
@@ -38,7 +38,7 @@ interface Builder<out T> {
  * @property createdAt the creation timestamp of the entity, or `null` if not set yet.
  * @property version the optimistic-lock token to put on the built entity, or `null` if the entity is not assembled
  *   from a stored row.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface DomainEntityBuilder<out Entity> : Builder<Entity> {
 
@@ -51,7 +51,7 @@ interface DomainEntityBuilder<out Entity> : Builder<Entity> {
     /**
      * Sets [createdAt] to the current instant.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun createdNow() {
         createdAt = Instant.now()
@@ -64,7 +64,7 @@ interface DomainEntityBuilder<out Entity> : Builder<Entity> {
  * @param Data the type of the data object.
  * @param DataBuilder the builder type of [Data].
  * @property data the data object, or `null` if not configured yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface DataCapable<Data, DataBuilder : Builder<Data>> {
 
@@ -74,7 +74,7 @@ interface DataCapable<Data, DataBuilder : Builder<Data>> {
      * Creates a new [DataBuilder].
      *
      * @return a fresh, unconfigured data builder.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun dataBuilder(): DataBuilder
 }
@@ -85,7 +85,7 @@ interface DataCapable<Data, DataBuilder : Builder<Data>> {
  * @param Data the type of the data object.
  * @param DataBuilder the builder type of [Data].
  * @param builder the configuration block applied to a fresh [DataBuilder].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 inline fun <Data, DataBuilder : Builder<Data>> DataCapable<Data, DataBuilder>.data(builder: DataBuilder.() -> Unit) {
     data = dataBuilder().apply(builder).build()
@@ -98,7 +98,7 @@ inline fun <Data, DataBuilder : Builder<Data>> DataCapable<Data, DataBuilder>.da
  * @param Entity the type of the built entity.
  * @param Data the type of the data object.
  * @param DataBuilder the builder type of [Data].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class DomainEntityWithDataBuilder<Entity, Data, DataBuilder : Builder<Data>> :
     DomainEntityBuilder<Entity>, DataCapable<Data, DataBuilder> {

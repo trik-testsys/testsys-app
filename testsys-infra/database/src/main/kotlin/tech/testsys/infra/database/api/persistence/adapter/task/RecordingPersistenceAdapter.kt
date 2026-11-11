@@ -19,7 +19,7 @@ import tech.testsys.infra.database.internal.mapping.task.RecordingMapping
  * The recording file is stored through [FileDataStorage] in [FileStorageKind.Recording];
  * a recording is fixed on creation, so [update] always fails.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

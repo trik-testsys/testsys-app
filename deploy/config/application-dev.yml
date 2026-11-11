@@ -1,0 +1,28 @@
+# Application parameters of the dev and e2e environments, mounted by deploy/compose.dev.yml and
+# deploy/compose.e2e.yml as application-environment.yml; e2e adds its differences from application-e2e.yml.
+# The secrets, the Grafana address and the grading node addresses are variables in deploy/env/dev.env and
+# deploy/env/e2e.env. The email confirmation parameters, the invite TTLs and the participant limit are initial
+# values: values saved in the service cabinet override them.
+testsys:
+  operation:
+    community:
+      public-community-id: 1
+      public-community-name: Публичное Сообщество
+    # Supervisor of the environment; its access code is TESTSYS_SUPERVISOR_ACCESS_TOKEN.
+    supervisor:
+      name: Супервайзер
+    email-confirmation:
+      confirmation-code-lifetime: PT15M
+      max-confirmation-attempts: 3
+    community-invite:
+      ttl: P7D
+      refresh-period: PT1H
+    competition:
+      max-participants: 500
+    class-invite:
+      ttl: P7D
+      refresh-period: PT1H
+  # Mailpit of the Compose project, without authorization.
+  mail:
+    host: mailpit
+    port: 1025

@@ -17,27 +17,27 @@ import tech.testsys.web.app.security.UserKind
 /**
  * User of the current request on whose behalf the services run operations.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface CurrentUser {
     /**
      * Returns the current user of any kind.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun user(): User<*>
 
     /**
      * Returns the current user, who must be a [MultipleRoleUser].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun multipleRoleUser(): MultipleRoleUser
 
     /**
      * Returns the current user, who must be a [SingleRoleUser].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun singleRoleUser(): SingleRoleUser
 }
@@ -46,7 +46,7 @@ interface CurrentUser {
  * [CurrentUser] of the signed-in [CabinetPrincipal], loaded on every call; without a signed-in user, with a missing user
  * or with a user of another kind every call throws [IllegalStateException].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 class SecurityCurrentUser(

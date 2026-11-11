@@ -9,7 +9,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
  * Hibernate naming strategy: snake_case columns (`taskId` → `task_id`); tables also drop the `JpaEntity`/`Entity`
  * suffix and get the `ts_` prefix (`SubmissionJpaEntity` → `ts_submission`).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 class TestsysPhysicalNamingStrategy : PhysicalNamingStrategyStandardImpl() {

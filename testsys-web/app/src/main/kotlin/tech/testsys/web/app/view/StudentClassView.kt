@@ -24,7 +24,7 @@ import java.time.Instant
  * Class of a Student (testsys.web.page.student.class): the name and description of the class and its contests with their
  * dates, time to pass and state for the student; a contest row opens its page.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Route("student/classes/:classId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")
@@ -53,9 +53,9 @@ class StudentClassView(
                 block(title = texts.detailsTitle()) {
                     guide(texts.classDetailsGuide())
                     load({ studentService.checkClassAccess(classId) }) { loaded ->
-                        row { codeInput(texts.id(), labelSize = 4, size = 8) { value = loaded.id.value.toString() } }
-                        row { textInput(texts.name(), labelSize = 4, size = 20) { value = loaded.name } }
-                        row { textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) { value = loaded.description } }
+                        row { codeInput(texts.id(), labelSize = 2, size = 4) { value = loaded.id.value.toString() } }
+                        row { textInput(texts.name(), labelSize = 2, size = 22) { value = loaded.name } }
+                        row { textArea(texts.description(), labelSize = 2, size = 22, maxLines = 4) { value = loaded.description } }
                     }
                 }.isEditable = false
             }

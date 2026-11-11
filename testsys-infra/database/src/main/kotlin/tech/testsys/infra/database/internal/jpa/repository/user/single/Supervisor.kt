@@ -8,7 +8,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 /**
  * Spring Data repository for [SupervisorDataJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -17,14 +17,14 @@ interface SupervisorDataJpaEntityRepository : SnowflakeJpaEntityRepository<Super
     /**
      * Finds the supervisor data row of the user [userId], or `null` if the user does not hold the role.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByUserId(userId: Long): SupervisorDataJpaEntity?
 
     /**
      * Finds the supervisor data rows of any of the users [userIds] in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAllByUserIdIn(userIds: Collection<Long>): List<SupervisorDataJpaEntity>
 }

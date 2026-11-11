@@ -12,7 +12,7 @@ import java.time.Instant
  * @property classId the context identifier.
  * @property contestId the context identifier.
  * @property enteredAt the first entry moment.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

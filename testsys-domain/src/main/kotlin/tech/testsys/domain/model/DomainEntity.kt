@@ -8,7 +8,7 @@ import java.time.Instant
  * so identifiers of different kinds cannot be mixed up at compile time.
  *
  * @property value the raw numeric value of the identifier.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface DomainId {
     val value: Long
@@ -19,7 +19,7 @@ interface DomainId {
  * when it is updated. The domain only passes it along; it is never derived, compared or modified by domain code.
  *
  * @property value the raw value of the token.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @JvmInline
 value class EntityVersion(val value: Long)
@@ -33,7 +33,7 @@ value class EntityVersion(val value: Long)
  * @property createdAt the moment the entity was created.
  * @property version the optimistic-lock token of the loaded state, or `null` if the entity was not obtained
  *   from persistence; an update with a stale token fails.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 abstract class DomainEntity<Id : DomainId>(
     val id: Id,
@@ -64,7 +64,7 @@ abstract class DomainEntity<Id : DomainId>(
  * @param Id the identifier type of the referenced entity.
  * @param Entity the type of the referenced entity.
  * @property id the identifier of the referenced entity.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LazyEntity<Id : DomainId, Entity : DomainEntity<Id>>(val id: Id) {
 
@@ -76,7 +76,7 @@ class LazyEntity<Id : DomainId, Entity : DomainEntity<Id>>(val id: Id) {
      * @param persistence the loader used to fetch the entity on the first call.
      * @return the referenced entity.
      * @throws IllegalArgumentException if no entity with [id] exists.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun load(persistence: EntityLoader<Id, Entity>): Entity {
         value?.let {
@@ -97,7 +97,7 @@ class LazyEntity<Id : DomainId, Entity : DomainEntity<Id>>(val id: Id) {
  * @param Id the identifier type of the referenced entities.
  * @param Entity the type of the referenced entities.
  * @property ids the identifiers of the referenced entities.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class LazyEntityList<Id : DomainId, Entity : DomainEntity<Id>>(val ids: List<Id>) {
     private var value: List<Entity>? = null
@@ -110,7 +110,7 @@ class LazyEntityList<Id : DomainId, Entity : DomainEntity<Id>>(val ids: List<Id>
      * @param page reserved for future pagination; currently ignored.
      * @return the referenced entities.
      * @throws IllegalArgumentException if any of [ids] does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun load(persistence: EntityLoader<Id, Entity>, pageSize: Int = Int.MAX_VALUE, page: Int = 0): List<Entity> {
         value?.let {

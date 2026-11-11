@@ -27,13 +27,11 @@ class SubmissionMappingTests : EntityMappingTests<SubmissionMapping>() {
     @Test
     fun `should restore developer solution test version without a contest`() {
         val row = row(SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST, versionId = 3)
+        val version = TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0")
 
-        val restored = mapping.toDomain(row, MultipleRoleUserId(1), TrikStudioVersion("3.0.0"), emptyList())
+        val restored = mapping.toDomain(row, MultipleRoleUserId(1), version, emptyList())
 
-        assertEquals(
-            TrikStudioVersion("3.0.0"),
-            assertIs<SubmissionKind.DeveloperSolutionTest>(restored.data.kind).trikStudioVersion,
-        )
+        assertEquals(version, assertIs<SubmissionKind.DeveloperSolutionTest>(restored.data.kind).trikStudioVersion)
     }
 
     @ParameterizedTest
@@ -43,7 +41,7 @@ class SubmissionMappingTests : EntityMappingTests<SubmissionMapping>() {
         hasResolvedVersion: Boolean,
     ) {
         val row = row(SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST, versionId = 3L.takeIf { hasVersionId })
-        val version = TrikStudioVersion("3.0.0").takeIf { hasResolvedVersion }
+        val version = TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0").takeIf { hasResolvedVersion }
 
         assertFailsWith<IllegalArgumentException> {
             mapping.toDomain(row, MultipleRoleUserId(1), version, emptyList())
@@ -55,7 +53,7 @@ class SubmissionMappingTests : EntityMappingTests<SubmissionMapping>() {
         val row = row(SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST, versionId = 3, contestId = 4)
 
         assertFailsWith<IllegalArgumentException> {
-            mapping.toDomain(row, MultipleRoleUserId(1), TrikStudioVersion("3.0.0"), emptyList())
+            mapping.toDomain(row, MultipleRoleUserId(1), TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0"), emptyList())
         }
     }
 
@@ -86,7 +84,7 @@ class SubmissionMappingTests : EntityMappingTests<SubmissionMapping>() {
             solution(2)
             task(3)
             status.queued()
-            kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+            kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0") }
         }
 
         val row = mapping.toJpaEntity(data, trikStudioVersionId = 7)
@@ -103,7 +101,7 @@ class SubmissionMappingTests : EntityMappingTests<SubmissionMapping>() {
             solution(2)
             task(3)
             status.queued()
-            kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+            kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0") }
         }
 
         assertFailsWith<IllegalArgumentException> { mapping.toJpaEntity(data, trikStudioVersionId = null) }

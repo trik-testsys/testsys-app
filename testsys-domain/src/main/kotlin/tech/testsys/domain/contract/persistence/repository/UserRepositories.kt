@@ -5,6 +5,9 @@ import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessRestorationRequestData
+import tech.testsys.domain.model.user.AccessRestorationRequestId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.EmailChangeRequest
@@ -30,7 +33,7 @@ import java.time.Instant
 /**
  * Port for users of every kind: search of those available to an administrator and records of their logins.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface UserRepository {
 
@@ -42,7 +45,7 @@ interface UserRepository {
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
      * @param filter conditions combined with AND before paging and counting; foreign or unknown communities match nothing.
      * @return available users of their concrete kinds, the original pagination and exact filtered total; missing pages are empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToAdministrator(
         administratorId: MultipleRoleUserId,
@@ -57,7 +60,7 @@ interface UserRepository {
      * @param administratorId the creator of the communities that grant access as in [findAvailableToAdministrator] without filters.
      * @param userId the id of the user of any kind to find.
      * @return the available user of its concrete kind with all its data, or `null` if it is missing or not available.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findAvailableToAdministratorById(administratorId: MultipleRoleUserId, userId: UserId): User<*>?
 
@@ -68,7 +71,7 @@ interface UserRepository {
      * @param administratorId the creator of the communities whose multiple-role members, observers and creator are counted.
      * @param filter conditions combined with AND; foreign or unknown communities match nothing.
      * @return the exact number of matching available users.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun countAvailableToAdministrator(administratorId: MultipleRoleUserId, filter: UserFilter = UserFilter()): Long
 
@@ -78,7 +81,7 @@ interface UserRepository {
      *
      * @param userIds the ids of users of any kind; an id of another kind than the stored user matches nothing.
      * @return the last login of every found user that has logged in; users without a login or missing users are absent.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findLastLogins(userIds: List<UserId>): Map<UserId, Instant>
 
@@ -88,7 +91,7 @@ interface UserRepository {
      *
      * @param userId the id of the user to check.
      * @return `true` if a user of the kind matching [userId] exists, `false` otherwise.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun existsById(userId: UserId): Boolean
 
@@ -98,7 +101,7 @@ interface UserRepository {
      *
      * @param userId the id of the user who has logged in.
      * @param loggedInAt the moment of the login.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun recordLogin(userId: UserId, loggedInAt: Instant)
 }
@@ -108,7 +111,7 @@ interface UserRepository {
  *
  * @param Id the identifier type of the user kind.
  * @param Entity the user kind.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface UserAccessTokenFinder<Id : UserId, Entity : User<Id>> {
 
@@ -118,7 +121,7 @@ interface UserAccessTokenFinder<Id : UserId, Entity : User<Id>> {
      *
      * @param rawAccessToken the access code entered by the user.
      * @return the user, or `null` if no user of this kind has this access code.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByAccessToken(rawAccessToken: String): Entity?
 }
@@ -126,11 +129,9 @@ interface UserAccessTokenFinder<Id : UserId, Entity : User<Id>> {
 /**
  * Persistence port for [MultipleRoleUser] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
-interface MultipleRoleUserRepository :
-    EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>,
-    UserAccessTokenFinder<MultipleRoleUserId, MultipleRoleUser> {
+interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser> {
 
     /**
      * Synchronously and atomically grants [role] to [userId] if it is not held yet and makes the user a member of
@@ -142,7 +143,7 @@ interface MultipleRoleUserRepository :
      * @param role the role held in [communityId]; a newly granted role has empty role data.
      * @return the stored user after joining.
      * @throws IllegalArgumentException if the user does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun addCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUser
 
@@ -156,7 +157,7 @@ interface MultipleRoleUserRepository :
      * @param role the role whose membership in [communityId] is removed.
      * @return the stored user after the removal.
      * @throws IllegalArgumentException if the user does not exist.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun removeCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUser
 
@@ -166,7 +167,7 @@ interface MultipleRoleUserRepository :
      *
      * @param email the e-mail address to look for.
      * @return the user, or `null` if no user has this e-mail address.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByEmail(email: String): MultipleRoleUser?
 }
@@ -174,7 +175,7 @@ interface MultipleRoleUserRepository :
 /**
  * Persistence port for [Observer] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ObserverRepository :
     EntityRepository<ObserverData, SingleRoleUserId, Observer>,
@@ -183,7 +184,7 @@ interface ObserverRepository :
 /**
  * Persistence port for [Participant] entities.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface ParticipantRepository :
     EntityRepository<ParticipantData, SingleRoleUserId, Participant>,
@@ -197,7 +198,7 @@ interface ParticipantRepository :
      * @param accessTokenHashes the stored access codes of the new participants; an empty list saves nothing.
      * @param nameOf the name of a new participant computed from its assigned id.
      * @return the saved participants in the order of [accessTokenHashes].
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun saveToCompetition(
         competitionId: CompetitionId,
@@ -207,18 +208,29 @@ interface ParticipantRepository :
 }
 
 /**
- * Persistence port for [Supervisor] entities.
+ * Persistence port for [Supervisor] entities; the System has a single supervisor.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface SupervisorRepository :
     EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>,
-    UserAccessTokenFinder<SingleRoleUserId, Supervisor>
+    UserAccessTokenFinder<SingleRoleUserId, Supervisor> {
+
+    /**
+     * Synchronously finds the single supervisor of the System, without changing stored state.
+     * Storage exceptions propagate to the caller.
+     *
+     * @return the supervisor, or `null` if no supervisor is stored.
+     * @throws IllegalStateException if more than one supervisor is stored.
+     * @since 1.0.0-beta.1
+     */
+    fun findSingle(): Supervisor?
+}
 
 /**
  * Persistence port for [RegistrationRequest] entities; at most one request is stored per e-mail address.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface RegistrationRequestRepository : EntityRepository<RegistrationRequestData, RegistrationRequestId, RegistrationRequest> {
 
@@ -228,7 +240,7 @@ interface RegistrationRequestRepository : EntityRepository<RegistrationRequestDa
      *
      * @param email the e-mail address to look for.
      * @return the request, or `null` if there is no request for this e-mail address.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByEmail(email: String): RegistrationRequest?
 }
@@ -236,7 +248,7 @@ interface RegistrationRequestRepository : EntityRepository<RegistrationRequestDa
 /**
  * Persistence port for [EmailChangeRequest] entities; at most one request is stored per user.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface EmailChangeRequestRepository : EntityRepository<EmailChangeRequestData, EmailChangeRequestId, EmailChangeRequest> {
 
@@ -246,7 +258,26 @@ interface EmailChangeRequestRepository : EntityRepository<EmailChangeRequestData
      *
      * @param user the user changing the e-mail address.
      * @return the request, or `null` if the user has no e-mail change request.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByUser(user: MultipleRoleUserId): EmailChangeRequest?
+}
+
+/**
+ * Persistence port for [AccessRestorationRequest] entities; at most one request is stored per user.
+ *
+ * @since 1.0.0-beta.1
+ */
+interface AccessRestorationRequestRepository :
+    EntityRepository<AccessRestorationRequestData, AccessRestorationRequestId, AccessRestorationRequest> {
+
+    /**
+     * Finds the access restoration request of the user [user].
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param user the user restoring access.
+     * @return the request, or `null` if the user has no access restoration request.
+     * @since 1.0.0-beta.1
+     */
+    fun findByUser(user: MultipleRoleUserId): AccessRestorationRequest?
 }

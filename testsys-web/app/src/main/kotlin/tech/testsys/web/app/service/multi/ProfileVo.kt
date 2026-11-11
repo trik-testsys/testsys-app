@@ -9,6 +9,6 @@ import tech.testsys.web.app.service.RoleVo
  * @property name the nickname of the user.
  * @property email the e-mail address of the user.
  * @property roles each role of the user with the communities the user is a member of in it.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class ProfileVo(val name: String, val email: String, val roles: List<Pair<RoleVo, List<CommunityVo>>>)

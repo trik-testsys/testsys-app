@@ -5,7 +5,7 @@ package tech.testsys.domain.model.group
  * Every marked declaration must be checked and corrected before enabling another hash algorithm.
  *
  * @property reason why the declaration requires the original invite code.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @MustBeDocumented
 @Retention(AnnotationRetention.SOURCE)

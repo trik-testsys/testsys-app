@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 /**
  * Mapping between [Test] and [TestJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object TestMapping : EntityMapping<Test, TestJpaEntity> {
@@ -23,7 +23,7 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
     /**
      * Assembles a [Test] from [jpaEntity] and its [file].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: TestJpaEntity, file: FileData) = test {
         populateFields(jpaEntity)
@@ -39,7 +39,7 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
     /**
      * Creates a new [TestJpaEntity] row from [data] referencing the stored file [fileDataId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: TestData, fileDataId: Long) = TestJpaEntity(
         name = data.name,
@@ -52,7 +52,7 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
      * Creates the [TestJpaEntity] row replacing [current] from [entity], keeping `fileDataId`, `versionBucket`,
      * `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: Test, current: TestJpaEntity) = TestJpaEntity(
         name = entity.data.name,

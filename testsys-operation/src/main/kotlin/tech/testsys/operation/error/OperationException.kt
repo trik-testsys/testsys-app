@@ -5,7 +5,7 @@ package tech.testsys.operation.error
  * raised at.
  *
  * @property error the error the operation failed with.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 class OperationException @PublishedApi internal constructor(
     val error: OperationError,

@@ -14,7 +14,7 @@ import java.time.Instant
 /**
  * Spring Data repository for [UserJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Repository
 @InternalDatabaseApi
@@ -23,21 +23,21 @@ interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> 
     /**
      * Finds the user row whose stored access code equals [accessToken] and was produced by [accessTokenHashAlgorithm].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByAccessTokenAndAccessTokenHashAlgorithm(accessToken: String, accessTokenHashAlgorithm: HashAlgorithmJpaEnum): UserJpaEntity?
 
     /**
      * Finds the user row whose e-mail address equals [email].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun findByEmail(email: String): UserJpaEntity?
 
     /**
      * Whether a user row with [id] of the [type] kind exists, checked without loading the row.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun existsByIdAndType(id: Long, type: UserTypeJpaEnum): Boolean
 
@@ -45,7 +45,7 @@ interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> 
      * Increments the versions of the user rows [ids] in one statement and returns the number of updated rows; the
      * caller synchronizes the managed rows through `touchRoots`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     @Modifying
     @Query("update UserJpaEntity u set u.version = u.version + 1 where u.id in :ids")

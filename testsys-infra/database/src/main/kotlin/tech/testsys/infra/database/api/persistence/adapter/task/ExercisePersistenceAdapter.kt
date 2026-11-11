@@ -27,7 +27,7 @@ import java.util.UUID
  * Persistence adapter of [Exercise] entities backed by [ExerciseJpaEntity].
  * [update] rejects changes to the file or language with [UnsupportedOperationException].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

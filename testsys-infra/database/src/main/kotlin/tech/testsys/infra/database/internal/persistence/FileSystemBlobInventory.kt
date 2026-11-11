@@ -13,7 +13,7 @@ import java.util.UUID
 /**
  * Visits old UUID blobs directly inside configured directories without following symbolic links.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 class FileSystemBlobInventory {
@@ -24,7 +24,7 @@ class FileSystemBlobInventory {
      * Passes old regular files to [consume] in bounded batches; physical directory aliases are visited once.
      * Missing directories are skipped and never created; database failures from [consume] propagate immediately.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun forEachBatch(paths: List<Path>, cutoff: Instant, batchSize: Int, consume: (List<Path>) -> Unit) {
         require(batchSize > 0) { "Blob inventory batchSize must be positive: $batchSize" }
@@ -51,7 +51,7 @@ class FileSystemBlobInventory {
     /**
      * Deletes [file] if it still exists; logs an I/O failure so a later pass can retry it.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun delete(file: Path) {
         try {

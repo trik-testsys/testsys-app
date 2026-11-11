@@ -6,7 +6,7 @@ import tech.testsys.domain.model.task.TestDiagnosticResult
 /**
  * Synchronous analysis port for one polygon, without persistence or task execution scheduling.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 interface PolygonDiagnostics {
     /**
@@ -15,7 +15,7 @@ interface PolygonDiagnostics {
      *
      * @param test the concrete polygon version to analyse.
      * @return the messages associated with the identifier of [test], including an empty list.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun diagnose(test: Test): TestDiagnosticResult
 }

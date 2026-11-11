@@ -12,7 +12,7 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 /**
  * The single role of a [tech.testsys.domain.model.user.SingleRoleUser].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class UserSingleRoleJpaEnum {
@@ -27,7 +27,7 @@ enum class UserSingleRoleJpaEnum {
  *
  * @property singleRole the role held.
  * @property userId id of the user.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Embeddable
 @InternalDatabaseApi
@@ -40,7 +40,7 @@ data class SingleRoleToUserId(
 /**
  * Join row: the role a single-role user holds.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @CompositeKeyConstructor

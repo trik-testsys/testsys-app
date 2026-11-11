@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  *
  * @property taskId id of the graded task.
  * @property submissionId id of the graded [SubmissionJpaEntity].
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -31,7 +31,7 @@ class VerdictJpaEntity(
  * @property score the score awarded for the test.
  * @property logsId id of the [LogsJpaEntity] captured while running the test.
  * @property recordingId id of the [RecordingJpaEntity] captured while running the test, or `null` if none.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -47,7 +47,7 @@ class TestVerdictJpaEntity(
 /**
  * Column form of [tech.testsys.domain.model.task.SubmissionStatus], the lifecycle state of a [SubmissionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class SubmissionStatusJpaEnum {
@@ -59,7 +59,7 @@ enum class SubmissionStatusJpaEnum {
 /**
  * Column form of [tech.testsys.domain.model.task.GradingResult]; set only on [SubmissionStatusJpaEnum.GRADED] submissions.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class GradingResultJpaEnum {
@@ -71,7 +71,7 @@ enum class GradingResultJpaEnum {
 /**
  * Column form of [tech.testsys.domain.model.task.SubmissionKind], the purpose of a [SubmissionJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 enum class SubmissionKindJpaEnum {
@@ -83,7 +83,7 @@ enum class SubmissionKindJpaEnum {
  * JPA entity of [tech.testsys.domain.model.task.Recording], the runtime trace captured while grading.
  *
  * @property fileDataId id of the [FileDataJpaEntity] holding the recording.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -96,7 +96,7 @@ class RecordingJpaEntity(
  * JPA entity of [tech.testsys.domain.model.task.Logs], the textual output captured while grading.
  *
  * @property fileDataId id of the [FileDataJpaEntity] holding the logs.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
@@ -121,7 +121,7 @@ class LogsJpaEntity(
  * @property gradingErrorDescription description of a grading error, or `null` otherwise.
  * @property kind purpose of the submission.
  * @property gradingContestId id of the contest a grading submission belongs to, or `null` otherwise.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi

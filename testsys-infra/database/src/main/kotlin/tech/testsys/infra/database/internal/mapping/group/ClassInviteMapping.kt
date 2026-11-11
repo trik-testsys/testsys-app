@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 /**
  * Mapping between [ClassInvite] and [ClassInviteJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
 object ClassInviteMapping : EntityMapping<ClassInvite, ClassInviteJpaEntity> {
@@ -24,7 +24,7 @@ object ClassInviteMapping : EntityMapping<ClassInvite, ClassInviteJpaEntity> {
     /**
      * Assembles a [ClassInvite] from [jpaEntity] without hashing its stored code.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toDomain(jpaEntity: ClassInviteJpaEntity) = classInvite {
         populateFields(jpaEntity)
@@ -42,7 +42,7 @@ object ClassInviteMapping : EntityMapping<ClassInvite, ClassInviteJpaEntity> {
     /**
      * Creates a new [ClassInviteJpaEntity] row from [data].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(data: ClassInviteData) = ClassInviteJpaEntity(
         code = data.codeHash.value,
@@ -53,7 +53,7 @@ object ClassInviteMapping : EntityMapping<ClassInvite, ClassInviteJpaEntity> {
     /**
      * Creates the [ClassInviteJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun toJpaEntity(entity: ClassInvite, current: ClassInviteJpaEntity) = ClassInviteJpaEntity(
         code = entity.data.codeHash.value,

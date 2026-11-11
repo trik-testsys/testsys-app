@@ -6,12 +6,10 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
-import com.vaadin.flow.component.html.Image
 import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
-import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.HtmlAttribute
@@ -25,7 +23,7 @@ import java.time.Year
 /**
  * Scope of the page footer: links in display order, opened in the current tab.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @TestSysDsl
 class PageFooterScope internal constructor() {
@@ -34,7 +32,7 @@ class PageFooterScope internal constructor() {
     /**
      * Adds a link named [label] that opens [target] with [parameters].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun link(label: String, target: Class<out Component>, parameters: RouteParameters = RouteParameters.empty()) {
         links += RouterLink(label, target, parameters).apply { addClassName(CssClass.FooterLink) }
@@ -43,7 +41,7 @@ class PageFooterScope internal constructor() {
     /**
      * Adds a link named [label] that opens [href].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.1
      */
     fun link(label: String, href: String) {
         links += Anchor(href, label).apply { addClassName(CssClass.FooterLink) }
@@ -64,9 +62,9 @@ internal fun buildPageFooter(
     links: PageFooterScope = PageFooterScope(),
     clock: Clock = Clock.systemDefaultZone(),
 ): Footer {
-    val logo = Image(TestSysBrand.FOOTER, texts.messages.uiPage.brandName()).apply { addClassName(CssClass.FooterLogo) }
+    val name = Span(texts.messages.uiPage.brandName()).apply { addClassName(CssClass.FooterName) }
     val year = Span(texts.messages.uiPage.footerYear(year = Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
-    val brand = Div(logo, year).apply { addClassName(CssClass.FooterBrand) }
+    val brand = Div(name, year).apply { addClassName(CssClass.FooterBrand) }
     val inner = Div(brand).apply { addClassName(CssClass.FooterInner) }
     links.build(texts.messages.uiPage.footerLinks())?.let { navigation -> inner.add(navigation) }
     return Footer(inner).apply { addClassName(CssClass.Footer) }

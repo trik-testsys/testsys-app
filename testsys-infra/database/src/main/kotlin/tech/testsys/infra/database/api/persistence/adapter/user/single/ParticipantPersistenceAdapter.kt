@@ -7,6 +7,7 @@ import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.SingleRoleUserId
@@ -31,16 +32,17 @@ import tech.testsys.infra.database.internal.utils.requireVersion
  * The competition is fixed on creation and ignored on update. Update and remove increment the user version first;
  * [save], [saveToCompetition] and remove also increment the competition version.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class ParticipantPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
+    accessTokenHasher: AccessTokenHasher,
     private val participantDataJpaEntityRepository: ParticipantDataJpaEntityRepository,
     private val singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository,
     private val competitionJpaEntityRepository: CompetitionJpaEntityRepository,
-) : AbstractUserPersistenceAdapter<ParticipantData, SingleRoleUserId, Participant>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<ParticipantData, SingleRoleUserId, Participant>(jpaEntityRepository, accessTokenHasher),
     ParticipantRepository {
 
     @Transactional

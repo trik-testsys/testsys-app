@@ -11,6 +11,7 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.CompatibleUserRole
@@ -60,12 +61,13 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
  * Persistence adapter of [MultipleRoleUser] entities backed by [UserJpaEntity] rows of the multiple-role type.
  * [update] rejects removing the student role while the user is enrolled in a class.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class MultipleRoleUserPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
+    accessTokenHasher: AccessTokenHasher,
     private val multipleRoleToUserJpaEntityRepository: MultipleRoleToUserJpaEntityRepository,
     private val administratorDataJpaEntityRepository: AdministratorDataJpaEntityRepository,
     private val developerDataJpaEntityRepository: DeveloperDataJpaEntityRepository,
@@ -79,7 +81,7 @@ class MultipleRoleUserPersistenceAdapter(
     private val judgmentOrderJpaEntityRepository: JudgmentOrderJpaEntityRepository,
     private val classJpaEntityRepository: ClassJpaEntityRepository,
     private val competitionJpaEntityRepository: CompetitionJpaEntityRepository,
-) : AbstractUserPersistenceAdapter<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>(jpaEntityRepository, accessTokenHasher),
     MultipleRoleUserRepository {
 
     private val users: UserJpaEntityRepository = jpaEntityRepository

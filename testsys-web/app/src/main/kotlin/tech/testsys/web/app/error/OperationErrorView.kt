@@ -21,7 +21,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * competition shows the missing page screen with 404, missing access or role or a contest not entered yet shows 403,
  * and any other expected refusal shows the failed page screen with 400. Server faults never reach this handler.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 @AnonymousAllowed
 class OperationErrorView : ErrorPage(), HasErrorParameter<OperationException> {

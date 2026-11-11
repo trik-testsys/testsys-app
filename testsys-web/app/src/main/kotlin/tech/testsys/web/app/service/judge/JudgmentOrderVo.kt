@@ -16,7 +16,7 @@ import java.time.Instant
  * @property submission the identifier of the judged submission.
  * @property score the score set by the judge.
  * @property reason the reason for the change.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
 data class JudgmentOrderVo(
     val id: JudgmentOrderId,

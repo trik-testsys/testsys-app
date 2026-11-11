@@ -1,16 +1,14 @@
 package tech.testsys.operation.config
 
-import tech.testsys.operation.annotation.OperationConfig
 import java.time.Duration
 
 /**
- * Configuration of confirming an e-mail address by a code during self-registration and e-mail change.
+ * Configuration of confirming an e-mail address by a code during self-registration, e-mail change and access restoration.
  *
  * @property confirmationCodeLifetime how long a newly issued confirmation code is accepted.
  * @property maxConfirmationAttempts the number of attempts to enter a newly issued confirmation code.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.1
  */
-@OperationConfig("email-confirmation")
 interface EmailConfirmationConfig {
 
     val confirmationCodeLifetime: Duration

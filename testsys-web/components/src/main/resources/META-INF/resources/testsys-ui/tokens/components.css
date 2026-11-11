@@ -142,9 +142,9 @@
 
 /* ---------- Layout ---------- */
 .ts-app { min-width:var(--page-min); min-height:100vh; background:var(--surface-page); display:flex; flex-direction:column; }
-.ts-page { width:100%; max-width:var(--container); margin:0 auto; padding:var(--space-4) 0; display:flex; flex-direction:column; gap:var(--row-gap); flex:1 0 auto; }
+.ts-page { width:100%; max-width:var(--container-fit); margin:0 auto; padding:var(--space-4) 0; display:flex; flex-direction:column; gap:var(--row-gap); flex:1 0 auto; }
 .ts-footer { flex:none; border-top:1px solid var(--line); background:var(--surface-card); }
-.ts-footer__inner { max-width:var(--container); margin:0 auto; padding:var(--space-3) 0; display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
+.ts-footer__inner { max-width:var(--container-fit); margin:0 auto; padding:var(--space-3) 0; display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
 .ts-footer__brand { display:flex; align-items:center; gap:var(--space-3); }
 .ts-footer__name { color:var(--text-secondary); font:var(--fw-semibold) var(--fs-sm) var(--font-mono); }
 .ts-footer__year { color:var(--text-tertiary); font:var(--fw-regular) var(--fs-sm) var(--font-mono); }
@@ -329,7 +329,7 @@ span.ts-obscured-value:not(.ts-chip, .ts-counter) { display:inline-block; }
 .ts-crumbs a { color:var(--text-secondary); }
 .ts-crumbs__sep { color:var(--ink-300); }
 .ts-page-head { background:var(--white); border-bottom:1px solid var(--line); }
-.ts-page-head__inner { max-width:var(--container); margin:0 auto; padding-top:20px; display:flex; flex-direction:column; gap:14px; }
+.ts-page-head__inner { max-width:var(--container-fit); margin:0 auto; padding-top:20px; display:flex; flex-direction:column; gap:14px; }
 .ts-page-head__inner:not(:has(> .ts-tabs)) { padding-bottom:20px; }
 .ts-page-head__title-row { display:flex; align-items:center; gap:14px; }
 .ts-page-head__meta { font:var(--fw-regular) var(--fs-sm)/var(--lh-sm) var(--font-sans); color:var(--text-secondary); }

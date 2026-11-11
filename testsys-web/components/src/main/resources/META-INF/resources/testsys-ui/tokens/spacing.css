@@ -32,7 +32,9 @@
 
   /* Layout */
   --container: 1280px;
-  --page-min: 1440px;
+  /* The container on a window narrower than it: the window width without a gutter on each side. */
+  --container-fit: min(var(--container), calc(100% - 2 * var(--space-6)));
+  --page-min: 1024px;
   --header-height: 48px;
   --grid-columns: 24;
   --grid-gap: 12px;

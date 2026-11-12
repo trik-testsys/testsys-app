@@ -225,6 +225,7 @@ span.ts-obscured-value:not(.ts-chip, .ts-counter) { display:inline-block; }
 .ts-kbd { font:var(--fw-medium) var(--fs-micro) var(--font-mono); padding:2px 6px; border:1px solid var(--border-default); border-radius:var(--radius-xs); background:var(--surface-card); color:var(--text-secondary); }
 .ts-header__user { flex:none; white-space:nowrap; display:flex; align-items:center; gap:var(--space-2); height:30px; padding:0 8px 0 4px; border:0; border-radius:var(--radius-md); background:transparent; cursor:pointer; font:var(--fw-medium) var(--fs-sm) var(--font-sans); color:var(--text-primary); }
 .ts-header__user:hover { background:var(--muted); }
+.ts-header__user-mark { flex:none; white-space:nowrap; display:inline-flex; align-items:center; height:24px; padding:0 10px; border:1px solid var(--warning); border-radius:var(--radius-pill); background:var(--warning-bg); color:var(--warning-fg-strong); font:var(--fw-semibold) var(--fs-xs) var(--font-sans); }
 .ts-bell { position:relative; }
 .ts-bell__dot { position:absolute; top:4px; right:5px; width:8px; height:8px; border-radius:50%; background:var(--danger); border:2px solid var(--white); }
 

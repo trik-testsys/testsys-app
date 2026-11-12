@@ -45,7 +45,6 @@ class StudentClassView(
         val texts = localization.pageStudent
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.classTitle(name = studyClass.name)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), StudentView::class.java)
             }
             guide(texts.classGuide())

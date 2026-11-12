@@ -1,12 +1,14 @@
 package tech.testsys.web.app.view
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import io.mockk.Runs
@@ -62,12 +64,12 @@ class StudentViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should start the breadcrumbs with the main page`() {
+    fun `should show no breadcrumbs on the role page`() {
         signIn(study.student())
 
         UI.getCurrent().navigate(StudentView::class.java)
 
-        assertEquals(mapOf("Главная" to "home"), StudyPages.crumbs())
+        assertTrue(UI.getCurrent()._find<Nav> { classes = "ts-crumbs" }.isEmpty())
     }
 
     @Test

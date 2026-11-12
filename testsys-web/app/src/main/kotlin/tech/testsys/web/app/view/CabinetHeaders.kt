@@ -90,7 +90,7 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
     /**
      * Returns the Cabinet header of the signed-in user with the [active] section: the start page, the menu of the roles
      * with search and the nickname menu with the profile, unless the role is fixed, the return of a supervisor signed in
-     * as the user, and signing out.
+     * as the user, and signing out. The sign-in of a supervisor is marked before the nickname.
      *
      * @since 1.0.0-beta.1
      */
@@ -99,7 +99,6 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
         val texts = currentLocalization().pageCabinet
         val home = HeaderDestination.Route(startPageOf(CabinetPrincipal.of(user).kind))
         val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
-        val name = if (isImpersonated) texts.impersonationName(name = nameOf(user)) else nameOf(user)
 
         return CabinetHeader(
             items = listOf(
@@ -107,7 +106,10 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
                 MegaMenuItem(key = MENU_SECTION, label = texts.menu(), menu = HeaderMegaMenu(columnsOf(user, texts)), isSearchable = true),
             ),
             active = active,
-            user = HeaderUser(name = name) {
+            user = HeaderUser(
+                name = nameOf(user),
+                mark = if (isImpersonated) texts.impersonationBadge() else null,
+            ) {
                 if (user is MultipleRoleUser) link(texts.profile(), ProfileView::class.java)
                 if (isImpersonated) item(texts.impersonationReturn()) { returnToSupervisor() }
                 destructiveItem(texts.signOut()) { authenticationContext.logout() }
@@ -177,7 +179,7 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
     /**
      * Menu column of one role: the heading opens the page of the role, and each of its [sections], a label with the
      * value of the route parameter [SECTION_PARAMETER], opens that section of the page. Each link has its own location,
-     * so the menu marks only the one that was opened.
+     * so the menu marks the one that was opened or the closest one above a nested page.
      */
     private fun roleColumn(title: String, page: Class<out Component>, sections: List<Pair<String, String>>): HeaderMegaColumn {
         val links = sections.map { (label, section) ->

@@ -163,6 +163,7 @@ internal enum class CssClass(internal val value: String) {
     HeaderSearch("ts-header__search"),
     HeaderSpacer("ts-header__spacer"),
     HeaderUser("ts-header__user"),
+    HeaderUserMark("ts-header__user-mark"),
     Hint("ts-hint"),
     Hstack("ts-hstack"),
     Icon("ts-icon"),

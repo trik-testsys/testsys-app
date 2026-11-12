@@ -108,7 +108,7 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
         open(fixtures.studyClass(owner = signInManager(), name = "Кружок").id)
 
         val crumbs = UI.getCurrent()._get<Nav> { classes = "ts-crumbs" }._find<RouterLink>().associate { link -> link.text to link.href }
-        assertEquals(mapOf("Главная" to "home", "Кабинет Организатора" to "manager", "Классы" to "manager/classes"), crumbs)
+        assertEquals(mapOf("Кабинет Организатора" to "manager", "Классы" to "manager/classes"), crumbs)
         assertEquals("Класс «Кружок»", UI.getCurrent()._get<H1>().text)
     }
 

@@ -5,6 +5,7 @@ package tech.testsys.web.components.navigation.header
 import com.vaadin.flow.component.Text
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Nav
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.buildBrand
 import tech.testsys.web.components.core.CssClass
@@ -40,6 +41,7 @@ internal fun buildHeader(header: CabinetHeader, texts: UiLocalization): Div {
         header.notifications?.let { notifications ->
             bar.add(HeaderNotificationsController(notifications, texts.messages.uiPage, interactions).component)
         }
+        user.mark?.let { mark -> bar.add(Span(mark).apply { addClassName(CssClass.HeaderUserMark) }) }
         val userControl = if (user.menu == null) {
             userChip(user, texts.locale)
         } else {

@@ -63,11 +63,10 @@ internal fun competitionContestParameters(competitionId: CompetitionId, contestI
     mapOf(COMPETITION_ID_PARAMETER to competitionId.value.toString(), MANAGER_CONTEST_ID_PARAMETER to contestId.value.toString()),
 )
 
-/** Adds the breadcrumbs from the main page to the [section] of the Cabinet of a Manager. */
+/** Adds the breadcrumbs from the role page to the [section] of the Cabinet of a Manager. */
 internal fun PageHeadScope.managerCrumbs(section: String) {
     val localization = currentLocalization()
     val cabinet = localization.pageCabinet
-    crumb(cabinet.home(), MultiMainView::class.java)
     crumb(localization.pageManager.title(), ManagerView::class.java)
     val title = if (section == CLASSES_SECTION) cabinet.sectionClasses() else cabinet.sectionCompetitions()
     crumb(title, ManagerView::class.java, managerSection(section))

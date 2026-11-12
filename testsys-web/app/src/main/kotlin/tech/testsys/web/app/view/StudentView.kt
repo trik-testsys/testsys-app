@@ -48,7 +48,7 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
         val localization = currentLocalization()
         val texts = localization.pageStudent
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            head(texts.title())
             guide(texts.guide())
             row {
                 block(size = CLASSES_COLUMNS, title = localization.pageCabinet.sectionClasses()) {

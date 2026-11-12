@@ -87,7 +87,6 @@ class DeveloperResourceView(
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.resourceTitle(type = titleTypeOf(kindOf(latest)), name = latest.name)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), DeveloperView::class.java)
                 crumb(localization.pageCabinet.sectionTasks(), DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
                 crumb(texts.taskTitle(name = task.name), DeveloperTaskView::class.java, taskParameters(taskId))

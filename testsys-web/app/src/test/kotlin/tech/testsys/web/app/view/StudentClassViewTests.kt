@@ -50,7 +50,7 @@ class StudentClassViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should lead the breadcrumbs to the main page and the cabinet`() {
+    fun `should lead the breadcrumbs to the cabinet`() {
         val student = study.student()
         val studyClass = study.studentClass(listOf(student), name = "Кружок")
         signIn(student)
@@ -58,7 +58,7 @@ class StudentClassViewTests : MockSpringVaadinTests() {
         open(studyClass)
 
         assertEquals("Класс «Кружок»", UI.getCurrent()._get<H1>().text)
-        assertEquals(mapOf("Главная" to "home", "Кабинет Ученика" to "student"), StudyPages.crumbs())
+        assertEquals(mapOf("Кабинет Ученика" to "student"), StudyPages.crumbs())
     }
 
     @Test

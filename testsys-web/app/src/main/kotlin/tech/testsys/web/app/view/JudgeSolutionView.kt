@@ -80,7 +80,6 @@ class JudgeSolutionView(
         val texts = localization.pageJudge
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.solutionTitle(id = submission.id.value)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), JudgeView::class.java)
                 crumb(localization.pageCabinet.sectionSubmissions(), JudgeView::class.java, judgeSubmissionsParameters())
                 badge(texts.solutionStatus(status = status), tone)

@@ -11,7 +11,6 @@ import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
-import com.vaadin.flow.router.RouterLink
 import com.vaadin.flow.server.VaadinSession
 import io.mockk.every
 import io.mockk.mockk
@@ -70,14 +69,13 @@ class ProfileViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should show the nickname and the e-mail address in read-only fields under the main page crumb`() {
+    fun `should show the nickname and the e-mail address in read-only fields without breadcrumbs`() {
         val user = open()
 
         assertEquals(user.data.name, textField("Псевдоним").value)
         assertEquals(user.data.email, textField("Почта").value)
         assertTrue(textField("Псевдоним").isReadOnly && textField("Почта").isReadOnly)
-        val crumbs = UI.getCurrent()._get<Nav> { classes = "ts-crumbs" }._find<RouterLink>().associate { link -> link.text to link.href }
-        assertEquals(mapOf("Главная" to "home"), crumbs)
+        assertTrue(UI.getCurrent()._find<Nav> { classes = "ts-crumbs" }.isEmpty())
     }
 
     @Test

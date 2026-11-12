@@ -1498,8 +1498,8 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should mark the supervisor sign in after a middle dot joined by no-break spaces in impersonation name`() {
-            assertEquals("Маша$NBSP·${NBSP}вход${NBSP}Супервайзера", l.pageCabinet.impersonationName(name = "Маша"))
+        fun `should use the genitive supervisor term in impersonation badge`() {
+            assertEquals("Вход Супервайзера", l.pageCabinet.impersonationBadge())
         }
 
         @Test

@@ -143,6 +143,24 @@ class HeaderTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should show the mark of a user before them`() {
+        val user = HeaderUser("Анна Петрова", mark = "Вход Супервайзера")
+
+        val header = buildHeader(CabinetHeader(user = user), testTexts)
+
+        val parts = header.find("ts-header__bar").children.toList().takeLast(2)
+        assertEquals(listOf("ts-header__user-mark", "ts-header__user"), parts.map { part -> part.element.classList.single() })
+        assertEquals("Вход Супервайзера", parts.first().element.text)
+    }
+
+    @Test
+    fun `should show no mark of a user without one`() {
+        val header = buildHeader(CabinetHeader(user = HeaderUser("Анна Петрова")), testTexts)
+
+        assertTrue(header.findAll("ts-header__user-mark").isEmpty())
+    }
+
+    @Test
     fun `should show the sign-in link to a guest`() {
         val header = buildHeader(CabinetHeader(signIn = HeaderDestination.Route(FirstTestView::class.java)), testTexts)
 

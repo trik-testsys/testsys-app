@@ -61,7 +61,6 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.testingTitle(startedAt = request.createdAt)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), DeveloperView::class.java)
                 crumb(texts.taskTitle(name = task.name), DeveloperTaskView::class.java, taskParameters(taskId))
             }

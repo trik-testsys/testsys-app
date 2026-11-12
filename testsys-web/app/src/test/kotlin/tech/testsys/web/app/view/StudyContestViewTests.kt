@@ -59,7 +59,7 @@ class StudyContestViewTests : MockSpringVaadinTests() {
     @Nested
     inner class StudentTests {
         @Test
-        fun `should lead the breadcrumbs to the main page, the cabinet and the class`() {
+        fun `should lead the breadcrumbs to the cabinet and the class`() {
             val student = study.student()
             val contest = study.runningContest(name = "Весенний тур")
             val studyClass = study.studentClass(listOf(student), listOf(contest), name = "Кружок")
@@ -69,7 +69,7 @@ class StudyContestViewTests : MockSpringVaadinTests() {
 
             assertEquals("Тур «Весенний тур»", UI.getCurrent()._get<H1>().text)
             assertEquals(
-                mapOf("Главная" to "home", "Кабинет Ученика" to "student", "Класс «Кружок»" to "student/classes/${studyClass.id.value}"),
+                mapOf("Кабинет Ученика" to "student", "Класс «Кружок»" to "student/classes/${studyClass.id.value}"),
                 StudyPages.crumbs(),
             )
         }

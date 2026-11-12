@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.FirstTestView
 import tech.testsys.web.components.ItemTestView
 import tech.testsys.web.components.MockVaadinTests
+import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.testTexts
@@ -114,6 +115,23 @@ class HeaderMenuSearchTests : MockVaadinTests() {
 
         assertEquals(listOf("page", null), links.map { link -> link.element.getAttribute("aria-current") })
         assertEquals(listOf(true, false), links.map { link -> link.element.hasAttribute("highlight") })
+    }
+
+    @OptIn(InternalComponentsApi::class)
+    @ParameterizedTest
+    @CsvSource(
+        "role/tasks, role/tasks, page",
+        "role/tasks/7, role/tasks, location",
+        "role/tasks/7, role,",
+        "role/other, role, location",
+        "role/tasksX, role/tasks,",
+        "role, role, page",
+        "home, role,",
+    )
+    fun `should mark the closest menu route of the opened location`(path: String, href: String, expected: String?) {
+        val mark = nearestRouteMark(path, href, hrefs = setOf("role", "role/tasks"))
+
+        assertEquals(expected, mark?.attribute)
     }
 
     @Test

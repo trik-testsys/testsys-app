@@ -51,7 +51,6 @@ class SupervisorView(
         val texts = localization.pageSupervisor
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.title()) {
-                crumb(localization.pageCabinet.home(), SupervisorView::class.java)
                 tabs(matchRouteParameters = true) {
                     tab(
                         localization.pageCabinet.sectionUsers(),

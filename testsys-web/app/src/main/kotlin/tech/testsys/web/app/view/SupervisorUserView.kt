@@ -107,7 +107,6 @@ class SupervisorUserView(
         val texts = localization.pageSupervisor
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.userHead(kind = headKindOf(user), name = user.name)) {
-                crumb(localization.pageCabinet.home(), SupervisorView::class.java)
                 crumb(texts.title(), SupervisorView::class.java)
                 crumb(
                     localization.pageCabinet.sectionUsers(),

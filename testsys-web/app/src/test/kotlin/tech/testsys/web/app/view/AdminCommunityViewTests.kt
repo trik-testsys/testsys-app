@@ -107,7 +107,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         open(community.id)
 
         val crumbs = UI.getCurrent()._get<Nav> { classes = "ts-crumbs" }._find<RouterLink>().associate { link -> link.text to link.href }
-        assertEquals(mapOf("Главная" to "home", "Кабинет Администратора" to "admin", "Сообщества" to "admin/communities"), crumbs)
+        assertEquals(mapOf("Кабинет Администратора" to "admin", "Сообщества" to "admin/communities"), crumbs)
     }
 
     @Test

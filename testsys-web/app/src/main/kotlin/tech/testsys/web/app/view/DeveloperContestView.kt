@@ -89,7 +89,6 @@ class DeveloperContestView(
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.contestTitle(name = contest.name)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), DeveloperView::class.java)
                 crumb(localization.pageCabinet.sectionContests(), DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
                 actions {

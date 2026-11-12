@@ -75,7 +75,6 @@ class DeveloperView(
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.title()) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 tabs(matchRouteParameters = true) {
                     tab(localization.pageCabinet.sectionTasks(), DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
                     tab(localization.pageCabinet.sectionContests(), DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))

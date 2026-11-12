@@ -57,7 +57,7 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
         // (testsys.user.single.supervisor.impersonate).
         val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
         page(headers.cabinet(active = null)) {
-            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            head(texts.title())
             guide(if (isImpersonated) texts.impersonationGuide() else texts.guide())
             row {
                 block(size = PROFILE_COLUMNS, title = texts.title()) {

@@ -51,7 +51,6 @@ private const val DETAILS_COLUMNS = 12
 abstract class CommunityDetailsView(
     private val headers: CabinetHeaders,
     private val service: CommunityManagementService,
-    private val homePage: Class<out Component>,
     private val cabinetPage: Class<out Component>,
     private val cabinetLabel: String,
     private val onOpenUser: (AdminUserVo) -> Unit,
@@ -72,7 +71,6 @@ abstract class CommunityDetailsView(
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.communityHead(name = community.name)) {
-                crumb(localization.pageCabinet.home(), homePage)
                 crumb(cabinetLabel, cabinetPage)
                 crumb(
                     localization.pageCabinet.sectionCommunities(),
@@ -302,7 +300,6 @@ abstract class CommunityDetailsView(
 class AdminCommunityView(headers: CabinetHeaders, service: AdministratorService) : CommunityDetailsView(
     headers,
     service,
-    MultiMainView::class.java,
     AdminView::class.java,
     currentLocalization().pageAdministrator.title(),
     ::openAdminUser,

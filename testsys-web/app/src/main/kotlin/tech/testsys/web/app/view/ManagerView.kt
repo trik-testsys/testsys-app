@@ -57,7 +57,6 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
         val texts = localization.pageManager
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.title()) {
-                crumb(cabinet.home(), MultiMainView::class.java)
                 tabs(matchRouteParameters = true) {
                     tab(cabinet.sectionClasses(), ManagerView::class.java, managerSection(CLASSES_SECTION))
                     tab(cabinet.sectionCompetitions(), ManagerView::class.java, managerSection(COMPETITIONS_SECTION))

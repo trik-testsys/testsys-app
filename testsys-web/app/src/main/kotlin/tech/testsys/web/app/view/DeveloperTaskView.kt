@@ -193,7 +193,6 @@ class DeveloperTaskView(
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.taskTitle(name = task.name)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), DeveloperView::class.java)
                 crumb(localization.pageCabinet.sectionTasks(), DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
                 badge(texts.taskState(state = state.variant), state.tone)

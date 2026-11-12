@@ -121,7 +121,6 @@ class AdminUserView(
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.userHead(kind = if (user is ObserverVo) UserHeadKind.OBSERVER else UserHeadKind.USER, name = user.name)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), AdminView::class.java)
                 crumb(localization.pageCabinet.sectionUsers(), AdminView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "users"))
                 if (sections.isNotEmpty()) {

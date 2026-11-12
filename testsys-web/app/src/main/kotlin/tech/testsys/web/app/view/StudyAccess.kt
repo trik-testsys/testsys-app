@@ -135,7 +135,6 @@ internal sealed class StudyAccess {
             val name = checkNotNull(studyClass) { "Study context of class id=${classId.value} has no class" }.name
             val localization = currentLocalization()
             val texts = localization.pageStudent
-            head.crumb(localization.pageCabinet.home(), MultiMainView::class.java)
             head.crumb(texts.title(), StudentView::class.java)
             head.crumb(texts.classTitle(name = name), StudentClassView::class.java, studentClassParameters(classId))
         }

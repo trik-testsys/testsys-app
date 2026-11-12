@@ -72,7 +72,7 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
         val localization = currentLocalization()
         val texts = localization.pageJudge
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            head(texts.title())
             guide(texts.guide())
             row {
                 block(title = localization.pageCabinet.sectionSubmissions()) {

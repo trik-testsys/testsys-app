@@ -40,10 +40,11 @@ data class MegaMenuItem(
  * Signed-in user shown in the Cabinet header.
  *
  * @property name the full name of the user.
+ * @property mark the optional accent label before the user, e.g. that somebody else signed in as them.
  * @property menu the optional links and actions of the user, or `null` to show the user without a menu.
  * @since 1.0.0-beta.1
  */
-data class HeaderUser(val name: String, val menu: (MenuScope.() -> Unit)? = null)
+data class HeaderUser(val name: String, val mark: String? = null, val menu: (MenuScope.() -> Unit)? = null)
 
 /**
  * Top bar of a Cabinet page: the brand, sections and optional menu search, notifications and user menu.

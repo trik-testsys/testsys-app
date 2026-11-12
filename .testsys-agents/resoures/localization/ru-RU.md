@@ -884,6 +884,28 @@ Notes collected while moving the Observer and Supervisor pages onto localization
     XML: …».
   - «супервайзер»: Р. ед. «суперва́йзера», Д. ед. «суперва́йзеру». Source:
     https://ru.wiktionary.org/wiki/супервайзер.
+- Update (2026-11-12): the nickname suffix `page_cabinet.impersonation.name` («{$name} · вход Супервайзера») was
+  replaced, with user approval, by the standalone accent badge `page_cabinet.impersonation.badge` «Вход
+  Супервайзера» shown next to the nickname. The notes above on «·», lowercase and no-break spaces describe the
+  removed message.
+  - Capital «В»: the label now stands alone, and ui-design.md sets sentence case for interface text. The words are
+    joined by an ordinary space, like every other multi-word label of the bundles; the removed message was the only
+    one with U+00A0, which kept the middle-dot annotation on the nickname's line. Whether a badge wraps is a
+    component matter, not a text one (project reasoning, no language source).
+  - Викисловарь «вход» re-read on 2026-11-12: still two senses, without usage labels: 1 «действие по значению гл.
+    входить…» («Вход воспрещён»), 2 «место, предназначенное для такого действия» («Вход в дом», «Вход в метро»).
+    Source: https://ru.wiktionary.org/wiki/вход.
+  - Ambiguity of the standalone label: «Вход» is also the title of the sign-in page (`page_guest.sign_in.title`),
+    so «Вход Супервайзера» alone could be read as "the Supervisor's sign-in (page)", a destination, as well as "the
+    Supervisor has signed in", a state. Applicability (inference): the badge is not interactive, has the warning
+    tone, and is shown only inside a Cabinet next to the nickname, where a link to a sign-in form has no place, so
+    the state reading prevails. Alternatives considered: «Вошёл Супервайзер» needs a gendered verb; «Режим
+    Супервайзера» suggests Supervisor rights inside the User's Cabinet, which the feature does not give. Neither
+    was adopted; the text is the one requested by the user.
+  - Unverified: how other Russian products label an impersonated session. A search on 2026-11-12 returned only 1C
+    tools titled «Вход под другим пользователем» (infostart.ru, snippets only) and an AppMaster article on
+    administrator impersonation (https://appmaster.io/ru/blog/bezopasnaia-podmena-administratora) that timed out
+    and stays unread.
 
 ## Access codes shown once and batch deletion of Participants (`page_manager`, `page_administrator`)
 

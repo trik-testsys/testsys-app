@@ -30,14 +30,17 @@ internal enum class CssClass(internal val value: String) {
     BlockDark("ts-block--dark"),
     BlockFilters("ts-block--filters"),
     BlockGrid("ts-block--grid"),
+    BlockNoStretch("ts-block--no-stretch"),
     BlockActions("ts-block__actions"),
     BlockBody("ts-block__body"),
     BlockBodyFlush("ts-block__body--flush"),
     BlockBodyGrid("ts-block__body--grid"),
+    BlockBodyLoad("ts-block__body--load"),
     BlockEditing("ts-block__editing"),
     BlockFoot("ts-block__foot"),
     BlockHead("ts-block__head"),
     BlockHeadTabs("ts-block__head--tabs"),
+    BlockRefresh("ts-block__refresh"),
     BlockRow("ts-block__row"),
     BlockSectionTitle("ts-block__section-title"),
     BlockSeparator("ts-block__separator"),
@@ -48,7 +51,6 @@ internal enum class CssClass(internal val value: String) {
     BlockTitles("ts-block__titles"),
     Brand("ts-brand"),
     BrandEmblem("ts-brand__emblem"),
-    BrandImage("ts-brand-image"),
     BrandWordmark("ts-brand__wordmark"),
     Btn("ts-btn"),
     BtnBusy("ts-btn--busy"),
@@ -118,8 +120,6 @@ internal enum class CssClass(internal val value: String) {
     FiledropActions("ts-filedrop__actions"),
     FiledropMeta("ts-filedrop__meta"),
     FiledropStatus("ts-filedrop__status"),
-    Filter("ts-filter"),
-    FilterOn("ts-filter--on"),
     Footer("ts-footer"),
     FooterBrand("ts-footer__brand"),
     FooterInner("ts-footer__inner"),
@@ -163,6 +163,7 @@ internal enum class CssClass(internal val value: String) {
     HeaderSearch("ts-header__search"),
     HeaderSpacer("ts-header__spacer"),
     HeaderUser("ts-header__user"),
+    HeaderUserMark("ts-header__user-mark"),
     Hint("ts-hint"),
     Hstack("ts-hstack"),
     Icon("ts-icon"),
@@ -190,6 +191,7 @@ internal enum class CssClass(internal val value: String) {
     NavItem("ts-nav__item"),
     NavItemActive("ts-nav__item--active"),
     NavigationCell("ts-navigation-cell"),
+    NavigationLink("ts-navigation-link"),
     Num("ts-num"),
     ObscuredValue("ts-obscured-value"),
     Option("ts-option"),
@@ -203,12 +205,7 @@ internal enum class CssClass(internal val value: String) {
     PageHeadTitleRow("ts-page-head__title-row"),
     Pager("ts-pager"),
     PagerBtn("ts-pager__btn"),
-    PagerBtnActive("ts-pager__btn--active"),
-    PagerGap("ts-pager__gap"),
     PagerLabel("ts-pager__label"),
-    Pill("ts-pill"),
-    PillActive("ts-pill--active"),
-    Pills("ts-pills"),
     Pop("ts-pop"),
     PopoverFoot("ts-popover__foot"),
     PopoverSearch("ts-popover__search"),
@@ -229,7 +226,6 @@ internal enum class CssClass(internal val value: String) {
     RowNew("ts-row-new"),
     RowSelected("ts-row-selected"),
     Seg("ts-seg"),
-    SegSm("ts-seg--sm"),
     Skel("ts-skel"),
     SkelBadge("ts-skel--badge"),
     SkelCircle("ts-skel--circle"),
@@ -324,9 +320,6 @@ internal fun HasStyle.addClassNames(vararg values: CssClass) = addClassNames(*va
 
 @InternalComponentsApi
 internal fun HasStyle.removeClassName(value: CssClass): Boolean = removeClassName(value.value)
-
-@InternalComponentsApi
-internal fun HasStyle.hasClassName(value: CssClass): Boolean = hasClassName(value.value)
 
 @InternalComponentsApi
 internal fun HasStyle.removeClassNames(vararg values: CssClass) = removeClassNames(*values.map { value -> value.value }.toTypedArray())

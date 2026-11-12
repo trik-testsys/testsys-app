@@ -13,7 +13,7 @@ import tech.testsys.infra.settings.api.service.SettingsChangeResult
 import tech.testsys.infra.settings.api.service.SettingsPersistence
 import tech.testsys.infra.settings.api.service.SettingsService
 import tech.testsys.web.components.TestSysView
-import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
@@ -59,7 +59,7 @@ class ServiceSettingsView(
                                     textInput(LABELS.getValue(key), labelSize = 5, size = 6, hint = key.property)
                                 form.bind(key, input)
                                 input.isEditable = overview.persistence == SettingsPersistence.Known
-                                horizontal(size = 1) { iconAction(IconName.Info, label = settingHelp(key, snapshot)) }
+                                horizontal(size = 1) { action(label = settingHelp(key, snapshot), icon = IconName.Info, iconOnly = true) }
                             }
                             separator()
                         }

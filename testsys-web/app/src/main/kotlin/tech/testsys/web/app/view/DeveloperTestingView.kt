@@ -3,7 +3,6 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.HasDynamicTitle
-import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.DomainId
@@ -26,6 +25,7 @@ import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.field
 import tech.testsys.web.components.display.text
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
@@ -51,17 +51,16 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
     }
 
     private fun show(taskId: TaskId, requestId: TaskValidationRequestId) {
-        val (task, _) = developerService.viewTask(taskId)
-        val request = developerService.viewTaskValidationRequests(taskId).firstOrNull { request ->
-            request.id == requestId && request.task == taskId
-        } ?: throw NotFoundException("Testing request ${requestId.value} does not belong to task ${taskId.value}")
-        val names = resourceNames(task, request)
-        val execution = request.execution
+        // Checks access before the blocks load, so that a refusal or a request of another task opens its error screen.
+        val (task, request) = developerService.checkTaskValidationRequestAccess(taskId, requestId)
+        val loaded = SharedFetch {
+            val current = developerService.checkTaskValidationRequestAccess(taskId, requestId).second
+            current to resourceNames(task, current)
+        }
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.testingTitle(startedAt = request.createdAt)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), DeveloperView::class.java)
                 crumb(texts.taskTitle(name = task.name), DeveloperTaskView::class.java, taskParameters(taskId))
             }
@@ -69,50 +68,61 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
             row {
                 block(title = texts.details()) {
                     guide(texts.testingDetailsGuide())
-                    row {
-                        codeInput(texts.startedAt(), labelSize = 2, size = 4) {
-                            value = texts.testingStartedAtValue(startedAt = request.createdAt)
-                            isEditable = false
-                        }
-                    }
-                    row {
-                        val (label, tone) = validationStatusOf(execution)
-                        field(texts.state(), labelSize = 2, size = 22) { badge(label, tone) }
-                    }
-                    row {
-                        textInput(texts.summary(), labelSize = 2, size = 22) {
-                            value = summaryOf(execution)
-                            isEditable = false
-                        }
-                    }
+                    val details = { developerService.checkTaskValidationRequestAccess(taskId, requestId).second }
+                    load(details) { current -> detailsRows(current) }
                 }
             }
             row {
                 block(title = texts.testingDiagnosticsTitle()) {
                     guide(texts.testingDiagnosticsGuide())
-                    val diagnostics = diagnosticsOf(execution)
-                    table(key = { result: TestDiagnosticResult -> result.testId }, fetch = { query -> pageOf(diagnostics, query) }) {
-                        textColumn(texts.testingDiagnosticsPolygon(), size = 8) { result ->
-                            names[result.testId] ?: texts.testingUnknownResource(id = result.testId.value)
-                        }
-                        column(texts.testingDiagnosticsRemarks()) { result ->
-                            // Info neither blocks author solutions nor needs action, so the page shows only Warning and Error.
-                            val reports = result.reports.filter { report -> report.severity != DiagnosticSeverity.Info }
-                            vertical {
-                                if (reports.isEmpty()) text(texts.testingDiagnosticsNoRemarks())
-                                reports.forEach { report -> text(diagnosticText(report)) }
-                            }
-                        }
-                        empty(texts.testingDiagnosticsEmpty(), texts.testingDiagnosticsEmptyHint())
-                    }
+                    load(loaded.forLoad()) { (current, known) -> diagnosticsTable(current, known) }
                 }
             }
             row {
                 block(title = localization.pageCabinet.sectionSubmissions()) {
                     guide(texts.testingSubmissionsGuide())
-                    submissionRows(request, names)
+                    load(loaded.forLoad()) { (current, known) -> submissionRows(current, known) }
                 }
             }
+        }
+    }
+
+    private fun BlockScope.detailsRows(request: TaskValidationRequestVo) {
+        val texts = currentLocalization().pageDeveloper
+        row {
+            codeInput(texts.startedAt(), labelSize = 2, size = 4) {
+                value = texts.testingStartedAtValue(startedAt = request.createdAt)
+                isEditable = false
+            }
+        }
+        row {
+            val (label, tone) = validationStatusOf(request.execution)
+            field(texts.state(), labelSize = 2, size = 22) { badge(label, tone) }
+        }
+        row {
+            textInput(texts.summary(), labelSize = 2, size = 22) {
+                value = summaryOf(request.execution)
+                isEditable = false
+            }
+        }
+    }
+
+    private fun BlockScope.diagnosticsTable(request: TaskValidationRequestVo, names: Map<DomainId, String>) {
+        val texts = currentLocalization().pageDeveloper
+        val diagnostics = diagnosticsOf(request.execution)
+        table(key = { result: TestDiagnosticResult -> result.testId }, fetch = { query -> pageOf(diagnostics, query) }) {
+            textColumn(texts.testingDiagnosticsPolygon(), size = 8) { result ->
+                names[result.testId] ?: texts.testingUnknownResource(id = result.testId.value)
+            }
+            column(texts.testingDiagnosticsRemarks()) { result ->
+                // Info neither blocks author solutions nor needs action, so the page shows only Warning and Error.
+                val reports = result.reports.filter { report -> report.severity != DiagnosticSeverity.Info }
+                vertical {
+                    if (reports.isEmpty()) text(texts.testingDiagnosticsNoRemarks())
+                    reports.forEach { report -> text(diagnosticText(report)) }
+                }
+            }
+            empty(texts.testingDiagnosticsEmpty(), texts.testingDiagnosticsEmptyHint())
         }
     }
 

@@ -19,9 +19,9 @@ internal enum class ElementRole(internal val attribute: String) {
     Dialog("dialog"),
     Group("group"),
     Image("img"),
+    Link("link"),
     Menu("menu"),
     MenuItem("menuitem"),
-    Presentation("presentation"),
     ProgressBar("progressbar"),
     Region("region"),
     SearchBox("searchbox"),
@@ -40,7 +40,6 @@ internal enum class ElementScope(internal val attribute: String) {
 internal enum class AriaCurrent(internal val attribute: String) {
     Page("page"),
     Location("location"),
-    Step("step"),
 }
 
 @InternalComponentsApi
@@ -125,12 +124,6 @@ internal fun Element.setAriaPressed(value: Boolean?): Element = setOrRemove(name
 
 @InternalComponentsApi
 internal fun Element.setAriaRequired(value: Boolean?): Element = setOrRemove(name = "aria-required", value = value?.toString())
-
-@InternalComponentsApi
-internal fun Element.setAnswered(value: Boolean?): Element = setOrRemove(name = "data-answered", value = value?.toString())
-
-@InternalComponentsApi
-internal fun Element.setFlagged(value: Boolean?): Element = setOrRemove(name = "data-flagged", value = value?.toString())
 
 @InternalComponentsApi
 internal fun Element.setHidden(value: Boolean): Element = setAttribute("hidden", value)

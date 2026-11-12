@@ -37,7 +37,6 @@ import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TaskValidationTechnicalFailure
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.web.app.MockSpringVaadinTests
-import tech.testsys.web.app.error.NotFoundView
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
@@ -98,7 +97,8 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
 
         UI.getCurrent().navigate(DeveloperTestingView::class.java, testingParameters(second.id, request.id))
 
-        assertEquals(NotFoundView::class.java, currentView)
+        assertEquals(OperationErrorView::class.java, currentView)
+        assertEquals("Страница не найдена", UI.getCurrent()._get<H1>().text)
     }
 
     @Test
@@ -118,17 +118,30 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         val task = developers.task()
         val request = testingRequest(task)
-        val service = service(task, listOf(request))
+        val service = service(task, request)
         open(task.id, request.id, service)
-        every { service.viewTaskValidationRequests(task.id) } returns listOf(
-            request.copy(execution = TaskValidationExecutionVo.Completed(emptyList(), emptyList(), emptyList(), Instant.EPOCH)),
-        )
+        val completed = request.copy(execution = TaskValidationExecutionVo.Completed(emptyList(), emptyList(), emptyList(), Instant.EPOCH))
+        every { service.checkTaskValidationRequestAccess(task.id, request.id) } returns (task to completed)
 
         open(task.id, request.id, service)
 
         assertEquals("Все Посылки набрали ожидаемый балл", textField("Итог").value)
         assertTrue(UI.getCurrent()._find<Button> { text = "К задаче" }.isEmpty())
         assertTrue(UI.getCurrent()._find<Button> { text = "Обновить" }.isEmpty())
+    }
+
+    @Test
+    fun `should show the details and a load error in the diagnostics and submissions if resource names fail to load`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val request = testingRequest(task)
+        val service = service(task, request)
+        every { service.viewResources() } throws IllegalStateException("Resource storage unavailable")
+
+        open(task.id, request.id, service)
+
+        assertEquals("Выполняются Диагностики", textField("Итог").value)
+        assertEquals(2, Regex("Не удалось загрузить").findAll(UI.getCurrent().element.textRecursively).count())
     }
 
     @Test
@@ -145,7 +158,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
                 Instant.EPOCH,
             ),
         )
-        val service = service(task, listOf(request))
+        val service = service(task, request)
         every { service.viewResources() } returns developerService.viewResources()
         val history = developerService.viewResource(task.id, original.versionBucket)
         every { service.viewResource(task.id, original.versionBucket) } returns history
@@ -186,7 +199,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
             ),
         )
 
-        open(task.id, request.id, service(task, listOf(request)))
+        open(task.id, request.id, service(task, request))
 
         val diagnostics = tableText("Полигон")
         assertFalse("Сведения" in diagnostics)
@@ -234,7 +247,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
             ),
             execution = execution,
         )
-        val service = service(task, listOf(request))
+        val service = service(task, request)
 
         open(task.id, request.id, service)
 
@@ -255,11 +268,10 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
         isActive = true,
     )
 
-    private fun service(task: TaskVo, requests: List<TaskValidationRequestVo>): DeveloperService {
+    private fun service(task: TaskVo, request: TaskValidationRequestVo): DeveloperService {
         val service = mockk<DeveloperService>()
-        every { service.viewTask(task.id) } returns (task to emptyList())
+        every { service.checkTaskValidationRequestAccess(task.id, request.id) } returns (task to request)
         every { service.viewResources() } returns emptyList()
-        every { service.viewTaskValidationRequests(task.id) } returns requests
         return service
     }
 

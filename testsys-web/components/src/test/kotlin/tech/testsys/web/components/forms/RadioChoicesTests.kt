@@ -3,18 +3,16 @@ package tech.testsys.web.components.forms
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestRow
 import tech.testsys.web.components.control
 
 internal class RadioChoicesTests : MockVaadinTests() {
     @Test
-    fun `should reject values outside segmented options`() {
+    fun `should reject values outside radio options`() {
         lateinit var input: ValueInput<String?>
         buildTestRow {
-            input = segmentedControl(
+            input = radio(
                 "Choice",
                 labelSize = 4,
                 size = 8,
@@ -31,29 +29,6 @@ internal class RadioChoicesTests : MockVaadinTests() {
         assertThrows(IllegalArgumentException::class.java) {
             buildTestRow { radio("Choice", labelSize = 4, size = 8, items = listOf("a", "a"), itemLabel = { value -> value }) }
         }
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = [0, 1, 5])
-    fun `should reject segmented choices outside the supported range`(count: Int) {
-        assertThrows(IllegalArgumentException::class.java) {
-            buildTestRow {
-                segmentedControl("Choice", labelSize = 4, size = 8, items = (0 until count).toList(), itemLabel = Int::toString)
-            }
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = [2, 4])
-    fun `should accept segmented choices at the supported boundaries`(count: Int) {
-        lateinit var input: ValueInput<Int?>
-        buildTestRow {
-            input = segmentedControl("Choice", labelSize = 4, size = 8, items = (0 until count).toList(), itemLabel = Int::toString)
-        }
-
-        input.value = count - 1
-
-        assertEquals(count - 1, input.value)
     }
 
     @Test

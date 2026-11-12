@@ -7,6 +7,10 @@ html {
   --lumo-primary-color: var(--accent);
   --lumo-primary-text-color: var(--accent);
   --lumo-primary-color-50pct: var(--accent-ring);
+  /* Lumo takes the focus ring from the 50pct colour, too pale here to be seen; a filled button hides an accent
+     border, so Vaadin controls without a field frame get a solid ring of the accent colour. */
+  --vaadin-focus-ring-color: var(--border-focus);
+  --vaadin-focus-ring-width: 2px;
   --lumo-error-color: var(--danger);
   --lumo-error-text-color: var(--danger);
   --lumo-success-color: var(--success);
@@ -53,6 +57,7 @@ vaadin-button[data-ts-role] {
   --vaadin-button-font-size: var(--fs-sm);
   --vaadin-button-font-weight: var(--fw-semibold);
   --vaadin-button-gap: var(--space-2);
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 vaadin-button[data-ts-role]:not([disabled]):not([aria-busy="true"]):not([data-ts-cooldown]) { cursor:pointer; }
 vaadin-button[data-ts-size="sm"] {
@@ -73,7 +78,7 @@ vaadin-button[data-ts-role="destructive"] {
   --vaadin-button-text-color: var(--danger-fg);
   --vaadin-button-border: 1px solid var(--danger-border);
 }
-vaadin-button[data-ts-role="destructive"]:hover { --vaadin-button-background: #F7D9D6; }
+vaadin-button[data-ts-role="destructive"]:hover { --vaadin-button-background: var(--danger-bg-hover); }
 vaadin-button[data-ts-role="link"] { --vaadin-button-background: transparent; --vaadin-button-text-color: var(--accent); }
 vaadin-button[data-ts-role="link"]:hover { --vaadin-button-background: var(--info-bg); }
 /* Danger: the confirming action of a dangerous dialog, mirroring .ts-btn--danger; pages have no such role. */
@@ -169,9 +174,9 @@ vaadin-button > .ts-spinner { display: inline-block; }
   --vaadin-input-field-label-font-size: var(--fs-xs);
   --vaadin-input-field-label-font-weight: var(--fw-medium);
   --vaadin-input-field-label-color: var(--text-primary);
-  --vaadin-input-field-helper-font-size: var(--fs-caption);
+  --vaadin-input-field-helper-font-size: var(--fs-xs);
   --vaadin-input-field-helper-color: var(--text-secondary);
-  --vaadin-input-field-error-font-size: var(--fs-caption);
+  --vaadin-input-field-error-font-size: var(--fs-xs);
   --vaadin-input-field-error-color: var(--danger);
   --vaadin-input-field-value-font-size: var(--fs-sm);
   /* The input-field part draws a 1px border outside this height; keep the whole control at --control-md. */
@@ -182,6 +187,11 @@ vaadin-button > .ts-spinner { display: inline-block; }
   background: var(--surface-card);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field):hover::part(input-field) {
+  border-color: var(--ink-400);
 }
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[focused]::part(input-field) {
@@ -191,6 +201,10 @@ vaadin-button > .ts-spinner { display: inline-block; }
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[invalid]::part(input-field) {
   border-color: var(--danger);
+}
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field)[invalid][focused]::part(input-field) {
+  box-shadow: 0 0 0 3px var(--danger-ring);
 }
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[disabled]::part(input-field) {
@@ -223,17 +237,6 @@ vaadin-button > .ts-spinner { display: inline-block; }
   width: 100%;
   padding-block: 0;
 }
-/* Label-less select in a line or a block head: no room for a label above; the small one matches small buttons. */
-vaadin-select[data-ts-size] { padding-block: 0; }
-/* The frame takes its height from --lumo-text-field-size and the value button inside from --lumo-size-m; the border
-   adds 2px. */
-vaadin-select[data-ts-size="sm"] {
-  --lumo-text-field-size: calc(var(--control-sm) - 2px);
-  --lumo-size-m: calc(var(--control-sm) - 2px);
-  --vaadin-input-field-value-font-size: var(--fs-xs);
-}
-/* A compact select keeps its height: the error shows as the red border, and its text stays the accessible description. */
-vaadin-select[data-ts-size="sm"]::part(error-message) { display: none; }
 .ts-field__value > vaadin-checkbox { display: flex; align-items: center; min-height: var(--control-md); }
 /* Native values remain separate from the shadow field frame, clear/toggle buttons, hints and errors. */
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-date-picker, vaadin-time-picker,
@@ -241,7 +244,7 @@ vaadin-select[data-ts-size="sm"]::part(error-message) { display: none; }
 vaadin-select > [slot="value"], .ts-code__area, vaadin-radio-button > label {
   filter:var(--ts-value-filter, none);
 }
-vaadin-checkbox::part(checkbox), vaadin-radio-button::part(radio), vaadin-switch::part(switch) { filter:var(--ts-value-filter, none); }
+vaadin-checkbox::part(checkbox), vaadin-radio-button::part(radio) { filter:var(--ts-value-filter, none); }
 vaadin-text-field[data-ts-mono] > input, vaadin-password-field[data-ts-mono] > input, vaadin-integer-field > input, vaadin-number-field > input {
   font-family: var(--font-mono);
 }
@@ -334,8 +337,8 @@ vaadin-context-menu-item.ts-menu__item--danger { color: var(--danger); }
 vaadin-context-menu-item.ts-menu__item[disabled] { color: var(--text-tertiary); cursor: default; }
 vaadin-context-menu-list-box hr { height: 1px; margin: 4px 0; border: 0; background: var(--line-subtle); }
 
-/* Radio groups and switches use Vaadin state and focus with the canonical control geometry. */
-vaadin-radio-group[data-ts-input], vaadin-switch[data-ts-input] { padding-block:0; }
+/* Radio groups use Vaadin state and focus with the canonical control geometry. */
+vaadin-radio-group[data-ts-input] { padding-block:0; }
 vaadin-radio-group.ts-radio-group::part(group-field) { display:flex; flex-wrap:wrap; gap:var(--space-3); }
 vaadin-radio-button {
   --vaadin-radio-button-size:18px;
@@ -372,31 +375,12 @@ vaadin-radio-group.ts-seg > vaadin-radio-button > label::after { content:""; pos
 vaadin-radio-group.ts-seg > vaadin-radio-button::part(radio) { position:absolute; width:1px; height:1px; padding:0; border:0; overflow:hidden; clip-path:inset(50%); }
 vaadin-radio-group.ts-seg > vaadin-radio-button[checked] { background:var(--surface-card); color:var(--text-primary); box-shadow:var(--shadow-segment); }
 vaadin-radio-group.ts-seg > vaadin-radio-button[focus-ring] { outline:1px solid var(--border-focus); outline-offset:0; box-shadow:0 0 0 3px var(--accent-ring); }
-vaadin-radio-group.ts-seg--sm > vaadin-radio-button { height:22px; padding:0 10px; font-size:var(--fs-caption); }
 vaadin-radio-group[readonly]::part(group-field) { background:transparent; border:1px dashed var(--border-strong); border-radius:var(--radius-md); }
 vaadin-radio-group[readonly] > vaadin-radio-button { cursor:default; }
 vaadin-radio-group[readonly]:not([disabled]) > vaadin-radio-button > label { color:inherit; }
-vaadin-radio-group.ts-seg[disabled]::part(group-field) { background:var(--muted); color:var(--text-tertiary); border-color:var(--border-default); }
 vaadin-radio-group[disabled] > vaadin-radio-button { color:var(--text-tertiary); cursor:default; }
 vaadin-radio-group[disabled] > vaadin-radio-button > label { color:var(--text-tertiary); }
-vaadin-switch[data-ts-input] {
-  --vaadin-switch-width:36px;
-  --vaadin-switch-height:20px;
-  --vaadin-switch-background:var(--line-strong);
-  --vaadin-switch-border-width:0;
-  --vaadin-switch-border-radius:var(--radius-pill);
-  --vaadin-switch-marker-width:16px;
-  --vaadin-switch-marker-height:16px;
-  --vaadin-switch-marker-color:var(--white);
-  --vaadin-switch-marker-border-width:0;
-  --vaadin-switch-marker-border-radius:50%;
-  --vaadin-switch-marker-scale:1;
-}
-vaadin-switch[checked] { --vaadin-switch-background:var(--accent); }
-vaadin-switch[focus-ring]::part(switch) { outline:1px solid var(--border-focus); outline-offset:0; box-shadow:0 0 0 3px var(--accent-ring); }
-vaadin-switch[disabled]::part(switch) { background:var(--muted); opacity:1; }
-vaadin-switch[readonly]:not([disabled])::part(switch) { background:var(--border-strong); }
-vaadin-switch[readonly][checked]:not([disabled])::part(switch) { background:var(--accent); }
+vaadin-radio-group.ts-seg[disabled]::part(group-field) { background:var(--muted); color:var(--text-tertiary); border-color:var(--border-default); }
 
 /* The line gutter follows the actual textarea scroll inside Vaadin. */
 .ts-code__lines { overflow:hidden; max-height:100%; flex:none; }
@@ -441,7 +425,6 @@ vaadin-upload-file::part(status) { color:var(--text-secondary); }
 .ts-filedrop > span:first-child { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
 .ts-filedrop__meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); font:var(--fw-regular) var(--fs-xs) var(--font-sans); }
 .ts-filedrop__status:empty, .ts-filedrop__actions:empty { display:none; }
-.ts-date-range { gap:var(--space-2); }
 .ts-date-range > button { flex:none; }
 
 vaadin-date-picker[data-ts-range-part]::part(toggle-button) { display:none; }

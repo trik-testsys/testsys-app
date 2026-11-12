@@ -3492,6 +3492,361 @@ class ManagerOperationsTests {
         }
     }
 
+    @Nested
+    inner class CheckManagerRoleTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should accept a Manager without reading storage`() {
+                operations.checkManagerRole(testManager { data = managerData {} }).getOrThrow()
+
+                verify { listOf(repository, competitionRepository, contestRepository, submissionRepository) wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedManagerRoleError if user is not a Manager`() {
+                assertRaises(MissedManagerRoleError) { operations.checkManagerRole(testAdministrator {}) }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckClassAccessTests {
+
+        private val classId = ClassId(11)
+        private val manager = testManager { data = managerData {} }
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the owned class`() {
+                val original = testClass()
+                every { repository.findById(classId) } returns original
+
+                val actual = operations.checkClassAccess(user = manager, classId = classId).getOrThrow()
+
+                assertSame(original, actual)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedManagerRoleError before reading storage if user is not a Manager`() {
+                assertRaises(MissedManagerRoleError) { operations.checkClassAccess(user = testAdministrator {}, classId = classId) }
+
+                verify { repository wasNot Called }
+            }
+
+            @Test
+            fun `should raise ClassNotExistsError if class does not exist`() {
+                every { repository.findById(classId) } returns null
+
+                assertRaises(ClassNotExistsError(classId)) { operations.checkClassAccess(user = manager, classId = classId) }
+            }
+
+            @Test
+            fun `should raise ClassAccessDeniedError if class belongs to another owner`() {
+                every { repository.findById(classId) } returns testClass { owner = MultipleRoleUserId(99) }
+
+                assertRaises(ClassAccessDeniedError(classId)) { operations.checkClassAccess(user = manager, classId = classId) }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should read only the class without writing it`() {
+                every { repository.findById(classId) } returns testClass()
+
+                operations.checkClassAccess(user = manager, classId = classId).getOrThrow()
+
+                verify { repository.findById(classId) }
+                confirmVerified(repository)
+                verify { listOf(classInviteRepository, multipleRoleUserRepository, contestRepository) wasNot Called }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckCompetitionAccessTests {
+
+        private val competitionId = CompetitionId(21)
+        private val manager = testManager { data = managerData {} }
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the owned competition`() {
+                val original = testCompetition()
+                every { competitionRepository.findById(competitionId) } returns original
+
+                val actual = operations.checkCompetitionAccess(user = manager, competitionId = competitionId).getOrThrow()
+
+                assertSame(original, actual)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedManagerRoleError before reading storage if user is not a Manager`() {
+                assertRaises(MissedManagerRoleError) {
+                    operations.checkCompetitionAccess(user = testAdministrator {}, competitionId = competitionId)
+                }
+
+                verify { competitionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise CompetitionNotExistsError if competition does not exist`() {
+                every { competitionRepository.findById(competitionId) } returns null
+
+                assertRaises(CompetitionNotExistsError(competitionId)) {
+                    operations.checkCompetitionAccess(user = manager, competitionId = competitionId)
+                }
+            }
+
+            @Test
+            fun `should raise CompetitionAccessDeniedError if competition belongs to another owner`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition { owner = MultipleRoleUserId(99) }
+
+                assertRaises(CompetitionAccessDeniedError(competitionId)) {
+                    operations.checkCompetitionAccess(user = manager, competitionId = competitionId)
+                }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should read only the competition without writing it`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition()
+
+                operations.checkCompetitionAccess(user = manager, competitionId = competitionId).getOrThrow()
+
+                verify { competitionRepository.findById(competitionId) }
+                confirmVerified(competitionRepository)
+                verify { listOf(participantRepository, userRepository, contestRepository) wasNot Called }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckClassContestAccessTests {
+
+        private val classId = ClassId(11)
+        private val contestId = ContestId(19)
+        private val manager = testManager { data = managerData {} }
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the owned class with the contest added to it`() {
+                val studyClass = testClass { contests(listOf(19)) }
+                val contest = testContest()
+                every { repository.findById(classId) } returns studyClass
+                every { contestRepository.findById(contestId) } returns contest
+
+                val (actualClass, actualContest) =
+                    operations.checkClassContestAccess(user = manager, classId = classId, contestId = contestId).getOrThrow()
+
+                assertSame(studyClass, actualClass)
+                assertSame(contest, actualContest)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedManagerRoleError before reading storage if user is not a Manager`() {
+                assertRaises(MissedManagerRoleError) {
+                    operations.checkClassContestAccess(user = testAdministrator {}, classId = classId, contestId = contestId)
+                }
+
+                verify { listOf(repository, contestRepository) wasNot Called }
+            }
+
+            @Test
+            fun `should raise ClassNotExistsError before reading the contest if class does not exist`() {
+                every { repository.findById(classId) } returns null
+
+                assertRaises(ClassNotExistsError(classId)) {
+                    operations.checkClassContestAccess(user = manager, classId = classId, contestId = contestId)
+                }
+
+                verify { contestRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise ContestNotExistsError before checking access if contest of a foreign class does not exist`() {
+                every { repository.findById(classId) } returns testClass { owner = MultipleRoleUserId(99) }
+                every { contestRepository.findById(contestId) } returns null
+
+                assertRaises(ContestNotExistsError(contestId)) {
+                    operations.checkClassContestAccess(user = manager, classId = classId, contestId = contestId)
+                }
+            }
+
+            @Test
+            fun `should raise ClassAccessDeniedError if class belongs to another owner`() {
+                every { repository.findById(classId) } returns testClass {
+                    owner = MultipleRoleUserId(99)
+                    contests(listOf(19))
+                }
+                every { contestRepository.findById(contestId) } returns testContest()
+
+                assertRaises(ClassAccessDeniedError(classId)) {
+                    operations.checkClassContestAccess(user = manager, classId = classId, contestId = contestId)
+                }
+            }
+
+            @Test
+            fun `should raise ContestNotAddedToClassError if contest is not added to the class`() {
+                every { repository.findById(classId) } returns testClass { contests(listOf(20)) }
+                every { contestRepository.findById(contestId) } returns testContest()
+
+                assertRaises(ContestNotAddedToClassError(classId = classId, contestId = contestId)) {
+                    operations.checkClassContestAccess(user = manager, classId = classId, contestId = contestId)
+                }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should read only the class and the contest without writing them`() {
+                every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
+                every { contestRepository.findById(contestId) } returns testContest()
+
+                operations.checkClassContestAccess(user = manager, classId = classId, contestId = contestId).getOrThrow()
+
+                verify { repository.findById(classId) }
+                verify { contestRepository.findById(contestId) }
+                confirmVerified(repository, contestRepository)
+                verify { listOf(submissionRepository, multipleRoleUserRepository, taskRepository) wasNot Called }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckCompetitionContestAccessTests {
+
+        private val competitionId = CompetitionId(21)
+        private val contestId = ContestId(19)
+        private val manager = testManager { data = managerData {} }
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the owned competition with the contest added to it`() {
+                val competition = testCompetition { contests(listOf(19)) }
+                val contest = testContest()
+                every { competitionRepository.findById(competitionId) } returns competition
+                every { contestRepository.findById(contestId) } returns contest
+
+                val (actualCompetition, actualContest) = operations.checkCompetitionContestAccess(
+                    user = manager,
+                    competitionId = competitionId,
+                    contestId = contestId,
+                ).getOrThrow()
+
+                assertSame(competition, actualCompetition)
+                assertSame(contest, actualContest)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedManagerRoleError before reading storage if user is not a Manager`() {
+                assertRaises(MissedManagerRoleError) {
+                    operations.checkCompetitionContestAccess(testAdministrator {}, competitionId, contestId)
+                }
+
+                verify { listOf(competitionRepository, contestRepository) wasNot Called }
+            }
+
+            @Test
+            fun `should raise CompetitionNotExistsError before reading the contest if competition does not exist`() {
+                every { competitionRepository.findById(competitionId) } returns null
+
+                assertRaises(CompetitionNotExistsError(competitionId)) {
+                    operations.checkCompetitionContestAccess(user = manager, competitionId = competitionId, contestId = contestId)
+                }
+
+                verify { contestRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise ContestNotExistsError before checking access if contest of a foreign competition does not exist`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition { owner = MultipleRoleUserId(99) }
+                every { contestRepository.findById(contestId) } returns null
+
+                assertRaises(ContestNotExistsError(contestId)) {
+                    operations.checkCompetitionContestAccess(user = manager, competitionId = competitionId, contestId = contestId)
+                }
+            }
+
+            @Test
+            fun `should raise CompetitionAccessDeniedError if competition belongs to another owner`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition {
+                    owner = MultipleRoleUserId(99)
+                    contests(listOf(19))
+                }
+                every { contestRepository.findById(contestId) } returns testContest()
+
+                assertRaises(CompetitionAccessDeniedError(competitionId)) {
+                    operations.checkCompetitionContestAccess(user = manager, competitionId = competitionId, contestId = contestId)
+                }
+            }
+
+            @Test
+            fun `should raise ContestNotAddedToCompetitionError if contest is not added to the competition`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition { contests(listOf(20)) }
+                every { contestRepository.findById(contestId) } returns testContest()
+
+                assertRaises(ContestNotAddedToCompetitionError(competitionId = competitionId, contestId = contestId)) {
+                    operations.checkCompetitionContestAccess(user = manager, competitionId = competitionId, contestId = contestId)
+                }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should read only the competition and the contest without writing them`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition { contests(listOf(19)) }
+                every { contestRepository.findById(contestId) } returns testContest()
+
+                operations.checkCompetitionContestAccess(user = manager, competitionId = competitionId, contestId = contestId).getOrThrow()
+
+                verify { competitionRepository.findById(competitionId) }
+                verify { contestRepository.findById(contestId) }
+                confirmVerified(competitionRepository, contestRepository)
+                verify { listOf(submissionRepository, participantRepository, taskRepository) wasNot Called }
+            }
+        }
+    }
+
     private fun testStudentUser(studentId: Long): MultipleRoleUser = multipleRoleUser {
         id = studentId
         createdAt = Instant.EPOCH

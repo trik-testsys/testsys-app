@@ -884,6 +884,28 @@ Notes collected while moving the Observer and Supervisor pages onto localization
     XML: …».
   - «супервайзер»: Р. ед. «суперва́йзера», Д. ед. «суперва́йзеру». Source:
     https://ru.wiktionary.org/wiki/супервайзер.
+- Update (2026-11-12): the nickname suffix `page_cabinet.impersonation.name` («{$name} · вход Супервайзера») was
+  replaced, with user approval, by the standalone accent badge `page_cabinet.impersonation.badge` «Вход
+  Супервайзера» shown next to the nickname. The notes above on «·», lowercase and no-break spaces describe the
+  removed message.
+  - Capital «В»: the label now stands alone, and ui-design.md sets sentence case for interface text. The words are
+    joined by an ordinary space, like every other multi-word label of the bundles; the removed message was the only
+    one with U+00A0, which kept the middle-dot annotation on the nickname's line. Whether a badge wraps is a
+    component matter, not a text one (project reasoning, no language source).
+  - Викисловарь «вход» re-read on 2026-11-12: still two senses, without usage labels: 1 «действие по значению гл.
+    входить…» («Вход воспрещён»), 2 «место, предназначенное для такого действия» («Вход в дом», «Вход в метро»).
+    Source: https://ru.wiktionary.org/wiki/вход.
+  - Ambiguity of the standalone label: «Вход» is also the title of the sign-in page (`page_guest.sign_in.title`),
+    so «Вход Супервайзера» alone could be read as "the Supervisor's sign-in (page)", a destination, as well as "the
+    Supervisor has signed in", a state. Applicability (inference): the badge is not interactive, has the warning
+    tone, and is shown only inside a Cabinet next to the nickname, where a link to a sign-in form has no place, so
+    the state reading prevails. Alternatives considered: «Вошёл Супервайзер» needs a gendered verb; «Режим
+    Супервайзера» suggests Supervisor rights inside the User's Cabinet, which the feature does not give. Neither
+    was adopted; the text is the one requested by the user.
+  - Unverified: how other Russian products label an impersonated session. A search on 2026-11-12 returned only 1C
+    tools titled «Вход под другим пользователем» (infostart.ru, snippets only) and an AppMaster article on
+    administrator impersonation (https://appmaster.io/ru/blog/bezopasnaia-podmena-administratora) that timed out
+    and stays unread.
 
 ## Access codes shown once and batch deletion of Participants (`page_manager`, `page_administrator`)
 
@@ -1146,3 +1168,66 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
 - Independent review, «по новому набору Полигонов»: in a table of several Regrades a reader of an older row could
   take «новый» as the latest set; «по набору Полигонов, с которым запущена Перепроверка» is a longer alternative.
   Kept: the natural reading refers back to the first sentence. Inference from the table context, no language source.
+
+## «Обновить» as the icon-only refresh button of a table (`ui_data.table.refresh`)
+
+- «Обновить» is a perfective transitive verb. Викисловарь lists the senses "restore, repair", "revive" (перен.),
+  "replace the outdated with the new" (перен.) and "use a new item for the first time" (разг.); no offensive or
+  jargon sense. Source: https://ru.wiktionary.org/wiki/обновить (read 2026-11-11).
+- Ambiguity: in software «Обновить» also means "update/upgrade" (install a newer version) or "edit and save"
+  (update a record). For an icon-only `refresh-cw` button at the end of a table header the reading "fetch the rows
+  again" is the natural one; inference from the UI context, no language source states it.
+- The project already uses the reload sense in `ui_feedback.error.page_failed.description` («Обновите страницу…»).
+- Unverified: the Microsoft Terminology entry for "Refresh" was not read; a search on 2026-11-11 returned only the
+  terminology portal and the Russian style guide PDF without the entry.
+- Independent review re-read Викисловарь (2026-11-11): five senses, the closest to refreshing data is «заменить новым
+  что-либо негодное, устаревшее» (mapping is an inference); no computing sense, no offensive sense.
+- Usage evidence of one product's localization, not a norm: the Russian ArcGIS Pro help uses the command «Обновить»
+  for re-reading a list («Когда вы обновляете элемент, появляются добавленные файлы, удаленные файлы удаляются»).
+  Source: https://doc.esri.com/ru/arcgis-pro/latest/help/projects/refresh-a-locations-content.html (read 2026-11-11).
+- In ru-RU bundles «Обновить»/«обновите» occurs only in the reload sense; editing uses «Изменить» and «Сохранить».
+- Optional alternative raised in review: «Обновить таблицу» names the object for screen readers on pages with several
+  tables; the bare verb follows neighbouring labels («Применить», «Сбросить», «Выбрать строку») and was kept.
+
+## «Таблица» as the accessible name of a table's scroll area (`ui_data.table.region`)
+
+- «Таблица» is an inanimate feminine noun, Zaliznyak type 5a; Им. «таблица» / «таблицы», Р. «таблицы» / «таблиц».
+  Викисловарь senses: 1. a form of presenting information in rows and columns; 2. a board or document for recording
+  data in columns; 3. a visual teaching aid; 4. прогр. a key-lookup data structure. No offensive, slang or jargon
+  label. Sense 1 is the one a `<table>` inside the scroll container shows; the others do not arise for a region
+  that holds a data table (inference). Source: https://ru.wiktionary.org/wiki/таблица (read 2026-11-12, first
+  100 000 characters of the page).
+- The name must not repeat the role. W3C APG, Landmark Regions: «Do not use the landmark role as part of the
+  label», with the example that "Site Navigation" is announced as "Site Navigation Navigation". So «Область
+  прокрутки таблицы» or «Область таблицы» would double the role word after `role="region"`; «Таблица» does not.
+  Source: https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/ (read 2026-11-12).
+- The name describes the content, not the scrolling. The reference pattern is
+  `<div role="region" aria-labelledby="Caption01" tabindex="0">`, named by the table caption; in a comment reply its author states «I
+  intentionally do not note the scrolling region in the accessible name». So «Прокручиваемая таблица» or «Таблица
+  с прокруткой» add nothing a screen-reader user needs. Sources:
+  https://adrianroselli.com/2020/11/under-engineered-responsive-tables.html and
+  https://design-system.w3.org/styles/tables.html (both read 2026-11-12). Neither covers a table without a caption;
+  the generic «Таблица» is the project's fallback because no table title reaches the component.
+- Known limit, not a language finding: the same APG page says «If a specific landmark role is used more than once
+  on a page, provide each instance of that landmark with a unique label», except when «the content and purpose of
+  each instance is identical». A page with several tables gets several regions named «Таблица». A unique name
+  needs a title parameter in the message and in the component, which is a contract change.
+- Unverified: the Russian word a screen reader speaks for `role="region"`. The NVDA `aria.py` landmark list has no
+  `region` entry (it maps to `controlTypes.Role.REGION`), and the role label was not found in the read part of the
+  Russian `nvda.po` (https://raw.githubusercontent.com/nvaccess/nvda/master/source/locale/ru/LC_MESSAGES/nvda.po,
+  first 200 000 of 831 600 characters, 2026-11-12). «Область» comes from the coordinator's task text. The axe rule
+  page https://dequeuniversity.com/rules/axe/4.10/landmark-unique timed out on 2026-11-12.
+- Reviewer update (2026-11-12): the component gives the container `role="group"`, not `role="region"`, so that a
+  page of several tables does not fill the landmark list. `group` is not a landmark, so the unique-label rule
+  above does not apply while the role stays `group`; «do not repeat the role in the name» still holds by analogy,
+  and «Таблица» is neither «группа» nor «область». MDN, ARIA `group` role: «A focusable container should have a
+  role and an accessible name. If there is no appropriate native role and the content does not warrant a page
+  landmark, use the `group` role.» Source:
+  https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/group_role (read 2026-11-12).
+- Reviewer note, not a language defect: the name equals the word a screen reader is expected to speak as the role
+  of the nested table, so a user may hear the word twice. In the comments under the Roselli article a reader
+  writes «Having the region and the table with the same text could be a little confusing» and the author replies
+  «NVDA seems to ignore announcing the region name if it is the same as the table»; that exchange concerns a
+  wrapper and a table sharing a caption, which is only analogous. Still unverified: the Russian words NVDA speaks
+  for `group`, `region` and `table` (first 400 000 of 831 600 characters of the Russian `nvda.po` read without
+  result).

@@ -10,7 +10,9 @@ import com.vaadin.flow.component.html.Hr
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.TextHandle
+import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.removeClassName
@@ -56,7 +58,14 @@ class BlockScope internal constructor(
     internal var tablePager: TablePager? = null
         private set
 
+    /** Fetches the current page of the table that fills the body, or the first one; `null` while the body holds no table. */
+    internal var tableRefresh: ((toFirstPage: Boolean) -> Unit)? = null
+        private set
+
     private var loadedBody: LoadedBody? = null
+
+    /** Refresh button of the load that fills the body, in the head actions. */
+    private var loadRefresh: Component? = null
 
     /** What fills the whole body, e.g. "a table"; `null` while the body is a grid of rows. */
     private var wholeBody: String? = null
@@ -195,11 +204,27 @@ class BlockScope internal constructor(
 
     /**
      * Makes [table] the whole flush body and keeps [pager] for the end of the footer; [bindPagerHost] gets its host.
+     * [refresh] fetches the current page of the table or the first one, for the refresh button and [refreshTable].
      */
-    internal fun placeTable(table: Component, pager: Component, bindPagerHost: (Component) -> Unit) {
+    internal fun placeTable(
+        table: Component,
+        pager: Component,
+        refresh: (toFirstPage: Boolean) -> Unit,
+        bindPagerHost: (Component) -> Unit,
+    ) {
         placeWhole(table, TABLE_OWNER)
         requestFlushBody()
         tablePager = TablePager(pager, bindPagerHost)
+        tableRefresh = refresh
+    }
+
+    /**
+     * Fetches the first page of the table of the block, also of one a load built; a load without a table loads again.
+     * Does nothing in a block that holds neither.
+     */
+    internal fun refreshTable() {
+        val refresh = tableRefresh
+        if (refresh != null) refresh(true) else loadedBody?.refreshTable()
     }
 
     /**
@@ -215,12 +240,15 @@ class BlockScope internal constructor(
     }
 
     /**
-     * Completes the block after its content: the editing switch goes after the head actions and the table pagination
-     * to the end of the footer; the footer hides with the pagination if nothing else is in it. A loaded body gets the
-     * footer for the pagination of a table it may load, hidden while the block has no footer content of its own.
+     * Completes the block after its content: the editing switch goes after the head actions, the refresh button of
+     * a table or a load last, and the table pagination to the end of the footer; the footer hides with the pagination
+     * if nothing else is in it. A loaded body gets the footer for the pagination of a table it may load, hidden while
+     * the block has no footer content of its own.
      */
     internal fun finish() {
         editingSwitch?.install(bar = headBar(), texts = texts, state = editState, body = body)
+        tableRefresh?.let { refresh -> addRefresh { refresh(false) } }
+        loadedBody?.let { loaded -> loadRefresh = addRefresh { loaded.onReload() } }
 
         tablePager?.let { placed ->
             val isOwnFooter = footerBar == null
@@ -235,14 +263,41 @@ class BlockScope internal constructor(
         }
     }
 
-    /** Starts what fills the body once the block is built, e.g. the first fetch of a load. */
-    internal fun start() {
-        loadedBody?.start()
+    /**
+     * Starts what fills the body once the block is built, e.g. the first fetch of a load. The refresh button of a load
+     * shows only while it holds a table; the part of the head with nothing else hides with it: the button itself,
+     * the head actions or [actionsOnlyHead], the head that holds only them.
+     */
+    internal fun start(actionsOnlyHead: Component?) {
+        val loaded = loadedBody ?: return
+
+        val button = checkNotNull(loadRefresh) { "Block must be finished before it starts" }
+        val bar = checkNotNull(actionsBar) { "Block with a load must have head actions once finished" }
+        val host = when {
+            bar.children.count() > 1 -> button
+            actionsOnlyHead != null -> actionsOnlyHead
+            else -> bar
+        }
+
+        loaded.useRefresh(host)
+        loaded.start()
     }
 
     /** Checks that what [call] adds belongs to the block itself: the content of a load fills the body only. */
     private fun checkBlockLevel(call: String) {
         check(!isLoadContent) { "Content of a load fills the block body only; call $call on the block itself" }
+    }
+
+    /**
+     * Adds the icon-only refresh button running [onRefresh] to the end of the head actions; it is set apart from
+     * the actions before it.
+     */
+    private fun addRefresh(onRefresh: () -> Unit): Component {
+        val holder = Div().apply { addClassName(CssClass.BlockRefresh) }
+        headBar().add(holder)
+        ContentScope(holder, texts, Placement.Head)
+            .action(texts.messages.uiData.tableRefresh(), IconName.RefreshCw, iconOnly = true) { onClick { onRefresh() } }
+        return holder
     }
 
     private fun footBar(): Footer = footerBar ?: Footer().apply { addClassName(CssClass.BlockFoot) }.also { created -> footerBar = created }

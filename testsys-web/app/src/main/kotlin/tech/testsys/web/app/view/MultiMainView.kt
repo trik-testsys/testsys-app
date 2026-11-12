@@ -16,6 +16,7 @@ import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
@@ -41,7 +42,8 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
     override fun getPageTitle(): String = currentLocalization().pageHome.title()
 
     private fun show() {
-        val profile = multipleRoleUserService.viewProfile().roles
+        // Both the roles and the communities blocks show the roles of one profile read.
+        val profile = SharedFetch { multipleRoleUserService.viewProfile().roles }
         val texts = currentLocalization().pageHome
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
             head(texts.title())
@@ -49,14 +51,16 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
             row {
                 block(size = ROLES_COLUMNS, title = texts.rolesTitle()) {
                     guide(texts.rolesGuide())
-                    table(
-                        key = { (role, _): Pair<RoleVo, List<CommunityVo>> -> labelOf(role) },
-                        fetch = { request -> pageOf(profile, request) },
-                    ) {
-                        column(texts.rolesRole(), size = 14) { (role, _) -> tag(labelOf(role)) }
-                        numberColumn(texts.rolesCommunities()) { (_, communities) -> communities.size }
-                        empty(texts.rolesEmpty(), texts.joinHint())
-                        onRowClick(isNavigation = true) { (role, _) -> UI.getCurrent().navigate(rolePageOf(role)) }
+                    load(profile.forLoad()) { roles ->
+                        table(
+                            key = { (role, _): Pair<RoleVo, List<CommunityVo>> -> labelOf(role) },
+                            fetch = { request -> pageOf(roles, request) },
+                        ) {
+                            column(texts.rolesRole(), size = 14) { (role, _) -> tag(labelOf(role)) }
+                            numberColumn(texts.rolesCommunities()) { (_, communities) -> communities.size }
+                            empty(texts.rolesEmpty(), texts.joinHint())
+                            onRowClick(isNavigation = true) { (role, _) -> UI.getCurrent().navigate(rolePageOf(role)) }
+                        }
                     }
                 }
                 block(title = texts.joinTitle()) {
@@ -74,16 +78,17 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
             row {
                 block(title = texts.communitiesTitle()) {
                     guide(texts.communitiesGuide())
-                    val communities = communitiesOf(profile)
-                    table(
-                        key = { (community, _): Pair<CommunityVo, List<RoleVo>> -> community.id },
-                        fetch = { request -> pageOf(communities, request) },
-                    ) {
-                        codeColumn(texts.communitiesId(), size = 4) { (community, _) -> community.id.value.toString() }
-                        textColumn(texts.communitiesName(), size = 8) { (community, _) -> community.name }
-                        textColumn(texts.communitiesDescription(), size = 7) { (community, _) -> community.description }
-                        column(texts.communitiesRoles()) { (_, roles) -> roles.forEach { role -> tag(labelOf(role)) } }
-                        empty(texts.communitiesEmpty(), texts.joinHint())
+                    load(profile.forLoad { roles -> communitiesOf(roles) }) { communities ->
+                        table(
+                            key = { (community, _): Pair<CommunityVo, List<RoleVo>> -> community.id },
+                            fetch = { request -> pageOf(communities, request) },
+                        ) {
+                            codeColumn(texts.communitiesId(), size = 4) { (community, _) -> community.id.value.toString() }
+                            textColumn(texts.communitiesName(), size = 8) { (community, _) -> community.name }
+                            textColumn(texts.communitiesDescription(), size = 7) { (community, _) -> community.description }
+                            column(texts.communitiesRoles()) { (_, roles) -> roles.forEach { role -> tag(labelOf(role)) } }
+                            empty(texts.communitiesEmpty(), texts.joinHint())
+                        }
                     }
                 }
             }

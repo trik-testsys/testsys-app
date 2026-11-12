@@ -37,6 +37,8 @@ import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.BlankJudgmentReasonError
 import tech.testsys.operation.error.ChangeVerdictError
+import tech.testsys.operation.error.CheckJudgeRoleError
+import tech.testsys.operation.error.CheckSubmissionAccessError
 import tech.testsys.operation.error.DownloadLogsError
 import tech.testsys.operation.error.DownloadRecordingError
 import tech.testsys.operation.error.DownloadSolutionError
@@ -119,6 +121,36 @@ class JudgeOperations(
             )
         }
         return Page(content = content, pagination = page.pagination, totalElements = page.totalElements).asSuccess()
+    }
+
+    /**
+     * Checks that [user] holds the [Judge] role, so that a page checks the role before it loads its verdicts.
+     * Missing judge role is an expected failure.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.judge.viewResults")
+    fun checkJudgeRole(user: MultipleRoleUser): OperationResult<Unit, CheckJudgeRoleError> = operation<Unit, CheckJudgeRoleError> {
+        ensure(user.hasRole<Judge>(), MissedJudgeRoleError)
+        return Unit.asSuccess()
+    }
+
+    /**
+     * Returns the submission [submissionId] available to [user] without its details, verdict and judgment orders, so that a
+     * page checks access before it loads them. Missing role, submission and access are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.judge.viewSolution")
+    fun checkSubmissionAccess(
+        user: MultipleRoleUser,
+        submissionId: SubmissionId,
+    ): OperationResult<Submission, CheckSubmissionAccessError> = operation<Submission, CheckSubmissionAccessError> {
+        ensure(user.hasRole<Judge>(), MissedJudgeRoleError)
+        val submission = submissionRepository.findById(submissionId)
+        ensure(submission != null) { SubmissionNotExistsError(submissionId) }
+        ensure(availableAuthorOf(submission) != null) { SubmissionAccessDeniedError(submissionId) }
+        return submission.asSuccess()
     }
 
     /**

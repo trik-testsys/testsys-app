@@ -52,6 +52,19 @@ internal class DrawerTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should not add a refresh button to a drawer table`() {
+        val handle = drawer("Testing") {
+            table("Diagnostics", key = { value: Int -> value }, rows = listOf(1, 2)) {
+                textColumn("Name") { value -> "Polygon $value" }
+            }
+        }
+
+        handle.open()
+
+        assertTrue(openDialogs().single().findAll("ts-block__refresh").isEmpty())
+    }
+
+    @Test
     fun `should reopen drawer with retained value and inherited readonly mode`() {
         val handle = drawer("Drawer") {
             row { field = textInput("Name", labelSize = 8, size = 16) { value = "Retained" } }

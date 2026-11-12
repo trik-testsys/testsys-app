@@ -25,12 +25,18 @@ internal enum class ActionRole(val attribute: String) {
 }
 
 /**
- * Adds the main action of a block; by convention a block has one.
+ * Adds the main action of a block; by convention a block has one. With [iconOnly] the button shows only [icon], and
+ * [label] becomes its accessible name and tooltip.
  *
+ * @throws IllegalArgumentException if [iconOnly] is set without [icon] or with a blank [label].
  * @since 1.0.0-beta.1
  */
-fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addAction(ActionRole.Main, label, icon, configure)
+fun ContentScope.mainAction(
+    label: String,
+    icon: IconName? = null,
+    iconOnly: Boolean = false,
+    configure: ActionHandle.() -> Unit = {},
+): ActionHandle = addAction(ActionRole.Main, label, icon, iconOnly, configure)
 
 /**
  * Adds the main action of a guest card, as wide as the card, under its fields.
@@ -41,72 +47,71 @@ fun GuestCardScope.mainAction(label: String, configure: ActionHandle.() -> Unit 
     body.mainAction(label, configure = configure)
 
 /**
- * Adds a neutral action.
+ * Adds a neutral action. With [iconOnly] the button shows only [icon], and [label] becomes its accessible name and
+ * tooltip.
  *
+ * @throws IllegalArgumentException if [iconOnly] is set without [icon] or with a blank [label].
  * @since 1.0.0-beta.1
  */
-fun ContentScope.action(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addAction(ActionRole.Neutral, label, icon, configure)
+fun ContentScope.action(
+    label: String,
+    icon: IconName? = null,
+    iconOnly: Boolean = false,
+    configure: ActionHandle.() -> Unit = {},
+): ActionHandle = addAction(ActionRole.Neutral, label, icon, iconOnly, configure)
 
 /**
- * Adds an action that deletes or cancels something.
+ * Adds an action that deletes or cancels something. With [iconOnly] the button shows only [icon], and [label] becomes
+ * its accessible name and tooltip.
  *
+ * @throws IllegalArgumentException if [iconOnly] is set without [icon] or with a blank [label].
  * @since 1.0.0-beta.1
  */
-fun ContentScope.destructiveAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addAction(ActionRole.Destructive, label, icon, configure)
+fun ContentScope.destructiveAction(
+    label: String,
+    icon: IconName? = null,
+    iconOnly: Boolean = false,
+    configure: ActionHandle.() -> Unit = {},
+): ActionHandle = addAction(ActionRole.Destructive, label, icon, iconOnly, configure)
 
 /**
- * Adds an inline text action.
+ * Adds an inline text action. With [iconOnly] the button shows only [icon], and [label] becomes its accessible name
+ * and tooltip.
  *
+ * @throws IllegalArgumentException if [iconOnly] is set without [icon] or with a blank [label].
  * @since 1.0.0-beta.1
  */
-fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addAction(ActionRole.Link, label, icon, configure)
-
-/**
- * Adds a neutral action shown as an icon only; [label] is read by screen readers and shown as a tooltip.
- *
- * @since 1.0.0-beta.1
- */
-fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addIconAction(ActionRole.Neutral, icon, label, configure)
-
-/**
- * Adds the main action as an icon; [label] provides its accessible name and tooltip.
- *
- * @since 1.0.0-beta.1
- */
-fun ContentScope.mainIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addIconAction(ActionRole.Main, icon, label, configure)
-
-/**
- * Adds a destructive action as an icon; [label] provides its accessible name and tooltip.
- *
- * @since 1.0.0-beta.1
- */
-fun ContentScope.destructiveIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addIconAction(ActionRole.Destructive, icon, label, configure)
-
-private fun ContentScope.addIconAction(role: ActionRole, icon: IconName, label: String, configure: ActionHandle.() -> Unit): ActionHandle {
-    require(label.isNotBlank()) { "Icon action accessible name must not be blank" }
-
-    val handle = addAction(role, label = null, icon, configure = {})
-    handle.button.apply {
-        setAriaLabel(label)
-        setTooltipText(label)
-        element.setIconOnly(true)
-    }
-
-    return handle.apply(configure)
-}
+fun ContentScope.linkAction(
+    label: String,
+    icon: IconName? = null,
+    iconOnly: Boolean = false,
+    configure: ActionHandle.() -> Unit = {},
+): ActionHandle = addAction(ActionRole.Link, label, icon, iconOnly, configure)
 
 /** Adds the filled red action of a dangerous confirmation; pages have no such role. */
 internal fun ContentScope.dangerAction(label: String, configure: ActionHandle.() -> Unit = {}) =
-    addAction(ActionRole.Danger, label, icon = null, configure)
+    addAction(ActionRole.Danger, label, icon = null, iconOnly = false, configure)
 
-private fun ContentScope.addAction(role: ActionRole, label: String?, icon: IconName?, configure: ActionHandle.() -> Unit): ActionHandle {
-    val button = buildActionButton(role, label, icon)
+private fun ContentScope.addAction(
+    role: ActionRole,
+    label: String,
+    icon: IconName?,
+    iconOnly: Boolean,
+    configure: ActionHandle.() -> Unit,
+): ActionHandle {
+    if (iconOnly) {
+        requireNotNull(icon) { "Icon-only action '$label' must have an icon" }
+        require(label.isNotBlank()) { "Icon-only action accessible name must not be blank" }
+    }
+
+    val button = buildActionButton(role, label.takeUnless { iconOnly }, icon)
+
+    if (iconOnly) {
+        button.setAriaLabel(label)
+        button.setTooltipText(label)
+        button.element.setIconOnly(true)
+    }
+
     add(button)
 
     return ActionHandle(button, button.icon).apply(configure)

@@ -19,6 +19,7 @@ import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.TextLimits
+import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Contest
@@ -47,6 +48,10 @@ import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.error.CheckParticipantContestAccessError
+import tech.testsys.operation.error.CheckParticipantTaskAccessError
+import tech.testsys.operation.error.CheckStudentContestAccessError
+import tech.testsys.operation.error.CheckStudentTaskAccessError
 import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNotExistsError
 import tech.testsys.operation.error.CompetitionNotExistsError
@@ -226,6 +231,138 @@ class StudyOperations(
         ensure(entry != null) { ContestNotEnteredError(contestId) }
         val submissions = submissionRepository.findGradingByContext(authorId = user.id, taskId = taskId, contestId = contestId)
         return studyTask(task, submissions).asSuccess()
+    }
+
+    /**
+     * Returns the first entry time of [user] and the original [contestId] in their competition without its tasks, so that a
+     * page checks access before it loads them. Refusals are those of [viewContest]; saves nothing.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.study.viewContest")
+    fun checkContestAccess(
+        user: SingleRoleUser,
+        contestId: ContestId,
+    ): OperationResult<StudyContestContext, CheckParticipantContestAccessError> =
+        operation<StudyContestContext, CheckParticipantContestAccessError> {
+            ensure(user is Participant, MissedParticipantRoleError)
+            val competitionId = user.data.competition.id
+            val competition = competitionRepository.findById(competitionId)
+            ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            ensure(contestId in competition.data.contests.ids) { ContestAccessDeniedError(contestId) }
+            val entry = participantContestEntryRepository.findByContext(
+                participantId = user.id,
+                competitionId = competitionId,
+                contestId = contestId,
+            )
+            return StudyContestContext(studyClass = null, enteredAt = entry?.data?.enteredAt, contest = contest).asSuccess()
+        }
+
+    /**
+     * Returns [classId], the first entry time of [user] in it and the original [contestId] without its tasks, so that a page
+     * checks access before it loads them. Refusals are those of [viewContest]; saves nothing.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.study.viewContest")
+    fun checkContestAccess(
+        user: MultipleRoleUser,
+        classId: ClassId,
+        contestId: ContestId,
+    ): OperationResult<StudyContestContext, CheckStudentContestAccessError> =
+        operation<StudyContestContext, CheckStudentContestAccessError> {
+            ensure(user.hasRole<Student>(), MissedStudentRoleError)
+            val studyClass = classRepository.findById(classId)
+            ensure(studyClass != null) { ClassNotExistsError(classId) }
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            ensure(user.id in studyClass.data.students.ids) { ClassAccessDeniedError(classId) }
+            ensure(contestId in studyClass.data.contests.ids) { ContestAccessDeniedError(contestId) }
+            val entry = studentContestEntryRepository.findByContext(
+                userId = user.id,
+                studyClassId = classId,
+                contestId = contestId,
+            )
+            return StudyContestContext(studyClass = studyClass, enteredAt = entry?.data?.enteredAt, contest = contest).asSuccess()
+        }
+
+    /**
+     * Returns the context of [taskId] of [contestId] in the competition of [user] with the languages a solution can be sent
+     * in, without its resources and submissions, so that a page checks access before it loads them. Refusals are those
+     * of [viewTask]; saves nothing.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.study.viewTask")
+    fun checkTaskAccess(
+        user: SingleRoleUser,
+        contestId: ContestId,
+        taskId: TaskId,
+    ): OperationResult<StudyTaskContext, CheckParticipantTaskAccessError> = operation<StudyTaskContext, CheckParticipantTaskAccessError> {
+        ensure(user is Participant, MissedParticipantRoleError)
+        val competitionId = user.data.competition.id
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(contestId in competition.data.contests.ids) { ContestAccessDeniedError(contestId) }
+        ensure(taskId in contest.data.tasks.ids) { TaskAccessDeniedError(taskId) }
+        val entry = participantContestEntryRepository.findByContext(
+            participantId = user.id,
+            competitionId = competitionId,
+            contestId = contestId,
+        )
+        ensure(entry != null) { ContestNotEnteredError(contestId) }
+        return StudyTaskContext(
+            studyClass = null,
+            enteredAt = entry.data.enteredAt,
+            contest = contest,
+            task = task,
+            languages = allowedLanguages(lastCommitted(task)),
+        ).asSuccess()
+    }
+
+    /**
+     * Returns the context of [taskId] of [contestId] in [classId] for [user] with the languages a solution can be sent in,
+     * without its resources and submissions, so that a page checks access before it loads them. Refusals are those
+     * of [viewTask]; saves nothing.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.study.viewTask")
+    fun checkTaskAccess(
+        user: MultipleRoleUser,
+        classId: ClassId,
+        contestId: ContestId,
+        taskId: TaskId,
+    ): OperationResult<StudyTaskContext, CheckStudentTaskAccessError> = operation<StudyTaskContext, CheckStudentTaskAccessError> {
+        ensure(user.hasRole<Student>(), MissedStudentRoleError)
+        val studyClass = classRepository.findById(classId)
+        ensure(studyClass != null) { ClassNotExistsError(classId) }
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(user.id in studyClass.data.students.ids) { ClassAccessDeniedError(classId) }
+        ensure(contestId in studyClass.data.contests.ids) { ContestAccessDeniedError(contestId) }
+        ensure(taskId in contest.data.tasks.ids) { TaskAccessDeniedError(taskId) }
+        val entry = studentContestEntryRepository.findByContext(
+            userId = user.id,
+            studyClassId = classId,
+            contestId = contestId,
+        )
+        ensure(entry != null) { ContestNotEnteredError(contestId) }
+        return StudyTaskContext(
+            studyClass = studyClass,
+            enteredAt = entry.data.enteredAt,
+            contest = contest,
+            task = task,
+            languages = allowedLanguages(lastCommitted(task)),
+        ).asSuccess()
     }
 
     /**
@@ -646,6 +783,34 @@ class StudyOperations(
      * @since 1.0.0-beta.1
      */
     data class StudyContestTask(val task: Task, val bestScore: Int?, val lastSubmission: Submission?)
+
+    /**
+     * Contest in the study context of a participant or a student, without its tasks.
+     *
+     * @property studyClass the selected class of a student, or `null` for a participant.
+     * @property enteredAt the saved first entry time in this context, or `null` before entry.
+     * @property contest the original contest.
+     * @since %CURRENT_VERSION%
+     */
+    data class StudyContestContext(val studyClass: Class?, val enteredAt: Instant?, val contest: Contest)
+
+    /**
+     * Task of an entered contest in the study context of a participant or a student, without its resources and submissions.
+     *
+     * @property studyClass the selected class of a student, or `null` for a participant.
+     * @property enteredAt the saved first entry time in this context.
+     * @property contest the original contest.
+     * @property task the original task.
+     * @property languages the distinct languages of the developer solutions of the last committed revision, in their order.
+     * @since %CURRENT_VERSION%
+     */
+    data class StudyTaskContext(
+        val studyClass: Class?,
+        val enteredAt: Instant,
+        val contest: Contest,
+        val task: Task,
+        val languages: List<TrikSupportedLanguage>,
+    )
 
     /**
      * Task of a contest as a participant or a student sees it, with its last committed revision and their submissions.

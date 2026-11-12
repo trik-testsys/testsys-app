@@ -9,7 +9,7 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H2
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.shared.Registration
-import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.DomProperty
@@ -50,14 +50,22 @@ enum class DialogSize(internal val cssClass: CssClass?) {
  * Modal `vaadin-dialog` drawing the `.ts-dialog` markup: a head with the title and a close button, or an alert body
  * with a warning glyph; [content] and [foot] take the content. [size] gives the width of the card. An open dialog
  * closes on navigation: opening attaches it to the UI, not to the page, so leaving the page would keep it shown.
+ * A dialog holding typed values passes [isClosedByOutsideClick] `false`, so a stray click does not discard them.
  */
-internal class DialogShell(texts: UiLocalization, title: String, subtitle: String?, size: DialogSize, isAlert: Boolean) {
+internal class DialogShell(
+    texts: UiLocalization,
+    title: String,
+    subtitle: String?,
+    size: DialogSize,
+    isAlert: Boolean,
+    isClosedByOutsideClick: Boolean = true,
+) {
     val dialog = Dialog().apply {
         addThemeName(CssTheme.Dialog)
         // Vaadin defaults, set explicitly to state how every dialog closes.
         modality = ModalityMode.STRICT
         isCloseOnEsc = true
-        isCloseOnOutsideClick = true
+        isCloseOnOutsideClick = isClosedByOutsideClick
         setAriaRole(if (isAlert) ElementRole.AlertDialog else ElementRole.Dialog)
         // Dialog.setAriaLabel is protected; it only sets this property.
         element.setProperty(DomProperty.AriaLabel, title)
@@ -88,7 +96,10 @@ internal class DialogShell(texts: UiLocalization, title: String, subtitle: Strin
             val titles = Div(heading).apply { addClassName(CssClass.BlockTitles) }
             subtitle?.let { text -> titles.add(Span(text).apply { addClassName(CssClass.BlockSub) }) }
             val head = Div(titles).apply { addClassName(CssClass.DialogHead) }
-            ContentScope(head, texts, Placement.Head).iconAction(IconName.X, texts.messages.uiOverlay.dialogClose()) { onClick { close() } }
+            ContentScope(head, texts, Placement.Head).action(texts.messages.uiOverlay.dialogClose(), IconName.X, iconOnly = true) {
+                onClick { close() }
+            }
+
             body.add(content)
             card.add(head, body, foot)
         }

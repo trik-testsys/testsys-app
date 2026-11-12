@@ -25,11 +25,11 @@ import tech.testsys.infra.database.api.service.ServiceUserFilter
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserRole
 import tech.testsys.infra.database.api.service.ServiceUserSearch
+import tech.testsys.web.app.view.loadTable
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.filters
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.multiSelect
@@ -69,7 +69,7 @@ class ServiceUsersView(private val headers: ServiceHeaders, private val search: 
             head("Пользователи")
             row {
                 block(title = "Пользователи") {
-                    val rows = table(
+                    loadTable(
                         key = { user: User<*> -> user.id.value },
                         fetch = { request ->
                             val users = search.find(applied, request.toPagination())
@@ -84,14 +84,14 @@ class ServiceUsersView(private val headers: ServiceHeaders, private val search: 
                         onRowClick(isNavigation = true) { user -> openUser(user) }
                     }
 
-                    searchFilters(onRefresh = { rows.refresh(toFirstPage = true) })
+                    searchFilters()
                 }
             }
         }
     }
 
     /** Adds the search conditions; applying them publishes a new filter only if every identifier is a number. */
-    private fun BlockScope.searchFilters(onRefresh: () -> Unit) {
+    private fun BlockScope.searchFilters() {
         lateinit var id: ValueInput<String>
         lateinit var name: ValueInput<String>
         lateinit var email: ValueInput<String>
@@ -123,7 +123,6 @@ class ServiceUsersView(private val headers: ServiceHeaders, private val search: 
                 roles.value = emptySet()
                 applied = ServiceUserFilter()
             },
-            onRefresh = onRefresh,
         ) {
             row {
                 id = textInput("ID", labelSize = 3, size = 9, hint = "Точное совпадение")

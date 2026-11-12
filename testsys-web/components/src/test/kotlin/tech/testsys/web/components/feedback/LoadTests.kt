@@ -4,6 +4,7 @@ import com.github.mvysny.kaributesting.v10.MockVaadin
 import com.github.mvysny.kaributesting.v10._click
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.internal.PendingJavaScriptInvocation
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.signals.BindingActiveException
@@ -32,6 +33,7 @@ import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
+import tech.testsys.web.components.findAllButtons
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockHandle
 import tech.testsys.web.components.layout.BlockScope
@@ -39,6 +41,8 @@ import tech.testsys.web.components.navigation.tabs
 import tech.testsys.web.components.testTexts
 import java.util.concurrent.Executor
 import kotlin.concurrent.thread
+
+private const val LOAD_MARK = "ts-block__body--load"
 
 class LoadTests : MockVaadinTests() {
     private val queue = QueueExecutor()
@@ -139,6 +143,20 @@ class LoadTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should mark the body of a load`() {
+            buildTestPage { row { block { load({ 1 }) { value -> row { text("Всего: $value") } } } } }
+
+            assertTrue(LOAD_MARK in body().classes())
+        }
+
+        @Test
+        fun `should not mark the body of a block without a load`() {
+            buildTestPage { row { block { row { text("Всего: 1") } } } }
+
+            assertFalse(LOAD_MARK in body().classes())
+        }
+
+        @Test
         fun `should show the block head and actions while loading`() {
             buildTestPage {
                 row {
@@ -183,13 +201,22 @@ class LoadTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should keep the load mark on the body with loaded content`() {
+            buildTestPage { row { block { load({ 42 }) { value -> row { text("Всего: $value") } } } } }
+
+            queue.runAll()
+
+            assertTrue(LOAD_MARK in body().classes())
+        }
+
+        @Test
         fun `should build rows as a block without load does`() {
             val expected = buildTestPage { row { block { row { text("Всего: 3") } } } }.find("ts-block__body").element.outerHTML
             val loaded = buildTestPage { row { block { load({ 3 }) { value -> row { text("Всего: $value") } } } } }
 
             queue.runAll()
 
-            assertEquals(expected, loaded.find("ts-block__body").element.outerHTML)
+            assertEquals(expected, loaded.find("ts-block__body").htmlWithoutLoadMark())
         }
 
         @Test
@@ -221,7 +248,7 @@ class LoadTests : MockVaadinTests() {
 
             queue.runAll()
 
-            assertEquals(expected, loaded.find("ts-block__body").element.outerHTML)
+            assertEquals(expected, loaded.find("ts-block__body").htmlWithoutLoadMark())
         }
 
         @Test
@@ -353,6 +380,85 @@ class LoadTests : MockVaadinTests() {
             assertEquals(1, ui().findAll("ts-table-pager").size)
             assertTrue(ui().find("ts-block__foot").isVisible)
         }
+
+        @Test
+        fun `should load the block again on the refresh click of a loaded table`() {
+            buildTestPage { row { block { load({ (1..12).toList() }) { ids -> idTable(ids) } } } }
+            queue.runAll()
+
+            refreshButton()._click()
+
+            assertEquals(1, queue.size)
+            assertEquals(3, ui().findAll("ts-skel-row").size)
+        }
+
+        @Test
+        fun `should show the refresh button in the head once the load shows a table`() {
+            buildTestPage { row { block(title = "Список") { load({ (1..12).toList() }) { ids -> idTable(ids) } } } }
+            val isShownBeforeLoad = refreshButton().isShown()
+
+            queue.runAll()
+
+            assertFalse(isShownBeforeLoad)
+            assertTrue(refreshButton().isShown())
+        }
+
+        @Test
+        fun `should keep the refresh button while the block loads again`() {
+            buildTestPage { row { block(title = "Список") { load({ (1..12).toList() }) { ids -> idTable(ids) } } } }
+            queue.runAll()
+
+            refreshButton()._click()
+
+            assertEquals(3, ui().findAll("ts-skel-row").size)
+            assertTrue(refreshButton().isShown())
+        }
+
+        @Test
+        fun `should hide the refresh button after a load without a table`() {
+            var hasTable = true
+            lateinit var handle: LoadHandle
+            buildTestPage {
+                row {
+                    block(title = "Список") {
+                        handle = load({ hasTable }) { isTable -> if (isTable) idTable(listOf(1)) else row { text("Пусто") } }
+                    }
+                }
+            }
+            queue.runAll()
+            hasTable = false
+
+            handle.reload()
+            queue.runAll()
+
+            assertFalse(refreshButton().isShown())
+        }
+
+        @Test
+        fun `should keep the head actions and hide only the refresh button after a load without a table`() {
+            buildTestPage {
+                row {
+                    block(title = "Список") {
+                        actions { action("Экспорт") }
+                        load({ 3 }) { value -> row { text("Всего: $value") } }
+                    }
+                }
+            }
+
+            queue.runAll()
+
+            assertTrue(button("Экспорт").isShown())
+            assertFalse(refreshButton().isShown())
+        }
+
+        @Test
+        fun `should hide the head of an untitled block until its load shows a table`() {
+            buildTestPage { row { block { load({ 3 }) { value -> row { text("Всего: $value") } } } } }
+
+            queue.runAll()
+
+            assertFalse(ui().find("ts-block__head").isShown())
+        }
     }
 
     @Nested
@@ -401,6 +507,15 @@ class LoadTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should keep the load mark on the body with the error state`() {
+            buildTestPage { row { block { load<Int>({ error("Test fetch failure") }) { value -> row { text("Всего: $value") } } } } }
+
+            queue.runAll()
+
+            assertTrue(LOAD_MARK in body().classes())
+        }
+
+        @Test
         fun `should show the skeleton again on retry`() {
             buildTestPage { row { block { load(FailingOnce()::fetch) { value -> row { text("Всего: $value") } } } } }
             queue.runAll()
@@ -420,6 +535,18 @@ class LoadTests : MockVaadinTests() {
             queue.runAll()
 
             assertEquals("Всего: 2", ui().find("ts-block__row").element.textRecursively)
+        }
+
+        @Test
+        fun `should reset the content when the load fails`() {
+            var resets = 0
+            buildTestPage {
+                row { block { load({ 1 }, onReset = { resets++ }) { _ -> error("Test content failure") } } }
+            }
+
+            queue.runAll()
+
+            assertEquals(1, resets)
         }
 
         @Test
@@ -458,6 +585,23 @@ class LoadTests : MockVaadinTests() {
             assertEquals(3, ui().findAll("ts-skel-row").size)
             assertTrue(ui().findAll("ts-block__row").isEmpty())
             assertEquals("true", body().element.getAttribute("aria-busy"))
+        }
+
+        @Test
+        fun `should reset the content at the start of a reload before the fetch`() {
+            var resets = 0
+            lateinit var handle: LoadHandle
+            buildTestPage {
+                row { block { handle = load({ 1 }, onReset = { resets++ }) { value -> row { text("Всего: $value") } } } }
+            }
+            queue.runAll()
+            val resetsAfterFirstLoad = resets
+
+            handle.reload()
+
+            assertEquals(0, resetsAfterFirstLoad)
+            assertEquals(1, resets)
+            assertEquals(1, queue.size)
         }
 
         @Test
@@ -1033,6 +1177,16 @@ class LoadTests : MockVaadinTests() {
     private fun ui(): Component = UI.getCurrent()
 
     private fun body(): Component = ui().find("ts-block__body")
+
+    /** The refresh button in the block head, also while it is hidden. */
+    private fun refreshButton(): Button = findAllButtons(ui().find("ts-block__refresh")).single()
+
+    /** Whether this component and all its ancestors are visible. */
+    private fun Component.isShown(): Boolean =
+        generateSequence(this) { component -> component.parent.orElse(null) }.all { component -> component.isVisible }
+
+    /** The outer HTML of a loaded body without the load mark, which a body of a block without a load lacks. */
+    private fun Component.htmlWithoutLoadMark(): String = element.outerHTML.replace(" $LOAD_MARK", "")
 
     /** Keeps background tasks until a test runs them in the test thread, which is the UI thread. */
     private class QueueExecutor : Executor {

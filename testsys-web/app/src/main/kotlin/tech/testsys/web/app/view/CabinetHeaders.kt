@@ -34,8 +34,6 @@ import tech.testsys.web.components.navigation.header.HeaderMegaColumn
 import tech.testsys.web.components.navigation.header.HeaderMegaLink
 import tech.testsys.web.components.navigation.header.HeaderMegaMenu
 import tech.testsys.web.components.navigation.header.HeaderUser
-import tech.testsys.web.components.navigation.header.HeaderUserMenu
-import tech.testsys.web.components.navigation.header.HeaderUserMenuItem
 import tech.testsys.web.components.navigation.header.MegaMenuItem
 import tech.testsys.web.components.navigation.header.NavItem
 import tech.testsys.web.components.texts.currentLocalization
@@ -92,37 +90,30 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
     /**
      * Returns the Cabinet header of the signed-in user with the [active] section: the start page, the menu of the roles
      * with search and the nickname menu with the profile, unless the role is fixed, the return of a supervisor signed in
-     * as the user, and signing out.
+     * as the user, and signing out. The sign-in of a supervisor is marked before the nickname.
      *
      * @since 1.0.0-beta.1
      */
     fun cabinet(active: String? = null): CabinetHeader {
         val user = currentUser.user()
         val texts = currentLocalization().pageCabinet
-        val signOut = HeaderUserMenuItem(
-            label = texts.signOut(),
-            destination = HeaderDestination.Action { authenticationContext.logout() },
-            isDestructive = true,
-        )
-
+        val home = HeaderDestination.Route(startPageOf(CabinetPrincipal.of(user).kind))
         val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
-        val returnToSupervisor = HeaderUserMenuItem(
-            label = texts.impersonationReturn(),
-            destination = HeaderDestination.Action { returnToSupervisor() },
-        ).takeIf { isImpersonated }
-        val profile = HeaderUserMenuItem(texts.profile(), HeaderDestination.Route(ProfileView::class.java))
-            .takeIf { user is MultipleRoleUser }
-        val userMenu = listOfNotNull(profile, returnToSupervisor, signOut)
-        val name = if (isImpersonated) texts.impersonationName(name = nameOf(user)) else nameOf(user)
 
         return CabinetHeader(
             items = listOf(
-                NavItem(key = MAIN_SECTION, label = texts.home(), target = startPageOf(CabinetPrincipal.of(user).kind)),
-                MegaMenuItem(key = MENU_SECTION, label = texts.menu(), menu = HeaderMegaMenu(columnsOf(user, texts))),
+                NavItem(key = MAIN_SECTION, label = texts.home(), destination = home),
+                MegaMenuItem(key = MENU_SECTION, label = texts.menu(), menu = HeaderMegaMenu(columnsOf(user, texts)), isSearchable = true),
             ),
             active = active,
-            user = HeaderUser(name = name, menu = HeaderUserMenu(userMenu)),
-            menuSearchKey = MENU_SECTION,
+            user = HeaderUser(
+                name = nameOf(user),
+                mark = if (isImpersonated) texts.impersonationBadge() else null,
+            ) {
+                if (user is MultipleRoleUser) link(texts.profile(), ProfileView::class.java)
+                if (isImpersonated) item(texts.impersonationReturn()) { returnToSupervisor() }
+                destructiveItem(texts.signOut()) { authenticationContext.logout() }
+            },
         )
     }
 
@@ -188,7 +179,7 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
     /**
      * Menu column of one role: the heading opens the page of the role, and each of its [sections], a label with the
      * value of the route parameter [SECTION_PARAMETER], opens that section of the page. Each link has its own location,
-     * so the menu marks only the one that was opened.
+     * so the menu marks the one that was opened or the closest one above a nested page.
      */
     private fun roleColumn(title: String, page: Class<out Component>, sections: List<Pair<String, String>>): HeaderMegaColumn {
         val links = sections.map { (label, section) ->

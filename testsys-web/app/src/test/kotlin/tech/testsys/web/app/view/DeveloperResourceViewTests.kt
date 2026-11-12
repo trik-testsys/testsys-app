@@ -75,7 +75,7 @@ class DeveloperResourceViewTests : MockSpringVaadinTests() {
         )
         val service = mockk<DeveloperService>()
         every { service.viewResource(task.id, latest.versionBucket) } returns history
-        every { service.viewTask(task.id) } returns (loaded to emptyList())
+        every { service.checkResourceAccess(task.id, latest.versionBucket) } returns (loaded to latest)
         val view = DeveloperResourceView(headers, service, fileContentReader)
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns resourceParameters(task.id, latest.versionBucket)

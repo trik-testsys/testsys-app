@@ -5,8 +5,6 @@ import com.vaadin.flow.spring.security.AuthenticationContext
 import tech.testsys.web.components.navigation.header.CabinetHeader
 import tech.testsys.web.components.navigation.header.HeaderDestination
 import tech.testsys.web.components.navigation.header.HeaderUser
-import tech.testsys.web.components.navigation.header.HeaderUserMenu
-import tech.testsys.web.components.navigation.header.HeaderUserMenuItem
 import tech.testsys.web.components.navigation.header.NavItem
 
 /**
@@ -25,25 +23,18 @@ class ServiceHeaders(private val authentication: AuthenticationContext) {
      */
     fun header(active: String? = null): CabinetHeader = CabinetHeader(
         items = listOf(
-            NavItem(key = HOME_SECTION, label = "Главная", target = ServiceHomeView::class.java),
-            NavItem(key = SETTINGS_SECTION, label = "Настройки", target = ServiceSettingsView::class.java),
-            NavItem(key = GRADING_SECTION, label = "Проверка", target = ServiceGradingView::class.java),
-            NavItem(key = USERS_SECTION, label = "Пользователи", target = ServiceUsersView::class.java),
-            NavItem(key = VERSIONS_SECTION, label = "Версии TRIK Studio", target = ServiceTrikStudioVersionsView::class.java),
-        ),
-        active = active,
-        user = HeaderUser(
-            name = USER_NAME,
-            menu = HeaderUserMenu(
-                listOf(
-                    HeaderUserMenuItem(
-                        label = "Выйти",
-                        destination = HeaderDestination.Action { authentication.logout() },
-                        isDestructive = true,
-                    ),
-                ),
+            NavItem(key = HOME_SECTION, label = "Главная", destination = HeaderDestination.Route(ServiceHomeView::class.java)),
+            NavItem(key = SETTINGS_SECTION, label = "Настройки", destination = HeaderDestination.Route(ServiceSettingsView::class.java)),
+            NavItem(key = GRADING_SECTION, label = "Проверка", destination = HeaderDestination.Route(ServiceGradingView::class.java)),
+            NavItem(key = USERS_SECTION, label = "Пользователи", destination = HeaderDestination.Route(ServiceUsersView::class.java)),
+            NavItem(
+                key = VERSIONS_SECTION,
+                label = "Версии TRIK Studio",
+                destination = HeaderDestination.Route(ServiceTrikStudioVersionsView::class.java),
             ),
         ),
+        active = active,
+        user = HeaderUser(name = USER_NAME) { destructiveItem("Выйти") { authentication.logout() } },
     )
 
     companion object {

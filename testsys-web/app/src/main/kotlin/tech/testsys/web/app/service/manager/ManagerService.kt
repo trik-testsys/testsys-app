@@ -83,6 +83,57 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     fun viewClass(classId: ClassId): ClassDetailsVo = operations.viewClass(currentUser.multipleRoleUser(), classId).getOrThrow().toVo()
 
     /**
+     * Runs [ManagerOperations.checkManagerRole].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkManagerRole() {
+        operations.checkManagerRole(currentUser.multipleRoleUser()).getOrThrow()
+    }
+
+    /**
+     * Runs [ManagerOperations.checkClassAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkClassAccess(classId: ClassId): ClassVo =
+        operations.checkClassAccess(currentUser.multipleRoleUser(), classId).getOrThrow().toVo()
+
+    /**
+     * Runs [ManagerOperations.checkCompetitionAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkCompetitionAccess(competitionId: CompetitionId): CompetitionVo =
+        operations.checkCompetitionAccess(currentUser.multipleRoleUser(), competitionId).getOrThrow().toVo()
+
+    /**
+     * Runs [ManagerOperations.checkClassContestAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkClassContestAccess(classId: ClassId, contestId: ContestId): Pair<ClassVo, ContestVo> {
+        val (studyClass, contest) = operations.checkClassContestAccess(currentUser.multipleRoleUser(), classId, contestId).getOrThrow()
+        return studyClass.toVo() to contest.toVo()
+    }
+
+    /**
+     * Runs [ManagerOperations.checkCompetitionContestAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkCompetitionContestAccess(competitionId: CompetitionId, contestId: ContestId): Pair<CompetitionVo, ContestVo> {
+        val (competition, contest) =
+            operations.checkCompetitionContestAccess(currentUser.multipleRoleUser(), competitionId, contestId).getOrThrow()
+        return competition.toVo() to contest.toVo()
+    }
+
+    /**
      * Runs [ManagerOperations.createClassInvite].
      *
      * @since 1.0.0-beta.1

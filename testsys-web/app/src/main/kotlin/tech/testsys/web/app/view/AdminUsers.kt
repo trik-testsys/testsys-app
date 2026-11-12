@@ -19,7 +19,6 @@ import tech.testsys.web.components.actions.destructiveAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.filters
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.multiSelect
@@ -136,6 +135,7 @@ internal class CommunityDraft(var name: String = "", var description: String = "
 /**
  * Fills a cabinet block with users selected by [service], paged and filtered by nickname, roles and, unless [community]
  * fixes it, by one of [communities]. [openUser] opens the role-specific user page when a row is selected.
+ * The first page loads in the background.
  */
 internal fun BlockScope.adminUsersTable(
     service: UserListingService,
@@ -147,7 +147,7 @@ internal fun BlockScope.adminUsersTable(
     val texts = localization.pageAdministrator
     val defaults = UserFilter(communityId = community)
     var applied = defaults
-    val rows = table(
+    loadTable(
         key = { (user, _): Pair<AdminUserVo, Instant?> -> user.id },
         fetch = { request ->
             val users = service.viewUsers(request.toPagination(), applied)
@@ -182,7 +182,6 @@ internal fun BlockScope.adminUsersTable(
             communityChoice.value = null
             applied = defaults
         },
-        onRefresh = { rows.refresh(toFirstPage = true) },
     ) {
         row {
             name = textInput(texts.nickname(), labelSize = 2, size = 10, hint = texts.usersNicknameHint())

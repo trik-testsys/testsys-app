@@ -23,16 +23,16 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
-import tech.testsys.web.components.data.TableHandle
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.lookupMany
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
@@ -43,14 +43,14 @@ import tech.testsys.web.components.texts.currentLocalization
 private const val DETAILS_COLUMNS = 12
 
 /**
- * Community details and applicable management actions shared by administrator and supervisor routes.
+ * Community details and applicable management actions shared by administrator and supervisor routes. The access check of
+ * [service] runs before the blocks load and returns the community for the page head.
  *
  * @since 1.0.0-beta.1
  */
 abstract class CommunityDetailsView(
     private val headers: CabinetHeaders,
     private val service: CommunityManagementService,
-    private val homePage: Class<out Component>,
     private val cabinetPage: Class<out Component>,
     private val cabinetLabel: String,
     private val onOpenUser: (AdminUserVo) -> Unit,
@@ -61,19 +61,16 @@ abstract class CommunityDetailsView(
     override fun getPageTitle(): String = currentLocalization().pageAdministrator.communityTitle()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
-        val communityId = CommunityId(event.routeParameters.getLong(COMMUNITY_ID_PARAMETER).orElseThrow())
-        // Checks role and community access before the tables load, so a refusal opens its error screen.
-        service.viewCommunityInvites(communityId)
-        val communities = service.viewCommunities().map { (community, _) -> community }
-        show(communities.first { community -> community.id == communityId }, communities)
+        show(CommunityId(event.routeParameters.getLong(COMMUNITY_ID_PARAMETER).orElseThrow()))
     }
 
-    private fun show(community: CommunityVo, communities: List<CommunityVo>) {
+    private fun show(communityId: CommunityId) {
+        // Checks role and community access before the blocks load, so a refusal opens its error screen.
+        val community = service.checkCommunityAccess(communityId)
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.communityHead(name = community.name)) {
-                crumb(localization.pageCabinet.home(), homePage)
                 crumb(cabinetLabel, cabinetPage)
                 crumb(
                     localization.pageCabinet.sectionCommunities(),
@@ -83,15 +80,16 @@ abstract class CommunityDetailsView(
             }
             guide(texts.communityGuide())
             row {
-                detailsBlock(community) { edited -> show(edited, communities) }
-                invitesBlock(community.id)
+                detailsBlock(communityId) { show(communityId) }
+                invitesBlock(communityId)
             }
             row {
                 block(title = texts.communityUsersTitle()) {
                     guide(texts.communityUsersGuide())
-                    adminUsersTable(service, communities, community.id, onOpenUser)
-                    val creation = observerDialog(community.id) { created ->
-                        show(community, communities)
+                    // The community is fixed, so the community filter is hidden and offers only it.
+                    adminUsersTable(service, listOf(community), communityId, onOpenUser)
+                    val creation = observerDialog(communityId) { created ->
+                        show(communityId)
                         createdObserverDialog(created)
                     }
                     actions { action(texts.communityObserverCreate()) { onClick { creation() } } }
@@ -100,52 +98,59 @@ abstract class CommunityDetailsView(
         }
     }
 
-    /** Shows the name and description of [community] for viewing; a saved change rebuilds the page through [onEdited]. */
-    private fun PageRowScope.detailsBlock(community: CommunityVo, onEdited: (CommunityVo) -> Unit) {
+    /** Loads the name and description of [communityId] for viewing; a saved change rebuilds the page through [onEdited]. */
+    private fun PageRowScope.detailsBlock(communityId: CommunityId, onEdited: () -> Unit) {
         val texts = currentLocalization().pageAdministrator
-        val draft = Binder<CommunityDraft>()
+        var form: DetailsForm? = null
         block(size = DETAILS_COLUMNS, title = texts.details()) {
             guide(texts.communityDetailsGuide())
-            editing(
-                onSave = {
-                    val values = CommunityDraft()
-                    val isValid = draft.writeBeanIfValid(values)
-                    if (isValid) {
-                        onEdited(
-                            service.editCommunity(
-                                communityId = community.id,
-                                communityName = values.name,
-                                description = values.description,
-                            ),
-                        )
-                        toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityEdited())
-                    }
-                    isValid
-                },
-                onCancel = { draft.readBean(CommunityDraft(community.name, community.description)) },
-            )
-            row {
-                codeInput(texts.id(), labelSize = 4, size = 7) {
-                    value = community.id.value.toString()
-                    isEditable = false
-                }
+            editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
+            load({ service.checkCommunityAccess(communityId) }) { community -> form = detailsRows(community, onEdited) }
+        }
+    }
+
+    /** Adds the rows of the name and description of [community] and returns their form. */
+    private fun BlockScope.detailsRows(community: CommunityVo, onEdited: () -> Unit): DetailsForm {
+        val texts = currentLocalization().pageAdministrator
+        val draft = Binder<CommunityDraft>()
+        row {
+            codeInput(texts.id(), labelSize = 4, size = 7) {
+                value = community.id.value.toString()
+                isEditable = false
             }
-            row {
-                textInput(texts.name(), labelSize = 4, size = 20) {
-                    draft.forField(this)
-                        .nameRules(texts.nameRequired())
-                        .bind({ values -> values.name }, { values, name -> values.name = name })
-                }
+        }
+        row {
+            textInput(texts.name(), labelSize = 4, size = 20) {
+                draft.forField(this)
+                    .nameRules(texts.nameRequired())
+                    .bind({ values -> values.name }, { values, name -> values.name = name })
             }
-            row {
-                textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) {
-                    draft.forField(this)
-                        .bind({ values -> values.description }, { values, description -> values.description = description })
-                }
+        }
+        row {
+            textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) {
+                draft.forField(this)
+                    .bind({ values -> values.description }, { values, description -> values.description = description })
             }
         }
 
         draft.readBean(CommunityDraft(community.name, community.description))
+        return DetailsForm(
+            save = {
+                val values = CommunityDraft()
+                val isValid = draft.writeBeanIfValid(values)
+                if (isValid) {
+                    service.editCommunity(
+                        communityId = community.id,
+                        communityName = values.name,
+                        description = values.description,
+                    )
+                    onEdited()
+                    toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityEdited())
+                }
+                isValid
+            },
+            cancel = { draft.readBean(CommunityDraft(community.name, community.description)) },
+        )
     }
 
     /** Shows the access code of the just [created] observer once: it cannot be read back later. */
@@ -179,8 +184,8 @@ abstract class CommunityDetailsView(
         block(title = texts.communityInvitesTitle()) {
             guide(texts.communityInvitesGuide())
             // The menu of a row refreshes the table that contains it.
-            lateinit var rows: TableHandle<CommunityInviteVo>
-            rows = table(
+            lateinit var rows: LoadedTable<CommunityInviteVo>
+            rows = loadTable(
                 key = { invite: CommunityInviteVo -> invite.kind },
                 fetch = { request -> pageOf(service.viewCommunityInvites(communityId), request) },
             ) {
@@ -295,7 +300,6 @@ abstract class CommunityDetailsView(
 class AdminCommunityView(headers: CabinetHeaders, service: AdministratorService) : CommunityDetailsView(
     headers,
     service,
-    MultiMainView::class.java,
     AdminView::class.java,
     currentLocalization().pageAdministrator.title(),
     ::openAdminUser,

@@ -50,6 +50,16 @@ class FormDialogTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should keep a form dialog open on a click outside it`() {
+        val handle = dialog(title = "Ресурсы") { row { textInput("Название", labelSize = 6, size = 18) } }
+
+        handle.open()
+
+        assertFalse(openDialogs().single().isCloseOnOutsideClick)
+        assertTrue(openDialogs().single().isCloseOnEsc)
+    }
+
+    @Test
     fun `should reject a section row wider than 24 columns`() {
         assertThrows(IllegalStateException::class.java) {
             dialog(title = "Ресурсы") {
@@ -279,6 +289,20 @@ class FormDialogTests : MockVaadinTests() {
         _find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.messages.uiOverlay.dialogClose() }._click()
 
         assertEquals(2, closes)
+    }
+
+    @Test
+    fun `should call only the latest close listener`() {
+        val closes = mutableListOf<String>()
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
+        handle.onClose { closes += "first" }
+        handle.onClose { closes += "second" }
+        handle.open()
+        openDialogs()
+
+        handle.close()
+
+        assertEquals(listOf("second"), closes)
     }
 
     @Test

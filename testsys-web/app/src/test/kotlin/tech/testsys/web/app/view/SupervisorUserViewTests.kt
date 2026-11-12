@@ -11,11 +11,18 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Section
+import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
+import com.vaadin.flow.router.RouterLink
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -46,6 +53,7 @@ import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.app.service.supervisor.SupervisorService
 import java.time.Instant
 
 @SpringBootTest
@@ -64,6 +72,12 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var supervisorService: SupervisorService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
 
     private val logger = assertInstanceOf(Logger::class.java, LoggerFactory.getLogger(SupervisorUserView::class.java))
     private val appender = ListAppender<ILoggingEvent>().apply { start() }
@@ -183,6 +197,26 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show a role granted meanwhile after a refresh of the roles table`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val member = fixtures.multipleRoleUser {
+            roles {
+                developer {
+                    memberOf(listOf(fixtures.community().id.value))
+                    data = developerData {}
+                }
+            }
+        }
+        val target = fixtures.community(name = "Целевое сообщество")
+        open(member.id.value)
+        supervisorService.addToCommunity(member.id, target.id, CommunityRole.Student)
+
+        rolesBlock()._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+
+        assertTrue("Целевое сообществоУченик" in rolesBlock().element.textRecursively, rolesBlock().element.textRecursively)
+    }
+
+    @Test
     fun `should title the browser tab of a user and head the page with its kind`() {
         signIn(fixtures.userOf(UserKind.SUPERVISOR))
         val name = fixtures.unique("Наблюдатель")
@@ -265,6 +299,40 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should keep the title and tabs and show a load error in the details and roles if they fail to load`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val member = publicDeveloper()
+        val service = mockk<SupervisorService>()
+        every { service.checkUserAccessByIdValue(member.id.value) } returns supervisorService.checkUserAccessByIdValue(member.id.value)
+        every { service.viewUser(member.id) } throws IllegalStateException("User storage unavailable")
+        every { service.checkSupervisorRole() } throws IllegalStateException("Community storage unavailable")
+        val view = SupervisorUserView(headers, service, communityConfig)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns RouteParameters(USER_ID_PARAMETER, member.id.value.toString())
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(event)
+
+        assertEquals("Пользователь «${member.data.name}»", view._get<H1>().text)
+        assertEquals(listOf("Сведения", "Разработчик"), view._find<RouterLink>().filter { it.hasClassName("ts-tab") }.map { it.text })
+        assertFalse(view._get<Button> { text = "Включить в Сообщество" }.isEnabled)
+        assertTrue(view._get<Button> { text = "Войти под Пользователем" }.isEnabled)
+        assertEquals(2, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+    }
+
+    @Test
+    fun `should show the community of an observer`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val community = fixtures.community(name = fixtures.unique("Сообщество Наблюдателя"))
+        val observer = fixtures.observer(community)
+
+        open(observer.id.value)
+
+        assertTrue(UI.getCurrent()._find<TextField>().any { textField -> textField.value == community.data.name })
+    }
+
+    @Test
     fun `should refuse a supervisor detail route`() {
         val supervisor = fixtures.userOf(UserKind.SUPERVISOR)
         signIn(supervisor)
@@ -290,6 +358,13 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     }
 
     private fun openDialog(): Dialog = UI.getCurrent()._find<Dialog>().single { dialog -> dialog.isOpened }
+
+    /** Returns the block with the roles table. */
+    private fun rolesBlock(): Section {
+        val table = UI.getCurrent()._find<Table>().first { candidate -> "Роли" in candidate.element.textRecursively }
+        return generateSequence(table.parent.orElse(null)) { component -> component.parent.orElse(null) }
+            .filterIsInstance<Section>().first()
+    }
 
     private fun accessCodeFields(): List<TextField> =
         UI.getCurrent()._find<TextField>().filter { textField -> textField.ariaLabel.orElse(null) == "Код-доступа" }

@@ -13,16 +13,13 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
-import tech.testsys.web.app.service.DeveloperRoleVo
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
-import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.filters
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
@@ -58,7 +55,6 @@ private val FILTER_STATES: Map<TaskFilter.State, TaskState> = mapOf(
 class DeveloperView(
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
-    private val multipleRoleUserService: MultipleRoleUserService,
     private val currentUser: CurrentUser,
 ) : TestSysView(),
     BeforeEnterObserver,
@@ -72,15 +68,13 @@ class DeveloperView(
             return
         }
 
-        // Also checks the developer role before the tables load, so that its absence opens the forbidden screen.
-        val versions = developerService.viewTrikStudioVersions()
-        val communities = developerCommunities(multipleRoleUserService)
+        // Checks the developer role before the tables load, so that its absence opens the forbidden screen.
+        val communities = developerService.checkDeveloperRole()
         val me = currentUser.multipleRoleUser().id
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.title()) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 tabs(matchRouteParameters = true) {
                     tab(localization.pageCabinet.sectionTasks(), DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
                     tab(localization.pageCabinet.sectionContests(), DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
@@ -88,7 +82,7 @@ class DeveloperView(
             }
             guide(texts.guide())
             if (section == CONTESTS_SECTION) {
-                contestsBlock(me, communities, versions)
+                contestsBlock(me, communities)
             } else {
                 tasksBlock(me, communities, owned = false)
                 tasksBlock(me, communities, owned = true)
@@ -103,7 +97,7 @@ class DeveloperView(
                 guide(texts.tasksGuide())
                 val initial = TaskFilter(ownerId = me.takeIf { owned }, excludeOwnerId = me.takeUnless { owned })
                 var applied = initial
-                val rows = table(
+                val rows = loadTable(
                     key = { task: TaskVo -> task.id },
                     fetch = { request ->
                         val tasks = developerService.viewTasks(request.toPagination(), applied)
@@ -146,7 +140,6 @@ class DeveloperView(
                         community.value = null
                         applied = initial
                     },
-                    onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
                     row {
                         name = textInput(texts.name(), labelSize = 2, size = 10, hint = texts.nameHint())
@@ -171,14 +164,14 @@ class DeveloperView(
         }
     }
 
-    private fun PageScope.contestsBlock(me: MultipleRoleUserId, communities: List<CommunityVo>, versions: List<TrikStudioVersion>) {
+    private fun PageScope.contestsBlock(me: MultipleRoleUserId, communities: List<CommunityVo>) {
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         row {
             block(title = localization.pageCabinet.sectionContests()) {
                 guide(texts.contestsGuide())
                 var applied = ContestFilter(ownerId = me)
-                val rows = table(
+                val rows = loadTable(
                     key = { (contest, _): Pair<ContestVo, List<CommunityVo>> -> contest.id },
                     fetch = { request ->
                         val contests = developerService.viewContests(request.toPagination(), applied)
@@ -214,7 +207,6 @@ class DeveloperView(
                         community.value = null
                         applied = ContestFilter(ownerId = me)
                     },
-                    onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
                     row {
                         name = textInput(texts.name(), labelSize = 2, size = 10, hint = texts.nameHint())
@@ -222,8 +214,12 @@ class DeveloperView(
                     }
                 }
 
-                val creation = contestDialog(versions) { rows.refresh() }
-                actions { action(texts.contestsCreate()) { onClick { creation() } } }
+                // The versions are fetched on click, so that the dialog does not hold up the page.
+                actions {
+                    action(texts.contestsCreate()) {
+                        onClick { contestDialog(developerService.viewTrikStudioVersions()) { rows.refresh() }() }
+                    }
+                }
             }
         }
     }
@@ -363,10 +359,6 @@ class DeveloperView(
         var attemptMinutes: Int? = null
     }
 }
-
-/** Returns the communities of the developer role of the current user, which a list is filtered by and access is shared to. */
-internal fun developerCommunities(service: MultipleRoleUserService): List<CommunityVo> =
-    service.viewProfile().roles.filter { (role, _) -> role is DeveloperRoleVo }.flatMap { (_, communities) -> communities }
 
 /** Returns whether an attempt of [minutes] fits the contest from [start] to [end]; an open schedule fits any. */
 private fun fitsSchedule(minutes: Int?, start: LocalDateTime?, end: LocalDateTime?): Boolean =

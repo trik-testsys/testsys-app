@@ -15,6 +15,7 @@ import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
@@ -55,6 +56,17 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     fun viewTaskValidationRequests(taskId: TaskId): List<TaskValidationRequestVo> =
         operations.viewTaskValidationRequests(currentUser.multipleRoleUser(), taskId)
             .getOrThrow().map { request -> request.toVo() }
+
+    /**
+     * Runs [DeveloperOperations.checkTaskValidationRequestAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkTaskValidationRequestAccess(taskId: TaskId, requestId: TaskValidationRequestId): Pair<TaskVo, TaskValidationRequestVo> {
+        val (task, request) = operations.checkTaskValidationRequestAccess(currentUser.multipleRoleUser(), taskId, requestId).getOrThrow()
+        return task.toVo() to request.toVo()
+    }
 
     /**
      * Runs [DeveloperOperations.commitTask].
@@ -102,6 +114,15 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
         val (contest, tasks, communities) = operations.viewContest(currentUser.multipleRoleUser(), contestId).getOrThrow()
         return Triple(contest.toVo(), tasks.map { task -> task.toVo() }, communities.map { community -> community.toVo() })
     }
+
+    /**
+     * Runs [DeveloperOperations.checkContestAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkContestAccess(contestId: ContestId): ContestVo =
+        operations.checkContestAccess(currentUser.multipleRoleUser(), contestId).getOrThrow().toVo()
 
     /**
      * Runs [DeveloperOperations.viewTrikStudioVersions].
@@ -199,6 +220,23 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     }
 
     /**
+     * Runs [DeveloperOperations.checkDeveloperRole].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkDeveloperRole(): List<CommunityVo> =
+        operations.checkDeveloperRole(currentUser.multipleRoleUser()).getOrThrow().map { community -> community.toVo() }
+
+    /**
+     * Runs [DeveloperOperations.checkTaskAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkTaskAccess(taskId: TaskId): TaskVo = operations.checkTaskAccess(currentUser.multipleRoleUser(), taskId).getOrThrow().toVo()
+
+    /**
      * Runs [DeveloperOperations.editTaskInfo].
      *
      * @since 1.0.0-beta.1
@@ -234,6 +272,17 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     fun viewResource(taskId: TaskId, versionBucket: VersionBucket): List<Pair<ResourceVo, SolutionVo?>> =
         operations.viewResource(currentUser.multipleRoleUser(), taskId, versionBucket)
             .getOrThrow().map { (version, solution) -> version.toResourceVo() to solution?.toVo() }
+
+    /**
+     * Runs [DeveloperOperations.checkResourceAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkResourceAccess(taskId: TaskId, versionBucket: VersionBucket): Pair<TaskVo, ResourceVo> {
+        val (task, latest) = operations.checkResourceAccess(currentUser.multipleRoleUser(), taskId, versionBucket).getOrThrow()
+        return task.toVo() to latest.toResourceVo()
+    }
 
     /**
      * Runs [DeveloperOperations.downloadResourceVersion].

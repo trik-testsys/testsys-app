@@ -5,6 +5,7 @@ package tech.testsys.web.components.data
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableDataCell
@@ -19,6 +20,7 @@ import tech.testsys.web.components.core.AriaSort
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.DomEventFilter
+import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ElementScope
 import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
@@ -31,6 +33,7 @@ import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setFilter
 import tech.testsys.web.components.core.setPaddingPixels
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.setScope
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.feedback.buildEmptyState
@@ -69,6 +72,10 @@ internal class DataTable<T>(
     val root: Div = Div(table).apply {
         addClassName(CssClass.TableScroll)
         element.setAttribute(HtmlAttribute.TabIndex, "0")
+        // A focusable element needs a role and a name to be announced; a group, not a region, so that a page of
+        // several tables does not fill the landmark list with regions of one name.
+        element.setRole(ElementRole.Group)
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiData.tableRegion())
     }
     val pager: Pager = Pager(texts) { target -> load(target) }
 
@@ -283,14 +290,30 @@ internal class DataTable<T>(
         spec.columns.forEach { column ->
             val cell = TableDataCell()
             column.kind.cssClasses.forEach { cssClass -> cell.addClassName(cssClass) }
-            if (column === navigationColumn) cell.addClassName(CssClass.NavigationCell)
-            column.fill(row, cell)
+            if (column === navigationColumn) {
+                cell.addClassName(CssClass.NavigationCell)
+                cell.add(navigationLink(row, column))
+            } else {
+                column.fill(row, cell)
+            }
             add(cell)
         }
 
         spec.rowClick?.takeIf { isClickable }?.let { listener ->
             addClassName(CssClass.RowClickable)
             element.addEventListener(DomEvent.Click) { listener(row) }.setFilter(DomEventFilter.TableRowClick)
+        }
+    }
+
+    // The keyboard way into a navigating row: a focusable link around the text of its first text column. A click on it
+    // bubbles to the row, so only Enter is handled here.
+    private fun navigationLink(row: T, column: TableColumn<T>): Span = Span().apply {
+        addClassName(CssClass.NavigationLink)
+        element.setRole(ElementRole.Link)
+        element.setAttribute(HtmlAttribute.TabIndex, "0")
+        column.fill(row, this)
+        spec.rowClick?.let { listener ->
+            element.addEventListener(DomEvent.KeyDown) { listener(row) }.setFilter(DomEventFilter.TableLinkKey)
         }
     }
 

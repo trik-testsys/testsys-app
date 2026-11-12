@@ -85,7 +85,7 @@ private fun requiredMark(): Span = Span("*").apply {
 }
 
 /** Wraps [value] in an independently focusable field value area named by [label]. */
-internal fun fieldValueArea(label: String, value: Component): Div = Div(value).apply {
+private fun fieldValueArea(label: String, value: Component): Div = Div(value).apply {
     addClassName(CssClass.FieldValue)
     element.setRole(ElementRole.Group)
     element.setAttribute(HtmlAttribute.AriaLabel, label)

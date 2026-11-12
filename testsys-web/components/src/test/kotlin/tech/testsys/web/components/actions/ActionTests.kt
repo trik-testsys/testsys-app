@@ -46,7 +46,7 @@ class ActionTests : MockVaadinTests() {
 
         @Test
         fun `should label icon-only action for screen readers`() {
-            buildTestContent { iconAction(IconName.Trash, "Удалить задачу") }
+            buildTestContent { action("Удалить задачу", IconName.Trash, iconOnly = true) }
 
             val button = _find<Button>().single { button -> button.element.hasAttribute("data-ts-icon-only") }
             assertEquals("Удалить задачу", button.ariaLabel.orElseThrow())
@@ -121,6 +121,21 @@ class ActionTests : MockVaadinTests() {
             _get<Button> { text = "Отправить" }._click()
 
             assertEquals(1, clicks)
+        }
+
+        @Test
+        fun `should run only the latest click listener`() {
+            val clicks = mutableListOf<String>()
+            buildTestContent {
+                mainAction("Отправить") {
+                    onClick { clicks += "first" }
+                    onClick { clicks += "second" }
+                }
+            }
+
+            _get<Button> { text = "Отправить" }._click()
+
+            assertEquals(listOf("second"), clicks)
         }
 
         @Test

@@ -1,6 +1,7 @@
 package tech.testsys.web.components.actions
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.button.Button
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,17 +26,21 @@ internal class IconActionTests : MockVaadinTests() {
         "Main,Body,md",
         "Neutral,Body,md",
         "Destructive,Body,md",
+        "Link,Body,md",
         "Main,Head,sm",
         "Neutral,Head,sm",
         "Destructive,Head,sm",
+        "Link,Head,sm",
         "Main,Cell,sm",
         "Neutral,Cell,sm",
         "Destructive,Cell,sm",
+        "Link,Cell,sm",
     )
     fun `should preserve icon role name tooltip and placement`(role: ActionRole, placement: Placement, size: String) {
         buildInPlacement(role, placement)
 
-        val button = _get<Button>()
+        // A table block also has the refresh button in its head, so the action is found by its name.
+        val button = _find<Button>().single { action -> action.ariaLabel.orElse(null) == "Action name" }
         assertEquals(role.attribute, button.element.getAttribute("data-ts-role"))
         assertEquals(size, button.element.getAttribute("data-ts-size"))
         assertEquals("Action name", button.ariaLabel.orElseThrow())
@@ -46,7 +51,7 @@ internal class IconActionTests : MockVaadinTests() {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive", "Link"])
     fun `should ignore clicks while loading`(role: ActionRole) {
         var clicks = 0
         lateinit var handle: ActionHandle
@@ -60,7 +65,7 @@ internal class IconActionTests : MockVaadinTests() {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive", "Link"])
     fun `should run the click callback after loading ends`(role: ActionRole) {
         var clicks = 0
         lateinit var handle: ActionHandle
@@ -74,7 +79,7 @@ internal class IconActionTests : MockVaadinTests() {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive", "Link"])
     fun `should disable the button through the handle`(role: ActionRole) {
         lateinit var handle: ActionHandle
         buildTestContent { handle = iconOnly(role) }
@@ -85,9 +90,15 @@ internal class IconActionTests : MockVaadinTests() {
     }
 
     @ParameterizedTest
-    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive", "Link"])
     fun `should reject an empty accessible name`(role: ActionRole) {
         assertThrows<IllegalArgumentException> { buildTestContent { iconOnly(role, label = " ") } }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive", "Link"])
+    fun `should reject an icon-only action without an icon`(role: ActionRole) {
+        assertThrows<IllegalArgumentException> { buildTestContent { iconOnly(role, icon = null) } }
     }
 
     private fun buildInPlacement(role: ActionRole, placement: Placement) {
@@ -106,10 +117,12 @@ internal class IconActionTests : MockVaadinTests() {
         }
     }
 
-    private fun ContentScope.iconOnly(role: ActionRole, label: String = "Action name"): ActionHandle = when (role) {
-        ActionRole.Main -> mainIconAction(IconName.Upload, label)
-        ActionRole.Destructive -> destructiveIconAction(IconName.Trash, label)
-        ActionRole.Neutral -> iconAction(IconName.Settings, label)
-        else -> error("Unsupported icon role $role")
-    }
+    private fun ContentScope.iconOnly(role: ActionRole, label: String = "Action name", icon: IconName? = IconName.Settings): ActionHandle =
+        when (role) {
+            ActionRole.Main -> mainAction(label, icon, iconOnly = true)
+            ActionRole.Neutral -> action(label, icon, iconOnly = true)
+            ActionRole.Destructive -> destructiveAction(label, icon, iconOnly = true)
+            ActionRole.Link -> linkAction(label, icon, iconOnly = true)
+            ActionRole.Danger -> error("Unsupported icon role $role")
+        }
 }

@@ -9,7 +9,6 @@ import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.CompetitionFilter
-import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.infra.localization.PageManager
 import tech.testsys.web.app.service.manager.ManagerService
 import tech.testsys.web.components.TestSysView
@@ -17,10 +16,8 @@ import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
-import tech.testsys.web.components.data.TableHandle
 import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.filters
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.DateRange
@@ -54,13 +51,12 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
         }
 
         // Checks the manager role before the tables load, so that its absence opens the forbidden screen.
-        managerService.viewClasses(Pagination(page = 0, size = 1))
+        managerService.checkManagerRole()
         val localization = currentLocalization()
         val cabinet = localization.pageCabinet
         val texts = localization.pageManager
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.title()) {
-                crumb(cabinet.home(), MultiMainView::class.java)
                 tabs(matchRouteParameters = true) {
                     tab(cabinet.sectionClasses(), ManagerView::class.java, managerSection(CLASSES_SECTION))
                     tab(cabinet.sectionCompetitions(), ManagerView::class.java, managerSection(COMPETITIONS_SECTION))
@@ -127,7 +123,7 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
 
     /**
      * Fills the block with a table of classes or competitions fetched with the applied [GroupsFilter], the filters by name and
-     * creation date and the action of [creation].
+     * creation date and the action of [creation]. The first page loads in the background.
      */
     private fun <T> BlockScope.groupsTable(
         fetch: (PageRequest, GroupsFilter) -> Page<T>,
@@ -137,7 +133,7 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
     ) {
         val texts = currentLocalization().pageManager
         var applied = GroupsFilter()
-        val rows = table(key = key, fetch = { request -> fetch(request, applied) }, content = columns)
+        val rows = loadTable(key = key, fetch = { request -> fetch(request, applied) }, content = columns)
 
         lateinit var name: ValueInput<String>
         lateinit var dates: ValueInput<DateRange>
@@ -155,7 +151,6 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
                 dates.value = DateRange()
                 applied = GroupsFilter()
             },
-            onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
                 name = textInput(texts.name(), labelSize = 3, size = 9, hint = texts.filterNameHint())
@@ -167,7 +162,7 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
     }
 
     /** Adds the action of [creation] opening its dialog, which creates a named group and refreshes [rows]. */
-    private fun BlockScope.creationAction(creation: Creation, rows: TableHandle<*>) {
+    private fun BlockScope.creationAction(creation: Creation, rows: LoadedTable<*>) {
         val localization = currentLocalization()
         val texts = localization.pageManager
         val draft = Binder<NameDraft>()

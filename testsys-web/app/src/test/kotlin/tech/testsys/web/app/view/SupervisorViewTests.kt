@@ -11,23 +11,35 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Location
 import com.vaadin.flow.router.NavigationTrigger
 import com.vaadin.flow.router.RouteParameters
+import com.vaadin.flow.router.RouterLink
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.AccessDeniedView
 import tech.testsys.web.app.security.UserKind
+import tech.testsys.web.app.service.supervisor.SupervisorService
 
 @SpringBootTest
 class SupervisorViewTests : MockSpringVaadinTests() {
+    @Autowired
+    private lateinit var supervisorService: SupervisorService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
     @Test
     fun `should deny the cabinet to a signed-in user without the supervisor role`() {
         signIn(fixtures.administrator())
@@ -88,6 +100,25 @@ class SupervisorViewTests : MockSpringVaadinTests() {
 
         assertEquals("Кабинет Супервайзера", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
         assertEquals("Кабинет Супервайзера", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should keep the title and tabs and show a load error in the communities if they fail to load`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val service = mockk<SupervisorService>()
+        every { service.checkSupervisorRole() } returns supervisorService.checkSupervisorRole()
+        every { service.viewCommunities() } throws IllegalStateException("Community storage unavailable")
+        val view = SupervisorView(headers, service)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns section("communities")
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(event)
+
+        assertEquals("Кабинет Супервайзера", view._get<H1>().text)
+        assertEquals(listOf("Пользователи", "Сообщества"), view._find<RouterLink>().filter { it.hasClassName("ts-tab") }.map { it.text })
+        assertEquals(1, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
     }
 
     private fun section(name: String) = RouteParameters(ADMIN_SECTION_PARAMETER, name)

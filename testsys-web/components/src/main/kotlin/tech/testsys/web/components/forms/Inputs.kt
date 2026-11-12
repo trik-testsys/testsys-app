@@ -8,20 +8,24 @@ import com.vaadin.flow.component.HasAriaLabel
 import com.vaadin.flow.component.HasHelper
 import com.vaadin.flow.component.HasValidation
 import com.vaadin.flow.component.checkbox.Checkbox
+import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.data.binder.HasValidator
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.DomProperty
-import tech.testsys.web.components.core.ElementSize
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
-import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setInput
 import tech.testsys.web.components.core.setProperty
-import tech.testsys.web.components.core.setSize
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.FieldParts
 import tech.testsys.web.components.layout.GuestCardScope
 import tech.testsys.web.components.layout.LabelAction
-import tech.testsys.web.components.layout.fieldValueArea
 import tech.testsys.web.components.layout.placeField
 import tech.testsys.web.components.layout.placeStackedField
 
@@ -52,7 +56,6 @@ internal fun <C, T> BlockRowScope.addInput(
         component = control,
         validation = control,
         validator = control,
-        valueArea = parts.valueCell,
     )
     input.followBlock(editState)
     return input.apply(configure)
@@ -79,25 +82,12 @@ internal fun <C, T> GuestCardScope.addStackedInput(
         component = control,
         validation = control,
         validator = control,
-        valueArea = parts.valueCell,
     ).apply(configure)
 }
 
 /**
- * Adds [control] without a visible label, e.g. a filter in a block head: [label] is only its accessible name, and the
- * control takes the small size in a compact place.
+ * Places [control] without a visible label in a value area that is the whole field: [label] is only its accessible name.
  */
-internal fun <C, T> ContentScope.addLabelLessInput(
-    label: String,
-    control: C,
-    configure: ValueInput<T>.() -> Unit,
-): ValueInput<T>
-    where C : AbstractField<C, T>, C : HasValidation, C : HasValidator<T> {
-    control.element.setSize(if (placement.isCompact) ElementSize.Small else ElementSize.Medium)
-    return placeLabelLessInput(label, control, configure)
-}
-
-/** Places a label-less control in a value area whose focus and hover remain independent of its edit and enabled modes. */
 internal fun <C, T> ContentScope.placeLabelLessInput(
     label: String,
     control: C,
@@ -106,14 +96,17 @@ internal fun <C, T> ContentScope.placeLabelLessInput(
     where C : AbstractField<*, T>, C : HasValidation, C : HasValidator<T> {
     nameControl(control, label)
     control.element.setInput(true)
-    val area = fieldValueArea(label, control).apply { addClassName(CssClass.FieldValueInline) }
+    val area = Div(control).apply {
+        addClassNames(CssClass.FieldValue, CssClass.FieldValueInline)
+        element.setRole(ElementRole.Group)
+        element.setAttribute(HtmlAttribute.AriaLabel, label)
+    }
     add(area)
     return ValueInput(
-        parts = null,
+        parts = FieldParts(field = area, requiredMark = Span().apply { isVisible = false }, valueCell = area),
         component = control,
         validation = control,
         validator = control,
-        valueArea = area,
     ).apply(configure)
 }
 

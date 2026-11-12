@@ -58,6 +58,9 @@ import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.CommunityInviteConfig
+import tech.testsys.operation.error.CheckAdministratorRoleError
+import tech.testsys.operation.error.CheckCommunityAccessError
+import tech.testsys.operation.error.CheckUserAccessError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityIsPublicError
 import tech.testsys.operation.error.CommunityNameBlankError
@@ -206,6 +209,25 @@ class AdministratorOperations(
         val content = users.content.map { found -> found to lastLogins[found.id] }
         return Page(content = content, pagination = users.pagination, totalElements = users.totalElements).asSuccess()
     }
+
+    /**
+     * Returns [userId] available to [user] without its last login, with the ids of the communities created by [user], so
+     * that a page checks access and picks the role sections before it loads them. Refusals match [viewUser].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUser")
+    fun checkUserAccess(user: MultipleRoleUser, userId: UserId): OperationResult<Pair<User<*>, Set<CommunityId>>, CheckUserAccessError> =
+        operation<Pair<User<*>, Set<CommunityId>>, CheckUserAccessError> {
+            ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
+            val viewed = userRepository.findAvailableToAdministratorById(administratorId = user.id, userId = userId)
+            if (viewed == null) {
+                ensure(userRepository.existsById(userId)) { UserNotExistsError(userId) }
+                UserAccessDeniedError(userId).raise()
+            }
+            val communities = communityRepository.findByOwner(user.id).map { community -> community.id }.toSet()
+            return (viewed to communities).asSuccess()
+        }
 
     /**
      * Returns [userId] with all its stored data and its last login, or `null` without one, if it is available to [user],
@@ -464,6 +486,19 @@ class AdministratorOperations(
         val competitions = competitionRepository.findByContestIds(contests.map { it.id }.toSet())
         return contests.map { contest -> contest to competitions.filter { contest.id in it.data.contests.ids } }
     }
+
+    /**
+     * Returns the communities created by [user] without their user counts, so that a page checks the role and builds its
+     * community filter before it loads its lists. Missing role is an expected failure; nothing is written.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewCommunities")
+    fun checkAdministratorRole(user: MultipleRoleUser): OperationResult<List<Community>, CheckAdministratorRoleError> =
+        operation<List<Community>, CheckAdministratorRoleError> {
+            ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
+            return communityRepository.findByOwner(user.id).asSuccess()
+        }
 
     /**
      * Returns the communities created by [user] in ascending id order, each with the number of users available to [user]
@@ -746,6 +781,22 @@ class AdministratorOperations(
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
         return extendCommunityInvite(community, kind).asSuccess()
     }
+
+    /**
+     * Returns [communityId] owned by [user] without its invite codes and users, so that a page checks access before it loads
+     * them. Missing role, community and access are expected failures; nothing is written.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewInvites")
+    fun checkCommunityAccess(user: MultipleRoleUser, communityId: CommunityId): OperationResult<Community, CheckCommunityAccessError> =
+        operation<Community, CheckCommunityAccessError> {
+            ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
+            val community = communityRepository.findById(communityId)
+            ensure(community != null) { CommunityNotExistsError(communityId) }
+            ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
+            return community.asSuccess()
+        }
 
     /**
      * Returns both invite codes of [communityId] owned by [user] as issued, the manager code before the developer one.

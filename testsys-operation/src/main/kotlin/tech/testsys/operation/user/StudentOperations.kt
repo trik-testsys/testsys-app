@@ -17,6 +17,8 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Student
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.error.CheckStudentClassAccessError
+import tech.testsys.operation.error.CheckStudentRoleError
 import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassInviteCodeExpiredError
 import tech.testsys.operation.error.ClassInviteCodeNotValidError
@@ -159,5 +161,33 @@ class StudentOperations(
                 .filter { studyClass -> user.id in studyClass.data.students.ids }
                 .sortedBy { studyClass -> studyClass.id.value }
                 .asSuccess()
+        }
+
+    /**
+     * Checks that [user] holds the [Student] role, so that a page checks the role before it loads the classes.
+     * Missing student role is an expected failure.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.student.viewClasses")
+    fun checkStudentRole(user: MultipleRoleUser): OperationResult<Unit, CheckStudentRoleError> = operation<Unit, CheckStudentRoleError> {
+        ensure(user.hasRole<Student>(), MissedStudentRoleError)
+        return Unit.asSuccess()
+    }
+
+    /**
+     * Returns the class [classId] that lists [user] as a student without its contests, so that a page checks access before
+     * it loads them. Missing role, class and enrollment are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.student.viewContests")
+    fun checkClassAccess(user: MultipleRoleUser, classId: ClassId): OperationResult<Class, CheckStudentClassAccessError> =
+        operation<Class, CheckStudentClassAccessError> {
+            ensure(user.hasRole<Student>(), MissedStudentRoleError)
+            val studyClass = classRepository.findById(classId)
+            ensure(studyClass != null) { ClassNotExistsError(classId) }
+            ensure(user.id in studyClass.data.students.ids) { ClassAccessDeniedError(classId) }
+            return studyClass.asSuccess()
         }
 }

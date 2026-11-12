@@ -9,8 +9,11 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Nav
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -20,11 +23,15 @@ import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.web.app.MockSpringVaadinTests
+import tech.testsys.web.app.service.observer.ObserverService
 
 @SpringBootTest
 class ObserverViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var observers: ObserverRepository
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
 
     @Test
     fun `should show each current competition and assigned contest pair`() {
@@ -120,6 +127,22 @@ class ObserverViewTests : MockSpringVaadinTests() {
 
         assertEquals("Кабинет Наблюдателя", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
         assertEquals("Кабинет Наблюдателя", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should keep the title and the download and show a load error in the contests if they fail to load`() {
+        signIn(fixtures.observer(fixtures.community()))
+        val service = mockk<ObserverService>()
+        every { service.viewContests(any(), any()) } throws IllegalStateException("Contest storage unavailable")
+        val view = ObserverView(headers, service)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(mockk<BeforeEnterEvent>())
+
+        assertEquals("Кабинет Наблюдателя", view._get<H1>().text)
+        assertTrue(view._find<NativeButton>().any { it.element.getAttribute("aria-label")?.startsWith("Скачать все результаты") == true })
+        assertEquals(1, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
     }
 
     @Test

@@ -1,13 +1,20 @@
 package tech.testsys.web.app.view
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Nav
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -20,6 +27,7 @@ import tech.testsys.domain.model.group.Class
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.StudyFixtures
 import tech.testsys.web.app.error.OperationErrorView
+import tech.testsys.web.app.service.student.StudentService
 
 @SpringBootTest
 class StudentViewTests : MockSpringVaadinTests() {
@@ -31,6 +39,9 @@ class StudentViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var classInvites: ClassInviteRepository
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
 
     @Test
     fun `should show the forbidden screen to a user without the student role`() {
@@ -53,12 +64,29 @@ class StudentViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should start the breadcrumbs with the main page`() {
+    fun `should show no breadcrumbs on the role page`() {
         signIn(study.student())
 
         UI.getCurrent().navigate(StudentView::class.java)
 
-        assertEquals(mapOf("Главная" to "home"), StudyPages.crumbs())
+        assertTrue(UI.getCurrent()._find<Nav> { classes = "ts-crumbs" }.isEmpty())
+    }
+
+    @Test
+    fun `should keep the title and joining and show a load error in the classes if they fail to load`() {
+        signIn(study.student())
+        val service = mockk<StudentService>()
+        every { service.checkStudentRole() } just Runs
+        every { service.viewClasses() } throws IllegalStateException("Class storage unavailable")
+        val view = StudentView(headers, service)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(mockk<BeforeEnterEvent>())
+
+        assertEquals("Кабинет Ученика", view._get<H1>().text)
+        assertEquals(1, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+        assertTrue(view._get<Button> { text = "Присоединиться" }.isEnabled)
     }
 
     @Test

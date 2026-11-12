@@ -13,8 +13,11 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
@@ -32,6 +35,7 @@ import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.components.texts.currentTimeZone
 import java.time.LocalDateTime
 
@@ -42,6 +46,12 @@ class AdminViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var users: UserRepository
+
+    @Autowired
+    private lateinit var administratorService: AdministratorService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
 
     @Test
     fun `should open the communities tab when no section is given`() {
@@ -120,6 +130,24 @@ class AdminViewTests : MockSpringVaadinTests() {
 
         assertEquals(emptyList<Any>(), communities.findByOwner(administrator.id))
         assertEquals(0, UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.size)
+    }
+
+    @Test
+    fun `should show the created community in the table if the communities failed to load before`() {
+        signInAdministrator()
+        val service = mockk<AdministratorService>()
+        every { service.checkAdministratorRole() } returns administratorService.checkAdministratorRole()
+        every { service.viewCommunities() } throws IllegalStateException("Community storage unavailable")
+        every { service.createCommunity(any(), any()) } answers { administratorService.createCommunity(firstArg(), secondArg()) }
+        openCommunities(service)
+        every { service.viewCommunities() } answers { administratorService.viewCommunities() }
+        UI.getCurrent()._get<Button> { text = "Создать Сообщество" }._click()
+        field("Название")._value = "Новое сообщество"
+
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        val text = tableText()
+        assertTrue("Новое сообщество" in text, text)
     }
 
     @Test
@@ -237,6 +265,16 @@ class AdminViewTests : MockSpringVaadinTests() {
     }
 
     private fun section(name: String) = RouteParameters(ADMIN_SECTION_PARAMETER, name)
+
+    /** Opens the communities tab of a cabinet that takes its data from [service]. */
+    private fun openCommunities(service: AdministratorService) {
+        val view = AdminView(headers, service)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns section("communities")
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+        view.beforeEnter(event)
+    }
 
     private fun field(label: String): TextField =
         UI.getCurrent()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == label }

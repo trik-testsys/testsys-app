@@ -108,6 +108,20 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should mark the section of a page nested in it as the current location`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val observer = fixtures.observer(fixtures.community(), rawAccessToken = fixtures.unique("observer-code"))
+
+        UI.getCurrent().navigate("supervisor/users/${observer.id.value}")
+
+        val marked = UI.getCurrent()._find<RouterLink> { classes = "ts-mega__link" }
+            .filter { link -> link.element.hasAttribute("highlight") }
+            .associate { link -> link._get<Span>().text to link.element.getAttribute("aria-current") }
+        assertEquals(mapOf("Пользователи" to "location"), marked)
+        assertTrue(currentMenuLinks().isEmpty())
+    }
+
+    @Test
     fun `should mark only the opened section of a role page`() {
         signIn(fixtures.multipleRoleUser { roles { developer { data = developerData {} } } })
 
@@ -199,7 +213,11 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
 
         UI.getCurrent().navigate(MultiMainView::class.java)
 
-        assertEquals(1, UI.getCurrent()._find<Span> { text = "Анна Петрова$NBSP·${NBSP}вход${NBSP}Супервайзера" }.size)
+        assertEquals(
+            listOf("Вход Супервайзера"),
+            UI.getCurrent()._find<Span> { classes = "ts-header__user-mark" }.map { mark -> mark.text },
+        )
+        assertEquals(1, UI.getCurrent()._find<Span> { text = "Анна Петрова" }.size)
         val menuActions = UI.getCurrent()._find<NativeButton>().map { button -> button.text }
             .filter { label -> label in setOf("Вернуться к Супервайзеру", "Выйти") }
         assertEquals(listOf("Вернуться к Супервайзеру", "Выйти"), menuActions)
@@ -287,8 +305,5 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
             "Наблюдатель",
             "Супервайзер",
         )
-
-        // The supervisor mark is joined to the nickname by no-break spaces, so the avatar takes no initial from it.
-        val NBSP = Char(0x00A0).toString()
     }
 }

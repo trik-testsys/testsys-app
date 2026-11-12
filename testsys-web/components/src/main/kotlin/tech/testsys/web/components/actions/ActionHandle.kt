@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.SignalBinding
+import com.vaadin.flow.shared.Registration
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.ElementHandle
@@ -40,6 +41,8 @@ class ActionHandle internal constructor(
         button.icon = if (value) Span().apply { addClassName(CssClass.Spinner) } else icon
         if (value) button.element.setAriaBusy(true) else button.element.setAriaBusy(null)
     }
+
+    private var click: Registration? = null
 
     var isEnabled: Boolean
         get() = button.isEnabled
@@ -83,12 +86,13 @@ class ActionHandle internal constructor(
     fun bindLoading(signal: Signal<Boolean>): SignalBinding<Boolean> = loading.bind(signal)
 
     /**
-     * Runs [listener] when the action is clicked while it is not loading.
+     * Runs [listener] when the action is clicked while it is not loading. Replaces a listener set by an earlier call.
      *
      * @since 1.0.0-beta.1
      */
     fun onClick(listener: () -> Unit) {
-        button.addClickListener { _ -> if (!loading.value) listener() }
+        click?.remove()
+        click = button.addClickListener { _ -> if (!loading.value) listener() }
     }
 
     /**

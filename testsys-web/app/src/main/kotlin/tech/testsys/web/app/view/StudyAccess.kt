@@ -12,10 +12,13 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.participant.ParticipantService
+import tech.testsys.web.app.service.student.ClassVo
 import tech.testsys.web.app.service.student.StudentService
 import tech.testsys.web.app.service.study.GradingResultVo
+import tech.testsys.web.app.service.study.StudyContestContextVo
 import tech.testsys.web.app.service.study.StudyContestTaskVo
 import tech.testsys.web.app.service.study.StudyService
+import tech.testsys.web.app.service.study.StudyTaskContextVo
 import tech.testsys.web.app.service.study.StudyTaskVo
 import tech.testsys.web.app.service.study.SubmissionStatusVo
 import tech.testsys.web.components.display.TimerHandle
@@ -55,11 +58,17 @@ internal sealed class StudyAccess {
     /** Page of a task of a contest of this user. */
     abstract val taskPage: Class<out Component>
 
+    /** Checks access to [contestId] and returns it with the first entry time, without its tasks. */
+    abstract fun checkContest(contestId: ContestId): StudyContestContextVo
+
     /** Returns the first entry time, the contest [contestId] and its tasks. */
     abstract fun viewContest(contestId: ContestId): Triple<Instant?, ContestVo, List<StudyContestTaskVo>>
 
     /** Saves the first entry into [contestId]. */
     abstract fun enterContest(contestId: ContestId)
+
+    /** Checks access to [taskId] of [contestId] and returns it with its contest and languages, without its submissions. */
+    abstract fun checkTask(contestId: ContestId, taskId: TaskId): StudyTaskContextVo
 
     /** Returns [taskId] of [contestId] with the submissions of the user. */
     abstract fun viewTask(contestId: ContestId, taskId: TaskId): StudyTaskVo
@@ -73,8 +82,11 @@ internal sealed class StudyAccess {
     /** Sends [file] in [language] as a solution of [taskId]. */
     abstract fun sendSolution(contestId: ContestId, taskId: TaskId, file: FileData, language: TrikSupportedLanguage)
 
-    /** Adds to [head] the breadcrumbs from the start page to the page that lists the contests. */
-    abstract fun cabinetCrumbs(head: PageHeadScope)
+    /**
+     * Adds to [head] the breadcrumbs from the start page to the page that lists the contests; [studyClass] is the class of
+     * the study context, `null` for a participant.
+     */
+    abstract fun cabinetCrumbs(head: PageHeadScope, studyClass: ClassVo?)
 
     /** Returns the route parameters of the page of [contestId]. */
     abstract fun contestParameters(contestId: ContestId): RouteParameters
@@ -97,11 +109,15 @@ internal sealed class StudyAccess {
         override val contestPage: Class<out Component> = StudentContestView::class.java
         override val taskPage: Class<out Component> = StudentTaskView::class.java
 
+        override fun checkContest(contestId: ContestId) = studyService.checkContestAccess(classId, contestId)
+
         override fun viewContest(contestId: ContestId) = studyService.viewContest(classId, contestId)
 
         override fun enterContest(contestId: ContestId) {
             studentService.enterContest(classId, contestId)
         }
+
+        override fun checkTask(contestId: ContestId, taskId: TaskId) = studyService.checkTaskAccess(classId, contestId, taskId)
 
         override fun viewTask(contestId: ContestId, taskId: TaskId) = studyService.viewTask(classId, contestId, taskId)
 
@@ -115,13 +131,12 @@ internal sealed class StudyAccess {
             studyService.sendSolution(classId = classId, contestId = contestId, taskId = taskId, file = file, language = language)
         }
 
-        override fun cabinetCrumbs(head: PageHeadScope) {
-            val studyClass = studentService.viewClasses().first { studyClass -> studyClass.id == classId }
+        override fun cabinetCrumbs(head: PageHeadScope, studyClass: ClassVo?) {
+            val name = checkNotNull(studyClass) { "Study context of class id=${classId.value} has no class" }.name
             val localization = currentLocalization()
             val texts = localization.pageStudent
-            head.crumb(localization.pageCabinet.home(), MultiMainView::class.java)
             head.crumb(texts.title(), StudentView::class.java)
-            head.crumb(texts.classTitle(name = studyClass.name), StudentClassView::class.java, studentClassParameters(classId))
+            head.crumb(texts.classTitle(name = name), StudentClassView::class.java, studentClassParameters(classId))
         }
 
         override fun contestParameters(contestId: ContestId) = studentContestParameters(classId, contestId)
@@ -141,11 +156,15 @@ internal sealed class StudyAccess {
         override val contestPage: Class<out Component> = ParticipantContestView::class.java
         override val taskPage: Class<out Component> = ParticipantTaskView::class.java
 
+        override fun checkContest(contestId: ContestId) = studyService.checkContestAccess(contestId)
+
         override fun viewContest(contestId: ContestId) = studyService.viewContest(contestId)
 
         override fun enterContest(contestId: ContestId) {
             participantService.enterContest(contestId)
         }
+
+        override fun checkTask(contestId: ContestId, taskId: TaskId) = studyService.checkTaskAccess(contestId, taskId)
 
         override fun viewTask(contestId: ContestId, taskId: TaskId) = studyService.viewTask(contestId, taskId)
 
@@ -159,7 +178,7 @@ internal sealed class StudyAccess {
             studyService.sendSolution(contestId, taskId, file, language)
         }
 
-        override fun cabinetCrumbs(head: PageHeadScope) {
+        override fun cabinetCrumbs(head: PageHeadScope, studyClass: ClassVo?) {
             head.crumb(currentLocalization().pageParticipant.title(), ParticipantView::class.java)
         }
 

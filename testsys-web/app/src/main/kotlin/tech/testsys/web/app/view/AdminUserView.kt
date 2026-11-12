@@ -32,6 +32,7 @@ import tech.testsys.web.app.service.StudentRoleVo
 import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.destructiveAction
 import tech.testsys.web.components.actions.mainAction
@@ -39,6 +40,7 @@ import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
@@ -49,7 +51,6 @@ import tech.testsys.web.components.overlay.MenuScope
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
 import tech.testsys.web.components.texts.currentLocalization
-import java.time.Instant
 
 /**
  * Tab of the page of a user with non-fixed roles with the sections of one role.
@@ -108,16 +109,18 @@ class AdminUserView(
      * the user has no such section.
      */
     private fun show(userId: UserId, section: AdminUserSection? = null): RouteParameters? {
-        val (user, lastLogin) = administratorService.viewUser(userId)
-        val communities = administratorService.viewCommunities().map { (community, _) -> community }
-        val sections = sectionsOf(user, communities.map { community -> community.id }.toSet())
+        // Checks the role, the user and access before the blocks load, so that a refusal opens its error screen.
+        val (user, owned) = administratorService.checkUserAccess(userId)
+        val sections = sectionsOf(user, owned)
         if (section != null && section !in sections) return userParameters(userId)
 
+        val communities = SharedFetch {
+            administratorService.checkUserAccess(userId).first to administratorService.checkAdministratorRole()
+        }
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.userHead(kind = if (user is ObserverVo) UserHeadKind.OBSERVER else UserHeadKind.USER, name = user.name)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), AdminView::class.java)
                 crumb(localization.pageCabinet.sectionUsers(), AdminView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "users"))
                 if (sections.isNotEmpty()) {
@@ -133,7 +136,7 @@ class AdminUserView(
             guide(texts.userGuide())
             when (section) {
                 null -> {
-                    detailsBlock(user, lastLogin)
+                    detailsBlock(user)
                     rolesBlock(user, communities)
                     if (user is ObserverVo) assignedContestsBlock(administratorService, user.id)
                 }
@@ -151,16 +154,19 @@ class AdminUserView(
         return null
     }
 
-    private fun PageScope.detailsBlock(user: AdminUserVo, lastLogin: Instant?) {
+    /** Loads the common data of [user]; the deletion of an observer needs only the checked [user]. */
+    private fun PageScope.detailsBlock(user: AdminUserVo) {
         val texts = currentLocalization().pageAdministrator
         row {
             block(title = texts.details()) {
                 guide(texts.userDetailsGuide())
-                row {
-                    codeInput(texts.id(), labelSize = 3, size = 4) { value = user.id.value.toString() }
-                    textInput(texts.nickname(), labelSize = 3, size = 8) { value = user.name }
+                load({ administratorService.viewUser(user.id) }) { (viewed, lastLogin) ->
+                    row {
+                        codeInput(texts.id(), labelSize = 3, size = 4) { value = viewed.id.value.toString() }
+                        textInput(texts.nickname(), labelSize = 3, size = 8) { value = viewed.name }
+                    }
+                    row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) { value = lastLogin?.toUserDateTime() } }
                 }
-                row { dateTimeInput(texts.lastLogin(), labelSize = 3, size = 5) { value = lastLogin?.toUserDateTime() } }
                 if (user is ObserverVo) {
                     actions { destructiveAction(texts.userObserverDelete()) { onClick { deleteObserver(user) } } }
                 }
@@ -168,37 +174,57 @@ class AdminUserView(
         }
     }
 
-    private fun PageScope.rolesBlock(user: AdminUserVo, communities: List<CommunityVo>) {
-        val localization = currentLocalization()
-        val texts = localization.pageAdministrator
-        val memberships = communities.mapNotNull { community ->
+    /**
+     * Loads the roles of [user] in [communities] of the administrator, reading the user again with them; granting a role
+     * is enabled once those communities are loaded and opens with them.
+     */
+    private fun PageScope.rolesBlock(user: AdminUserVo, communities: SharedFetch<Pair<AdminUserVo, List<CommunityVo>>>) {
+        val texts = currentLocalization().pageAdministrator
+        row {
+            block(title = texts.userRolesTitle()) {
+                guide(texts.userRolesGuide())
+                var grant: ActionHandle? = null
+                if (user is MultipleRoleUserVo) {
+                    actions {
+                        // Enabled once the communities are loaded.
+                        grant = action(texts.userRolesGrant()) {
+                            isEnabled = false
+                            onClick { grantDialog(user, communities.value.second)() }
+                        }
+                    }
+                }
+                load(communities.forLoad(), onReset = { grant?.isEnabled = false }) { (current, loaded) ->
+                    val memberships = membershipsOf(current, loaded)
+                    table(
+                        key = { membership: Membership -> membership.community.id },
+                        fetch = { request -> pageOf(memberships, request) },
+                    ) {
+                        textColumn(texts.userCommunity(), size = 12) { membership -> membership.community.name }
+                        column(texts.roles()) { membership -> membership.labels.forEach { label -> tag(label) } }
+                        if (user is MultipleRoleUserVo) {
+                            menuColumn(
+                                ariaLabel = { membership -> texts.userRolesActions(community = membership.community.name) },
+                            ) { membership -> removalItems(user, membership, loaded) }
+                        }
+                        empty(texts.userRolesEmpty())
+                        onRowClick(isNavigation = true) { membership -> openAdminCommunity(membership.community.id) }
+                    }
+                    grant?.isEnabled = true
+                }
+            }
+        }
+    }
+
+    /** Returns the roles of [user] in each of [communities] where it holds any, with their labels. */
+    private fun membershipsOf(user: AdminUserVo, communities: List<CommunityVo>): List<Membership> {
+        val observerLabel = currentLocalization().pageCabinet.roleName(role = RoleNameRole.OBSERVER)
+        return communities.mapNotNull { community ->
             when (user) {
                 is MultipleRoleUserVo -> user.roles.filter { role -> community.id in role.memberOf }
                     .takeIf { roles -> roles.isNotEmpty() }
                     ?.let { roles -> Membership(community, roles.map(::labelOf), roles) }
-                is ObserverVo -> Membership(community, listOf(localization.pageCabinet.roleName(role = RoleNameRole.OBSERVER)), emptyList())
-                    .takeIf { user.community == community.id }
+                is ObserverVo -> Membership(community, listOf(observerLabel), emptyList()).takeIf { user.community == community.id }
                 is ParticipantVo -> null
-            }
-        }
-        row {
-            block(title = texts.userRolesTitle()) {
-                guide(texts.userRolesGuide())
-                table(key = { membership: Membership -> membership.community.id }, fetch = { request -> pageOf(memberships, request) }) {
-                    textColumn(texts.userCommunity(), size = 12) { membership -> membership.community.name }
-                    column(texts.roles()) { membership -> membership.labels.forEach { label -> tag(label) } }
-                    if (user is MultipleRoleUserVo) {
-                        menuColumn(
-                            ariaLabel = { membership -> texts.userRolesActions(community = membership.community.name) },
-                        ) { membership -> removalItems(user, membership, communities) }
-                    }
-                    empty(texts.userRolesEmpty())
-                    onRowClick(isNavigation = true) { membership -> openAdminCommunity(membership.community.id) }
-                }
-                if (user is MultipleRoleUserVo) {
-                    val granting = grantDialog(user, communities)
-                    actions { action(texts.userRolesGrant()) { onClick { granting() } } }
-                }
             }
         }
     }

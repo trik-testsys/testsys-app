@@ -8,6 +8,7 @@ import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.hasAriaBusy
 import tech.testsys.web.components.core.setAriaBusy
 import tech.testsys.web.components.core.setClassName
@@ -17,7 +18,7 @@ import tech.testsys.web.components.texts.UiLocalization
  * Body of a block that a load fills after the block is built, again on every reload: either a placeholder or
  * a failure that fills it whole, or content built by a scope of its own, as the block itself would build it; content
  * that adds nothing hides the body, as a block without rows has none. The pagination of a loaded table goes to the end
- * of the block footer.
+ * of the block footer, and a load mark on the body fades in the placeholder and whatever replaces it.
  */
 internal class LoadedBody(
     private val body: Div,
@@ -29,11 +30,20 @@ internal class LoadedBody(
     private var footer: Footer? = null
     private var isOwnFooter = false
     private var pager: TablePager? = null
+    private var tableRefresh: ((toFirstPage: Boolean) -> Unit)? = null
     private var isPagerPlaced = false
     private var editRelay: Registration? = null
+    private var refreshHost: Component? = null
 
     // Whether the body holds anything: false only after content that added nothing.
     private var hasContent = true
+
+    // Whether the last built content holds a table; a placeholder or a failure keeps it.
+    private var hasTable = false
+
+    init {
+        body.addClassName(CssClass.BlockBodyLoad)
+    }
 
     /** The body itself. */
     val component: Component
@@ -50,6 +60,9 @@ internal class LoadedBody(
     /** Runs once the block is built; the load starts its first fetch here. */
     var onStart: () -> Unit = {}
 
+    /** Loads the body again; the refresh button in the block head and the table filters of the block call it. */
+    var onReload: () -> Unit = {}
+
     /** Whether the body is marked busy for assistive technologies while it loads. */
     var isBusy: Boolean
         get() = body.element.hasAriaBusy()
@@ -63,8 +76,20 @@ internal class LoadedBody(
         isOwnFooter = isOwn
     }
 
+    /** Keeps [host] of the refresh button in the block head; it is shown while the last built content holds a table. */
+    fun useRefresh(host: Component) {
+        refreshHost = host
+        updateRefresh()
+    }
+
     fun start() {
         onStart()
+    }
+
+    /** Fetches the first page of the loaded table; loads the body again while it holds no table. */
+    fun refreshTable() {
+        val refresh = tableRefresh
+        if (refresh != null) refresh(true) else onReload()
     }
 
     /** Replaces the body with [component] that fills it whole, e.g. a placeholder; [isFlush] drops the padding. */
@@ -95,7 +120,14 @@ internal class LoadedBody(
         hasContent = body.children.findAny().isPresent
         updateVisibility()
         pager = scope.tablePager
+        tableRefresh = scope.tableRefresh
+        hasTable = tableRefresh != null
+        updateRefresh()
         updatePager()
+    }
+
+    private fun updateRefresh() {
+        refreshHost?.isVisible = hasTable
     }
 
     /** Shows the body while the load is shown and the body holds anything. */
@@ -109,6 +141,7 @@ internal class LoadedBody(
         editRelay = null
         takeOutPager()
         pager = null
+        tableRefresh = null
         body.removeAll()
     }
 

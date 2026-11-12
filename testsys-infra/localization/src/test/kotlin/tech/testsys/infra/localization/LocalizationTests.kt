@@ -477,6 +477,16 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should label the refresh button in table refresh`() {
+            assertEquals("Обновить", l.uiData.tableRefresh())
+        }
+
+        @Test
+        fun `should name the scroll area in table region`() {
+            assertEquals("Таблица", l.uiData.tableRegion())
+        }
+
+        @Test
         fun `should name the previous page button in pagination previous`() {
             assertEquals("Перейти на предыдущую страницу", l.uiData.paginationPrevious())
         }
@@ -1488,8 +1498,8 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should mark the supervisor sign in after a middle dot joined by no-break spaces in impersonation name`() {
-            assertEquals("Маша$NBSP·${NBSP}вход${NBSP}Супервайзера", l.pageCabinet.impersonationName(name = "Маша"))
+        fun `should use the genitive supervisor term in impersonation badge`() {
+            assertEquals("Вход Супервайзера", l.pageCabinet.impersonationBadge())
         }
 
         @Test

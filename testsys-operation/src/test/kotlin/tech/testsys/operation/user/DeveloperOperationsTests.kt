@@ -79,6 +79,7 @@ import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TaskValidationTechnicalFailure
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
@@ -132,6 +133,7 @@ import tech.testsys.operation.error.TaskTestingNoPolygonsError
 import tech.testsys.operation.error.TaskTestingNoStatementError
 import tech.testsys.operation.error.TaskTestingNoTrikStudioVersionsError
 import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
+import tech.testsys.operation.error.TaskValidationRequestNotExistsError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
@@ -5484,6 +5486,358 @@ class DeveloperOperationsTests {
 
                 Assertions.assertSame(storedFile, result)
                 verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckDeveloperRoleTests {
+
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return the communities of the Developer role in ascending order of identifiers`() {
+                val user = testDeveloper {
+                    memberOf(listOf(4, 2))
+                    data = developerData {}
+                }
+                every { communityRepository.load(any<LazyEntityList<CommunityId, Community>>()) } returns
+                    listOf(testCommunity(4), testCommunity(2))
+
+                val result = developerOperations.checkDeveloperRole(user).getOrThrow()
+
+                Assertions.assertEquals(listOf(CommunityId(2), CommunityId(4)), result.map { community -> community.id })
+                verify(exactly = 1) { communityRepository.load(any<LazyEntityList<CommunityId, Community>>()) }
+            }
+
+            @Test
+            fun `should return no communities for a Developer outside any community`() {
+                val result = developerOperations.checkDeveloperRole(developer).getOrThrow()
+
+                Assertions.assertEquals(emptyList<Community>(), result)
+                verify { communityRepository wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+                assertRaises(MissedDeveloperRoleError) { developerOperations.checkDeveloperRole(testAdministrator {}) }
+
+                verify { communityRepository wasNot Called }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckTaskAccessTests {
+
+        private val taskId = TaskId(42)
+
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return the owned task`() {
+                val ownedTask = testNewTask()
+                every { taskRepository.findById(taskId) } returns ownedTask
+
+                val result = developerOperations.checkTaskAccess(developer, taskId).getOrThrow()
+
+                Assertions.assertSame(ownedTask, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+                assertRaises(MissedDeveloperRoleError) { developerOperations.checkTaskAccess(testAdministrator {}, taskId) }
+
+                verify(exactly = 0) { taskRepository.findById(any()) }
+            }
+
+            @Test
+            fun `should raise TaskNotExistsError if task does not exist`() {
+                every { taskRepository.findById(taskId) } returns null
+
+                assertRaises(TaskNotExistsError(taskId)) { developerOperations.checkTaskAccess(developer, taskId) }
+            }
+
+            @Test
+            fun `should raise TaskAccessDeniedError if task belongs to another user`() {
+                every { taskRepository.findById(taskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+
+                assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.checkTaskAccess(developer, taskId) }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @ParameterizedTest
+            @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+            fun `should not save a task in any state when checking access to it`(state: String) {
+                every { taskRepository.findById(taskId) } returns taskInState(state)
+
+                developerOperations.checkTaskAccess(developer, taskId).getOrThrow()
+
+                verify(exactly = 0) { taskRepository.update(any<Task>()) }
+                verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckResourceAccessTests {
+
+        private val bucket = VersionBucket(UUID(0, 0))
+        private val taskId = TaskId(0)
+
+        @BeforeEach
+        fun setUp() {
+            every { statementRepository.findLatestByVersionBucket(any()) } returns null
+            every { exerciseRepository.findLatestByVersionBucket(any()) } returns null
+            every { testRepository.findLatestByVersionBucket(any()) } returns null
+            every { developerSolutionRepository.findLatestByVersionBucket(any()) } returns null
+        }
+
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return the owned task with the latest version of a statement chain`() {
+                val task = testNewTask()
+                val latest = viewStatement(id = 2, createdAt = Instant.ofEpochSecond(20))
+                every { taskRepository.findById(taskId) } returns task
+                every { statementRepository.findLatestByVersionBucket(bucket) } returns latest
+
+                val result = developerOperations.checkResourceAccess(developer, taskId, bucket).getOrThrow()
+
+                Assertions.assertSame(task, result.first)
+                Assertions.assertSame(latest, result.second)
+            }
+
+            @Test
+            fun `should return the latest version of a developer solution chain`() {
+                val latest = viewDeveloperSolution()
+                val solutionBucket = latest.data.versionBucket
+                every { taskRepository.findById(taskId) } returns testNewTask().withData {
+                    uploadedResources = mutableSetOf(solutionBucket)
+                }
+                every { developerSolutionRepository.findLatestByVersionBucket(solutionBucket) } returns latest
+
+                val result = developerOperations.checkResourceAccess(developer, taskId, solutionBucket).getOrThrow()
+
+                Assertions.assertSame(latest, result.second)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+                assertRaises(MissedDeveloperRoleError) {
+                    developerOperations.checkResourceAccess(testAdministrator {}, taskId, bucket)
+                }
+
+                verify(exactly = 0) { taskRepository.findById(any()) }
+            }
+
+            @Test
+            fun `should raise TaskNotExistsError if task does not exist`() {
+                every { taskRepository.findById(taskId) } returns null
+
+                assertRaises(TaskNotExistsError(taskId)) { developerOperations.checkResourceAccess(developer, taskId, bucket) }
+            }
+
+            @Test
+            fun `should raise ResourceNotExistsError before checking the owner if chain does not exist`() {
+                every { taskRepository.findById(taskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+
+                assertRaises(ResourceNotExistsError(bucket)) { developerOperations.checkResourceAccess(developer, taskId, bucket) }
+            }
+
+            @Test
+            fun `should raise TaskAccessDeniedError if task belongs to another user`() {
+                every { taskRepository.findById(taskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+                every { statementRepository.findLatestByVersionBucket(bucket) } returns testStatement()
+
+                assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.checkResourceAccess(developer, taskId, bucket) }
+            }
+
+            @Test
+            fun `should raise ResourceNotUploadedToTaskError if chain is outside the task`() {
+                every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf() }
+                every { statementRepository.findLatestByVersionBucket(bucket) } returns testStatement()
+
+                assertRaises(ResourceNotUploadedToTaskError(taskId, bucket)) {
+                    developerOperations.checkResourceAccess(developer, taskId, bucket)
+                }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @ParameterizedTest
+            @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+            fun `should not save a task in any state when checking access to its resource`(state: String) {
+                every { taskRepository.findById(taskId) } returns taskInState(state)
+                every { statementRepository.findLatestByVersionBucket(bucket) } returns testStatement()
+
+                developerOperations.checkResourceAccess(developer, taskId, bucket).getOrThrow()
+
+                verify(exactly = 0) { taskRepository.update(any<Task>()) }
+                verify(exactly = 0) { statementRepository.update(any<Statement>()) }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckTaskValidationRequestAccessTests {
+
+        private val taskId = TaskId(0)
+        private val requestId = TaskValidationRequestId(11)
+
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return the owned task with its testing request`() {
+                val task = testNewTask()
+                val request = testTaskValidationRequest()
+                every { taskRepository.findById(taskId) } returns task
+                every { taskValidationRequestRepository.findById(requestId) } returns request
+
+                val result = developerOperations.checkTaskValidationRequestAccess(developer, taskId, requestId).getOrThrow()
+
+                Assertions.assertSame(task, result.first)
+                Assertions.assertSame(request, result.second)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+                assertRaises(MissedDeveloperRoleError) {
+                    developerOperations.checkTaskValidationRequestAccess(testAdministrator {}, taskId, requestId)
+                }
+
+                verify(exactly = 0) { taskRepository.findById(any()) }
+            }
+
+            @Test
+            fun `should raise TaskNotExistsError if task does not exist`() {
+                every { taskRepository.findById(taskId) } returns null
+
+                assertRaises(TaskNotExistsError(taskId)) {
+                    developerOperations.checkTaskValidationRequestAccess(developer, taskId, requestId)
+                }
+            }
+
+            @Test
+            fun `should raise TaskAccessDeniedError before looking for the request if task belongs to another user`() {
+                every { taskRepository.findById(taskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+
+                assertRaises(TaskAccessDeniedError(taskId)) {
+                    developerOperations.checkTaskValidationRequestAccess(developer, taskId, requestId)
+                }
+
+                verify(exactly = 0) { taskValidationRequestRepository.findById(any()) }
+            }
+
+            @Test
+            fun `should raise TaskValidationRequestNotExistsError if request does not exist`() {
+                every { taskRepository.findById(taskId) } returns testNewTask()
+                every { taskValidationRequestRepository.findById(requestId) } returns null
+
+                assertRaises(TaskValidationRequestNotExistsError(requestId)) {
+                    developerOperations.checkTaskValidationRequestAccess(developer, taskId, requestId)
+                }
+            }
+
+            @Test
+            fun `should raise TaskValidationRequestNotExistsError if request belongs to another task`() {
+                every { taskRepository.findById(taskId) } returns testNewTask()
+                every { taskValidationRequestRepository.findById(requestId) } returns testTaskValidationRequest { task(7) }
+
+                assertRaises(TaskValidationRequestNotExistsError(requestId)) {
+                    developerOperations.checkTaskValidationRequestAccess(developer, taskId, requestId)
+                }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckContestAccessTests {
+
+        private val contestId = ContestId(19)
+
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return an owned contest`() {
+                val owned = testContest()
+                every { contestRepository.findById(contestId) } returns owned
+
+                val result = developerOperations.checkContestAccess(developer, contestId).getOrThrow()
+
+                Assertions.assertSame(owned, result)
+            }
+
+            @Test
+            fun `should return another owner's contest shared to the Developer community`() {
+                val user = testDeveloper {
+                    memberOf(listOf(4))
+                    data = developerData {}
+                }
+                val foreign = testContest {
+                    owner = MultipleRoleUserId(99)
+                    sharedTo(listOf(4))
+                }
+                every { contestRepository.findById(contestId) } returns foreign
+
+                val result = developerOperations.checkContestAccess(user, contestId).getOrThrow()
+
+                Assertions.assertSame(foreign, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+                assertRaises(MissedDeveloperRoleError) { developerOperations.checkContestAccess(testAdministrator {}, contestId) }
+
+                verify(exactly = 0) { contestRepository.findById(any()) }
+            }
+
+            @Test
+            fun `should raise ContestNotExistsError if contest does not exist`() {
+                every { contestRepository.findById(contestId) } returns null
+
+                assertRaises(ContestNotExistsError(contestId)) { developerOperations.checkContestAccess(developer, contestId) }
+            }
+
+            @Test
+            fun `should raise ContestAccessDeniedError if contest is neither owned nor shared to the Developer communities`() {
+                every { contestRepository.findById(contestId) } returns testContest {
+                    owner = MultipleRoleUserId(99)
+                    sharedTo(listOf(3))
+                }
+
+                assertRaises(ContestAccessDeniedError(contestId)) { developerOperations.checkContestAccess(developer, contestId) }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @Test
+            fun `should not write the contest when checking access to it`() {
+                every { contestRepository.findById(contestId) } returns testContest()
+
+                developerOperations.checkContestAccess(developer, contestId).getOrThrow()
+
+                verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+                verify(exactly = 0) { contestRepository.removeById(any()) }
             }
         }
     }

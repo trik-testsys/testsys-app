@@ -8,13 +8,13 @@ import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
-import com.vaadin.flow.server.VaadinService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -22,6 +22,8 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.support.GenericApplicationContext
@@ -39,12 +41,17 @@ import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.view.MultiMainView
 import java.time.Clock
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicReference
 
 @SpringBootTest
 class SecurityConfigurationTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var currentUser: CurrentUser
+
+    @Autowired
+    @Qualifier(TaskExecutionAutoConfiguration.APPLICATION_TASK_EXECUTOR_BEAN_NAME)
+    private lateinit var executor: Executor
 
     private val logger =
         assertInstanceOf(Logger::class.java, LoggerFactory.getLogger(SecurityConfiguration::class.java))
@@ -69,9 +76,11 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
     fun `should give background work of a page the signed-in user`() {
         val user = fixtures.userOf(UserKind.MULTIPLE_ROLE)
         signIn(user)
+        val testThread = Thread.currentThread()
 
-        val result = CompletableFuture.supplyAsync({ currentUser.user() }, VaadinService.getCurrent().executor).get()
+        val (thread, result) = CompletableFuture.supplyAsync({ Thread.currentThread() to currentUser.user() }, executor).get()
 
+        assertNotEquals(testThread, thread)
         assertEquals(user.id, result.id)
     }
 

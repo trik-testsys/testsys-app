@@ -24,6 +24,7 @@ import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
@@ -50,14 +51,13 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
     override fun getPageTitle(): String = currentLocalization().pageProfile.title()
 
     private fun show() {
-        val profile = multipleRoleUserService.viewProfile()
         val localization = currentLocalization()
         val texts = localization.pageProfile
         // A supervisor signed in as the user changes neither their e-mail address nor their password
         // (testsys.user.single.supervisor.impersonate).
         val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
         page(headers.cabinet(active = null)) {
-            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            head(texts.title())
             guide(if (isImpersonated) texts.impersonationGuide() else texts.guide())
             row {
                 block(size = PROFILE_COLUMNS, title = texts.title()) {
@@ -70,8 +70,10 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
                             action(texts.passwordOpen()) { onClick { changingPassword() } }
                         }
                     }
-                    row { textInput(texts.nickname(), labelSize = 4, size = 20) { value = profile.name } }
-                    row { textInput(texts.email(), labelSize = 4, size = 20) { value = profile.email } }
+                    load({ multipleRoleUserService.viewProfile() }) { profile ->
+                        row { textInput(texts.nickname(), labelSize = 4, size = 20) { value = profile.name } }
+                        row { textInput(texts.email(), labelSize = 4, size = 20) { value = profile.email } }
+                    }
                 }.isEditable = false
             }
         }

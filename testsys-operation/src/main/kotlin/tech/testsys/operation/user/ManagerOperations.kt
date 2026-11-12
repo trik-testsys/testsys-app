@@ -43,6 +43,11 @@ import tech.testsys.operation.config.ClassInviteConfig
 import tech.testsys.operation.config.CompetitionConfig
 import tech.testsys.operation.error.AddClassContestError
 import tech.testsys.operation.error.AddCompetitionContestError
+import tech.testsys.operation.error.CheckClassContestAccessError
+import tech.testsys.operation.error.CheckCompetitionAccessError
+import tech.testsys.operation.error.CheckCompetitionContestAccessError
+import tech.testsys.operation.error.CheckManagerClassAccessError
+import tech.testsys.operation.error.CheckManagerRoleError
 import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNameBlankError
 import tech.testsys.operation.error.ClassNameTooLongError
@@ -191,6 +196,34 @@ class ManagerOperations(
     }
 
     /**
+     * Checks that [user] holds the [Manager] role, so that a page checks the role before it loads its lists.
+     * Missing manager role is an expected failure.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.class.viewClasses")
+    fun checkManagerRole(user: MultipleRoleUser): OperationResult<Unit, CheckManagerRoleError> = operation<Unit, CheckManagerRoleError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        return Unit.asSuccess()
+    }
+
+    /**
+     * Returns [classId] owned by [user] without its invite, students and contests, so that a page checks access before it
+     * loads them. Missing role, class and access are expected failures; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.class.viewClass")
+    fun checkClassAccess(user: MultipleRoleUser, classId: ClassId): OperationResult<Class, CheckManagerClassAccessError> =
+        operation<Class, CheckManagerClassAccessError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            val studyClass = classRepository.findById(classId)
+            ensure(studyClass != null) { ClassNotExistsError(classId) }
+            ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+            return studyClass.asSuccess()
+        }
+
+    /**
      * Returns [classId] owned by [user] with its invite, its students with their last logins and its contests, both in
      * stored order. Missing role, class and access are expected failures; storage exceptions propagate to the caller.
      *
@@ -316,6 +349,24 @@ class ManagerOperations(
         ensure(user.hasRole<Manager>(), MissedManagerRoleError)
         val competitions = competitionRepository.findAvailableToManager(ownerId = user.id, pagination = pagination, filter = filter)
         return competitions.asSuccess()
+    }
+
+    /**
+     * Returns [competitionId] owned by [user] without its participants and contests, so that a page checks access before it
+     * loads them. Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.competition.viewCompetition")
+    fun checkCompetitionAccess(
+        user: MultipleRoleUser,
+        competitionId: CompetitionId,
+    ): OperationResult<Competition, CheckCompetitionAccessError> = operation<Competition, CheckCompetitionAccessError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+        return competition.asSuccess()
     }
 
     /**
@@ -474,6 +525,53 @@ class ManagerOperations(
         val participants = participantRepository.findByIds(participantIds).inOrderOf(participantIds)
         return findContestResults(contest = contest, members = participants).asSuccess()
     }
+
+    /**
+     * Returns [classId] owned by [user] with [contestId] added to it without the tasks and results, so that a page checks
+     * access before it loads them. Missing role, class, contest, access and contest assignment are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.viewContest")
+    fun checkClassContestAccess(
+        user: MultipleRoleUser,
+        classId: ClassId,
+        contestId: ContestId,
+    ): OperationResult<Pair<Class, Contest>, CheckClassContestAccessError> = operation<Pair<Class, Contest>, CheckClassContestAccessError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val studyClass = classRepository.findById(classId)
+        ensure(studyClass != null) { ClassNotExistsError(classId) }
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+        ensure(contestId in studyClass.data.contests.ids) { ContestNotAddedToClassError(classId = classId, contestId = contestId) }
+        return (studyClass to contest).asSuccess()
+    }
+
+    /**
+     * Returns [competitionId] owned by [user] with [contestId] added to it without the tasks and results, so that a page
+     * checks access before it loads them. Missing role, competition, contest, access and contest assignment are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.viewContest")
+    fun checkCompetitionContestAccess(
+        user: MultipleRoleUser,
+        competitionId: CompetitionId,
+        contestId: ContestId,
+    ): OperationResult<Pair<Competition, Contest>, CheckCompetitionContestAccessError> =
+        operation<Pair<Competition, Contest>, CheckCompetitionContestAccessError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            val competition = competitionRepository.findById(competitionId)
+            ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+            ensure(contestId in competition.data.contests.ids) {
+                ContestNotAddedToCompetitionError(competitionId = competitionId, contestId = contestId)
+            }
+            return (competition to contest).asSuccess()
+        }
 
     /**
      * Adds [contestId] shared to a community of the [Manager] role of [user] to [classId] they own and returns the updated class.

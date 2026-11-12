@@ -828,6 +828,83 @@ class AdministratorOperationsTests {
     }
 
     @Nested
+    inner class CheckUserAccessTests {
+
+        private val userId = MultipleRoleUserId(42)
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the available user with the ids of the communities created by the administrator`() {
+                val viewed = testDeveloper {
+                    memberOf(listOf(communityId.value))
+                    data = developerData {}
+                }
+                every {
+                    userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId)
+                } returns viewed
+                every { communities.findByOwner(administrator.id) } returns listOf(testCommunity(), testCommunity(id = 43))
+
+                val (actual, owned) = check().getOrThrow()
+
+                assertSame(viewed, actual)
+                assertEquals(setOf(communityId, CommunityId(43)), owned)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedAdministratorRoleError before reading storage if user is not an Administrator`() {
+                assertRaises(MissedAdministratorRoleError) { check(user = testManager { data = managerData {} }) }
+
+                verify { listOf(userRepository, communities) wasNot Called }
+            }
+
+            @Test
+            fun `should raise UserNotExistsError before reading communities if the user is not available and does not exist`() {
+                every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId) } returns null
+                every { userRepository.existsById(userId) } returns false
+
+                assertRaises(UserNotExistsError(userId)) { check() }
+
+                verify { communities wasNot Called }
+            }
+
+            @Test
+            fun `should raise UserAccessDeniedError before reading communities if the user exists but is not available`() {
+                every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId) } returns null
+                every { userRepository.existsById(userId) } returns true
+
+                assertRaises(UserAccessDeniedError(userId)) { check() }
+
+                verify { communities wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should read neither the last login nor writable storage when checking a user`() {
+                every {
+                    userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId)
+                } returns administrator
+                every { communities.findByOwner(administrator.id) } returns emptyList()
+
+                check().getOrThrow()
+
+                verify(exactly = 0) { userRepository.findLastLogins(any()) }
+                verify { listOf(managerInvites, developerInvites, observers, contests, multipleRoleUsers) wasNot Called }
+            }
+        }
+
+        private fun check(user: MultipleRoleUser = administrator) = operations.checkUserAccess(user = user, userId = userId)
+    }
+
+    @Nested
     inner class CreateCommunityInviteTests {
 
         @Nested
@@ -1251,6 +1328,66 @@ class AdministratorOperationsTests {
     }
 
     @Nested
+    inner class CheckCommunityAccessTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the owned community`() {
+                val community = testCommunity()
+                every { communities.findById(communityId) } returns community
+
+                val actual = check().getOrThrow()
+
+                assertSame(community, actual)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedAdministratorRoleError before reading storage if user is not an Administrator`() {
+                assertRaises(MissedAdministratorRoleError) { check(user = testManager { data = managerData {} }) }
+
+                verify { communities wasNot Called }
+            }
+
+            @Test
+            fun `should raise CommunityNotExistsError if community does not exist`() {
+                every { communities.findById(communityId) } returns null
+
+                assertRaises(CommunityNotExistsError(communityId)) { check() }
+            }
+
+            @Test
+            fun `should raise CommunityAccessDeniedError if community belongs to another user`() {
+                every { communities.findById(communityId) } returns testCommunity(ownerId = 99)
+
+                assertRaises(CommunityAccessDeniedError(communityId)) { check() }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should read only the community without its invites when checking it`() {
+                every { communities.findById(communityId) } returns testCommunity()
+
+                check().getOrThrow()
+
+                verify { communities.findById(communityId) }
+                confirmVerified(communities)
+                verify { listOf(managerInvites, developerInvites, userRepository, clock, config) wasNot Called }
+            }
+        }
+
+        private fun check(user: MultipleRoleUser = administrator) = operations.checkCommunityAccess(user = user, communityId = communityId)
+    }
+
+    @Nested
     inner class RefreshCommunityInviteTests {
 
         @Nested
@@ -1442,6 +1579,37 @@ class AdministratorOperationsTests {
                 assertRaises(MissedAdministratorRoleError) { operations.viewCommunities(testManager { data = managerData {} }) }
 
                 verify { listOf(communities, userRepository) wasNot Called }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckAdministratorRoleTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the communities of the administrator in the port order without counting their users`() {
+                val first = testCommunity()
+                val second = testCommunity(id = 42)
+                every { communities.findByOwner(administrator.id) } returns listOf(first, second)
+
+                val actual = operations.checkAdministratorRole(administrator).getOrThrow()
+
+                assertEquals(listOf(first, second), actual)
+                verify { userRepository wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedAdministratorRoleError before reading storage if user is not an Administrator`() {
+                assertRaises(MissedAdministratorRoleError) { operations.checkAdministratorRole(nonAdministrator) }
+
+                verify { communities wasNot Called }
             }
         }
     }

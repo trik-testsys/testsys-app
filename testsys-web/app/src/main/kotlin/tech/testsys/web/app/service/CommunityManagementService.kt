@@ -21,6 +21,13 @@ interface CommunityManagementService : UserListingService {
     fun viewCommunities(): List<Pair<CommunityVo, Long>>
 
     /**
+     * Checks access to a community without its invite codes and users, so that its page refuses before the blocks load.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun checkCommunityAccess(communityId: CommunityId): CommunityVo
+
+    /**
      * Edits a visible community.
      *
      * @since 1.0.0-beta.1

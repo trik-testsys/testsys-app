@@ -16,7 +16,6 @@ class SupervisorCommunityView(headers: CabinetHeaders, service: SupervisorServic
     headers,
     service,
     SupervisorView::class.java,
-    SupervisorView::class.java,
     currentLocalization().pageSupervisor.title(),
     ::openSupervisorUser,
 )

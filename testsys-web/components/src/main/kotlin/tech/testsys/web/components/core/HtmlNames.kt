@@ -11,13 +11,10 @@ internal enum class HtmlTag(internal val value: String) {
     ColGroup("colgroup"),
     I("i"),
     Mark("mark"),
-    Small("small"),
     Span("span"),
     Table("table"),
-    Tbody("tbody"),
     Td("td"),
     Th("th"),
-    Thead("thead"),
     Tr("tr"),
 }
 
@@ -33,7 +30,6 @@ internal enum class HtmlAttribute(internal val value: String) {
     Class("class"),
     ColSpan("colspan"),
     DataHeaderKey("data-header-key"),
-    DataKey("data-key"),
     DataGuideTitle("data-guide-title"),
     DataGuideDescription("data-guide-description"),
     DataGuideOrder("data-guide-order"),

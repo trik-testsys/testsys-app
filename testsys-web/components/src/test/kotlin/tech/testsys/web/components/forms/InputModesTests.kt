@@ -1,6 +1,6 @@
 package tech.testsys.web.components.forms
 
-import com.vaadin.flow.component.checkbox.Switch
+import com.vaadin.flow.component.checkbox.Checkbox
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -15,7 +15,7 @@ internal class InputModesTests : MockVaadinTests() {
     private lateinit var code: ValueInput<String>
 
     @Test
-    fun `should retain switch and code values when their block becomes read-only`() {
+    fun `should retain checkbox and code values when their block becomes read-only`() {
         buildModes()
         toggle.value = true
         code.value = "one\ntwo"
@@ -29,10 +29,10 @@ internal class InputModesTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should mark switch and code editor as inputs that row clicks ignore`() {
+    fun `should mark checkbox and code editor as inputs that row clicks ignore`() {
         buildModes()
 
-        assertTrue(control<Switch>("Switch").element.hasAttribute("data-ts-input"))
+        assertTrue(control<Checkbox>("Checkbox").element.hasAttribute("data-ts-input"))
         assertTrue(control<CodeEditorField>("Code").element.hasAttribute("data-ts-input"))
     }
 
@@ -41,7 +41,7 @@ internal class InputModesTests : MockVaadinTests() {
             row {
                 block = block {
                     row {
-                        toggle = switchInput("Switch", labelSize = 2, size = 2)
+                        toggle = checkbox("Checkbox", labelSize = 2, size = 2)
                         code = codeEditor("Code", labelSize = 2, size = 6)
                     }
                 }

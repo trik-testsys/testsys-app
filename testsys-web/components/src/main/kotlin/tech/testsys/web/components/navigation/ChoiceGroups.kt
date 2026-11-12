@@ -27,15 +27,13 @@ import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.display.CounterKind
 import tech.testsys.web.components.display.buildCounter
-import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.BlockScope
-import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.texts.UiLocalization
 
 private const val MIN_OPTIONS = 2
 
-/** Option of a tab or pill group; [countKind] is `null` for a pill, which has no counter. */
-internal class ChoiceOption<V>(val value: V, val label: String, val count: Int?, val countKind: CounterKind?)
+/** Option of a tab group with its counter. */
+internal class ChoiceOption<V>(val value: V, val label: String, val count: Int?, val countKind: CounterKind)
 
 /**
  * Scope of block tabs: the tabs in order.
@@ -60,27 +58,7 @@ class TabsScope<V> internal constructor() {
 }
 
 /**
- * Scope of pills: the pills in order.
- *
- * @param V the type of the pill values.
- * @since 1.0.0-beta.1
- */
-@TestSysDsl
-class PillsScope<V> internal constructor() {
-    internal val options = mutableListOf<ChoiceOption<V>>()
-
-    /**
-     * Adds a pill of [value] named [label].
-     *
-     * @since 1.0.0-beta.1
-     */
-    fun pill(value: V, label: String) {
-        options += ChoiceOption(value, label, count = null, countKind = null)
-    }
-}
-
-/**
- * Handle of a group of tabs or pills: the chosen value and the listener of choices.
+ * Handle of a group of tabs: the chosen value and the listener of choices.
  *
  * @param V the type of the values.
  * @property value the chosen value; setting it does not run the listener.
@@ -166,41 +144,6 @@ fun <V> BlockScope.tabs(initial: V, content: TabsScope<V>.() -> Unit): TabsHandl
 }
 
 /**
- * Adds pills that switch a category of what the block shows, e.g. in the block head.
- *
- * @param V the type of the pill values.
- * @throws IllegalArgumentException if there are fewer than two pills, their values repeat or [initial] is not among them.
- * @since 1.0.0-beta.1
- */
-fun <V> ContentScope.pills(initial: V, content: PillsScope<V>.() -> Unit): ChoiceHandle<V> {
-    val group = pillGroup(initial, texts, content)
-    add(group.root)
-    return ChoiceHandle(group)
-}
-
-/**
- * Adds pills on [size] columns of the row, or on the rest of it.
- *
- * @param V the type of the pill values.
- * @throws IllegalArgumentException if there are fewer than two pills, their values repeat or [initial] is not among them.
- * @since 1.0.0-beta.1
- */
-fun <V> BlockRowScope.pills(initial: V, size: Int? = null, content: PillsScope<V>.() -> Unit): ChoiceHandle<V> {
-    val group = pillGroup(initial, texts, content)
-    place(size, group.root)
-    return ChoiceHandle(group)
-}
-
-private fun <V> pillGroup(initial: V, texts: UiLocalization, content: PillsScope<V>.() -> Unit): ChoiceGroup<V> = ChoiceGroup(
-    options = PillsScope<V>().apply(content).options,
-    initial = initial,
-    root = Div().apply { addClassName(CssClass.Pills) },
-    buttonClass = CssClass.Pill,
-    activeClass = CssClass.PillActive,
-    texts = texts,
-)
-
-/**
  * Buttons of [options] in [root] with [initial] chosen; the chosen button carries [activeClass] and `aria-pressed`.
  */
 internal class ChoiceGroup<V>(
@@ -258,13 +201,11 @@ internal class ChoiceGroup<V>(
         element.setType(ElementType.Button)
         add(Text(option.label))
 
-        option.countKind?.let { kind ->
-            val counter = buildCounter(option.count ?: 0, kind, texts)
-            counts[option.value] = option.count
-            showCount(counter, option.count)
-            counters[option.value] = counter
-            add(counter)
-        }
+        val counter = buildCounter(option.count ?: 0, option.countKind, texts)
+        counts[option.value] = option.count
+        showCount(counter, option.count)
+        counters[option.value] = counter
+        add(counter)
 
         addClickListener { choose(option.value) }
     }

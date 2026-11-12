@@ -28,6 +28,7 @@ import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.FileDropHandle
 import tech.testsys.web.components.forms.UploadLimits
@@ -35,6 +36,7 @@ import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.fileDrop
 import tech.testsys.web.components.forms.integerInput
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.texts.currentLocalization
@@ -78,26 +80,37 @@ class DeveloperResourceView(
     }
 
     private fun show(taskId: TaskId, versionBucket: VersionBucket) {
-        // Checks the role, the task, its owner and the chain before the task, so that a refusal opens its error screen.
-        val history = developerService.viewResource(taskId, versionBucket).sortedWith(NEWEST_FIRST)
-        val (task, _) = developerService.viewTask(taskId)
-        val latest = history.first().first
+        // Checks the role, the task, the chain and access before the blocks load, so that a refusal opens its error screen.
+        val (task, latest) = developerService.checkResourceAccess(taskId, versionBucket)
+        val history = SharedFetch { developerService.viewResource(taskId, versionBucket).sortedWith(NEWEST_FIRST) }
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.resourceTitle(type = titleTypeOf(kindOf(latest)), name = latest.name)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 crumb(texts.title(), DeveloperView::class.java)
                 crumb(localization.pageCabinet.sectionTasks(), DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
                 crumb(texts.taskTitle(name = task.name), DeveloperTaskView::class.java, taskParameters(taskId))
             }
             guide(texts.resourceGuide())
             detailsBlock(task, history)
-            historyBlock(task, history)
+            historyBlock(task, latest, history)
         }
     }
 
-    private fun PageScope.detailsBlock(task: TaskVo, history: List<Pair<ResourceVo, SolutionVo?>>) {
+    private fun PageScope.detailsBlock(task: TaskVo, history: SharedFetch<List<Pair<ResourceVo, SolutionVo?>>>) {
+        val texts = currentLocalization().pageDeveloper
+        var form: DetailsForm? = null
+        row {
+            block(title = texts.details()) {
+                guide(texts.editingGuide())
+                editing(onSave = { form?.save?.invoke() == true }, onCancel = { form?.cancel?.invoke() })
+                load(history.forLoad()) { versions -> form = detailsRows(task, versions) }
+            }
+        }
+    }
+
+    /** Adds the rows of the details of the latest version of [history] and returns their form. */
+    private fun BlockScope.detailsRows(task: TaskVo, history: List<Pair<ResourceVo, SolutionVo?>>): DetailsForm {
         val texts = currentLocalization().pageDeveloper
         val (latest, solution) = history.first()
         val draft = Binder<ResourceDraft>()
@@ -105,118 +118,117 @@ class DeveloperResourceView(
         val fileCopy = AtomicReference<Pair<String, FileData>?>()
         lateinit var drop: FileDropHandle
         row {
-            block(title = texts.details()) {
-                guide(texts.editingGuide())
-                editing(
-                    onSave = {
-                        val values = ResourceDraft()
-                        val file = fileCopy.get()?.takeIf { (id, _) -> id in drop.fileIds }?.second
-                        draft.writeBeanIfValid(values) && save(task, history, values, file)
-                    },
-                    onCancel = {
-                        draft.readBean(initial)
-                        fileCopy.set(null)
-                        drop.clear()
-                    },
-                )
-                row {
-                    codeInput(texts.id(), labelSize = 4, size = 8) {
-                        value = latest.versionBucket.value.toString()
-                        isEditable = false
-                    }
-                    textInput(texts.type(), labelSize = 4, size = 8) {
-                        value = typeOf(latest)
-                        isEditable = false
-                    }
+            codeInput(texts.id(), labelSize = 4, size = 8) {
+                value = latest.versionBucket.value.toString()
+                isEditable = false
+            }
+            textInput(texts.type(), labelSize = 4, size = 8) {
+                value = typeOf(latest)
+                isEditable = false
+            }
+        }
+        row {
+            codeInput(texts.resourceLatestId(), labelSize = 4, size = 8) {
+                value = latest.id.value.toString()
+                isEditable = false
+            }
+        }
+        row {
+            codeInput(texts.resourceWorkingId(), labelSize = 4, size = 8) {
+                value = attachedVersionId(history, task.wip, texts.resourceNoWorking())
+                isEditable = false
+            }
+            codeInput(texts.resourceCommittedId(), labelSize = 4, size = 8) {
+                value = attachedVersionId(history, task.lastCommitted, texts.resourceNotCommitted())
+                isEditable = false
+            }
+        }
+        row {
+            textInput(texts.name(), labelSize = 4, size = 8) {
+                draft.forField(this)
+                    .nameRules(texts.nameRequired())
+                    .bind({ values -> values.name }, { values, name -> values.name = name })
+            }
+            languageOf(latest, solution)?.let { language ->
+                textInput(texts.language(), labelSize = 4, size = 8) {
+                    value = language
+                    isEditable = false
                 }
-                row {
-                    codeInput(texts.resourceLatestId(), labelSize = 4, size = 8) {
-                        value = latest.id.value.toString()
-                        isEditable = false
-                    }
-                }
-                row {
-                    codeInput(texts.resourceWorkingId(), labelSize = 4, size = 8) {
-                        value = attachedVersionId(history, task.wip, texts.resourceNoWorking())
-                        isEditable = false
-                    }
-                    codeInput(texts.resourceCommittedId(), labelSize = 4, size = 8) {
-                        value = attachedVersionId(history, task.lastCommitted, texts.resourceNotCommitted())
-                        isEditable = false
-                    }
-                }
-                row {
-                    textInput(texts.name(), labelSize = 4, size = 8) {
-                        draft.forField(this)
-                            .nameRules(texts.nameRequired())
-                            .bind({ values -> values.name }, { values, name -> values.name = name })
-                    }
-                    languageOf(latest, solution)?.let { language ->
-                        textInput(texts.language(), labelSize = 4, size = 8) {
-                            value = language
-                            isEditable = false
-                        }
-                    }
-                }
-                row {
-                    textInput(texts.file(), labelSize = 4, size = 8) {
-                        value = fileNameOf(latest, solution)
-                        isEditable = false
-                    }
-                    drop = fileDrop(
-                        texts.resourceNewFile(),
-                        FILE_LIMITS,
-                        labelSize = 4,
-                        size = 8,
-                        consume = { file -> fileCopy.set(file.id to file.toFileData()) },
-                    )
-                }
-                if (latest is DeveloperSolutionVo) {
-                    row {
-                        integerInput(texts.expectedScore(), labelSize = 4, size = 8, min = 0) {
-                            draft.forField(this)
-                                .asRequired(texts.scoreRequired())
-                                .bind({ values -> values.score }, { values, score -> values.score = score })
-                        }
-                    }
+            }
+        }
+        row {
+            textInput(texts.file(), labelSize = 4, size = 8) {
+                value = fileNameOf(latest, solution)
+                isEditable = false
+            }
+            drop = fileDrop(
+                texts.resourceNewFile(),
+                FILE_LIMITS,
+                labelSize = 4,
+                size = 8,
+                consume = { file -> fileCopy.set(file.id to file.toFileData()) },
+            )
+        }
+        if (latest is DeveloperSolutionVo) {
+            row {
+                integerInput(texts.expectedScore(), labelSize = 4, size = 8, min = 0) {
+                    draft.forField(this)
+                        .asRequired(texts.scoreRequired())
+                        .bind({ values -> values.score }, { values, score -> values.score = score })
                 }
             }
         }
 
         draft.readBean(initial)
+        return DetailsForm(
+            save = {
+                val values = ResourceDraft()
+                val file = fileCopy.get()?.takeIf { (id, _) -> id in drop.fileIds }?.second
+                draft.writeBeanIfValid(values) && save(task, history, values, file)
+            },
+            cancel = {
+                draft.readBean(initial)
+                fileCopy.set(null)
+                drop.clear()
+            },
+        )
     }
 
-    private fun PageScope.historyBlock(task: TaskVo, history: List<Pair<ResourceVo, SolutionVo?>>) {
+    private fun PageScope.historyBlock(task: TaskVo, latest: ResourceVo, history: SharedFetch<List<Pair<ResourceVo, SolutionVo?>>>) {
         val texts = currentLocalization().pageDeveloper
-        val isSolution = history.first().first is DeveloperSolutionVo
+        val isSolution = latest is DeveloperSolutionVo
         row {
             block(title = texts.resourceHistoryTitle()) {
                 guide(texts.resourceHistoryGuide())
-                table(
-                    key = { (version, _): Pair<ResourceVo, SolutionVo?> -> version.id },
-                    fetch = { request -> pageOf(history, request) },
-                ) {
-                    codeColumn(texts.versionId(), size = 4) { (version, _) -> version.id.value.toString() }
-                    dateTimeColumn(texts.resourceHistoryChangedAt(), size = 3) { (version, _) -> version.createdAt.toUserDateTime() }
-                    textColumn(texts.name(), size = if (isSolution) 4 else 5) { (version, _) -> version.name }
-                    textColumn(texts.file(), size = if (isSolution) 4 else 6) { (version, solution) -> fileNameOf(version, solution) }
-                    if (isSolution) {
-                        numberColumn(texts.score(), size = 3) { (version, _) -> (version as? DeveloperSolutionVo)?.expectedScore?.value }
-                    }
-                    column(texts.attached(), size = 5) { (version, _) ->
-                        if (version.id in idsOf(task.lastCommitted)) badge(texts.attachedCommitted(), tone = Tone.Success)
-                        if (version.id in idsOf(task.wip)) badge(texts.attachedWorking(), tone = Tone.Warning)
-                    }
-                    column("") { (version, _) ->
-                        iconDownloadAction(label = texts.download(), produce = { _ ->
-                            val file = developerService.downloadResourceVersion(task.id, version.versionBucket, version.id)
-                            val bytes = fileContentReader.read(file)
-                            DownloadContent(
-                                filename = file.uploadedFilename,
-                                contentType = FILE_CONTENT_TYPE,
-                                length = bytes.size.toLong(),
-                            ) { ByteArrayInputStream(bytes) }
-                        })
+                load(history.forLoad()) { versions ->
+                    table(
+                        key = { (version, _): Pair<ResourceVo, SolutionVo?> -> version.id },
+                        fetch = { request -> pageOf(versions, request) },
+                    ) {
+                        codeColumn(texts.versionId(), size = 4) { (version, _) -> version.id.value.toString() }
+                        dateTimeColumn(texts.resourceHistoryChangedAt(), size = 3) { (version, _) -> version.createdAt.toUserDateTime() }
+                        textColumn(texts.name(), size = if (isSolution) 4 else 5) { (version, _) -> version.name }
+                        textColumn(texts.file(), size = if (isSolution) 4 else 6) { (version, solution) -> fileNameOf(version, solution) }
+                        if (isSolution) {
+                            numberColumn(texts.score(), size = 3) { (version, _) ->
+                                (version as? DeveloperSolutionVo)?.expectedScore?.value
+                            }
+                        }
+                        column(texts.attached(), size = 5) { (version, _) ->
+                            if (version.id in idsOf(task.lastCommitted)) badge(texts.attachedCommitted(), tone = Tone.Success)
+                            if (version.id in idsOf(task.wip)) badge(texts.attachedWorking(), tone = Tone.Warning)
+                        }
+                        column("") { (version, _) ->
+                            iconDownloadAction(label = texts.download(), produce = { _ ->
+                                val file = developerService.downloadResourceVersion(task.id, version.versionBucket, version.id)
+                                val bytes = fileContentReader.read(file)
+                                DownloadContent(
+                                    filename = file.uploadedFilename,
+                                    contentType = FILE_CONTENT_TYPE,
+                                    length = bytes.size.toLong(),
+                                ) { ByteArrayInputStream(bytes) }
+                            })
+                        }
                     }
                 }
             }

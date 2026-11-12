@@ -14,6 +14,7 @@ import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.forms.lookup
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.navigation.PageHeadScope
@@ -62,11 +63,10 @@ internal fun competitionContestParameters(competitionId: CompetitionId, contestI
     mapOf(COMPETITION_ID_PARAMETER to competitionId.value.toString(), MANAGER_CONTEST_ID_PARAMETER to contestId.value.toString()),
 )
 
-/** Adds the breadcrumbs from the main page to the [section] of the Cabinet of a Manager. */
+/** Adds the breadcrumbs from the role page to the [section] of the Cabinet of a Manager. */
 internal fun PageHeadScope.managerCrumbs(section: String) {
     val localization = currentLocalization()
     val cabinet = localization.pageCabinet
-    crumb(cabinet.home(), MultiMainView::class.java)
     crumb(localization.pageManager.title(), ManagerView::class.java)
     val title = if (section == CLASSES_SECTION) cabinet.sectionClasses() else cabinet.sectionCompetitions()
     crumb(title, ManagerView::class.java, managerSection(section))
@@ -83,12 +83,12 @@ internal fun formatDuration(duration: Duration?): String? =
     duration?.let { value -> "${value.toHours()}:${value.toMinutesPart().toString().padStart(2, '0')}" }
 
 /**
- * Adds the block of [contests] added to a class or competition: a row opens the page of the contest through [onOpen], and
- * the action of adding a contest adds one shared to the communities of the manager through [onAdd]
- * (testsys.user.multi.manager.addContest).
+ * Adds the block of the contests added to a class or competition, which [fetch] returns in the background: a row opens the
+ * page of the contest through [onOpen], and the action of adding a contest adds one shared to the communities of the manager
+ * through [onAdd] (testsys.user.multi.manager.addContest).
  */
 internal fun PageScope.managerContestsBlock(
-    contests: List<ContestVo>,
+    fetch: () -> List<ContestVo>,
     service: ManagerService,
     onOpen: (ContestVo) -> Unit,
     onAdd: (ContestVo) -> Unit,
@@ -136,13 +136,15 @@ internal fun PageScope.managerContestsBlock(
     row {
         block(title = localization.pageCabinet.sectionContests()) {
             guide(texts.contestsGuide())
-            table(key = { contest: ContestVo -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
-                textColumn(texts.name(), size = 9) { contest -> contest.name }
-                dateTimeColumn(texts.startsAt(), size = 5) { contest -> contest.startsAt?.toUserDateTime() }
-                dateTimeColumn(texts.endsAt(), size = 5) { contest -> contest.endsAt?.toUserDateTime() }
-                codeColumn(texts.attemptDuration()) { contest -> formatDuration(contest.attemptDuration) }
-                empty(texts.contestsEmpty(), texts.contestsEmptyHint())
-                onRowClick(isNavigation = true, listener = onOpen)
+            load(fetch) { contests ->
+                table(key = { contest: ContestVo -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
+                    textColumn(texts.name(), size = 9) { contest -> contest.name }
+                    dateTimeColumn(texts.startsAt(), size = 5) { contest -> contest.startsAt?.toUserDateTime() }
+                    dateTimeColumn(texts.endsAt(), size = 5) { contest -> contest.endsAt?.toUserDateTime() }
+                    codeColumn(texts.attemptDuration()) { contest -> formatDuration(contest.attemptDuration) }
+                    empty(texts.contestsEmpty(), texts.contestsEmptyHint())
+                    onRowClick(isNavigation = true, listener = onOpen)
+                }
             }
             actions {
                 action(texts.contestsAdd()) {

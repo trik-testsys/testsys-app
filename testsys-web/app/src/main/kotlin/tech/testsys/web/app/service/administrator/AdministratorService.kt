@@ -68,6 +68,17 @@ class AdministratorService(private val operations: AdministratorOperations, priv
         return user.toAdminVo() to lastLogin
     }
 
+    /**
+     * Runs [AdministratorOperations.checkUserAccess].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkUserAccess(userId: UserId): Pair<AdminUserVo, Set<CommunityId>> {
+        val (user, communities) = operations.checkUserAccess(currentUser.multipleRoleUser(), userId).getOrThrow()
+        return user.toAdminVo() to communities
+    }
+
     @Transactional(readOnly = true)
     override fun viewUserTasks(userId: UserId): List<Triple<TaskVo, TaskValidationRequestVo?, List<CommunityVo>>> =
         operations.viewUserTasks(currentUser.multipleRoleUser(), userId).getOrThrow().map { (task, request, communities) ->
@@ -109,6 +120,19 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     @Transactional(readOnly = true)
     override fun viewCommunityInvites(communityId: CommunityId): List<CommunityInviteVo> =
         operations.viewCommunityInvites(currentUser.multipleRoleUser(), communityId).getOrThrow().map { invite -> invite.toVo() }
+
+    @Transactional(readOnly = true)
+    override fun checkCommunityAccess(communityId: CommunityId): CommunityVo =
+        operations.checkCommunityAccess(currentUser.multipleRoleUser(), communityId).getOrThrow().toVo()
+
+    /**
+     * Runs [AdministratorOperations.checkAdministratorRole].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun checkAdministratorRole(): List<CommunityVo> =
+        operations.checkAdministratorRole(currentUser.multipleRoleUser()).getOrThrow().map { community -> community.toVo() }
 
     @Transactional(readOnly = true)
     override fun viewCommunities(): List<Pair<CommunityVo, Long>> =

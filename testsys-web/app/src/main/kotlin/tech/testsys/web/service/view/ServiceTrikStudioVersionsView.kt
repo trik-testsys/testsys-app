@@ -9,13 +9,13 @@ import tech.testsys.infra.database.api.service.TrikStudioVersionDeletion
 import tech.testsys.infra.database.api.service.TrikStudioVersionRegistration
 import tech.testsys.infra.database.api.service.TrikStudioVersionRejection
 import tech.testsys.infra.database.api.service.TrikStudioVersionTagChange
+import tech.testsys.web.app.view.LoadedTable
+import tech.testsys.web.app.view.loadTable
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.data.Page
-import tech.testsys.web.components.data.TableHandle
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
@@ -36,7 +36,7 @@ class ServiceTrikStudioVersionsView(
     private val headers: ServiceHeaders,
     private val versions: ServiceTrikStudioVersions,
 ) : TestSysView() {
-    private lateinit var rows: TableHandle<TrikStudioVersion>
+    private lateinit var rows: LoadedTable<TrikStudioVersion>
     private var usedTags: Set<String> = emptySet()
 
     init {
@@ -45,7 +45,7 @@ class ServiceTrikStudioVersionsView(
             row {
                 block(title = "Версии TRIK Studio") {
                     actions { action("Добавить", icon = IconName.Plus) { onClick { openAddDialog() } } }
-                    rows = table(
+                    rows = loadTable(
                         key = { version: TrikStudioVersion -> version.tag },
                         fetch = { request ->
                             val registered = versions.findAll()

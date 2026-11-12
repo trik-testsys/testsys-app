@@ -28,6 +28,7 @@ import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.skipWhenHidden
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockHandle
+import tech.testsys.web.components.layout.BlockScope
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicReference
 
@@ -57,6 +58,18 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
     @Test
     fun `should return to the first page after applying from a later page`() {
         val fixture = Fixture()
+        fixture.filters.isExpanded = true
+        fixture.next()
+        fixture.input.value = "changed"
+
+        fixture.apply()
+
+        assertEquals(listOf("default" to 0, "default" to 2, "changed" to 0), fixture.requests)
+    }
+
+    @Test
+    fun `should refresh the first page of a table declared after the filters`() {
+        val fixture = Fixture(isFiltersFirst = true)
         fixture.filters.isExpanded = true
         fixture.next()
         fixture.input.value = "changed"
@@ -148,9 +161,10 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
     fun `should put filters outside the flush table body regardless of declaration order`() {
         val fixture = Fixture()
 
-        assertTrue("ts-table-filters" in fixture.root.child(0).classes())
-        assertTrue("ts-block__body" in fixture.root.child(1).classes())
-        assertTrue("ts-block__foot" in fixture.root.child(2).classes())
+        assertTrue("ts-block__head" in fixture.root.child(0).classes())
+        assertTrue("ts-table-filters" in fixture.root.child(1).classes())
+        assertTrue("ts-block__body" in fixture.root.child(2).classes())
+        assertTrue("ts-block__foot" in fixture.root.child(3).classes())
     }
 
     @Test
@@ -159,8 +173,8 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
             buildTestPage {
                 row {
                     block {
-                        filters(onApply = { true }, onReset = {}, onRefresh = {}) {}
-                        filters(onApply = { true }, onReset = {}, onRefresh = {}) {}
+                        filters(onApply = { true }, onReset = {}) {}
+                        filters(onApply = { true }, onReset = {}) {}
                     }
                 }
             }
@@ -173,7 +187,7 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
             buildTestPage {
                 row {
                     block(size = 12) {
-                        filters(onApply = { true }, onReset = {}, onRefresh = {}) {
+                        filters(onApply = { true }, onReset = {}) {
                             row { textInput("Too wide", labelSize = 4, size = 21) }
                         }
                     }
@@ -205,7 +219,7 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
                 row {
                     block {
                         loaded = load({ 1 }) { value -> row { text(value.toString()) } }
-                        filters = filters(onApply = { true }, onReset = {}, onRefresh = { loaded.reload() }) {
+                        filters = filters(onApply = { true }, onReset = {}) {
                             row { input = textInput("Draft", labelSize = 4, size = 20) }
                         }
                     }
@@ -225,11 +239,58 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should refresh the first page of the loaded table on apply`() {
+            val offsets = mutableListOf<Int>()
+            var fetches = 0
+            val main = buildTestPage {
+                row {
+                    block {
+                        filters(onApply = { true }, onReset = {}) {}
+                        load({ ++fetches }) { _ ->
+                            table(key = { value: Int -> value }, pageSize = 2, fetch = { request ->
+                                offsets += request.offset
+                                Page((1..8).drop(request.offset).take(request.limit), total = 8)
+                            }) { column("ID") { value -> text(value.toString()) } }
+                        }
+                    }
+                }
+            }
+            queue.runAll()
+            assertInstanceOf(NativeButton::class.java, main.findAll("ts-pager__btn").last())._click()
+
+            assertInstanceOf(Button::class.java, main.find("ts-table-filters__apply"))._click()
+            queue.runAll()
+
+            assertEquals(listOf(0, 2, 0), offsets)
+            assertEquals(1, fetches)
+        }
+
+        @Test
+        fun `should load the block again on apply while the load holds no table`() {
+            var fetches = 0
+            val main = buildTestPage {
+                row {
+                    block {
+                        filters(onApply = { true }, onReset = {}) {}
+                        load({ ++fetches }) { value -> row { text(value.toString()) } }
+                    }
+                }
+            }
+            queue.runAll()
+
+            assertInstanceOf(Button::class.java, main.find("ts-table-filters__apply"))._click()
+            queue.runAll()
+
+            assertEquals(2, fetches)
+            assertTrue("2" in main.find("ts-block__body").element.textRecursively)
+        }
+
+        @Test
         fun `should reject filter declarations inside the replaced load body`() {
             val main = buildTestPage {
                 row {
                     block {
-                        load({ 1 }) { _ -> filters(onApply = { true }, onReset = {}, onRefresh = {}) {} }
+                        load({ 1 }) { _ -> filters(onApply = { true }, onReset = {}) {} }
                     }
                 }
             }
@@ -256,7 +317,8 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
         var value: String = "default"
     }
 
-    private class Fixture {
+    /** Block with a table and its filters; [isFiltersFirst] declares the filters before the table. */
+    private class Fixture(isFiltersFirst: Boolean = false) {
         val binder = Binder<DraftBuilder>()
         val requests = mutableListOf<Pair<String, Int>>()
         private val applied = AtomicReference("default")
@@ -267,34 +329,38 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
         val root = buildTestPage {
             row {
                 block = block {
+                    if (isFiltersFirst) addFilters()
                     table = table(key = { value: Int -> value }, pageSize = 2, fetch = { request ->
                         requests += applied.get() to request.offset
                         Page((1..8).drop(request.offset).take(request.limit), total = 8)
                     }) { column("ID") { value -> text(value.toString()) } }
-                    filters = filters(
-                        onApply = {
-                            val candidate = DraftBuilder()
-                            binder.writeBeanIfValid(candidate).also { valid -> if (valid) applied.set(candidate.value) }
-                        },
-                        onReset = {
-                            applied.set("default")
-                            binder.readBean(DraftBuilder())
-                        },
-                        onRefresh = { table.refresh(toFirstPage = true) },
-                    ) {
-                        row {
-                            input = textInput("Query", labelSize = 4, size = 20) {
-                                binder.forField(this).asRequired("Required")
-                                    .bind({ draft -> draft.value }, { draft, value -> draft.value = value }).skipWhenHidden()
-                            }
-                        }
-                    }
+                    if (!isFiltersFirst) addFilters()
                 }
             }
         }.child(0).child(0)
 
         init {
             binder.readBean(DraftBuilder())
+        }
+
+        private fun BlockScope.addFilters() {
+            filters = filters(
+                onApply = {
+                    val candidate = DraftBuilder()
+                    binder.writeBeanIfValid(candidate).also { valid -> if (valid) applied.set(candidate.value) }
+                },
+                onReset = {
+                    applied.set("default")
+                    binder.readBean(DraftBuilder())
+                },
+            ) {
+                row {
+                    input = textInput("Query", labelSize = 4, size = 20) {
+                        binder.forField(this).asRequired("Required")
+                            .bind({ draft -> draft.value }, { draft, value -> draft.value = value }).skipWhenHidden()
+                    }
+                }
+            }
         }
 
         fun apply() = assertInstanceOf(Button::class.java, root.find("ts-table-filters__apply"))._click()

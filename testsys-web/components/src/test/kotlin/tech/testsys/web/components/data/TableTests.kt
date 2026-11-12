@@ -626,6 +626,8 @@ class TableTests : MockVaadinTests() {
 
         val viewport = ui().find("ts-table-scroll")
         assertTrue(viewport.isVisible)
+        assertEquals("group", viewport.element.getAttribute("role"))
+        assertEquals(testTexts.messages.uiData.tableRegion(), viewport.element.getAttribute("aria-label"))
         assertEquals(listOf(ui().find("ts-table")), viewport.children.toList())
         assertTrue(ui().find("ts-block__foot").isVisible)
         assertTrue(ui().find("ts-block__foot").find("ts-table-pager").isVisible)

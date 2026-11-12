@@ -72,6 +72,10 @@ internal class DataTable<T>(
     val root: Div = Div(table).apply {
         addClassName(CssClass.TableScroll)
         element.setAttribute(HtmlAttribute.TabIndex, "0")
+        // A focusable element needs a role and a name to be announced; a group, not a region, so that a page of
+        // several tables does not fill the landmark list with regions of one name.
+        element.setRole(ElementRole.Group)
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiData.tableRegion())
     }
     val pager: Pager = Pager(texts) { target -> load(target) }
 

@@ -482,6 +482,11 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should name the scroll area in table region`() {
+            assertEquals("Таблица", l.uiData.tableRegion())
+        }
+
+        @Test
         fun `should name the previous page button in pagination previous`() {
             assertEquals("Перейти на предыдущую страницу", l.uiData.paginationPrevious())
         }

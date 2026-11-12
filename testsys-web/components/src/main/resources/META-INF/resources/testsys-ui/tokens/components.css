@@ -34,8 +34,8 @@
 .ts-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
 .ts-label { font:var(--fw-medium) var(--fs-xs)/var(--lh-xs) var(--font-sans); color:var(--text-primary); display:flex; justify-content:space-between; gap:var(--space-2); }
 .ts-label--disabled { color:var(--text-tertiary); }
-.ts-hint { font:var(--fw-regular) var(--fs-caption)/var(--lh-caption) var(--font-sans); color:var(--text-secondary); }
-.ts-error { font:var(--fw-medium) var(--fs-caption)/var(--lh-caption) var(--font-sans); color:var(--danger); }
+.ts-hint { font:var(--fw-regular) var(--fs-xs)/var(--lh-xs) var(--font-sans); color:var(--text-secondary); }
+.ts-error { font:var(--fw-medium) var(--fs-xs)/var(--lh-xs) var(--font-sans); color:var(--danger); }
 .ts-trigger { min-height:var(--control-md); width:100%; padding:3px 6px 3px var(--space-3); border:1px solid var(--border-strong); border-radius:var(--radius-md); background:var(--surface-card); display:flex; align-items:center; gap:6px; flex-wrap:wrap; cursor:pointer; font:var(--fw-regular) var(--fs-sm) var(--font-sans); color:var(--text-primary); text-align:left; }
 .ts-trigger--open { border-color:var(--border-focus); box-shadow:0 0 0 3px var(--accent-ring); }
 .ts-trigger--error { border-color:var(--danger); }
@@ -44,8 +44,10 @@
 .ts-trigger__chev { margin-left:auto; color:var(--text-secondary); display:grid; place-items:center; transition:transform var(--dur-fast) var(--ease-out); }
 .ts-trigger--open .ts-trigger__chev { transform:rotate(180deg); }
 .ts-chip { display:inline-flex; align-items:center; gap:4px; height:22px; padding:0 4px 0 var(--space-2); border-radius:var(--radius-sm); background:var(--accent-soft); color:var(--accent); font:var(--fw-medium) var(--fs-xs) var(--font-sans); }
-.ts-chip__x { width:18px; height:18px; border:0; border-radius:var(--radius-xs); background:transparent; color:inherit; display:grid; place-items:center; cursor:pointer; padding:0; }
+.ts-chip__x { position:relative; width:18px; height:18px; border:0; border-radius:var(--radius-xs); background:transparent; color:inherit; display:grid; place-items:center; cursor:pointer; padding:0; }
 .ts-chip__x:hover { background:var(--muted); }
+/* The button stays 18px in a 22px chip; its click area is 24px. */
+.ts-chip__x::after { content:''; position:absolute; inset:-3px; }
 .ts-chip--more { background:var(--muted); color:var(--text-primary); padding:0 var(--space-2); font-weight:var(--fw-semibold); }
 
 /* ---------- Popover / options / menu ---------- */
@@ -338,6 +340,7 @@ a.ts-tab { text-decoration:none; }
 .ts-pager { display:flex; align-items:center; gap:4px; }
 .ts-pager__btn { min-width:var(--control-sm); height:var(--control-sm); padding:0 var(--space-2); border-radius:var(--radius-md); border:1px solid var(--border-strong); background:var(--surface-card); color:var(--text-primary); font:var(--fw-semibold) var(--fs-xs) var(--font-mono); cursor:pointer; display:grid; place-items:center; }
 .ts-pager__btn:hover { background:var(--canvas); }
+.ts-pager__btn:disabled { background:var(--canvas); color:var(--text-disabled); border-color:var(--border-default); cursor:not-allowed; }
 .ts-pager__label { font:var(--fw-medium) var(--fs-xs) var(--font-mono); padding:0 var(--space-2); }
 
 /* ---------- Feedback ---------- */
@@ -401,7 +404,9 @@ a.ts-tab { text-decoration:none; }
 .ts-table th:first-child, .ts-table td:first-child { padding-left:var(--space-3); }
 .ts-table th:last-child, .ts-table td:last-child { padding-right:var(--space-3); }
 .ts-table th.ts-sortable { cursor:pointer; display:table-cell; position:static; }
-.ts-table th.ts-sorted { color:var(--text-primary); }
+.ts-table th.ts-sorted, .ts-table th.ts-sortable:hover { color:var(--text-primary); }
+/* A sortable heading that is not sorted yet shows that it can be; the sorted one carries its arrow in the text. */
+.ts-table th.ts-sortable:not(.ts-sorted)::after { content:' ↕'; color:var(--text-tertiary); }
 .ts-table td { padding:8px var(--space-3); border-bottom:1px solid var(--line-subtle); vertical-align:middle; }
 :where(.ts-table) > tbody > tr:where(:not(.ts-row-empty):nth-child(even)) { background:var(--canvas); }
 :where(.ts-table) > tbody > tr:where(.ts-row-clickable:hover) { background:var(--canvas-deep); }

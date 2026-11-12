@@ -173,9 +173,9 @@ vaadin-button > .ts-spinner { display: inline-block; }
   --vaadin-input-field-label-font-size: var(--fs-xs);
   --vaadin-input-field-label-font-weight: var(--fw-medium);
   --vaadin-input-field-label-color: var(--text-primary);
-  --vaadin-input-field-helper-font-size: var(--fs-caption);
+  --vaadin-input-field-helper-font-size: var(--fs-xs);
   --vaadin-input-field-helper-color: var(--text-secondary);
-  --vaadin-input-field-error-font-size: var(--fs-caption);
+  --vaadin-input-field-error-font-size: var(--fs-xs);
   --vaadin-input-field-error-color: var(--danger);
   --vaadin-input-field-value-font-size: var(--fs-sm);
   /* The input-field part draws a 1px border outside this height; keep the whole control at --control-md. */

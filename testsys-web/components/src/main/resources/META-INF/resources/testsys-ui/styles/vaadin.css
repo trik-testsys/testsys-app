@@ -57,6 +57,7 @@ vaadin-button[data-ts-role] {
   --vaadin-button-font-size: var(--fs-sm);
   --vaadin-button-font-weight: var(--fw-semibold);
   --vaadin-button-gap: var(--space-2);
+  transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 vaadin-button[data-ts-role]:not([disabled]):not([aria-busy="true"]):not([data-ts-cooldown]) { cursor:pointer; }
 vaadin-button[data-ts-size="sm"] {
@@ -77,7 +78,7 @@ vaadin-button[data-ts-role="destructive"] {
   --vaadin-button-text-color: var(--danger-fg);
   --vaadin-button-border: 1px solid var(--danger-border);
 }
-vaadin-button[data-ts-role="destructive"]:hover { --vaadin-button-background: #F7D9D6; }
+vaadin-button[data-ts-role="destructive"]:hover { --vaadin-button-background: var(--danger-bg-hover); }
 vaadin-button[data-ts-role="link"] { --vaadin-button-background: transparent; --vaadin-button-text-color: var(--accent); }
 vaadin-button[data-ts-role="link"]:hover { --vaadin-button-background: var(--info-bg); }
 /* Danger: the confirming action of a dangerous dialog, mirroring .ts-btn--danger; pages have no such role. */
@@ -186,6 +187,11 @@ vaadin-button > .ts-spinner { display: inline-block; }
   background: var(--surface-card);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field):hover::part(input-field) {
+  border-color: var(--ink-400);
 }
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[focused]::part(input-field) {
@@ -195,6 +201,10 @@ vaadin-button > .ts-spinner { display: inline-block; }
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[invalid]::part(input-field) {
   border-color: var(--danger);
+}
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field)[invalid][focused]::part(input-field) {
+  box-shadow: 0 0 0 3px var(--danger-ring);
 }
 :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[disabled]::part(input-field) {
@@ -415,7 +425,6 @@ vaadin-upload-file::part(status) { color:var(--text-secondary); }
 .ts-filedrop > span:first-child { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
 .ts-filedrop__meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); font:var(--fw-regular) var(--fs-xs) var(--font-sans); }
 .ts-filedrop__status:empty, .ts-filedrop__actions:empty { display:none; }
-.ts-date-range { gap:var(--space-2); }
 .ts-date-range > button { flex:none; }
 
 vaadin-date-picker[data-ts-range-part]::part(toggle-button) { display:none; }

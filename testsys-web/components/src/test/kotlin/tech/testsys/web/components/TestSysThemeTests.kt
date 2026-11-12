@@ -263,7 +263,7 @@ class TestSysThemeTests {
 
         assertEquals("fixed", layout["table-layout"])
         assertEquals("var(--ts-table-width)", layout["width"])
-        assertEquals("calc(var(--ts-table-used) * 52px * var(--ts-page-columns, 24) / 24)", layout["min-width"])
+        assertEquals("calc(var(--ts-table-used) * 40px * var(--ts-page-columns, 24) / 24)", layout["min-width"])
         assertEquals("auto", rule(css, ".ts-table-scroll")["overflow-x"])
         assertEquals("anywhere", rule(css, ".ts-table-grid th, .ts-table-grid td")["overflow-wrap"])
     }

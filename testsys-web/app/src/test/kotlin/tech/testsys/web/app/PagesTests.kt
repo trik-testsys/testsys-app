@@ -92,7 +92,8 @@ private typealias ParametersOf = (AppFixtures, User<*>?) -> RouteParameters
 
 /**
  * Opens every page of the application, signed in as a user of the kind the page requires, so that a page build error fails the build.
- * A user with non-fixed roles holds the administrator role, which the Cabinet of an Administrator requires.
+ * A user with non-fixed roles holds the administrator and supervisor roles, which the Cabinets of an Administrator and of a
+ * Supervisor require.
  */
 @Import(PostgresTestConfiguration::class)
 @SpringBootTest
@@ -131,7 +132,7 @@ class PagesTests : MockSpringVaadinTests() {
 
         private val signedInUsers: Map<UserKind, (AppFixtures) -> User<*>> =
             UserKind.entries.associateWith { kind -> { fixtures: AppFixtures -> fixtures.userOf(kind) } } +
-                (UserKind.MULTIPLE_ROLE to AppFixtures::administrator)
+                (UserKind.MULTIPLE_ROLE to { fixtures -> fixtures.grantRole(fixtures.administrator(), CommunityRole.Supervisor) })
 
         private val parameterSets: Map<Class<out Component>, Map<String, ParametersOf>> = mapOf(
             ParticipantView::class.java to mapOf(

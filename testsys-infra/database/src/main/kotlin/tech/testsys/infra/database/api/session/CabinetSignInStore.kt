@@ -47,12 +47,11 @@ interface CabinetSignInStore {
     fun deleteOwn(userId: CabinetSignInUserId, exceptTokenHash: String? = null)
 
     /**
-     * Deletes every sign-in of the user [userId], including those in which the user as a supervisor signed in as
-     * another user, and returns the deleted sign-ins.
+     * Deletes the sign-ins in which the supervisor [supervisorId] signed in as another user and returns them.
      *
-     * @since 1.0.0-beta.1
+     * @since %CURRENT_VERSION%
      */
-    fun deleteAllOf(userId: CabinetSignInUserId): List<StoredCabinetSignIn>
+    fun deleteImpersonatedBy(supervisorId: CabinetSignInUserId): List<StoredCabinetSignIn>
 
     /**
      * Deletes the sign-ins last seen before [before] and returns them.
@@ -80,7 +79,6 @@ enum class CabinetSignInUserKind {
     MULTIPLE_ROLE,
     PARTICIPANT,
     OBSERVER,
-    SUPERVISOR,
 }
 
 /**

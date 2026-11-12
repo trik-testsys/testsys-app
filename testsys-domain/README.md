@@ -21,7 +21,7 @@
 
 - Каждая сущность наследует `DomainEntity<Id>`. Идентификатор — `@JvmInline value class`, реализующий `DomainId`
   (`TaskId`, `ContestId`, …). Равенство сущностей — по классу и `id`.
-  Исключение: `SingleRoleUserId` общий для `Participant`, `Observer` и `Supervisor`.
+  Исключение: `SingleRoleUserId` общий для `Participant` и `Observer`.
 - Сущность неизменяема и разделена на `X(id, createdAt, data)` и полезную нагрузку `XData`.
   Обновление создаёт новый экземпляр через `X.withData { … }`, который переносит токен `version`.
 - `version: EntityVersion?` — непрозрачный токен оптимистической блокировки. В конструктор он не входит:
@@ -118,13 +118,14 @@
 
 ### Пользователи
 
-- `MultipleRoleUser` владеет набором `CompatibleUserRole`: `Developer`, `Student`, `Administrator`, `Judge`, `Manager`.
-- `SingleRoleUser` — один из `Participant`, `Observer`, `Supervisor`.
+- `MultipleRoleUser` владеет набором `CompatibleUserRole`: `Developer`, `Student`, `Administrator`, `Judge`, `Manager`,
+  `Supervisor`.
+- `SingleRoleUser` — один из `Participant`, `Observer`.
 
 Смысл Фиксированных и Нефиксированных Ролей — в [definitions.md](../docs/domain/definitions.md).
 
 `UserData` содержит только Псевдоним. Код-доступа есть только у Пользователей с Фиксированной Ролью: данные
-`Participant`, `Observer` и `Supervisor` реализуют `SingleRoleUserData`
+`Participant` и `Observer` реализуют `SingleRoleUserData`
 ([SingleRoleUser.kt](src/main/kotlin/tech/testsys/domain/model/user/SingleRoleUser.kt)). Пользователь
 с Нефиксированными Ролями входит по почте и Паролю: `MultipleRoleUserData.passwordHash` хранит `PasswordHash`
 ([MultipleRoleUser.kt](src/main/kotlin/tech/testsys/domain/model/user/MultipleRoleUser.kt)) — значение, которое
@@ -150,14 +151,11 @@ database/README.md.
 `withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, hasher)` внутри блока `withData`.
 Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
 
-Порты хранения Пользователей с Фиксированной Ролью `ParticipantRepository`, `ObserverRepository`
-и `SupervisorRepository` расширяют `UserAccessTokenFinder`
+Порты хранения Пользователей с Фиксированной Ролью `ParticipantRepository` и `ObserverRepository`
+расширяют `UserAccessTokenFinder`
 ([UserRepositories.kt](src/main/kotlin/tech/testsys/domain/contract/persistence/repository/UserRepositories.kt)).
 Его метод `findByAccessToken` принимает исходный КД и возвращает Пользователя своего вида, которому этот КД
 присвоен сейчас, или `null`. КД сравнивается без нормализации. Хэширование и сравнение выполняет адаптер хранения.
-
-`SupervisorRepository.findSingle` возвращает единственного Супервайзера Системы или `null`, если его ещё нет. Если
-сохранено несколько Супервайзеров, метод бросает `IllegalStateException`: схема БД второго Супервайзера не запрещает.
 
 `MultipleRoleUserRepository.findByEmail` и `RegistrationRequestRepository.findByEmail` сравнивают почту точно,
 без нормализации; нормализует почту операция.
@@ -167,14 +165,14 @@ database/README.md.
 сразу для нескольких Пользователей.
 
 [`SupervisorUserReadPort`](src/main/kotlin/tech/testsys/domain/contract/persistence/SupervisorUserReadPort.kt)
-читает всех Пользователей, кроме Супервайзеров, с фильтрацией и постраничной выдачей. Он также читает
+читает всех Пользователей, кроме имеющих Роль Супервайзера, с фильтрацией и постраничной выдачей. Он также читает
 одного Пользователя и считает Пользователей Сообщества. [`SupervisorCommunityReadPort`](src/main/kotlin/tech/testsys/domain/contract/persistence/SupervisorCommunityReadPort.kt)
 возвращает все Сообщества по идентификатору.
 
 `MultipleRoleUserRepository.addCommunityMembership` включает Пользователя в Сообщество в Роли из перечисления
 [`CommunityRole`](src/main/kotlin/tech/testsys/domain/model/user/CommunityRole.kt): Администратора, Организатора,
-Разработчика, Ученика или Судьи. Роль выбирает операция: создание Сообщества, Код-приглашение или решение
-Администратора или Супервайзера.
+Разработчика, Ученика, Судьи или Супервайзера. Роль выбирает операция: создание Сообщества, Код-приглашение или
+решение Администратора или Супервайзера. Роль Супервайзера выдаёт служебный кабинет.
 `MultipleRoleUserRepository.removeCommunityMembership` исключает Пользователя из Сообщества в такой Роли; Роль и её
 данные остаются у Пользователя, даже если членств в этой Роли больше нет.
 

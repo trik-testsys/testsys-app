@@ -124,7 +124,8 @@ class RememberedSignIns(
     fun tokenHashOf(session: HttpSession): String? = session.getAttribute(TOKEN_HASH_ATTRIBUTE) as? String
 
     /**
-     * Forgets the sign-in of the session or the cookie of [request] and clears the cookie on [response].
+     * Forgets the sign-in of the session or the cookie of [request] and clears the cookie on [response]; a session whose
+     * sign-in was already deleted elsewhere keeps its token digest.
      *
      * @since 1.0.0-beta.1
      */
@@ -132,8 +133,8 @@ class RememberedSignIns(
         val session = request.getSession(false)
         val hash = session?.let(::tokenHashOf)
             ?: request.cookies?.firstOrNull { cookie -> cookie.name == cookieName }?.value?.let(tokenHash)
-        hash?.let(store::delete)
-        session?.removeAttribute(TOKEN_HASH_ATTRIBUTE)
+        // The kept digest tells the closing of the session that the end of the sign-in was recorded where it was deleted.
+        if (hash != null && store.delete(hash)) session?.removeAttribute(TOKEN_HASH_ATTRIBUTE)
         response.addCookie(cookie(request, "", isSet = false))
     }
 

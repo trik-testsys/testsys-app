@@ -515,9 +515,13 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                     case.copy(values = singleRoleCredentials + case.values)
                 },
             )
-            addAll(enumCases("ts_single_role_to_user", "single_role", listOf("PARTICIPANT", "OBSERVER", "SUPERVISOR")))
+            addAll(enumCases("ts_single_role_to_user", "single_role", listOf("PARTICIPANT", "OBSERVER"), rejected = listOf("SUPERVISOR")))
             addAll(
-                enumCases("ts_multiple_role_to_user", "multiple_role", listOf("DEVELOPER", "STUDENT", "ADMINISTRATOR", "JUDGE", "MANAGER")),
+                enumCases(
+                    table = "ts_multiple_role_to_user",
+                    column = "multiple_role",
+                    values = listOf("DEVELOPER", "STUDENT", "ADMINISTRATOR", "JUDGE", "MANAGER", "SUPERVISOR"),
+                ),
             )
             addAll(enumCases("ts_solution", "language", listOf("PYTHON", "JAVA_SCRIPT", "VISUAL_LANGUAGE")))
             addAll(enumCases("ts_exercise", "language", listOf("PYTHON", "JAVA_SCRIPT", "VISUAL_LANGUAGE")))
@@ -525,7 +529,14 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             addAll(enumCases("ts_community_invite", "code_hash_algorithm", listOf("IDENTITY")))
             addAll(enumCases("ts_community_invite", "role", listOf("MANAGER", "DEVELOPER")))
             addAll(enumCases("ts_diagnostic_report", "severity", listOf("INFO", "WARNING", "ERROR")))
-            addAll(enumCases("ts_cabinet_sign_in", "user_kind", listOf("MULTIPLE_ROLE", "PARTICIPANT", "OBSERVER", "SUPERVISOR")))
+            addAll(
+                enumCases(
+                    table = "ts_cabinet_sign_in",
+                    column = "user_kind",
+                    values = listOf("MULTIPLE_ROLE", "PARTICIPANT", "OBSERVER"),
+                    rejected = listOf("SUPERVISOR"),
+                ),
+            )
             addAll(cabinetSignInUsers())
             addAll(
                 enumCases(
@@ -643,8 +654,14 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             constraint = "ck_ts_user_access_token_hash_algorithm",
         )
 
-        private fun enumCases(table: String, column: String, values: List<String>): List<RowCase> = (values + "UNKNOWN").map { value ->
-            RowCase(table = table, values = mapOf(column to "'$value'"), isAccepted = value in values, constraint = "ck_${table}_$column")
-        }
+        private fun enumCases(table: String, column: String, values: List<String>, rejected: List<String> = emptyList()): List<RowCase> =
+            (values + rejected + "UNKNOWN").map { value ->
+                RowCase(
+                    table = table,
+                    values = mapOf(column to "'$value'"),
+                    isAccepted = value in values,
+                    constraint = "ck_${table}_$column",
+                )
+            }
     }
 }

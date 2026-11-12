@@ -29,6 +29,7 @@ import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.ParticipantVo
 import tech.testsys.web.app.service.RoleVo
 import tech.testsys.web.app.service.StudentRoleVo
+import tech.testsys.web.app.service.SupervisorRoleVo
 import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.components.TestSysView
@@ -371,9 +372,12 @@ class AdminUserView(
     }
 }
 
-/** Returns the community role of [role], or `null` for the administrator role, which an administrator does not remove. */
+/**
+ * Returns the community role of [role], or `null` for the administrator and supervisor roles, which an administrator
+ * does not remove.
+ */
 internal fun communityRoleOf(role: RoleVo): CommunityRole? = when (role) {
-    is AdministratorRoleVo -> null
+    is AdministratorRoleVo, is SupervisorRoleVo -> null
     is DeveloperRoleVo -> CommunityRole.Developer
     is ManagerRoleVo -> CommunityRole.Manager
     is JudgeRoleVo -> CommunityRole.Judge

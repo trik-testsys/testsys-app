@@ -1871,7 +1871,7 @@ class AdministratorOperationsTests {
         inner class HappyPathTests {
 
             @ParameterizedTest
-            @EnumSource(CommunityRole::class, names = ["Judge", "Administrator"], mode = EnumSource.Mode.EXCLUDE)
+            @EnumSource(CommunityRole::class, names = ["Judge", "Administrator", "Supervisor"], mode = EnumSource.Mode.EXCLUDE)
             fun `should add the membership of the user in the chosen role and return the stored user`(role: CommunityRole) {
                 val stored = member()
                 prepareGrant()
@@ -2025,7 +2025,7 @@ class AdministratorOperationsTests {
             }
 
             @ParameterizedTest
-            @EnumSource(value = CommunityRole::class, names = ["Judge", "Administrator"])
+            @EnumSource(value = CommunityRole::class, names = ["Judge", "Administrator", "Supervisor"])
             fun `should raise RoleNotGrantableError for a role an administrator does not grant without changing the user`(
                 role: CommunityRole,
             ) {

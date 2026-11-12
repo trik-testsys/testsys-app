@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.AccessDeniedView
+import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.supervisor.SupervisorService
 
@@ -41,8 +42,18 @@ class SupervisorViewTests : MockSpringVaadinTests() {
     private lateinit var headers: CabinetHeaders
 
     @Test
-    fun `should deny the cabinet to a signed-in user without the supervisor role`() {
+    fun `should show the forbidden screen to a user with non-fixed roles without the supervisor role`() {
         signIn(fixtures.administrator())
+
+        UI.getCurrent().navigate(SupervisorView::class.java, section("users"))
+
+        assertEquals(OperationErrorView::class.java, currentView)
+        assertEquals("Нет доступа", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should deny the cabinet to a user with a fixed role`() {
+        signIn(fixtures.userOf(UserKind.OBSERVER))
         val ui = UI.getCurrent()
 
         val result = ui.internals.router.navigate(ui, Location("supervisor/users"), NavigationTrigger.PAGE_LOAD)
@@ -77,7 +88,7 @@ class SupervisorViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should rebuild the users table when returning from communities in the same view`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val observer = fixtures.observer(fixtures.community(), name = "Наблюдатель Пётр")
         UI.getCurrent().navigate(SupervisorView::class.java, section("users"))
         val firstView = UI.getCurrent()._get<SupervisorView>()
@@ -94,7 +105,7 @@ class SupervisorViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should title the head and the browser tab of the supervisor cabinet`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
 
         UI.getCurrent().navigate(SupervisorView::class.java, section("communities"))
 
@@ -104,7 +115,7 @@ class SupervisorViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should keep the title and tabs and show a load error in the communities if they fail to load`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val service = mockk<SupervisorService>()
         every { service.checkSupervisorRole() } returns supervisorService.checkSupervisorRole()
         every { service.viewCommunities() } throws IllegalStateException("Community storage unavailable")

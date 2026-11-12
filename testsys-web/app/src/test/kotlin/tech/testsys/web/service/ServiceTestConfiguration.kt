@@ -16,14 +16,14 @@ import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.studentData
-import tech.testsys.domain.builder.api.supervisor
-import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.AccessTokenHasher
+import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.User
+import tech.testsys.infra.database.api.service.ServiceSupervisorRole
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserSearch
@@ -40,6 +40,7 @@ import tech.testsys.infra.settings.api.catalog.SettingsValues
 import tech.testsys.infra.settings.api.service.SettingsOverview
 import tech.testsys.infra.settings.api.service.SettingsPersistence
 import tech.testsys.infra.settings.api.service.SettingsService
+import tech.testsys.operation.config.PublicCommunityOwner
 import java.time.Clock
 import java.time.Instant
 
@@ -83,21 +84,36 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
             name = "Наблюдатель Анна"
         }
     },
-    supervisor {
+    multipleRoleUser {
         id = 1004
         createdAt = Instant.parse("2026-03-14T09:30:00Z")
-        data = supervisorData {
-            accessToken("supervisor-token", serviceTestAccessTokenHasher)
+        data = multipleRoleUserData {
+            passwordHash = PasswordHash("supervisor-password-hash")
             name = "Супервайзер Олег"
+            email = "oleg@example.com"
+            roles { supervisor { memberOf(listOf(42)) } }
         }
     },
 )
+
+/** Technical owner of the public community, whom the service card offers no supervisor role action. */
+val SERVICE_TEST_PUBLIC_COMMUNITY_OWNER: MultipleRoleUser = multipleRoleUser {
+    id = 1005
+    createdAt = Instant.parse("2026-03-14T09:30:00Z")
+    data = multipleRoleUserData {
+        passwordHash = PasswordHash("owner-password-hash")
+        name = "Владелец"
+        email = PublicCommunityOwner.EMAIL
+    }
+}
 
 /** Makes the mocked [search] find nothing by conditions and find each of [SERVICE_TEST_USERS] by its id. */
 fun stubServiceTestUsers(search: ServiceUserSearch) {
     every { search.find(any(), any()) } answers { Page(emptyList(), secondArg(), 0) }
     every { search.findById(any()) } returns null
-    SERVICE_TEST_USERS.forEach { user -> every { search.findById(ServiceUserId(user.id.value)) } returns user }
+    (SERVICE_TEST_USERS + SERVICE_TEST_PUBLIC_COMMUNITY_OWNER).forEach { user ->
+        every { search.findById(ServiceUserId(user.id.value)) } returns user
+    }
 }
 
 @TestConfiguration(proxyBeanMethods = false)
@@ -143,6 +159,9 @@ class ServiceTestConfiguration {
 
     @Bean
     fun serviceUserSearch(): ServiceUserSearch = mockk<ServiceUserSearch>().also(::stubServiceTestUsers)
+
+    @Bean
+    fun serviceSupervisorRole(): ServiceSupervisorRole = mockk()
 
     @Bean
     fun serviceTrikStudioVersions(): ServiceTrikStudioVersions = mockk {

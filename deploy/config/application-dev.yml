@@ -8,9 +8,6 @@ testsys:
     community:
       public-community-id: 1
       public-community-name: Публичное Сообщество
-    # Supervisor of the environment; its access code is TESTSYS_SUPERVISOR_ACCESS_TOKEN.
-    supervisor:
-      name: Супервайзер
     email-confirmation:
       confirmation-code-lifetime: PT15M
       max-confirmation-attempts: 3

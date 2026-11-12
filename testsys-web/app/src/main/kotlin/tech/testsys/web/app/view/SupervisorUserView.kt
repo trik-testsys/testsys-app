@@ -46,7 +46,7 @@ import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
 import tech.testsys.web.components.texts.currentLocalization
 
-/** Message variants naming the community roles a supervisor grants. */
+/** Message variants naming the community roles a supervisor grants, in the order of the role choice. */
 private val COMMUNITY_ROLE_NAMES: Map<CommunityRole, RoleNameRole> = mapOf(
     CommunityRole.Administrator to RoleNameRole.ADMINISTRATOR,
     CommunityRole.Manager to RoleNameRole.MANAGER,
@@ -61,7 +61,7 @@ private val COMMUNITY_ROLE_NAMES: Map<CommunityRole, RoleNameRole> = mapOf(
  * @since 1.0.0-beta.1
  */
 @Route("supervisor/users/:userId([0-9]+)/:section?(developer|manager|judge)")
-@RolesAllowed("SUPERVISOR")
+@RolesAllowed("MULTIPLE_ROLE")
 class SupervisorUserView(
     private val headers: CabinetHeaders,
     private val service: SupervisorService,
@@ -203,8 +203,12 @@ class SupervisorUserView(
                         }
                     }
                 }
-                actions {
-                    action(texts.userImpersonate()) { onClick { impersonate(user.id) } }
+                // A supervisor signed in as a user does not sign in as another user
+                // (testsys.user.multi.supervisor.impersonate).
+                if (CabinetSignIn.principal()?.impersonatedBy == null) {
+                    actions {
+                        action(texts.userImpersonate()) { onClick { impersonate(user.id) } }
+                    }
                 }
             }
         }
@@ -316,7 +320,7 @@ class SupervisorUserView(
                     texts.userGrantRole(),
                     labelSize = 6,
                     size = 18,
-                    items = CommunityRole.entries,
+                    items = COMMUNITY_ROLE_NAMES.keys.toList(),
                     itemLabel = { role -> localization.pageCabinet.roleName(role = COMMUNITY_ROLE_NAMES.getValue(role)) },
                 ) {
                     draft.forField(this).asRequired(texts.userGrantRoleRequired())

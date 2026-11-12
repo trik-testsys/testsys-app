@@ -12,4 +12,5 @@ enum class CommunityRole {
     Developer,
     Student,
     Judge,
+    Supervisor,
 }

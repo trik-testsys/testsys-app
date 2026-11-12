@@ -46,14 +46,15 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
         fun `should return users of every kind as entities of their kinds without conditions`() {
             val manager = fixtures.manager()
             val participant = fixtures.participant(fixtures.competition(owner = manager))
-            val observer = fixtures.observer(fixtures.community(owner = manager))
-            val supervisor = fixtures.supervisor()
+            val community = fixtures.community(owner = manager)
+            val observer = fixtures.observer(community)
+            val supervisor = fixtures.supervisor(community)
 
             val page = search.find(ServiceUserFilter(), allUsers)
 
             assertEquals(listOf(manager.id.value, participant.id.value, observer.id.value, supervisor.id.value), idsOf(page))
             assertEquals(
-                listOf(MultipleRoleUser::class, Participant::class, Observer::class, Supervisor::class),
+                listOf(MultipleRoleUser::class, Participant::class, Observer::class, MultipleRoleUser::class),
                 page.content.map { user -> user::class },
             )
             assertEquals(4L, page.totalElements)
@@ -74,11 +75,11 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
         @Test
         fun `should select a single-role user by id`() {
             fixtures.developer()
-            val supervisor = fixtures.supervisor()
+            val observer = fixtures.observer()
 
-            val page = search.find(ServiceUserFilter(id = ServiceUserId(supervisor.id.value)), allUsers)
+            val page = search.find(ServiceUserFilter(id = ServiceUserId(observer.id.value)), allUsers)
 
-            assertEquals(listOf(supervisor.id.value), idsOf(page))
+            assertEquals(listOf(observer.id.value), idsOf(page))
         }
 
         @ParameterizedTest
@@ -102,11 +103,11 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
         @Test
         fun `should match single-role users by name`() {
             fixtures.developer()
-            val supervisor = fixtures.supervisor()
+            val observer = fixtures.observer()
 
-            val page = search.find(ServiceUserFilter(name = "SUPERVISOR"), allUsers)
+            val page = search.find(ServiceUserFilter(name = "OBSERVER"), allUsers)
 
-            assertEquals(listOf(supervisor.id.value), idsOf(page))
+            assertEquals(listOf(observer.id.value), idsOf(page))
         }
 
         @ParameterizedTest
@@ -129,7 +130,6 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
             val manager = fixtures.manager()
             fixtures.participant(fixtures.competition(owner = manager))
             fixtures.observer(fixtures.community(owner = manager))
-            fixtures.supervisor()
 
             val page = search.find(ServiceUserFilter(email = "example"), allUsers)
 
@@ -144,7 +144,7 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
             fixtures.student()
             val participant = fixtures.participant(fixtures.competition(owner = administrator))
             fixtures.observer(fixtures.community(owner = administrator))
-            val supervisor = fixtures.supervisor()
+            val supervisor = fixtures.supervisor(fixtures.community(owner = administrator))
 
             val page = search.find(
                 ServiceUserFilter(roles = setOf(ServiceUserRole.DEVELOPER, ServiceUserRole.PARTICIPANT, ServiceUserRole.SUPERVISOR)),
@@ -215,7 +215,7 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
         }
 
         @ParameterizedTest
-        @EnumSource(ServiceUserRole::class, names = ["DEVELOPER", "JUDGE", "MANAGER", "STUDENT"])
+        @EnumSource(ServiceUserRole::class, names = ["DEVELOPER", "JUDGE", "MANAGER", "STUDENT", "SUPERVISOR"])
         fun `should select a non-fixed role by membership in the community`(role: ServiceUserRole) {
             val owner = fixtures.administrator()
             val community = fixtures.community(owner = owner)
@@ -266,17 +266,13 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
         }
 
         @Test
-        fun `should select no participants or supervisors by their roles with a community`() {
+        fun `should select no participants by their role with a community`() {
             val owner = fixtures.manager()
             val community = fixtures.community(owner = owner)
             fixtures.participant(fixtures.competition(owner = owner))
-            fixtures.supervisor()
             member(community) { developerIn(it) }
 
-            val page = search.find(
-                ServiceUserFilter(roles = setOf(ServiceUserRole.PARTICIPANT, ServiceUserRole.SUPERVISOR), communityId = community.id),
-                allUsers,
-            )
+            val page = search.find(ServiceUserFilter(roles = setOf(ServiceUserRole.PARTICIPANT), communityId = community.id), allUsers)
 
             assertEquals(emptyList<User<*>>(), page.content)
             assertEquals(0L, page.totalElements)
@@ -443,7 +439,7 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
             val first = fixtures.developer()
             val second = fixtures.developer()
             fixtures.developer()
-            fixtures.supervisor()
+            fixtures.student()
             val request = Pagination(page = 0, size = 2)
 
             val page = search.find(ServiceUserFilter(roles = setOf(ServiceUserRole.DEVELOPER)), request)
@@ -459,7 +455,7 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
             fixtures.developer()
             fixtures.developer()
             val third = fixtures.developer()
-            fixtures.supervisor()
+            fixtures.student()
             val request = Pagination(page = 1, size = 2)
 
             val page = search.find(ServiceUserFilter(roles = setOf(ServiceUserRole.DEVELOPER)), request)
@@ -533,12 +529,13 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
         }
 
         @Test
-        fun `should find a supervisor by id`() {
+        fun `should find a supervisor by id with the supervisor role`() {
             val supervisor = fixtures.supervisor()
 
-            val found = search.findById(ServiceUserId(supervisor.id.value))
+            val found = search.findById(ServiceUserId(supervisor.id.value)) as? MultipleRoleUser
 
-            assertEquals(supervisor.id, (found as? Supervisor)?.id)
+            assertEquals(supervisor.id, found?.id)
+            assertEquals(1, found?.data?.roles?.filterIsInstance<Supervisor>()?.size)
         }
 
         @Test
@@ -598,7 +595,8 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
         ServiceUserRole.JUDGE -> judgeIn(communities)
         ServiceUserRole.MANAGER -> managerIn(communities)
         ServiceUserRole.STUDENT -> studentIn(communities)
-        ServiceUserRole.ADMINISTRATOR, ServiceUserRole.PARTICIPANT, ServiceUserRole.OBSERVER, ServiceUserRole.SUPERVISOR ->
+        ServiceUserRole.SUPERVISOR -> roles { supervisor { memberOf(communities.map { community -> community.id.value }) } }
+        ServiceUserRole.ADMINISTRATOR, ServiceUserRole.PARTICIPANT, ServiceUserRole.OBSERVER ->
             error("Role $role is not covered by this helper")
     }
 

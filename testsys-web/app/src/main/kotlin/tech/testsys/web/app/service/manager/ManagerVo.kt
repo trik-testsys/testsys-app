@@ -10,7 +10,6 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.user.IssuedParticipant
 import tech.testsys.operation.user.ManagerOperations
@@ -149,7 +148,7 @@ internal fun ManagerOperations.ContestResults.toVo(): ContestResultsVo = Contest
         when (member) {
             is MultipleRoleUser -> member.id to member.data.name
             is Participant -> member.id to member.data.name
-            is Observer, is Supervisor -> error("User id=${member.id.value} of a kind that is no group member was returned")
+            is Observer -> error("User id=${member.id.value} of a kind that is no group member was returned")
         }
     },
     results = results,

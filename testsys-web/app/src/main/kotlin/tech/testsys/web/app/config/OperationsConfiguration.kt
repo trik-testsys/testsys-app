@@ -1,6 +1,5 @@
 package tech.testsys.web.app.config
 
-import org.springframework.beans.factory.SmartInitializingSingleton
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.context.annotation.Bean
@@ -37,14 +36,12 @@ import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.user.AccessTokenHasher
-import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
@@ -153,26 +150,6 @@ class OperationsConfiguration {
         return object : CommunityConfig {
             override val publicCommunityId = id
         }
-    }
-
-    /**
-     * Creates the single Supervisor or sets its name and access code from the required properties under
-     * `testsys.operation.supervisor` after all singletons of the shared infrastructure are created, before the web
-     * contexts start.
-     *
-     * @since 1.0.0-beta.1
-     */
-    @Bean
-    fun supervisorBootstrap(
-        environment: Environment,
-        supervisors: SupervisorRepository,
-        participants: ParticipantRepository,
-        observers: ObserverRepository,
-        transactions: TransactionOperations,
-        accessTokenHasher: AccessTokenHasher,
-        signIns: CabinetSignInStore,
-    ): SmartInitializingSingleton = SmartInitializingSingleton {
-        SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher, signIns).ensure(environment)
     }
 
     /**
@@ -313,7 +290,6 @@ class OperationsConfiguration {
         multipleRoleUsers: MultipleRoleUserRepository,
         participants: ParticipantRepository,
         observers: ObserverRepository,
-        supervisors: SupervisorRepository,
         users: UserRepository,
         registrationRequests: RegistrationRequestRepository,
         mailSender: UserMailSender,
@@ -326,7 +302,6 @@ class OperationsConfiguration {
         multipleRoleUserRepository = multipleRoleUsers,
         participantRepository = participants,
         observerRepository = observers,
-        supervisorRepository = supervisors,
         userRepository = users,
         registrationRequestRepository = registrationRequests,
         mailSender = mailSender,

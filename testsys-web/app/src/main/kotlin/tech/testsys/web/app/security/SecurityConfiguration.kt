@@ -3,6 +3,9 @@ package tech.testsys.web.app.security
 import com.vaadin.flow.spring.security.NavigationAccessControlConfigurer
 import com.vaadin.flow.spring.security.UidlRedirectStrategy
 import com.vaadin.flow.spring.security.VaadinSecurityConfigurer
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -18,13 +21,19 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.core.session.SessionRegistryImpl
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
 import org.springframework.security.web.context.SecurityContextHolderFilter
+import org.springframework.security.web.session.ConcurrentSessionFilter
 import org.springframework.security.web.session.HttpSessionDestroyedEvent
 import org.springframework.security.web.session.HttpSessionEventPublisher
+import org.springframework.web.filter.OncePerRequestFilter
+import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.infra.database.api.session.CabinetSignInUserKind
 import tech.testsys.infra.database.api.session.StoredCabinetSignIn
@@ -101,7 +110,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
 
     /**
      * Deletes the remembered sign-in of the destroyed session [event] and writes at INFO the end of a session of
-     * a supervisor signed in as a user (testsys.user.single.supervisor.impersonate). A sign-in already deleted
+     * a supervisor signed in as a user (testsys.user.multi.supervisor.impersonate). A sign-in already deleted
      * elsewhere is not recorded again; one still remembered at the shutdown stays and is not recorded.
      *
      * @since 1.0.0-beta.1
@@ -109,7 +118,7 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
     @EventListener
     fun sessionDestroyed(event: HttpSessionDestroyedEvent) {
         val hash = signIns.tokenHashOf(event.session)
-        // A signed-out session has forgotten its sign-in already, so only its end is left to record.
+        // A session without a digest has deleted its sign-in on sign-out itself, so only its end is left to record.
         if (hash != null && (isClosing || !store.delete(hash))) return
 
         event.securityContexts
@@ -138,12 +147,18 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
 
     /**
      * Filter chain with the Vaadin defaults except the HTTP access rules: every request is permitted, a guest session is
-     * restored from [cabinetSignIns] into [sessionRegistry], and an expired or signed-out session leads to the root.
+     * restored from [cabinetSignIns] into [sessionRegistry], a session of a supervisor as a user expires once
+     * [multipleRoleUsers] no longer give the supervisor the role, and an expired or signed-out session leads to the root.
      *
      * @since 1.0.0-beta.1
      */
     @Bean
-    fun securityFilterChain(http: HttpSecurity, sessionRegistry: SessionRegistry, cabinetSignIns: RememberedSignIns): SecurityFilterChain {
+    fun securityFilterChain(
+        http: HttpSecurity,
+        sessionRegistry: SessionRegistry,
+        cabinetSignIns: RememberedSignIns,
+        multipleRoleUsers: MultipleRoleUserRepository,
+    ): SecurityFilterChain {
         http.authorizeHttpRequests { requests -> requests.anyRequest().permitAll() }
         http.sessionManagement { sessions ->
             sessions.maximumSessions(-1)
@@ -161,6 +176,10 @@ class SecurityConfiguration(private val store: CabinetSignInStore, environment: 
             }
         }
         http.addFilterAfter(restore, SecurityContextHolderFilter::class.java)
+        val revoked = revokedSupervisorFilter(sessionRegistry) { supervisorId ->
+            multipleRoleUsers.findById(MultipleRoleUserId(supervisorId))?.data?.roles?.any { role -> role is Supervisor } == true
+        }
+        http.addFilterBefore(revoked, ConcurrentSessionFilter::class.java)
         http.with(VaadinSecurityConfigurer.vaadin()) { vaadin ->
             vaadin.enableAuthorizedRequestsConfiguration(false)
             vaadin.logoutSuccessHandler(signedOutHandler())
@@ -174,7 +193,7 @@ private val logger: Logger = LoggerFactory.getLogger(SecurityConfiguration::clas
 
 /**
  * Writes at INFO the end of every sign-in of a supervisor as a user among the deleted [signIns]
- * (testsys.user.single.supervisor.impersonate).
+ * (testsys.user.multi.supervisor.impersonate).
  */
 internal fun logEndedSupervisorSessions(signIns: List<StoredCabinetSignIn>) {
     signIns.filterIsInstance<StoredCabinetSignIn.User>().map(::principalOf).forEach(::logEndedSupervisorSession)
@@ -188,6 +207,23 @@ private fun logEndedSupervisorSession(principal: CabinetPrincipal) {
         logger.info("Session of supervisor {} as user {} ended", supervisorId, principal.userId)
     }
 }
+
+/**
+ * Filter that expires the registered session of a supervisor signed in as a user once [holdsSupervisorRole] is false
+ * for the supervisor, so that the expired-session handling signs it out (testsys.user.multi.supervisor.impersonate).
+ */
+private fun revokedSupervisorFilter(registry: SessionRegistry, holdsSupervisorRole: (Long) -> Boolean): OncePerRequestFilter =
+    object : OncePerRequestFilter() {
+        override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
+            val supervisorId = (SecurityContextHolder.getContext().authentication?.principal as? CabinetPrincipal)?.impersonatedBy
+            val session = request.getSession(false)
+            if (supervisorId != null && session != null && !holdsSupervisorRole(supervisorId)) {
+                registry.getSessionInformation(session.id)?.expireNow()
+            }
+
+            filterChain.doFilter(request, response)
+        }
+    }
 
 /** Returns the authentication of the remembered [signIn] of the main interface, or `null` for a service sign-in. */
 private fun authenticationOf(signIn: StoredCabinetSignIn): Authentication? {
@@ -205,7 +241,6 @@ private fun principalOf(signIn: StoredCabinetSignIn.User): CabinetPrincipal {
         CabinetSignInUserKind.MULTIPLE_ROLE -> UserKind.MULTIPLE_ROLE
         CabinetSignInUserKind.PARTICIPANT -> UserKind.PARTICIPANT
         CabinetSignInUserKind.OBSERVER -> UserKind.OBSERVER
-        CabinetSignInUserKind.SUPERVISOR -> UserKind.SUPERVISOR
     }
     return CabinetPrincipal(userId = signIn.userId.value, kind = kind, impersonatedBy = signIn.impersonatedBy?.value)
 }

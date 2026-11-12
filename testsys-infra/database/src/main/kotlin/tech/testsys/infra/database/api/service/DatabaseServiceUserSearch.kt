@@ -16,7 +16,6 @@ import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
@@ -37,11 +36,11 @@ import tech.testsys.infra.database.internal.jpa.entity.user.multiple.JudgeDataJp
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.ManagerDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.MultipleRoleToUserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.StudentDataJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.multiple.SupervisorDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.UserMultipleRoleJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ContestToObserverJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ParticipantDataJpaEntity
-import tech.testsys.infra.database.internal.jpa.entity.user.single.SupervisorDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.requireId
 import org.springframework.data.domain.Sort as JpaSort
@@ -59,7 +58,6 @@ class DatabaseServiceUserSearch(
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val participantRepository: ParticipantRepository,
     private val observerRepository: ObserverRepository,
-    private val supervisorRepository: SupervisorRepository,
 ) : ServiceUserSearch {
 
     @Transactional(readOnly = true)
@@ -118,8 +116,7 @@ class DatabaseServiceUserSearch(
         val singleRoleIds = singleRoleRows.map { row -> SingleRoleUserId(row.requireId()) }
         val users: List<User<*>> = findUnlessEmpty(multipleRoleIds, multipleRoleUserRepository::findByIds) +
             findUnlessEmpty(singleRoleIds, participantRepository::findByIds) +
-            findUnlessEmpty(singleRoleIds, observerRepository::findByIds) +
-            findUnlessEmpty(singleRoleIds, supervisorRepository::findByIds)
+            findUnlessEmpty(singleRoleIds, observerRepository::findByIds)
         val usersById = users.associateBy { user -> user.id.value }
 
         return rows.map { row ->
@@ -152,8 +149,8 @@ class DatabaseServiceUserSearch(
         fun holdsAny(roles: Set<ServiceUserRole>): Predicate = builder.or(*roles.map { role -> holds(role) }.toTypedArray())
 
         /**
-         * Users holding any of [roles] in [communityId]; the fixed roles of participants and supervisors are not held
-         * in a community, so they select nobody.
+         * Users holding any of [roles] in [communityId]; the fixed role of participants is not held in a community, so
+         * it selects nobody.
          */
         fun holdsAnyIn(roles: Set<ServiceUserRole>, communityId: CommunityId): Predicate {
             val grounds = roles.mapNotNull { role -> holdsIn(role, communityId) }
@@ -205,7 +202,7 @@ class DatabaseServiceUserSearch(
             ServiceUserRole.STUDENT -> multipleRole(StudentDataJpaEntity::class.java)
             ServiceUserRole.PARTICIPANT -> exists(ParticipantDataJpaEntity::class.java, userIdOf = { row -> row.get("userId") })
             ServiceUserRole.OBSERVER -> exists(ObserverDataJpaEntity::class.java, userIdOf = { row -> row.get("userId") })
-            ServiceUserRole.SUPERVISOR -> exists(SupervisorDataJpaEntity::class.java, userIdOf = { row -> row.get("userId") })
+            ServiceUserRole.SUPERVISOR -> multipleRole(SupervisorDataJpaEntity::class.java)
         }
 
         /**
@@ -220,8 +217,9 @@ class DatabaseServiceUserSearch(
             ServiceUserRole.JUDGE -> membershipIn(communityId, UserMultipleRoleJpaEnum.JUDGE)
             ServiceUserRole.MANAGER -> membershipIn(communityId, UserMultipleRoleJpaEnum.MANAGER)
             ServiceUserRole.STUDENT -> membershipIn(communityId, UserMultipleRoleJpaEnum.STUDENT)
+            ServiceUserRole.SUPERVISOR -> membershipIn(communityId, UserMultipleRoleJpaEnum.SUPERVISOR)
             ServiceUserRole.OBSERVER -> observes(communityId)
-            ServiceUserRole.PARTICIPANT, ServiceUserRole.SUPERVISOR -> null
+            ServiceUserRole.PARTICIPANT -> null
         }
 
         /**

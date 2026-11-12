@@ -26,6 +26,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.StudentData
+import tech.testsys.domain.model.user.Supervisor
 import java.time.Instant
 
 /**
@@ -197,6 +198,18 @@ class StudentBuilder : CompatibleUserRoleBuilderWithData<Student, StudentData, S
 class AdministratorBuilder : CompatibleUserRoleBuilderWithoutData<Administrator>() {
 
     override fun build() = Administrator(
+        memberOf = memberOf.lazify(),
+    )
+}
+
+/**
+ * Builder of the [Supervisor] role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+class SupervisorBuilder : CompatibleUserRoleBuilderWithoutData<Supervisor>() {
+
+    override fun build() = Supervisor(
         memberOf = memberOf.lazify(),
     )
 }
@@ -385,6 +398,18 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
      */
     fun Roles.administrator(builder: AdministratorBuilder.() -> Unit) {
         AdministratorBuilder()
+            .apply(builder)
+            .build()
+            .also { add(it) }
+    }
+
+    /**
+     * Adds a [Supervisor] role configured by [builder].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun Roles.supervisor(builder: SupervisorBuilder.() -> Unit) {
+        SupervisorBuilder()
             .apply(builder)
             .build()
             .also { add(it) }

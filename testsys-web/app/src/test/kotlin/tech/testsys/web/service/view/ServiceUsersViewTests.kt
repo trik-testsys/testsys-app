@@ -118,7 +118,8 @@ class ServiceUsersViewTests : ServiceMockVaadinTests() {
         val texts = rows().map { row -> row.element.textRecursively }
 
         assertTrue("maria@example.com" in texts.first(), texts.first())
-        assertTrue(texts.drop(1).all { text -> "@" !in text }, texts.toString())
+        assertTrue(texts.drop(1).dropLast(1).all { text -> "@" !in text }, texts.toString())
+        assertTrue("oleg@example.com" in texts.last(), texts.last())
     }
 
     @Test

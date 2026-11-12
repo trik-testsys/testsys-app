@@ -26,6 +26,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
  * @property student the student role, or `null` if not held.
  * @property judge the judge role, or `null` if not held.
  * @property manager the manager role, or `null` if not held.
+ * @property supervisor the supervisor role, or `null` if not held.
  * @since 1.0.0-beta.1
  */
 @InternalDatabaseApi
@@ -35,6 +36,7 @@ data class MultipleRoleUserRoles(
     val student: StudentRoleInfo?,
     val judge: JudgeRoleInfo?,
     val manager: ManagerRoleInfo?,
+    val supervisor: SupervisorRoleInfo?,
 ) {
 
     /**
@@ -44,6 +46,14 @@ data class MultipleRoleUserRoles(
      * @since 1.0.0-beta.1
      */
     data class AdministratorRoleInfo(val memberOf: List<CommunityId>)
+
+    /**
+     * Supervisor role of a user.
+     *
+     * @property memberOf ids of the communities the role is held in.
+     * @since %CURRENT_VERSION%
+     */
+    data class SupervisorRoleInfo(val memberOf: List<CommunityId>)
 
     /**
      * Developer role of a user.
@@ -164,6 +174,9 @@ object MultipleRoleUserMapping {
                             competitions(info.competitions.map { it.value })
                         }
                     }
+                }
+                roles.supervisor?.let { info ->
+                    supervisor { memberOf(info.memberOf.map { it.value }) }
                 }
             }
         }

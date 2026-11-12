@@ -137,20 +137,24 @@ class DatabaseCabinetSignInStoreTests : DatabaseIntegrationTests() {
         }
 
         @Test
-        fun `should delete and return the sign-ins of a supervisor and of the supervisor as users`() {
+        fun `should delete and return only the sign-ins of a supervisor as users`() {
             val supervisor = supervisor()
             val user = student()
-            val own = StoredCabinetSignIn.User(userId = supervisor, kind = CabinetSignInUserKind.SUPERVISOR)
             val asUser = userSignIn(user, impersonatedBy = supervisor)
-            store.create("supervisor", own, now)
+            val asAnotherUser = userSignIn(student(), impersonatedBy = supervisor)
+            store.create("supervisor", userSignIn(supervisor), now)
             store.create("as-user", asUser, now)
+            store.create("as-another-user", asAnotherUser, now)
+            store.create("as-user-by-another", userSignIn(user, impersonatedBy = supervisor()), now)
             store.create("user", userSignIn(user), now)
 
-            val deleted = store.deleteAllOf(supervisor)
+            val deleted = store.deleteImpersonatedBy(supervisor)
 
-            assertEquals(setOf(own, asUser), deleted.toSet())
-            assertNull(store.find("supervisor", idleSince = longAgo))
+            assertEquals(setOf(asUser, asAnotherUser), deleted.toSet())
             assertNull(store.find("as-user", idleSince = longAgo))
+            assertNull(store.find("as-another-user", idleSince = longAgo))
+            assertEquals(userSignIn(supervisor), store.find("supervisor", idleSince = longAgo))
+            assertNotNull(store.find("as-user-by-another", idleSince = longAgo))
             assertEquals(userSignIn(user), store.find("user", idleSince = longAgo))
         }
 

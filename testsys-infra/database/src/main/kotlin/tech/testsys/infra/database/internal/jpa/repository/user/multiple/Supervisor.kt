@@ -1,8 +1,10 @@
-package tech.testsys.infra.database.internal.jpa.repository.user.single
+package tech.testsys.infra.database.internal.jpa.repository.user.multiple
 
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.user.single.SupervisorDataJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.multiple.SupervisorDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
@@ -22,9 +24,10 @@ interface SupervisorDataJpaEntityRepository : SnowflakeJpaEntityRepository<Super
     fun findByUserId(userId: Long): SupervisorDataJpaEntity?
 
     /**
-     * Finds the supervisor data rows of any of the users [userIds] in one query.
+     * Finds which of the users [userIds] hold the role, in one query.
      *
-     * @since 1.0.0-beta.1
+     * @since %CURRENT_VERSION%
      */
-    fun findAllByUserIdIn(userIds: Collection<Long>): List<SupervisorDataJpaEntity>
+    @Query("select e.userId from SupervisorDataJpaEntity e where e.userId in :userIds")
+    fun findUserIdsByUserIdIn(@Param("userIds") userIds: Collection<Long>): List<Long>
 }

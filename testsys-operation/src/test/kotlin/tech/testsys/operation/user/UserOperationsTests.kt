@@ -21,7 +21,6 @@ import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepos
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -33,7 +32,6 @@ import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.RegistrationRequestData
 import tech.testsys.domain.model.user.RegistrationRequestId
 import tech.testsys.domain.model.user.Student
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.config.PublicCommunityOwner
@@ -53,7 +51,6 @@ import tech.testsys.operation.util.testMultipleRoleUser
 import tech.testsys.operation.util.testObserver
 import tech.testsys.operation.util.testParticipant
 import tech.testsys.operation.util.testRegistrationRequest
-import tech.testsys.operation.util.testSupervisor
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -68,7 +65,6 @@ class UserOperationsTests {
     private val multipleRoleUsers = mockk<MultipleRoleUserRepository>()
     private val participants = mockk<ParticipantRepository>()
     private val observers = mockk<ObserverRepository>()
-    private val supervisors = mockk<SupervisorRepository>()
     private val users = mockk<UserRepository>()
     private val registrationRequests = mockk<RegistrationRequestRepository>()
     private val mailSender = mockk<UserMailSender>()
@@ -86,7 +82,6 @@ class UserOperationsTests {
         multipleRoleUserRepository = multipleRoleUsers,
         participantRepository = participants,
         observerRepository = observers,
-        supervisorRepository = supervisors,
         userRepository = users,
         registrationRequestRepository = registrationRequests,
         mailSender = mailSender,
@@ -102,7 +97,6 @@ class UserOperationsTests {
     fun setUp() {
         every { participants.findByAccessToken(any()) } returns null
         every { observers.findByAccessToken(any()) } returns null
-        every { supervisors.findByAccessToken(any()) } returns null
         every { users.recordLogin(any(), any()) } just runs
         every { multipleRoleUsers.findByEmail(any()) } returns null
         every { registrationRequests.findByEmail(any()) } returns null
@@ -157,16 +151,6 @@ class UserOperationsTests {
 
                 assertSame(user, result)
             }
-
-            @Test
-            fun `should return supervisor whose access code matches`() {
-                val user = testSupervisor()
-                every { supervisors.findByAccessToken("supervisor") } returns user
-
-                val result = operations.authenticate(accessToken = "supervisor").getOrThrow()
-
-                assertSame(user, result)
-            }
         }
 
         @Nested
@@ -204,11 +188,11 @@ class UserOperationsTests {
 
             @Test
             fun `should record the last login truncated to microseconds`() {
-                val user = testSupervisor()
-                every { supervisors.findByAccessToken("supervisor") } returns user
+                val user = testObserver()
+                every { observers.findByAccessToken("observer") } returns user
                 every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
 
-                operations.authenticate(accessToken = "supervisor")
+                operations.authenticate(accessToken = "observer")
 
                 verify(exactly = 1) { users.recordLogin(user.id, Instant.parse("2026-01-01T00:00:00.123456Z")) }
             }
@@ -236,7 +220,6 @@ class UserOperationsTests {
                 verify(exactly = 0) {
                     participants.update(any<Participant>())
                     observers.update(any<Observer>())
-                    supervisors.update(any<Supervisor>())
                 }
             }
         }

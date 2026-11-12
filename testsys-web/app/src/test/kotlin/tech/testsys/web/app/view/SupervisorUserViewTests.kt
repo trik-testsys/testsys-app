@@ -51,7 +51,6 @@ import tech.testsys.web.app.StudyFixtures
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
-import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.supervisor.SupervisorService
 import java.time.Instant
@@ -89,7 +88,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should show an observer for viewing without modification actions`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val accessToken = fixtures.unique("observer-code")
         val observer = fixtures.observer(fixtures.community(), rawAccessToken = accessToken)
 
@@ -105,7 +104,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should show neither an access code nor the password hash of a user with non-fixed roles`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val member = fixtures.multipleRoleUser {
             roles {
                 developer {
@@ -123,7 +122,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should not show the access code of a participant`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val participant = study.participant(emptyList())
 
         open(participant.id.value)
@@ -134,7 +133,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should grant the administrator role to a user who is only in the public community`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val name = fixtures.unique("Разработчик")
         val member = fixtures.multipleRoleUser(name = name) {
             roles {
@@ -159,7 +158,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should not offer the administrator role to a user who already holds it`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val administrator = fixtures.administrator()
         fixtures.community(owner = administrator)
 
@@ -171,7 +170,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should add a user to a foreign community in a newly granted role`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val original = fixtures.community()
         val target = fixtures.community(name = "Целевое сообщество")
         val member = fixtures.multipleRoleUser {
@@ -198,7 +197,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should show a role granted meanwhile after a refresh of the roles table`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val member = fixtures.multipleRoleUser {
             roles {
                 developer {
@@ -218,7 +217,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should title the browser tab of a user and head the page with its kind`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val name = fixtures.unique("Наблюдатель")
         val observer = fixtures.observer(fixtures.community(), name = name)
         val participant = study.participant(emptyList())
@@ -234,7 +233,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should sign the supervisor in as a user with non-fixed roles and open the main page`() {
-        val supervisor = fixtures.userOf(UserKind.SUPERVISOR)
+        val supervisor = fixtures.supervisor()
         signIn(supervisor)
         val member = publicDeveloper()
         open(member.id.value)
@@ -247,7 +246,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should sign the supervisor in as an observer and open the observer page`() {
-        val supervisor = fixtures.userOf(UserKind.SUPERVISOR)
+        val supervisor = fixtures.supervisor()
         signIn(supervisor)
         val observer = fixtures.observer(fixtures.community())
         open(observer.id.value)
@@ -260,7 +259,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should write the supervisor and user ids at INFO when the supervisor signs in as a user`() {
-        val supervisor = fixtures.userOf(UserKind.SUPERVISOR)
+        val supervisor = fixtures.supervisor()
         signIn(supervisor)
         val member = publicDeveloper()
         open(member.id.value)
@@ -274,7 +273,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should not record a login of the user the supervisor signs in as`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val member = publicDeveloper()
         open(member.id.value)
 
@@ -285,7 +284,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should refuse signing in as the technical owner of the public community`() {
-        val supervisor = fixtures.userOf(UserKind.SUPERVISOR)
+        val supervisor = fixtures.supervisor()
         signIn(supervisor)
         val owner = requireNotNull(users.findByEmail(PublicCommunityOwner.EMAIL))
         open(owner.id.value)
@@ -299,8 +298,29 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should not offer signing in as another user while the supervisor is signed in as a user`() {
+        signInAsSupervisorUser()
+        val member = publicDeveloper()
+
+        open(member.id.value)
+
+        assertEquals(SupervisorUserView::class.java, currentView)
+        assertTrue(UI.getCurrent()._find<Button> { text = "Войти под Пользователем" }.isEmpty())
+    }
+
+    @Test
+    fun `should refuse signing in as another user while the supervisor is signed in as a user`() {
+        val principal = signInAsSupervisorUser()
+        val member = publicDeveloper()
+
+        assertThrows<IllegalStateException> { supervisorService.impersonate(member.id) }
+
+        assertEquals(principal, CabinetSignIn.principal())
+    }
+
+    @Test
     fun `should keep the title and tabs and show a load error in the details and roles if they fail to load`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val member = publicDeveloper()
         val service = mockk<SupervisorService>()
         every { service.checkUserAccessByIdValue(member.id.value) } returns supervisorService.checkUserAccessByIdValue(member.id.value)
@@ -323,7 +343,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should show the community of an observer`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val community = fixtures.community(name = fixtures.unique("Сообщество Наблюдателя"))
         val observer = fixtures.observer(community)
 
@@ -334,7 +354,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should refuse a supervisor detail route`() {
-        val supervisor = fixtures.userOf(UserKind.SUPERVISOR)
+        val supervisor = fixtures.supervisor()
         signIn(supervisor)
 
         open(supervisor.id.value)
@@ -352,6 +372,11 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
             }
         }
     }
+
+    /** Signs a supervisor in as a user who also holds the supervisor role and returns the session principal. */
+    private fun signInAsSupervisorUser(): CabinetPrincipal =
+        CabinetPrincipal.of(fixtures.supervisor()).copy(impersonatedBy = fixtures.supervisor().id.value)
+            .also { principal -> CabinetSignIn.signIn(principal) }
 
     private fun open(id: Long) {
         UI.getCurrent().navigate(SupervisorUserView::class.java, RouteParameters(USER_ID_PARAMETER, id.toString()))

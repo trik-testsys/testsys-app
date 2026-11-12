@@ -5,7 +5,7 @@ import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 
 /**
- * Read-only selection of every non-supervisor user for the Supervisor cabinet.
+ * Read-only selection of every user without the supervisor role for the Supervisor cabinet.
  *
  * @since 1.0.0-beta.1
  */
@@ -23,16 +23,16 @@ interface SupervisorUserReadPort {
     fun findUsers(pagination: Pagination, filter: UserFilter = UserFilter()): Page<User<*>>
 
     /**
-     * Synchronously reads a non-supervisor [userId], without changing it; storage failures propagate.
+     * Synchronously reads [userId] without the supervisor role, without changing it; storage failures propagate.
      *
      * @param userId identifier of the requested user.
-     * @return its concrete kind or `null` when absent or a supervisor.
+     * @return its concrete kind or `null` when absent or holding the supervisor role.
      * @since 1.0.0-beta.1
      */
     fun findUserById(userId: UserId): User<*>?
 
     /**
-     * Synchronously counts distinct non-supervisor users belonging to [communityId]. Storage failures propagate.
+     * Synchronously counts distinct users without the supervisor role belonging to [communityId]. Storage failures propagate.
      *
      * @param communityId community to count, including its owner and observers.
      * @return exact count, or zero for an unknown community.

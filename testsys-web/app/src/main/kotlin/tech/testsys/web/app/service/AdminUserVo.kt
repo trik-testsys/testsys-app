@@ -115,6 +115,13 @@ sealed interface RoleVo {
 data class AdministratorRoleVo(override val memberOf: List<CommunityId>) : RoleVo
 
 /**
+ * The supervisor role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data class SupervisorRoleVo(override val memberOf: List<CommunityId>) : RoleVo
+
+/**
  * The developer role.
  *
  * @property tasks the identifiers of the tasks created by the developer.
@@ -153,15 +160,14 @@ data class StudentRoleVo(override val memberOf: List<CommunityId>, val classes: 
 internal fun User<*>.toAdminVo(): AdminUserVo = when (this) {
     is MultipleRoleUser -> toVo()
     is Observer -> toVo()
-    is Participant, is Supervisor -> error("User id=${id.value} of a kind unavailable to administrators was returned")
+    is Participant -> error("User id=${id.value} of a kind unavailable to administrators was returned")
 }
 
-/** Maps a non-supervisor user to its cabinet data. */
+/** Maps a user without the supervisor role to its cabinet data. */
 internal fun User<*>.toSupervisorVo(): AdminUserVo = when (this) {
     is MultipleRoleUser -> toVo()
     is Observer -> toVo()
     is Participant -> ParticipantVo(id, createdAt, data.accessTokenHash, data.name, data.competition.id)
-    is Supervisor -> error("Supervisor id=${id.value} was returned by the supervisor read port")
 }
 
 internal fun Observer.toVo(): ObserverVo = ObserverVo(
@@ -189,4 +195,5 @@ internal fun CompatibleUserRole.toVo(): RoleVo = when (this) {
     is Manager -> ManagerRoleVo(memberOf = memberOf.ids, classes = data.classes.ids, competitions = data.competitions.ids)
     is Judge -> JudgeRoleVo(memberOf = memberOf.ids, judgmentOrders = data.judgmentOrders.ids)
     is Student -> StudentRoleVo(memberOf = memberOf.ids, classes = data.classes.ids, submissions = data.submissions.ids)
+    is Supervisor -> SupervisorRoleVo(memberOf = memberOf.ids)
 }

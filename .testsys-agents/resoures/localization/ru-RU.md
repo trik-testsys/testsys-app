@@ -1232,3 +1232,49 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
   wrapper and a table sharing a caption, which is only analogous. Still unverified: the Russian words NVDA speaks
   for `group`, `region` and `table` (first 400 000 of 831 600 characters of the Russian `nvda.po` read without
   result).
+
+## Changelog page (`page_changelog`)
+
+### «История изменений» as the name of the product changelog
+
+- Russian has three common renderings of "changelog". «Журнал изменений» heads the changelog pages of translated
+  open-source docs (for example https://lzw.me/docs/opencodedocs/ru/numman-ali/openskills/changelog/, seen as a
+  search result title on 2026-11-13, page not opened). The Russian Keep a Changelog page writes «лог изменений»
+  («Лог изменений — это файл, который содержит поддерживаемый, хронологически упорядоченный список значимых
+  изменений») and keeps the English word in its title «Ведите changelog»
+  (https://keepachangelog.com/ru/1.1.0/, read 2026-11-13). No dictionary entry for any of the phrases was found.
+- «Лог» is developer jargon and does not suit a page for every User. «История изменений» was chosen for
+  `page_changelog.title` (page head, tab title, footer link): it is short, plain and the coordinator's reference.
+- Second meaning with evidence: in office software «история изменений» is the edit history of a document. Google
+  Sheets has a context-menu item «Показать историю изменений» for a cell; it shows who changed the cell and when
+  (https://timeweb.com/ru/community/articles/kak-posmotret-istoriyu-izmeneniy-yacheyki-v-google-tablicah, read
+  2026-11-13). In TestSys a Developer also works with Task versions and «изменения Задачи», so a bare footer link
+  could be read as a history of one's own edits. The page guide names «версии TestSys», which resolves it on the
+  page. «Журнал изменений» has the same audit-log reading, so it is not a safer alternative. «Что нового» is not
+  ambiguous but describes only the latest version, while the page lists all versions.
+
+### «Заметные Пользователям» and the version order
+
+- «Заметный» (Викисловарь): 1. «такой, которого можно заметить, увидеть»; 2. перен. «явный, очевидный»;
+  3. перен. «выдающийся, известный». With a dative experiencer («изменения, заметные Пользователям») only sense 1
+  applies; sense 3 is used for people and works. The phrase says that internal changes are not listed without a
+  separate sentence. Source: https://ru.wiktionary.org/wiki/заметный (read 2026-11-13).
+- «Последняя версия» was avoided for the order: «последний» means both "latest" and "final in the list". The guide
+  says «Версии идут от новых к старым» instead (inference, no source read).
+- «Версия» alone is ambiguous in TestSys: page_developer uses it for Task, Resource and TRIK Studio versions. Both
+  guides therefore say «версии TestSys».
+- The glossary term `user` gained the form `dat pl` «Пользователям» for these messages.
+
+### Independent review evidence (2026-11-13)
+
+- Product sense of «История изменений» with genitive «изменений версии N»: ESET's Russian download page lists
+  «История изменений версии 13», «… версии 12» and older
+  (https://www.eset.com/kz-ru/business/download/endpoint-antivirus-windows/, read 2026-11-13). Vendor usage, not a
+  norm; it supports both the product-release sense and «Изменения этой версии TestSys». «Изменения в этой версии
+  TestSys» would remove the rare "edits made to this version" reading; optional.
+- «Идти» for position in an ordered list: МАС sense 9 «Занимать то или иное место по отношению к кому-, чему-л.»,
+  example «шел первым в списке директорского выпуска» (https://kartaslov.ru/значение-слова/идти, read 2026-11-13).
+- «Пользователь» declension (Викисловарь, 2a): Д. мн. «пользователям»; the other `glossary.user` forms match
+  (https://ru.wiktionary.org/wiki/пользователь, read 2026-11-13).
+- «Заметные Пользователям» means user-visible. If invisible but relevant changes (security or reliability fixes)
+  are listed, «изменения, касающиеся Пользователей» covers them without evaluation (reviewer suggestion, no source).

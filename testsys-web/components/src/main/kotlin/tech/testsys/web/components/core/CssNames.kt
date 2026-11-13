@@ -126,7 +126,7 @@ internal enum class CssClass(internal val value: String) {
     FooterLink("ts-footer__link"),
     FooterLinks("ts-footer__links"),
     FooterName("ts-footer__name"),
-    FooterYear("ts-footer__year"),
+    FooterVersion("ts-footer__version"),
     Guest("ts-guest"),
     GuestBrand("ts-guest__brand"),
     GuestCard("ts-guest-card"),

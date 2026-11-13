@@ -226,11 +226,6 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should show the year without digit grouping in footer year`() {
-            assertEquals("2026", l.uiPage.footerYear(year = 2026))
-        }
-
-        @Test
         fun `should name the footer navigation in footer links`() {
             assertEquals("Ссылки футера", l.uiPage.footerLinks())
         }
@@ -5953,6 +5948,32 @@ class LocalizationTests {
             assertEquals(
                 "Соревнование, к которому относится Участник.",
                 l.pageSupervisor.userParticipantGuide(),
+            )
+        }
+    }
+
+    @Nested
+    inner class PageChangelogTests {
+
+        @Test
+        fun `should name the page in title`() {
+            assertEquals("История изменений", l.pageChangelog.title())
+        }
+
+        @Test
+        fun `should render the user term in dative plural and the version order in guide`() {
+            assertEquals(
+                "Здесь для каждой версии TestSys перечислены изменения, заметные Пользователям. " +
+                    "Версии идут от новых к старым.",
+                l.pageChangelog.guide(),
+            )
+        }
+
+        @Test
+        fun `should render the user term in dative plural in version guide`() {
+            assertEquals(
+                "Изменения этой версии TestSys, заметные Пользователям.",
+                l.pageChangelog.versionGuide(),
             )
         }
     }

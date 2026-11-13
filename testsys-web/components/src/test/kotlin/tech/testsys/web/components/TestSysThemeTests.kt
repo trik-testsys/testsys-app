@@ -158,6 +158,17 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should set markdown content on the design system scale`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertEquals("var(--fw-regular) var(--fs-sm)/var(--lh-sm) var(--font-sans)", rule(overrides, "vaadin-markdown")["font"])
+        assertTrue(rule(overrides, "vaadin-markdown :is(h1, h2)").getValue("font").contains("var(--fs-h3)"))
+        assertEquals("0", rule(overrides, "vaadin-markdown > :first-child")["margin-top"])
+        assertTrue(rule(overrides, "vaadin-markdown code").getValue("font").contains("var(--font-mono)"))
+        assertEquals("var(--ink-900)", rule(overrides, "vaadin-markdown pre")["background"])
+    }
+
+    @Test
     fun `should use only defined font size tokens`() {
         val typography = text("testsys-ui/tokens/typography.css")
         val components = text("testsys-ui/tokens/components.css")

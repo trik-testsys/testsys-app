@@ -13,6 +13,7 @@ import com.vaadin.flow.router.InternalServerError
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.server.VaadinService
+import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -91,7 +92,8 @@ import tech.testsys.web.app.view.userParameters
 private typealias ParametersOf = (AppFixtures, User<*>?) -> RouteParameters
 
 /**
- * Opens every page of the application, signed in as a user of the kind the page requires, so that a page build error fails the build.
+ * Opens every page of the application, signed in as a user of the kind the page requires, or with non-fixed roles for a page open to
+ * every signed-in user, so that a page build error fails the build.
  * A user with non-fixed roles holds the administrator and supervisor roles, which the Cabinets of an Administrator and of a
  * Supervisor require.
  */
@@ -101,9 +103,9 @@ class PagesTests : MockSpringVaadinTests() {
     @ParameterizedTest(name = "{argumentSetName}", allowZeroInvocations = true)
     @MethodSource("pages")
     fun `should open the page without a build error`(page: Class<out Component>, parameters: ParametersOf) {
-        val user = page.getAnnotation(RolesAllowed::class.java)?.let { access ->
-            signedInUsers.getValue(UserKind.valueOf(access.value.single()))(fixtures).also { user -> signIn(user) }
-        }
+        val kind = page.getAnnotation(RolesAllowed::class.java)?.let { access -> UserKind.valueOf(access.value.single()) }
+            ?: UserKind.MULTIPLE_ROLE.takeIf { page.isAnnotationPresent(PermitAll::class.java) }
+        val user = kind?.let { signedInUsers.getValue(kind)(fixtures).also { user -> signIn(user) } }
 
         UI.getCurrent().navigate(page, parameters(fixtures, user))
 

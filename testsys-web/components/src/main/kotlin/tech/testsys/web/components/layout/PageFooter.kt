@@ -3,6 +3,8 @@
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.ComponentUtil
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
@@ -17,8 +19,6 @@ import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.texts.UiLocalization
-import java.time.Clock
-import java.time.Year
 
 /**
  * Scope of the page footer: links in display order, opened in the current tab.
@@ -57,15 +57,43 @@ class PageFooterScope internal constructor() {
     }
 }
 
-internal fun buildPageFooter(
-    texts: UiLocalization,
-    links: PageFooterScope = PageFooterScope(),
-    clock: Clock = Clock.systemDefaultZone(),
-): Footer {
+/**
+ * Sets the links that every footer built on [ui] adds after the links of its page: of a page, a guest page and an
+ * error screen. [links] runs at each footer build, so the set can depend on the state at that moment, such as whether
+ * the user is signed in; a repeated call replaces the set.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun setCommonFooterLinks(ui: UI, links: PageFooterScope.() -> Unit) {
+    ComponentUtil.setData(ui, CommonFooterLinks::class.java, CommonFooterLinks(links))
+}
+
+/** Key and value of the common footer links in the data of a UI. */
+private class CommonFooterLinks(val content: PageFooterScope.() -> Unit)
+
+/**
+ * Sets the version of the system that every footer built on [ui] shows after the brand name; with `null` the footer
+ * shows no version.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun setFooterVersion(ui: UI, version: String?) {
+    ComponentUtil.setData(ui, FooterVersion::class.java, version?.let(::FooterVersion))
+}
+
+/** Key and value of the footer version in the data of a UI. */
+private class FooterVersion(val value: String)
+
+internal fun buildPageFooter(texts: UiLocalization, links: PageFooterScope = PageFooterScope()): Footer {
+    val ui = UI.getCurrent()
     val name = Span(texts.messages.uiPage.brandName()).apply { addClassName(CssClass.FooterName) }
-    val year = Span(texts.messages.uiPage.footerYear(year = Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
-    val brand = Div(name, year).apply { addClassName(CssClass.FooterBrand) }
-    val inner = Div(brand).apply { addClassName(CssClass.FooterInner) }
+    val brand = Div(name).apply { addClassName(CssClass.FooterBrand) }
+    ui?.let { ComponentUtil.getData(it, FooterVersion::class.java) }?.let { version ->
+        brand.add(Span(version.value).apply { addClassName(CssClass.FooterVersion) })
+    }
+    val inner = Div().apply { addClassName(CssClass.FooterInner) }
+    ui?.let { ComponentUtil.getData(it, CommonFooterLinks::class.java) }?.let { common -> links.apply(common.content) }
     links.build(texts.messages.uiPage.footerLinks())?.let { navigation -> inner.add(navigation) }
+    inner.add(brand)
     return Footer(inner).apply { addClassName(CssClass.Footer) }
 }

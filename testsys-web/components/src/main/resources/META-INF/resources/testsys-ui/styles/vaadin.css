@@ -463,3 +463,26 @@ vaadin-popover[theme~="ts-header-menu-search"]::part(overlay) { width:min(calc(v
     display: block;
     margin-bottom: 8px;
 }
+
+/* Markdown: vaadin-markdown renders into its light DOM under Vaadin base and Lumo page typography; this puts the
+   content on the TestSys scale of a block body, below the block title. */
+vaadin-markdown { font:var(--fw-regular) var(--fs-sm)/var(--lh-sm) var(--font-sans); color:inherit; }
+vaadin-markdown > :first-child { margin-top:0; }
+vaadin-markdown > :last-child { margin-bottom:0; }
+vaadin-markdown :is(p, ul, ol, blockquote, pre, table) { margin-block:var(--space-2); }
+vaadin-markdown :is(h1, h2, h3, h4, h5, h6) { margin-block:var(--space-4) var(--space-2); color:inherit; letter-spacing:normal; text-transform:none; }
+vaadin-markdown :is(h1, h2) { font:var(--fw-bold) var(--fs-h3)/var(--lh-h3) var(--font-sans); }
+vaadin-markdown h3 { font:var(--fw-bold) var(--fs-body)/var(--lh-body) var(--font-sans); }
+vaadin-markdown :is(h4, h5, h6) { font:var(--fw-bold) var(--fs-sm)/var(--lh-sm) var(--font-sans); }
+vaadin-markdown li { margin-block:var(--space-1); }
+vaadin-markdown li::marker { color:var(--text-tertiary); }
+vaadin-markdown :is(ul, ol) :is(ul, ol) { margin-block:var(--space-1); }
+vaadin-markdown code { font:var(--fw-regular) var(--fs-xs) var(--font-mono); background:var(--muted); border-radius:var(--radius-sm); padding:1px var(--space-1); }
+vaadin-markdown pre { font:var(--fw-regular) var(--fs-xs)/var(--lh-xs) var(--font-mono); background:var(--ink-900); color:var(--text-code); border-radius:var(--radius-xl); padding:var(--space-3) var(--space-4); overflow-x:auto; }
+vaadin-markdown pre code { font:inherit; background:none; padding:0; border-radius:0; }
+vaadin-markdown blockquote { font-style:normal; font-weight:inherit; color:var(--text-secondary); border-left:2px solid var(--border-strong); margin-inline:0; padding-inline-start:var(--space-3); }
+vaadin-markdown hr { height:0; margin-block:var(--space-3); border:0; border-top:1px solid var(--border-default); background:none; }
+vaadin-markdown table { min-width:100%; border-collapse:collapse; }
+vaadin-markdown th { text-align:start; padding:6px var(--space-3); font:var(--fw-medium) var(--fs-caption) var(--font-sans); color:var(--text-secondary); background:var(--sunken); border-bottom:1px solid var(--border-default); }
+vaadin-markdown td { padding:8px var(--space-3); border-bottom:1px solid var(--line-subtle); overflow-wrap:anywhere; }
+vaadin-markdown img { max-width:100%; border-radius:var(--radius-xl); }

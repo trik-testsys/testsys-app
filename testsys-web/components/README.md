@@ -1085,7 +1085,7 @@ Escape и закрытие снаружи отменяют черновик. У�
 | `progressBar` | `ProgressValue.Determinate` (0–100) или `Indeterminate`; доступное имя обязательно |
 | `timer` | `TimerValue.Static(Duration)` либо `Until(Instant)`, варианты `Chip`, `Hero`, `Tiles`, `Text`; `TimerHandle.remainingSeconds` — сигнал только для чтения |
 | `skeleton`, `skeletonRows` | Геометрия в ядре; страница выбирает форму, число строк и `size`. Декоративные формы `Text`, `Circle`, `Badge`, `Rectangle` и строки внутри одного доступного статуса загрузки |
-| `markdown` | Только в `BlockRowScope`: текст Markdown из ресурсов приложения через штатный `Markdown` Vaadin на `size` колонках или на остатке строки; `ElementHandle`. Текст, введённый Пользователями, так не выводится |
+| `markdown` | Только в `BlockRowScope`: текст Markdown из ресурсов приложения через штатный `Markdown` Vaadin на `size` колонках или на остатке строки; `ElementHandle`. Синтаксис — GitHub Flavored Markdown штатного компонента; HTML в тексте очищается и не оформляется. Оформление содержимого — в `styles/vaadin.css` по [ui-design.md](../../docs/project/ui-design.md). Текст, введённый Пользователями, так не выводится |
 
 `verdict` не зависит от домена и не вычисляет успешность: конечное число показывается с нейтральным цветом.
 Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами.

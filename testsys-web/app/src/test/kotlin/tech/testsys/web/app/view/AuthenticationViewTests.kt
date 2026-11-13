@@ -148,7 +148,7 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should compare the access code exactly`() {
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
 
         signInWith(" $accessToken ")
@@ -158,7 +158,7 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should close signing in by the access code from the client address after five failures even with the right code`() {
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
         repeat(5) { signInWith("unknown access code") }
 
@@ -170,25 +170,25 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should keep signing in by the access code open from another client address when one address is blocked`() {
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
         repeat(5) { signInWith("unknown access code") }
         FakeHttpEnvironment.remoteAddr = fixtures.unique("client")
 
         signInWith(accessToken)
 
-        assertEquals(SupervisorView::class.java, currentView)
+        assertEquals(ObserverView::class.java, currentView)
     }
 
     @Test
     fun `should keep signing in by the access code open when an e-mail address equal to the client address is blocked`() {
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
         repeat(5) { signInByPassword(FakeHttpEnvironment.remoteAddr, "Wrong password") }
 
         signInWith(accessToken)
 
-        assertEquals(SupervisorView::class.java, currentView)
+        assertEquals(ObserverView::class.java, currentView)
     }
 
     @Test
@@ -213,7 +213,7 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     @Test
     fun `should sign in by the access code when it is chosen even with the e-mail and password filled`() {
         val user = fixtures.multipleRoleUser()
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
         val email = UI.getCurrent()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == "Почта" }
         email.value = user.data.email
@@ -221,8 +221,19 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
         signInWith(accessToken)
 
-        assertEquals(SupervisorView::class.java, currentView)
+        assertEquals(ObserverView::class.java, currentView)
         assertNotEquals(CabinetPrincipal.of(user), CabinetSignIn.principal())
+    }
+
+    @Test
+    fun `should sign a supervisor in by e-mail and password and open the main page`() {
+        val supervisor = fixtures.supervisor()
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+
+        signInByPassword(supervisor.data.email, fixtures.password)
+
+        assertEquals(MultiMainView::class.java, currentView)
+        assertEquals(CabinetPrincipal.of(supervisor), CabinetSignIn.principal())
     }
 
     @Test
@@ -309,6 +320,8 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
         assertEquals(title, assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
     }
 
+    private fun observerAccessToken(): String = fixtures.accessTokenOf(fixtures.observer(fixtures.community()))
+
     private fun signInWith(accessToken: String) {
         UI.getCurrent()._get<RadioButtonGroup<SignInMethod?>>().value = SignInMethod.AccessCode
         passwordField("Код-доступа").value = accessToken
@@ -337,7 +350,6 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
         fun fixedRoleStartPages(): List<Arguments> = listOf(
             Arguments.of(UserKind.PARTICIPANT, ParticipantView::class.java),
             Arguments.of(UserKind.OBSERVER, ObserverView::class.java),
-            Arguments.of(UserKind.SUPERVISOR, SupervisorView::class.java),
         )
 
         @JvmStatic

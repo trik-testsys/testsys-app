@@ -25,12 +25,12 @@ internal fun openSupervisorUser(user: AdminUserVo) {
 }
 
 /**
- * Supervisor cabinet with all non-supervisor users and all communities.
+ * Supervisor cabinet with all users without the supervisor role and all communities; the role is checked on entry.
  *
  * @since 1.0.0-beta.1
  */
 @Route("supervisor/:section?(users|communities)")
-@RolesAllowed("SUPERVISOR")
+@RolesAllowed("MULTIPLE_ROLE")
 class SupervisorView(
     private val headers: CabinetHeaders,
     private val service: SupervisorService,

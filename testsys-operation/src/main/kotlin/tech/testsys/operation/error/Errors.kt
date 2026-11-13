@@ -998,6 +998,14 @@ data object MissedSupervisorRoleError :
 data class AdministratorInPublicCommunityError(val communityId: CommunityId) : AddToCommunityError
 
 /**
+ * The supervisor role is granted only in the service cabinet, so a supervisor cannot assign it.
+ *
+ * @property role the rejected role.
+ * @since %CURRENT_VERSION%
+ */
+data class SupervisorRoleNotGrantableError(val role: CommunityRole) : AddToCommunityError
+
+/**
  * The user is the technical owner of the public community, whom nobody signs in as.
  *
  * @property userId the id of the technical owner.

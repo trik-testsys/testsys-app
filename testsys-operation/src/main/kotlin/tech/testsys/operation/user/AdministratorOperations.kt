@@ -634,7 +634,7 @@ class AdministratorOperations(
     /**
      * Makes [userId], available to [user] and holding non-fixed roles, a member of [communityId] owned by [user] in [role],
      * and of the public community if the role is new; a member already in that role is returned unchanged. Missing role,
-     * user, community, access, a fixed role of the user and the judge role are expected failures.
+     * user, community, access, a fixed role of the user and the judge and supervisor roles are expected failures.
      *
      * @since 1.0.0-beta.1
      */
@@ -653,7 +653,9 @@ class AdministratorOperations(
         ensure(granted != null) { UserAccessDeniedError(userId) }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
         ensure(granted is MultipleRoleUser) { UserHasFixedRoleError(userId) }
-        ensure(role != CommunityRole.Judge && role != CommunityRole.Administrator) { RoleNotGrantableError(role) }
+        ensure(role != CommunityRole.Judge && role != CommunityRole.Administrator && role != CommunityRole.Supervisor) {
+            RoleNotGrantableError(role)
+        }
 
         // The port keeps an existing membership, so a user already in the role is returned unchanged.
         val member = multipleRoleUserRepository.joinCommunity(

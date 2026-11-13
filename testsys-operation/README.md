@@ -378,7 +378,7 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 `authenticate(accessToken)` и `authenticateByPassword(email, password)`. Требования входа определены
 в `testsys.user.authentication` в [features.md](../docs/domain/features.md).
 
-- `authenticate` ищет Пользователя по Коду-доступа в портах хранения Участников, Наблюдателей и Супервайзера
+- `authenticate` ищет Пользователя по Коду-доступа в портах хранения Участников и Наблюдателей
   и возвращает найденного Пользователя как `User<*>`. Если КД не присвоен Пользователю с Фиксированной Ролью,
   операция возвращает `InvalidAccessTokenError`. Число попыток операция не ограничивает: это делает вызывающий код,
   в `testsys-web:app` — `AccessCodeSignIn`.
@@ -545,7 +545,7 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
   Число считает `UserRepository.countAvailableToAdministrator` отдельно для каждого Сообщества.
 - `createCommunity` после сохранения Сообщества включает в него создателя в Роли Администратора через
   `MultipleRoleUserRepository.addCommunityMembership`.
-- `grantRole` принимает Роль как `CommunityRole`; Роли Судьи и Администратора операция отклоняет ошибкой
+- `grantRole` принимает Роль как `CommunityRole`; Роли Судьи, Администратора и Супервайзера операция отклоняет ошибкой
   `RoleNotGrantableError`.
   Операция включает Пользователя через `joinCommunity` (см. раздел [Первое получение Роли](#первое-получение-роли))
   и для Пользователя, который уже состоит в Сообществе в этой Роли: порт такое членство не меняет.
@@ -575,9 +575,12 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 
 ## Кабинет Супервайзера
 
-[SupervisorOperations](src/main/kotlin/tech/testsys/operation/user/SupervisorOperations.kt) читает всех Пользователей,
-кроме Супервайзеров, и все Сообщества. `addToCommunity` выдаёт любую Нефиксированную Роль, кроме
-Администратора в Публичном Сообществе. При первой выдаче Администратора
+[SupervisorOperations](src/main/kotlin/tech/testsys/operation/user/SupervisorOperations.kt) выполняет действия
+Пользователя с Нефиксированными Ролями, который имеет Роль Супервайзера; остальным операции возвращают
+`MissedSupervisorRoleError`. Операции читают всех Пользователей, кроме имеющих Роль Супервайзера, и все Сообщества;
+`removeFromCommunity` так же не находит Супервайзера. `addToCommunity` выдаёт любую Нефиксированную Роль, кроме
+Администратора в Публичном Сообществе и Супервайзера: Роль Супервайзера выдаёт служебный кабинет, а операция
+возвращает `SupervisorRoleNotGrantableError`. При первой выдаче Администратора
 `AdministratorOperations.createFirstCommunity` создаёт ему Сообщество с Кодами-приглашениями.
 `grantAdministrator` выдаёт Роль Администратора без выбора Сообщества: если этой Роли у Пользователя нет,
 `AdministratorOperations.createFirstCommunity` создаёт ему первое Сообщество, и Пользователь становится его членом

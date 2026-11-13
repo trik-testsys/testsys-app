@@ -28,6 +28,7 @@ import tech.testsys.web.app.service.JudgeRoleVo
 import tech.testsys.web.app.service.ManagerRoleVo
 import tech.testsys.web.app.service.RoleVo
 import tech.testsys.web.app.service.StudentRoleVo
+import tech.testsys.web.app.service.SupervisorRoleVo
 import tech.testsys.web.components.navigation.header.CabinetHeader
 import tech.testsys.web.components.navigation.header.HeaderDestination
 import tech.testsys.web.components.navigation.header.HeaderMegaColumn
@@ -48,7 +49,6 @@ fun startPageOf(kind: UserKind): Class<out Component> = when (kind) {
     UserKind.MULTIPLE_ROLE -> MultiMainView::class.java
     UserKind.PARTICIPANT -> ParticipantView::class.java
     UserKind.OBSERVER -> ObserverView::class.java
-    UserKind.SUPERVISOR -> SupervisorView::class.java
 }
 
 /**
@@ -63,6 +63,7 @@ fun labelOf(role: RoleVo): String = currentLocalization().pageCabinet.roleName(
         is ManagerRoleVo -> RoleNameRole.MANAGER
         is JudgeRoleVo -> RoleNameRole.JUDGE
         is StudentRoleVo -> RoleNameRole.STUDENT
+        is SupervisorRoleVo -> RoleNameRole.SUPERVISOR
     },
 )
 
@@ -77,6 +78,7 @@ fun rolePageOf(role: RoleVo): Class<out Component> = when (role) {
     is ManagerRoleVo -> ManagerView::class.java
     is JudgeRoleVo -> JudgeView::class.java
     is StudentRoleVo -> StudentView::class.java
+    is SupervisorRoleVo -> SupervisorView::class.java
 }
 
 /**
@@ -117,7 +119,7 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
         )
     }
 
-    /** Signs the supervisor back in and opens their details of the user they leave (testsys.user.single.supervisor.impersonate). */
+    /** Signs the supervisor back in and opens their details of the user they leave (testsys.user.multi.supervisor.impersonate). */
     private fun returnToSupervisor() {
         val userId = CabinetSignIn.returnToSupervisor() ?: return
         UI.getCurrent().navigate(SupervisorUserView::class.java, RouteParameters(USER_ID_PARAMETER, userId.toString()))
@@ -137,13 +139,6 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
                 title = texts.roleName(role = RoleNameRole.OBSERVER),
                 page = ObserverView::class.java,
                 sections = listOf(texts.sectionContests() to "contests"),
-            ),
-        )
-        is Supervisor -> listOf(
-            roleColumn(
-                title = texts.roleName(role = RoleNameRole.SUPERVISOR),
-                page = SupervisorView::class.java,
-                sections = listOf(texts.sectionUsers() to "users", texts.sectionCommunities() to "communities"),
             ),
         )
     }
@@ -174,6 +169,11 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
             page = StudentView::class.java,
             sections = listOf(texts.sectionClasses() to "classes"),
         )
+        is Supervisor -> roleColumn(
+            title = texts.roleName(role = RoleNameRole.SUPERVISOR),
+            page = SupervisorView::class.java,
+            sections = listOf(texts.sectionUsers() to "users", texts.sectionCommunities() to "communities"),
+        )
     }
 
     /**
@@ -193,7 +193,6 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
         is MultipleRoleUser -> user.data.name
         is Participant -> user.data.name
         is Observer -> user.data.name
-        is Supervisor -> user.data.name
     }
 
     companion object {

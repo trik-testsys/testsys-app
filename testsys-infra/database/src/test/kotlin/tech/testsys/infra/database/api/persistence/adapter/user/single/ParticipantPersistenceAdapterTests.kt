@@ -118,11 +118,9 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     fun `should not find users of other kinds`() {
         val participant = repository.save(newData())
         val observerId = fixtures.observer().id
-        val supervisorId = fixtures.supervisor().id
         val developerId = SingleRoleUserId(fixtures.developer().id.value)
 
         assertNull(repository.findById(observerId))
-        assertNull(repository.findById(supervisorId))
         assertNull(repository.findById(developerId))
         assertEquals(listOf(participant.id), repository.findByIds(listOf(observerId, participant.id, developerId)).map { it.id })
         repository.removeById(observerId)

@@ -183,6 +183,21 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should write nothing when a session whose sign-in was deleted elsewhere signs out`() {
+        every { store.delete("hash") } returns false
+        val principal = CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE, impersonatedBy = 7)
+        val event = destroyedSession(principal, hash = "hash")
+        val request = MockHttpServletRequest().apply { setSession(event.session) }
+
+        val lines = logged {
+            configuration.cabinetSignIns().forget(request, MockHttpServletResponse())
+            configuration.sessionDestroyed(event)
+        }
+
+        assertTrue(lines.isEmpty())
+    }
+
+    @Test
     fun `should keep the remembered sign-in of a session closed by the shutdown and write nothing`() {
         val principal = CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE, impersonatedBy = 7)
         val event = destroyedSession(principal, hash = "hash")

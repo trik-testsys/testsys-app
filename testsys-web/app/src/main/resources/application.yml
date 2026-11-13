@@ -40,9 +40,6 @@ testsys:
   service:
     secret: ${TESTSYS_SERVICE_SECRET}
     grafana-url: ${TESTSYS_GRAFANA_URL}
-  operation:
-    supervisor:
-      access-token: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN}
   mail:
     # Empty for an SMTP server without authorization.
     password: ${TESTSYS_MAIL_PASSWORD:}

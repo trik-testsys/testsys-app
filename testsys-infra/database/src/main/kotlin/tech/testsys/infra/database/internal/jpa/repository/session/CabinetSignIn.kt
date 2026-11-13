@@ -55,12 +55,11 @@ interface CabinetSignInJpaEntityRepository : SnowflakeJpaEntityRepository<Cabine
     fun deleteOwnExcept(@Param("userId") userId: Long, @Param("exceptTokenHash") exceptTokenHash: String): Int
 
     /**
-     * Reads the records of the user [userId] together with those in which the supervisor [impersonatedBy] signed in as
-     * another user.
+     * Reads the records in which the supervisor [impersonatedBy] signed in as another user.
      *
-     * @since 1.0.0-beta.1
+     * @since %CURRENT_VERSION%
      */
-    fun findAllByUserIdOrImpersonatedBy(userId: Long, impersonatedBy: Long): List<CabinetSignInJpaEntity>
+    fun findAllByImpersonatedBy(impersonatedBy: Long): List<CabinetSignInJpaEntity>
 
     /**
      * Deletes the records in which the user [userId] signed in themselves and returns the number of deleted rows.

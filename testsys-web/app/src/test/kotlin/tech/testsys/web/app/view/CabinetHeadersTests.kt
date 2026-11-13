@@ -109,7 +109,7 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
 
     @Test
     fun `should mark the section of a page nested in it as the current location`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val observer = fixtures.observer(fixtures.community(), rawAccessToken = fixtures.unique("observer-code"))
 
         UI.getCurrent().navigate("supervisor/users/${observer.id.value}")
@@ -152,12 +152,21 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
 
     @Test
     fun `should offer only signing out to a user with a fixed role`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.userOf(UserKind.OBSERVER))
 
-        UI.getCurrent().navigate(SupervisorView::class.java)
+        UI.getCurrent().navigate(ObserverView::class.java)
 
         assertTrue(UI.getCurrent()._find<RouterLink> { text = "Профиль" }.isEmpty())
         assertEquals(1, UI.getCurrent()._find<NativeButton> { text = "Выйти" }.size)
+    }
+
+    @Test
+    fun `should show the column of the supervisor role with its sections in the menu`() {
+        signIn(fixtures.supervisor())
+
+        UI.getCurrent().navigate(MultiMainView::class.java)
+
+        assertEquals(mapOf("Супервайзер" to "supervisor"), menuSections())
     }
 
     @Test
@@ -202,7 +211,7 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
         assertEquals(expectedAsUser, asUserSignIn)
         assertNotEquals(asUser, returned)
         assertNull(store.find(asUser, idleSince = Instant.EPOCH))
-        val expectedOwn = StoredCabinetSignIn.User(userId = supervisorId, kind = CabinetSignInUserKind.SUPERVISOR)
+        val expectedOwn = StoredCabinetSignIn.User(userId = supervisorId, kind = CabinetSignInUserKind.MULTIPLE_ROLE)
         assertEquals(expectedOwn, store.find(returned, idleSince = Instant.EPOCH))
     }
 

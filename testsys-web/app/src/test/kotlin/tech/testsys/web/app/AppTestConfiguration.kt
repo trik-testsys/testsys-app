@@ -5,7 +5,6 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
-import org.springframework.core.env.Environment
 import org.springframework.core.task.SyncTaskExecutor
 import org.springframework.core.task.TaskExecutor
 import tech.testsys.domain.builder.api.classData
@@ -42,7 +41,6 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
@@ -61,10 +59,8 @@ import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
-import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.security.UserKind
@@ -82,7 +78,6 @@ class AppTestConfiguration {
         multipleRoleUsers: MultipleRoleUserRepository,
         participants: ParticipantRepository,
         observers: ObserverRepository,
-        supervisors: SupervisorRepository,
         communities: CommunityRepository,
         competitions: CompetitionRepository,
         classes: ClassRepository,
@@ -97,12 +92,10 @@ class AppTestConfiguration {
         dataSource: DataSource,
         passwordHasher: PasswordHasher,
         accessTokenHasher: AccessTokenHasher,
-        environment: Environment,
     ): AppFixtures = AppFixtures(
         multipleRoleUsers,
         participants,
         observers,
-        supervisors,
         communities,
         competitions,
         classes,
@@ -117,7 +110,6 @@ class AppTestConfiguration {
         dataSource,
         passwordHasher,
         accessTokenHasher,
-        environment.getRequiredProperty("testsys.operation.supervisor.access-token"),
     )
 
     @Bean
@@ -150,7 +142,6 @@ class AppFixtures(
     private val multipleRoleUsers: MultipleRoleUserRepository,
     private val participants: ParticipantRepository,
     private val observers: ObserverRepository,
-    private val supervisors: SupervisorRepository,
     private val communities: CommunityRepository,
     private val competitions: CompetitionRepository,
     private val classes: ClassRepository,
@@ -165,7 +156,6 @@ class AppFixtures(
     private val dataSource: DataSource,
     passwordHasher: PasswordHasher,
     private val accessTokenHasher: AccessTokenHasher,
-    private val supervisorAccessToken: String,
 ) {
     val password = "Known password 1"
 
@@ -194,29 +184,21 @@ class AppFixtures(
 
     /**
      * Returns a new user of [kind] with [name] and [rawAccessToken] or unique defaults, a user with non-fixed roles
-     * without an access code; for a supervisor it returns the single supervisor created at context startup, whose name
-     * and access code come from the test configuration.
+     * without an access code.
      */
-    fun userOf(kind: UserKind, name: String? = null, rawAccessToken: String? = null): User<*> {
-        if (kind == UserKind.SUPERVISOR) {
-            require(name == null && rawAccessToken == null) { "The single supervisor keeps its configured name and access code" }
-            return supervisor()
-        }
+    fun userOf(kind: UserKind, name: String? = null, rawAccessToken: String? = null): User<*> =
+        newUserOf(kind, name ?: unique("User"), rawAccessToken ?: unique("token"))
 
-        return newUserOf(kind, name ?: unique("User"), rawAccessToken ?: unique("token"))
-    }
-
-    /** Returns the single supervisor created at context startup. */
-    fun supervisor(): Supervisor = checkNotNull(supervisors.findSingle()) { "The supervisor bootstrap has not run" }
+    /** Returns a new user holding only the supervisor role, a member of [community] in it as in the public community. */
+    fun supervisor(name: String = unique("Supervisor"), community: Community = community()): MultipleRoleUser =
+        grantRole(multipleRoleUser(name = name), CommunityRole.Supervisor, community)
 
     /**
      * Returns the access code the fixed-role [user] was created with: the stored hash cannot be reversed, so the
-     * fixtures remember the codes they issue and the supervisor's comes from the test configuration.
+     * fixtures remember the codes they issue.
      */
-    fun accessTokenOf(user: SingleRoleUser): String = when (user) {
-        is Supervisor -> supervisorAccessToken
-        is Participant, is Observer -> checkNotNull(rawAccessTokens[user.id]) { "User ${user.id} was not created by the fixtures" }
-    }
+    fun accessTokenOf(user: SingleRoleUser): String =
+        checkNotNull(rawAccessTokens[user.id]) { "User ${user.id} was not created by the fixtures" }
 
     private fun newUserOf(kind: UserKind, name: String, rawAccessToken: String): User<*> = when (kind) {
         UserKind.MULTIPLE_ROLE -> multipleRoleUser(name = name)
@@ -237,7 +219,6 @@ class AppFixtures(
             ).also { participant -> rawAccessTokens[participant.id] = rawAccessToken }
         }
         UserKind.OBSERVER -> observer(of = community(), name = name, rawAccessToken = rawAccessToken)
-        UserKind.SUPERVISOR -> error("The single supervisor is created by the bootstrap")
     }
 
     /** Returns a new user holding only the administrator role. */

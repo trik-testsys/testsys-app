@@ -90,25 +90,3 @@ class Observer(
     createdAt: Instant,
     val data: ObserverData,
 ) : SingleRoleUser(id, createdAt, data)
-
-/**
- * Data of a [Supervisor].
- *
- * @since 1.0.0-beta.1
- */
-data class SupervisorData(
-    override val accessTokenHash: AccessTokenHash,
-    override val name: String,
-) : SingleRoleUserData
-
-/**
- * A fixed-role user who creates and manages other users.
- *
- * @property data the data of the supervisor.
- * @since 1.0.0-beta.1
- */
-class Supervisor(
-    id: SingleRoleUserId,
-    createdAt: Instant,
-    val data: SupervisorData,
-) : SingleRoleUser(id, createdAt, data)

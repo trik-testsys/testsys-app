@@ -29,7 +29,6 @@ import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
@@ -62,6 +61,7 @@ import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.RefreshSupervisorCommunityInviteError
 import tech.testsys.operation.error.RemoveSupervisorMemberError
 import tech.testsys.operation.error.RoleNotRemovableError
+import tech.testsys.operation.error.SupervisorRoleNotGrantableError
 import tech.testsys.operation.error.UserHasFixedRoleError
 import tech.testsys.operation.error.UserNotCommunityMemberError
 import tech.testsys.operation.error.UserNotExistsError
@@ -110,14 +110,14 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewUsers(
         user: User<*>,
         pagination: Pagination,
         filter: UserFilter = UserFilter(),
     ): OperationResult<Page<Pair<User<*>, Instant?>>, ViewSupervisorUsersError> =
         operation<Page<Pair<User<*>, Instant?>>, ViewSupervisorUsersError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val page = users.findUsers(pagination, filter)
             val logins = userRepository.findLastLogins(page.content.map { it.id })
             Page(page.content.map { found -> found to logins[found.id] }, page.pagination, page.totalElements)
@@ -128,10 +128,10 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewUser(user: User<*>, userId: UserId): OperationResult<Pair<User<*>, Instant?>, ViewSupervisorUserError> =
         operation<Pair<User<*>, Instant?>, ViewSupervisorUserError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val found = users.findUserById(userId)
             ensure(found != null) { UserNotExistsError(userId) }
             found to userRepository.findLastLogins(listOf(userId))[userId]
@@ -142,7 +142,7 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewUserTasks(
         user: User<*>,
         userId: UserId,
@@ -156,7 +156,7 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewUserContests(
         user: User<*>,
         userId: UserId,
@@ -170,7 +170,7 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewUserClasses(
         user: User<*>,
         userId: UserId,
@@ -184,7 +184,7 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewUserCompetitions(
         user: User<*>,
         userId: UserId,
@@ -198,7 +198,7 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewUserJudgments(
         user: User<*>,
         userId: UserId,
@@ -212,7 +212,7 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewUserAssignedContests(
         user: User<*>,
         userId: UserId,
@@ -226,10 +226,10 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun viewCommunities(user: User<*>): OperationResult<List<Pair<Community, Long>>, ViewSupervisorCommunitiesError> =
         operation<List<Pair<Community, Long>>, ViewSupervisorCommunitiesError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             communities.findAllCommunities().map { community ->
                 community to users.countUsersInCommunity(community.id)
             }
@@ -241,10 +241,10 @@ class SupervisorOperations(
      *
      * @since %CURRENT_VERSION%
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun checkSupervisorRole(user: User<*>): OperationResult<List<Community>, CheckSupervisorRoleError> =
         operation<List<Community>, CheckSupervisorRoleError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             communities.findAllCommunities()
         }
 
@@ -254,10 +254,10 @@ class SupervisorOperations(
      *
      * @since %CURRENT_VERSION%
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun checkUserAccess(user: User<*>, userId: UserId): OperationResult<User<*>, CheckSupervisorUserAccessError> =
         operation<User<*>, CheckSupervisorUserAccessError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val found = users.findUserById(userId)
             ensure(found != null) { UserNotExistsError(userId) }
             found
@@ -269,10 +269,10 @@ class SupervisorOperations(
      *
      * @since %CURRENT_VERSION%
      */
-    @Feature("testsys.user.single.supervisor.authorization")
+    @Feature("testsys.user.multi.supervisor.authorization")
     fun checkCommunityAccess(user: User<*>, communityId: CommunityId): OperationResult<Community, CheckSupervisorCommunityAccessError> =
         operation<Community, CheckSupervisorCommunityAccessError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val community = communityRepository.findById(communityId)
             ensure(community != null) { CommunityNotExistsError(communityId) }
             community
@@ -283,19 +283,20 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.addToCommunity")
+    @Feature("testsys.user.multi.supervisor.addToCommunity")
     fun addToCommunity(
         user: User<*>,
         userId: UserId,
         communityId: CommunityId,
         role: CommunityRole,
     ): OperationResult<MultipleRoleUser, AddToCommunityError> = operation<MultipleRoleUser, AddToCommunityError> {
-        ensure(user is Supervisor, MissedSupervisorRoleError)
+        ensure(user.isSupervisor(), MissedSupervisorRoleError)
         val member = users.findUserById(userId)
         ensure(member != null) { UserNotExistsError(userId) }
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(member is MultipleRoleUser) { UserHasFixedRoleError(userId) }
+        ensure(role != CommunityRole.Supervisor) { SupervisorRoleNotGrantableError(role) }
         ensure(role != CommunityRole.Administrator || communityId != communityConfig.publicCommunityId) {
             AdministratorInPublicCommunityError(communityId)
         }
@@ -315,10 +316,10 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.grantAdministrator")
+    @Feature("testsys.user.multi.supervisor.grantAdministrator")
     fun grantAdministrator(user: User<*>, userId: UserId): OperationResult<MultipleRoleUser, GrantAdministratorError> =
         operation<MultipleRoleUser, GrantAdministratorError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val member = users.findUserById(userId)
             ensure(member != null) { UserNotExistsError(userId) }
             ensure(member is MultipleRoleUser) { UserHasFixedRoleError(userId) }
@@ -333,9 +334,9 @@ class SupervisorOperations(
      *
      * @since 1.0.0-beta.1
      */
-    @Feature("testsys.user.single.supervisor.impersonate")
+    @Feature("testsys.user.multi.supervisor.impersonate")
     fun impersonate(user: User<*>, userId: UserId): OperationResult<User<*>, ImpersonateError> = operation<User<*>, ImpersonateError> {
-        ensure(user is Supervisor, MissedSupervisorRoleError)
+        ensure(user.isSupervisor(), MissedSupervisorRoleError)
         val target = users.findUserById(userId)
         ensure(target != null) { UserNotExistsError(userId) }
         ensure(target !is MultipleRoleUser || target.data.email != PublicCommunityOwner.EMAIL) {
@@ -356,7 +357,7 @@ class SupervisorOperations(
         name: String,
         description: String,
     ): OperationResult<Community, EditSupervisorCommunityError> = operation<Community, EditSupervisorCommunityError> {
-        ensure(user is Supervisor, MissedSupervisorRoleError)
+        ensure(user.isSupervisor(), MissedSupervisorRoleError)
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(name.isNotBlank(), CommunityNameBlankError)
@@ -376,9 +377,9 @@ class SupervisorOperations(
         communityId: CommunityId,
         role: CommunityRole,
     ): OperationResult<MultipleRoleUser, RemoveSupervisorMemberError> = operation<MultipleRoleUser, RemoveSupervisorMemberError> {
-        ensure(user is Supervisor, MissedSupervisorRoleError)
+        ensure(user.isSupervisor(), MissedSupervisorRoleError)
         val member = multipleRoleUsers.findById(userId)
-        ensure(member != null) { UserNotExistsError(userId) }
+        ensure(member != null && !member.isSupervisor()) { UserNotExistsError(userId) }
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(communityId != communityConfig.publicCommunityId) { CommunityIsPublicError(communityId) }
@@ -402,7 +403,7 @@ class SupervisorOperations(
         name: String,
         contestIds: Set<ContestId>,
     ): OperationResult<IssuedObserver, CreateSupervisorObserverError> = operation<IssuedObserver, CreateSupervisorObserverError> {
-        ensure(user is Supervisor, MissedSupervisorRoleError)
+        ensure(user.isSupervisor(), MissedSupervisorRoleError)
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
         val byId = contests.findByIdsAsMap(contestIds)
@@ -441,7 +442,7 @@ class SupervisorOperations(
         name: String? = null,
     ): OperationResult<Page<Contest>, ViewSupervisorCommunityContestsError> =
         operation<Page<Contest>, ViewSupervisorCommunityContestsError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             ensure(communityRepository.findById(communityId) != null) { CommunityNotExistsError(communityId) }
             contests.findSharedTo(setOf(communityId, communityConfig.publicCommunityId), pagination, ContestFilter(name = name))
         }
@@ -458,7 +459,7 @@ class SupervisorOperations(
         communityId: CommunityId,
     ): OperationResult<List<CommunityInvite>, ViewSupervisorCommunityInvitesError> =
         operation<List<CommunityInvite>, ViewSupervisorCommunityInvitesError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val community = communityRepository.findById(communityId)
             ensure(community != null) { CommunityNotExistsError(communityId) }
             administratorOperations.communityInvites(community)
@@ -477,7 +478,7 @@ class SupervisorOperations(
         kind: CommunityInvite.Kind,
     ): OperationResult<CommunityInvite, CreateSupervisorCommunityInviteError> =
         operation<CommunityInvite, CreateSupervisorCommunityInviteError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val community = communityRepository.findById(communityId)
             ensure(community != null) { CommunityNotExistsError(communityId) }
             administratorOperations.replaceCommunityInvite(community, kind)
@@ -496,7 +497,7 @@ class SupervisorOperations(
         kind: CommunityInvite.Kind,
     ): OperationResult<CommunityInvite, ExtendSupervisorCommunityInviteError> =
         operation<CommunityInvite, ExtendSupervisorCommunityInviteError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val community = communityRepository.findById(communityId)
             ensure(community != null) { CommunityNotExistsError(communityId) }
             administratorOperations.extendCommunityInvite(community, kind)
@@ -514,9 +515,11 @@ class SupervisorOperations(
         kind: CommunityInvite.Kind,
     ): OperationResult<CommunityInvite, RefreshSupervisorCommunityInviteError> =
         operation<CommunityInvite, RefreshSupervisorCommunityInviteError> {
-            ensure(user is Supervisor, MissedSupervisorRoleError)
+            ensure(user.isSupervisor(), MissedSupervisorRoleError)
             val community = communityRepository.findById(communityId)
             ensure(community != null) { CommunityNotExistsError(communityId) }
             administratorOperations.refreshCommunityInvite(community, kind)
         }
+
+    private fun User<*>.isSupervisor(): Boolean = this is MultipleRoleUser && heldRole(CommunityRole.Supervisor) != null
 }

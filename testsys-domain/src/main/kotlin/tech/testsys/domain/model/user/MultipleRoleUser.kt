@@ -132,6 +132,15 @@ class Administrator(
 ) : CompatibleUserRole(memberOf)
 
 /**
+ * The supervisor role: grants the right to create and manage other users; held only in the public community.
+ *
+ * @since %CURRENT_VERSION%
+ */
+class Supervisor(
+    memberOf: LazyEntityList<CommunityId, Community>,
+) : CompatibleUserRole(memberOf)
+
+/**
  * Data of the [Judge] role.
  *
  * @property judgmentOrders the rulings issued by the judge.

@@ -28,7 +28,6 @@ import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.studentContestEntryData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.submissionData
-import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.verdictData
@@ -59,7 +58,6 @@ import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
@@ -98,7 +96,6 @@ import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.RegistrationRequest
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
@@ -121,7 +118,6 @@ class DatabaseFixtures(
     private val multipleRoleUsers: MultipleRoleUserRepository,
     private val participants: ParticipantRepository,
     private val observers: ObserverRepository,
-    private val supervisors: SupervisorRepository,
     private val communities: CommunityRepository,
     private val competitions: CompetitionRepository,
     private val classes: ClassRepository,
@@ -255,12 +251,11 @@ class DatabaseFixtures(
         },
     )
 
-    fun supervisor(rawAccessToken: String = unique("token")): Supervisor = supervisors.save(
-        supervisorData {
-            accessToken(rawAccessToken, accessTokenHasher)
-            name = unique("Supervisor")
-        },
-    )
+    /** Creates a user holding the supervisor role, a member of [community] in it as in the public community. */
+    fun supervisor(community: Community = community()): MultipleRoleUser {
+        val communityId = community.id.value
+        return multipleRoleUser { roles { supervisor { memberOf(listOf(communityId)) } } }
+    }
 
     fun community(owner: MultipleRoleUser = developer()): Community {
         val ownerId = owner.id.value

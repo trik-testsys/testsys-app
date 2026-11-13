@@ -25,7 +25,7 @@ services:
       - "127.0.0.1:${TESTSYS_SERVICE_HTTP_PORT:-8081}:8081"
       - "127.0.0.1:${TESTSYS_METRICS_HTTP_PORT:-8082}:8082"
     # TestSysRuntime first starts the shared infrastructure context: Liquibase migrations and the Public Community
-    # and Supervisor bootstraps. Then it starts the main, service and metrics web contexts in this order, so the
+    # bootstrap. Then it starts the main, service and metrics web contexts in this order, so the
     # metrics port opens last. If any context fails, TestSysRuntime closes the started ones and the process exits.
     # Accepted TCP connections on all three ports therefore mean the application is ready.
     healthcheck:

@@ -18,7 +18,8 @@ import org.springframework.context.annotation.Import
 import org.springframework.security.core.session.SessionRegistry
 import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.infra.database.api.session.CabinetSignInStore
 import tech.testsys.infra.database.api.session.CabinetSignInUserId
@@ -32,6 +33,7 @@ import java.net.http.HttpResponse
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.HexFormat
+import java.util.UUID
 
 @Import(PostgresTestConfiguration::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = ["vaadin.productionMode=true"])
@@ -44,9 +46,6 @@ class SecurityConfigurationHttpTests {
 
     @Autowired
     private lateinit var store: CabinetSignInStore
-
-    @Autowired
-    private lateinit var supervisors: SupervisorRepository
 
     @Autowired
     private lateinit var multipleRoleUsers: MultipleRoleUserRepository
@@ -82,25 +81,52 @@ class SecurityConfigurationHttpTests {
 
     @Test
     fun `should sign a new session in from the remembered sign-in of its cookie`() {
-        val supervisor = checkNotNull(supervisors.findSingle()).id.value
+        val supervisor = newUser("Restored supervisor", isSupervisor = true)
         val hash = sha256Hex(RESTORED_TOKEN)
         store.create(
             hash,
-            StoredCabinetSignIn.User(userId = CabinetSignInUserId(supervisor), kind = CabinetSignInUserKind.SUPERVISOR),
+            StoredCabinetSignIn.User(userId = CabinetSignInUserId(supervisor.id.value), kind = CabinetSignInUserKind.MULTIPLE_ROLE),
             Instant.now(),
         )
         try {
             val principal = restoredPrincipal(RESTORED_TOKEN)
 
-            assertEquals(CabinetPrincipal(userId = supervisor, kind = UserKind.SUPERVISOR), principal)
+            assertEquals(CabinetPrincipal(userId = supervisor.id.value, kind = UserKind.MULTIPLE_ROLE), principal)
         } finally {
             store.delete(hash)
+            multipleRoleUsers.removeById(supervisor.id)
+        }
+    }
+
+    @Test
+    fun `should sign a session of a supervisor as a user out once the supervisor no longer holds the role`() {
+        val former = newUser("Former supervisor", isSupervisor = false)
+        val user = newUser("User of a former supervisor", isSupervisor = false)
+        val hash = sha256Hex(REVOKED_TOKEN)
+        val signIn = StoredCabinetSignIn.User(
+            userId = CabinetSignInUserId(user.id.value),
+            kind = CabinetSignInUserKind.MULTIPLE_ROLE,
+            impersonatedBy = CabinetSignInUserId(former.id.value),
+        )
+        store.create(hash, signIn, Instant.now())
+        try {
+            val response = HttpClient.newHttpClient().use { client ->
+                client.send(page("home", "$SIGN_IN_COOKIE=$REVOKED_TOKEN"), HttpResponse.BodyHandlers.discarding())
+            }
+
+            assertEquals(302, response.statusCode())
+            assertEquals("/", URI(response.headers().firstValue("Location").orElseThrow()).path)
+            assertEquals(null, store.find(hash, idleSince = Instant.EPOCH))
+        } finally {
+            store.delete(hash)
+            multipleRoleUsers.removeById(user.id)
+            multipleRoleUsers.removeById(former.id)
         }
     }
 
     @Test
     fun `should restore the sign-in of a supervisor as a user and write it at INFO`() {
-        val supervisor = checkNotNull(supervisors.findSingle()).id.value
+        val supervisor = newUser("Impersonating supervisor", isSupervisor = true).id.value
         val user = multipleRoleUsers.save(
             multipleRoleUserData {
                 passwordHash = PasswordHash("hash")
@@ -126,6 +152,7 @@ class SecurityConfigurationHttpTests {
         } finally {
             logger.detachAppender(appender)
             multipleRoleUsers.removeById(user.id)
+            multipleRoleUsers.removeById(MultipleRoleUserId(supervisor))
         }
     }
 
@@ -151,6 +178,15 @@ class SecurityConfigurationHttpTests {
         return sessionRegistry.getSessionInformation(sessionId)?.principal
     }
 
+    private fun newUser(name: String, isSupervisor: Boolean): MultipleRoleUser = multipleRoleUsers.save(
+        multipleRoleUserData {
+            passwordHash = PasswordHash("hash")
+            this.name = name
+            email = "${UUID.randomUUID()}@example.com"
+            if (isSupervisor) roles { supervisor {} }
+        },
+    )
+
     private fun sha256Hex(token: String): String =
         HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.UTF_8)))
 
@@ -165,5 +201,6 @@ class SecurityConfigurationHttpTests {
         const val SIGN_IN_COOKIE = "TESTSYS_APP_SIGN_IN"
         const val RESTORED_TOKEN = "restored-sign-in-token"
         const val IMPERSONATED_TOKEN = "impersonated-sign-in-token"
+        const val REVOKED_TOKEN = "revoked-supervisor-sign-in-token"
     }
 }

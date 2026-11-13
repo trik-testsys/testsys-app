@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        The supervisor role becomes a non-fixed role kept in ts_supervisor_data and ts_multiple_role_to_user.
+        Fixed-role supervisors have no e-mail and password, so they are deleted; their sign-ins go by cascade.
+    -->
+    <changeSet id="1.0.0-24-1" author="testsys">
+        <sql><![CDATA[
+            DELETE FROM ts_supervisor_data
+            WHERE user_id IN (SELECT user_id FROM ts_single_role_to_user WHERE single_role = 'SUPERVISOR');
+            WITH supervisors AS (
+                DELETE FROM ts_single_role_to_user WHERE single_role = 'SUPERVISOR' RETURNING user_id
+            )
+            DELETE FROM ts_user WHERE id IN (SELECT user_id FROM supervisors);
+        ]]></sql>
+        <rollback/>
+    </changeSet>
+
+    <changeSet id="1.0.0-24-supervisor-role-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_single_role_to_user DROP CONSTRAINT ck_ts_single_role_to_user_single_role;
+            ALTER TABLE ts_single_role_to_user ADD CONSTRAINT ck_ts_single_role_to_user_single_role CHECK (
+                single_role IN ('PARTICIPANT', 'OBSERVER')
+            );
+            ALTER TABLE ts_multiple_role_to_user DROP CONSTRAINT ck_ts_multiple_role_to_user_multiple_role;
+            ALTER TABLE ts_multiple_role_to_user ADD CONSTRAINT ck_ts_multiple_role_to_user_multiple_role CHECK (
+                multiple_role IN ('DEVELOPER', 'STUDENT', 'ADMINISTRATOR', 'JUDGE', 'MANAGER', 'SUPERVISOR')
+            );
+            ALTER TABLE ts_cabinet_sign_in DROP CONSTRAINT ck_ts_cabinet_sign_in_user_kind;
+            ALTER TABLE ts_cabinet_sign_in ADD CONSTRAINT ck_ts_cabinet_sign_in_user_kind CHECK (
+                user_kind IN ('MULTIPLE_ROLE', 'PARTICIPANT', 'OBSERVER', 'SERVICE')
+            );
+        ]]></sql>
+        <rollback>
+            <sql><![CDATA[
+                ALTER TABLE ts_cabinet_sign_in DROP CONSTRAINT ck_ts_cabinet_sign_in_user_kind;
+                ALTER TABLE ts_cabinet_sign_in ADD CONSTRAINT ck_ts_cabinet_sign_in_user_kind CHECK (
+                    user_kind IN ('MULTIPLE_ROLE', 'PARTICIPANT', 'OBSERVER', 'SUPERVISOR', 'SERVICE')
+                );
+                ALTER TABLE ts_multiple_role_to_user DROP CONSTRAINT ck_ts_multiple_role_to_user_multiple_role;
+                ALTER TABLE ts_multiple_role_to_user ADD CONSTRAINT ck_ts_multiple_role_to_user_multiple_role CHECK (
+                    multiple_role IN ('DEVELOPER', 'STUDENT', 'ADMINISTRATOR', 'JUDGE', 'MANAGER')
+                );
+                ALTER TABLE ts_single_role_to_user DROP CONSTRAINT ck_ts_single_role_to_user_single_role;
+                ALTER TABLE ts_single_role_to_user ADD CONSTRAINT ck_ts_single_role_to_user_single_role CHECK (
+                    single_role IN ('PARTICIPANT', 'OBSERVER', 'SUPERVISOR')
+                );
+            ]]></sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -54,7 +54,7 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
         val localization = currentLocalization()
         val texts = localization.pageProfile
         // A supervisor signed in as the user changes neither their e-mail address nor their password
-        // (testsys.user.single.supervisor.impersonate).
+        // (testsys.user.multi.supervisor.impersonate).
         val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
         page(headers.cabinet(active = null)) {
             head(texts.title())

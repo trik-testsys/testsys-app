@@ -44,7 +44,11 @@ class UserPaginationQueryTests : DatabaseIntegrationTests() {
         val manager = member(community) { managerIn(it) }
         val observer = fixtures.observer(community)
         val participant = fixtures.participant(fixtures.competition(owner = manager))
-        val supervisor = fixtures.supervisor()
+        val supervisor = fixtures.supervisor(community)
+        val developingSupervisor = fixtures.multipleRoleUser {
+            developerIn(listOf(community))
+            roles { supervisor { memberOf(listOf(community.id.value)) } }
+        }
 
         val page = supervisorUsers.findUsers(allUsers)
 
@@ -52,6 +56,8 @@ class UserPaginationQueryTests : DatabaseIntegrationTests() {
         assertEquals(4L, page.totalElements)
         assertEquals(Participant::class, supervisorUsers.findUserById(participant.id)?.let { it::class })
         assertEquals(null, supervisorUsers.findUserById(supervisor.id))
+        assertEquals(null, supervisorUsers.findUserById(developingSupervisor.id))
+        assertEquals(3L, supervisorUsers.countUsersInCommunity(community.id))
     }
 
     @Test

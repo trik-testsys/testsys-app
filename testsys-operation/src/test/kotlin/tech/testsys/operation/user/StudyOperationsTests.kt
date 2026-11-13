@@ -270,8 +270,8 @@ class StudyOperationsTests {
             inner class RefusalTests {
 
                 @Test
-                fun `should raise MissedParticipantRoleError if user is a Supervisor`() {
-                    val user = testSupervisor()
+                fun `should raise MissedParticipantRoleError if user is an Observer`() {
+                    val user = testObserver()
 
                     assertRaises(MissedParticipantRoleError) {
                         operations.viewContest(user = user, contestId = contest.id)
@@ -912,8 +912,8 @@ class StudyOperationsTests {
             inner class RefusalTests {
 
                 @Test
-                fun `should raise MissedParticipantRoleError if user is a Supervisor`() {
-                    val user = testSupervisor()
+                fun `should raise MissedParticipantRoleError if user is an Observer`() {
+                    val user = testObserver()
 
                     assertRaises(MissedParticipantRoleError) {
                         operations.viewTask(user = user, contestId = taskContest.id, taskId = task.id)
@@ -1317,9 +1317,9 @@ class StudyOperationsTests {
             inner class RefusalTests {
 
                 @Test
-                fun `should raise MissedParticipantRoleError before reading storage if user is a Supervisor`() {
+                fun `should raise MissedParticipantRoleError before reading storage if user is an Observer`() {
                     assertRaises(MissedParticipantRoleError) {
-                        operations.checkContestAccess(user = testSupervisor(), contestId = contest.id)
+                        operations.checkContestAccess(user = testObserver(), contestId = contest.id)
                     }
 
                     verify { competitions wasNot Called }
@@ -1518,9 +1518,9 @@ class StudyOperationsTests {
             inner class RefusalTests {
 
                 @Test
-                fun `should raise MissedParticipantRoleError before reading storage if user is a Supervisor`() {
+                fun `should raise MissedParticipantRoleError before reading storage if user is an Observer`() {
                     assertRaises(MissedParticipantRoleError) {
-                        operations.checkTaskAccess(user = testSupervisor(), contestId = taskContest.id, taskId = task.id)
+                        operations.checkTaskAccess(user = testObserver(), contestId = taskContest.id, taskId = task.id)
                     }
 
                     verify { competitions wasNot Called }
@@ -1812,7 +1812,7 @@ class StudyOperationsTests {
                 fun `should reject missing participant role`() {
                     assertRaises(MissedParticipantRoleError) {
                         operations.downloadSolution(
-                            user = testSupervisor(),
+                            user = testObserver(),
                             contestId = taskContest.id,
                             taskId = task.id,
                             submissionId = SubmissionId(51),
@@ -2279,8 +2279,8 @@ class StudyOperationsTests {
             inner class RefusalTests {
 
                 @Test
-                fun `should raise MissedParticipantRoleError if user is a Supervisor`() {
-                    val user = testSupervisor()
+                fun `should raise MissedParticipantRoleError if user is an Observer`() {
+                    val user = testObserver()
 
                     assertRaises(MissedParticipantRoleError) {
                         download(resourceId = statement.id, user = user)
@@ -2817,8 +2817,8 @@ class StudyOperationsTests {
             inner class RefusalTests {
 
                 @Test
-                fun `should raise MissedParticipantRoleError if user is a Supervisor`() {
-                    val user = testSupervisor()
+                fun `should raise MissedParticipantRoleError if user is an Observer`() {
+                    val user = testObserver()
 
                     assertRaises(MissedParticipantRoleError) { send(user = user) }
 

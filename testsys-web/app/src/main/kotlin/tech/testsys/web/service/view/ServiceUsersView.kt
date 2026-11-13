@@ -146,7 +146,6 @@ internal fun dataOf(user: User<*>): UserData = when (user) {
     is MultipleRoleUser -> user.data
     is Participant -> user.data
     is Observer -> user.data
-    is Supervisor -> user.data
 }
 
 /** Returns the e-mail of [user], or `null` for a user with a fixed role, who has none. */
@@ -164,11 +163,11 @@ internal fun roleLabelsOf(user: User<*>): List<String> = when (user) {
             is Judge -> ROLE_LABELS.getValue(ServiceUserRole.JUDGE)
             is Manager -> ROLE_LABELS.getValue(ServiceUserRole.MANAGER)
             is Student -> ROLE_LABELS.getValue(ServiceUserRole.STUDENT)
+            is Supervisor -> ROLE_LABELS.getValue(ServiceUserRole.SUPERVISOR)
         }
     }
     is Participant -> listOf(ROLE_LABELS.getValue(ServiceUserRole.PARTICIPANT))
     is Observer -> listOf(ROLE_LABELS.getValue(ServiceUserRole.OBSERVER))
-    is Supervisor -> listOf(ROLE_LABELS.getValue(ServiceUserRole.SUPERVISOR))
 }
 
 /** Opens the card of [user]. */

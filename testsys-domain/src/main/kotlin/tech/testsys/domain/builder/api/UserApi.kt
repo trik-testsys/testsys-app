@@ -16,8 +16,6 @@ import tech.testsys.domain.builder.user.ParticipantDataBuilder
 import tech.testsys.domain.builder.user.RegistrationRequestBuilder
 import tech.testsys.domain.builder.user.RegistrationRequestDataBuilder
 import tech.testsys.domain.builder.user.StudentDataBuilder
-import tech.testsys.domain.builder.user.SupervisorBuilder
-import tech.testsys.domain.builder.user.SupervisorDataBuilder
 import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.model.user.AccessRestorationRequest
 import tech.testsys.domain.model.user.AccessRestorationRequestData
@@ -35,8 +33,6 @@ import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.RegistrationRequestData
 import tech.testsys.domain.model.user.StudentData
-import tech.testsys.domain.model.user.Supervisor
-import tech.testsys.domain.model.user.SupervisorData
 
 /**
  * Builds [MultipleRoleUserData] with a [MultipleRoleUserDataBuilder] block.
@@ -79,20 +75,6 @@ inline fun participantData(builder: ParticipantDataBuilder.() -> Unit) = Partici
  * @since 1.0.0-beta.1
  */
 inline fun participant(builder: ParticipantBuilder.() -> Unit) = ParticipantBuilder().apply(builder).build()
-
-/**
- * Builds [SupervisorData] with a [SupervisorDataBuilder] block.
- *
- * @since 1.0.0-beta.1
- */
-inline fun supervisorData(builder: SupervisorDataBuilder.() -> Unit) = SupervisorDataBuilder().apply(builder).build()
-
-/**
- * Builds a [Supervisor] with a [SupervisorBuilder] block.
- *
- * @since 1.0.0-beta.1
- */
-inline fun supervisor(builder: SupervisorBuilder.() -> Unit) = SupervisorBuilder().apply(builder).build()
 
 /**
  * Builds [RegistrationRequestData] with a [RegistrationRequestDataBuilder] block.
@@ -230,27 +212,6 @@ private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
  */
 fun MultipleRoleUser.withData(builder: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser {
     return MultipleRoleUser(
-        id = this.id,
-        createdAt = this.createdAt,
-        data = this.data.toBuilder().apply(builder).build(),
-    ).applyVersion(this.version)
-}
-
-private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
-    val thisData = this
-    return SupervisorDataBuilder().apply {
-        storedAccessToken(thisData.accessTokenHash)
-        name = thisData.name
-    }
-}
-
-/**
- * Returns a copy of this supervisor with its data modified by [builder].
- *
- * @since 1.0.0-beta.1
- */
-fun Supervisor.withData(builder: SupervisorDataBuilder.() -> Unit): Supervisor {
-    return Supervisor(
         id = this.id,
         createdAt = this.createdAt,
         data = this.data.toBuilder().apply(builder).build(),

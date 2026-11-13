@@ -711,11 +711,12 @@ Notes collected while moving the Observer and Supervisor pages onto localization
   Тв. «супервайзером», П. «супервайзере». One sense, labelled «торг.»: «сотрудник, контролирующий чью-либо
   деятельность, работу»; partial synonyms «инспектор», «контролёр»; «см. также: супервизор». The page gives no
   spelling variant, so «супервизор» is a related entry, not a confirmed variant.
-- Applicability: the TestSys Role (features.md, testsys.entity.supervisor) extends the commercial sense to the one
-  User who controls all Users and Communities; the capitalized form follows features.md. No undesirable connotation
-  found. definitions.md defines it as a Fixed Role (items 3 and 12: «Супервайзер — Роль, наделяющая Пользователя
-  правом создавать других Пользователей и управлять ими. В Системе один Супервайзер.»; project-source fact verified
-  by the independent reviewer on 2026-10-12). `glossary.supervisor` was added because three `page_supervisor` messages
+- Applicability: the TestSys Role (features.md, testsys.user.multi.supervisor.authorization) extends the commercial
+  sense to Users who control all Communities and all Users except Supervisors; the capitalized form follows
+  features.md. No undesirable connotation found. definitions.md item 12 (definition updated 2026-11-12): «Супервайзер —
+  Роль, наделяющая Пользователя правом создавать других Пользователей и управлять ими. Пользователь имеет эту Роль
+  только в Публичном Сообществе. Супервайзеров в Системе может быть несколько.»; it is no longer listed among the
+  Fixed Roles of item 3. `glossary.supervisor` was added because three `page_supervisor` messages
   decline it («Кабинета Супервайзера», «кроме Супервайзеров», «доступные Супервайзеру»). `page_supervisor.title`
   stays a literal «Кабинет Супервайзера» because existing text was not to be changed; a term reference there would
   render the same output.
@@ -777,8 +778,8 @@ Notes collected while moving the Observer and Supervisor pages onto localization
 - Forms of the new glossary variants confirmed by the independent review (all read 2026-10-12): Тв. мн.
   «соревнованиями» (https://ru.wiktionary.org/wiki/соревнование); Им. «система», Р. «системы»
   (https://ru.wiktionary.org/wiki/система); Тв. «администратором» (https://ru.wiktionary.org/wiki/администратор).
-- Style observation, not a defect: «кроме Супервайзеров» uses a generic plural although the System has one
-  Супервайзер; the wording is verbatim from features.md (testsys.web.page.supervisor).
+- «кроме Супервайзеров» is verbatim from features.md (testsys.web.page.supervisor); the plural matches
+  definitions.md item 12, under which the System may have several Supervisors.
 
 ### CSV header «ID участника»
 

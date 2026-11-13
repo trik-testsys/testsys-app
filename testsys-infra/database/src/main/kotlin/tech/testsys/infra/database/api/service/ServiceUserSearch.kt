@@ -65,7 +65,8 @@ data class ServiceUserFilter(
 }
 
 /**
- * Role of a user selected by [ServiceUserFilter.roles]: a non-fixed role or the fixed role of a single-role user.
+ * Role of a user selected by [ServiceUserFilter.roles]: a non-fixed role, including the supervisor role, or the fixed
+ * role of a single-role user.
  *
  * @since 1.0.0-beta.1
  */

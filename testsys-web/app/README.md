@@ -38,7 +38,7 @@ Transaction manager остаётся общим.
 
 | Пакет | Что лежит |
 |-------|-----------|
-| `config` | Spring-конфигурация: локализация `UI` (`UiLocaleInitializer`), `InfraConfiguration`, `OperationsConfiguration`, `MainWebConfiguration` с метриками основного интерфейса, `AfterTransactionExecutor`, `AfterCommitGrader`; лог вызовов и контекст запроса `CallLoggingInterceptor`, `LoggedValues` и `RequestLogContext`, см. раздел [Логирование](#логирование) |
+| `config` | Spring-конфигурация: локализация `UI` (`UiLocaleInitializer`), общие ссылки футера `FooterLinksInitializer`, `InfraConfiguration`, `OperationsConfiguration`, `MainWebConfiguration` с метриками основного интерфейса, `AfterTransactionExecutor`, `AfterCommitGrader`; лог вызовов и контекст запроса `CallLoggingInterceptor`, `LoggedValues` и `RequestLogContext`, см. раздел [Логирование](#логирование) |
 | `security` | `SecurityConfiguration`, `CabinetPrincipal`, программный вход `CabinetSignIn`, сохранённый вход `RememberedSignIns` и `RateLimitConfiguration`, см. раздел [Безопасность](#безопасность) |
 | `service` | `CurrentUser`, общие VO и `Page.map` прокси-сервисов |
 | `service/<actor>` | Прокси-сервис `<Actor>Service` и его VO, см. раздел [Прокси-сервисы](#прокси-сервисы) |
@@ -79,9 +79,10 @@ Transaction manager остаётся общим.
 `SecurityConfiguration` подключает Spring Security через `VaadinSecurityConfigurer` и разрешает любой HTTP-запрос.
 Доступ к странице проверяет `NavigationAccessControl` Vaadin при навигации, в том числе при первом HTTP-запросе
 благодаря `vaadin.eagerServerLoad`. Он читает аннотации страницы: `@AnonymousAllowed` открывает страницу без входа,
-`@RolesAllowed` — Пользователю указанного вида. Страница без аннотации закрыта для всех, поэтому экраны ошибок
-тоже помечены `@AnonymousAllowed`. Гостя с закрытой страницы `NavigationAccessControl` отправляет на страницу
-входа `AuthenticationView` и запоминает в сессии путь открытой страницы — адрес возврата. Вошедший Пользователь
+`@PermitAll` — любому вошедшему Пользователю, `@RolesAllowed` — Пользователю указанного вида. Страница
+без аннотации закрыта для всех, поэтому экраны ошибок тоже помечены `@AnonymousAllowed`. Гостя с закрытой
+страницы `NavigationAccessControl` отправляет на страницу входа `AuthenticationView` и запоминает в сессии путь
+открытой страницы — адрес возврата. Вошедший Пользователь
 другого вида получает экран `forbidden` с кодом 403 от `AccessDeniedView`.
 
 `SecurityConfiguration` объявляет `TaskDecorator`, и Spring Boot применяет его к `applicationTaskExecutor`. Поэтому
@@ -248,6 +249,7 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 | `RestoreAccessView` | `restore-access` | Без входа; Супервайзера под Пользователем перенаправляет на стартовую страницу Пользователя |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
 | `ProfileView` | `profile` | `MULTIPLE_ROLE` |
+| `ChangelogView` | `changelog` | Любой вошедший Пользователь |
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
@@ -288,7 +290,8 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 наличие `editing` и доступность действий. Поэтому отсутствие Роли, сущности или доступа открывает экран ошибки
 из раздела [Ошибки операций](#ошибки-операций), а не ошибку загрузки блока. Проверки нет у `ParticipantView`,
 `ObserverView`, `MultiMainView` и `ProfileView`: вид Пользователя проверяет `@RolesAllowed`, и других отказов
-при загрузке их данных нет. `CommunityDetailsView` проверяет доступ через `CommunityManagementService.checkCommunityAccess`:
+при загрузке их данных нет. Нет её и у `ChangelogView`: страница не вызывает сервисов.
+`CommunityDetailsView` проверяет доступ через `CommunityManagementService.checkCommunityAccess`:
 у Администратора это доступ к созданному им Сообществу, у Супервайзера — существование Сообщества.
 
 Шапка и заголовок появляются сразу, а тела блоков загружаются через `load` из components со скелетоном. Таблицу
@@ -374,6 +377,7 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 | `page_guest` | `AuthenticationView`, `RestoreAccessView`; подзаголовок, метка шага и ссылка «Вернуться к входу», общие для гостевых страниц |
 | `page_registration` | `RegistrationView` |
 | `page_profile` | `ProfileView` |
+| `page_changelog` | `ChangelogView` и подпись её ссылки в футере |
 | `page_confirmation` | Подтверждение почты кодом из письма, общее для `RegistrationView` и `ProfileView` |
 | `page_password` | Правила нового Пароля и отказ по ним, общие для `RegistrationView`, `RestoreAccessView` и `ProfileView` |
 | `page_home` | `MultiMainView` |
@@ -397,6 +401,17 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 `SupervisorCommunityView` получает из `page_supervisor` только название Кабинета для хлебных крошек.
 
 Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
+
+`ChangelogView` показывает историю изменений: по блоку на каждую версию Системы, от новой версии к старой.
+Тексты версий — осознанное исключение из правила о бандлах `page_*`. Это Markdown-файлы
+`src/main/resources/changelog/<языковой тег>/<версия>.md`, у каждого региона своя папка. Имя файла — версия SemVer,
+например `1.0.0-beta.1.md`; с файлом другого имени построение страницы завершается `IllegalStateException`.
+Порядок задаёт старшинство версий SemVer. Файл содержит только изменения, заметные Пользователям, без заголовка
+версии: номер показывает заголовок блока. Чтобы добавить релиз, положите новый файл, код менять не нужно.
+
+`FooterLinksInitializer` при создании каждого `UI` задаёт общие ссылки футера через `setCommonFooterLinks`, см.
+раздел [Футер страницы](../components/README.md#футер-страницы) components/README.md. Вошедший Пользователь видит
+в футере каждой страницы, гостевой страницы и экрана ошибки ссылку на `ChangelogView`; гость её не видит.
 
 ## Прокси-сервисы
 

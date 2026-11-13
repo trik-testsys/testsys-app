@@ -3,6 +3,8 @@
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.ComponentUtil
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
@@ -57,6 +59,20 @@ class PageFooterScope internal constructor() {
     }
 }
 
+/**
+ * Sets the links that every footer built on [ui] adds after the links of its page: of a page, a guest page and an
+ * error screen. [links] runs at each footer build, so the set can depend on the state at that moment, such as whether
+ * the user is signed in; a repeated call replaces the set.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun setCommonFooterLinks(ui: UI, links: PageFooterScope.() -> Unit) {
+    ComponentUtil.setData(ui, CommonFooterLinks::class.java, CommonFooterLinks(links))
+}
+
+/** Key and value of the common footer links in the data of a UI. */
+private class CommonFooterLinks(val content: PageFooterScope.() -> Unit)
+
 internal fun buildPageFooter(
     texts: UiLocalization,
     links: PageFooterScope = PageFooterScope(),
@@ -66,6 +82,8 @@ internal fun buildPageFooter(
     val year = Span(texts.messages.uiPage.footerYear(year = Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
     val brand = Div(name, year).apply { addClassName(CssClass.FooterBrand) }
     val inner = Div(brand).apply { addClassName(CssClass.FooterInner) }
+    val common = UI.getCurrent()?.let { ui -> ComponentUtil.getData(ui, CommonFooterLinks::class.java) }
+    common?.let { commonLinks -> links.apply(commonLinks.content) }
     links.build(texts.messages.uiPage.footerLinks())?.let { navigation -> inner.add(navigation) }
     return Footer(inner).apply { addClassName(CssClass.Footer) }
 }

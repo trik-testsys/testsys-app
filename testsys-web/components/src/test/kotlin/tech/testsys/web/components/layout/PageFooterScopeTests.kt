@@ -1,5 +1,6 @@
 package tech.testsys.web.components.layout
 
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -51,6 +52,19 @@ internal class PageFooterScopeTests : MockVaadinTests() {
             rendered.map { link -> link.element.getAttribute("href") },
         )
         assertEquals(listOf(null, null), rendered.map { link -> link.element.getAttribute("target") })
+    }
+
+    @Test
+    fun `should add the common links of the UI after the links of the page at each build`() {
+        var label = "Первая"
+        setCommonFooterLinks(UI.getCurrent()) { link(label, href = "/common") }
+        buildPageFooter(testTexts, clock = fixedClock)
+        label = "Вторая"
+        val links = PageFooterScope().apply { link("Item", ItemTestView::class.java, RouteParameters("id", "7")) }
+
+        val footer = buildPageFooter(testTexts, links, clock = fixedClock)
+
+        assertEquals(listOf("Item", "Вторая"), footer.findAll("ts-footer__link").map { link -> link.element.textRecursively })
     }
 
     @ParameterizedTest

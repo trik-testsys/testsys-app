@@ -5957,6 +5957,32 @@ class LocalizationTests {
         }
     }
 
+    @Nested
+    inner class PageChangelogTests {
+
+        @Test
+        fun `should name the page in title`() {
+            assertEquals("История изменений", l.pageChangelog.title())
+        }
+
+        @Test
+        fun `should render the user term in dative plural and the version order in guide`() {
+            assertEquals(
+                "Здесь для каждой версии TestSys перечислены изменения, заметные Пользователям. " +
+                    "Версии идут от новых к старым.",
+                l.pageChangelog.guide(),
+            )
+        }
+
+        @Test
+        fun `should render the user term in dative plural in version guide`() {
+            assertEquals(
+                "Изменения этой версии TestSys, заметные Пользователям.",
+                l.pageChangelog.versionGuide(),
+            )
+        }
+    }
+
     private companion object {
         // ICU digit groups and some messages use a no-break space; the code point keeps the expectations visible.
         val NBSP = Char(0x00A0).toString()

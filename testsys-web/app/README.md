@@ -38,7 +38,7 @@ Transaction manager остаётся общим.
 
 | Пакет | Что лежит |
 |-------|-----------|
-| `config` | Spring-конфигурация: локализация `UI` (`UiLocaleInitializer`), общие ссылки футера `FooterLinksInitializer`, `InfraConfiguration`, `OperationsConfiguration`, `MainWebConfiguration` с метриками основного интерфейса, `AfterTransactionExecutor`, `AfterCommitGrader`; лог вызовов и контекст запроса `CallLoggingInterceptor`, `LoggedValues` и `RequestLogContext`, см. раздел [Логирование](#логирование) |
+| `config` | Spring-конфигурация: локализация `UI` (`UiLocaleInitializer`), общие ссылки и номер версии в футере `FooterInitializer`, `InfraConfiguration`, `OperationsConfiguration`, `MainWebConfiguration` с метриками основного интерфейса, `AfterTransactionExecutor`, `AfterCommitGrader`; лог вызовов и контекст запроса `CallLoggingInterceptor`, `LoggedValues` и `RequestLogContext`, см. раздел [Логирование](#логирование) |
 | `security` | `SecurityConfiguration`, `CabinetPrincipal`, программный вход `CabinetSignIn`, сохранённый вход `RememberedSignIns` и `RateLimitConfiguration`, см. раздел [Безопасность](#безопасность) |
 | `service` | `CurrentUser`, общие VO и `Page.map` прокси-сервисов |
 | `service/<actor>` | Прокси-сервис `<Actor>Service` и его VO, см. раздел [Прокси-сервисы](#прокси-сервисы) |
@@ -409,9 +409,12 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 Порядок задаёт старшинство версий SemVer. Файл содержит только изменения, заметные Пользователям, без заголовка
 версии: номер показывает заголовок блока. Чтобы добавить релиз, положите новый файл, код менять не нужно.
 
-`FooterLinksInitializer` при создании каждого `UI` задаёт общие ссылки футера через `setCommonFooterLinks`, см.
-раздел [Футер страницы](../components/README.md#футер-страницы) components/README.md. Вошедший Пользователь видит
-в футере каждой страницы, гостевой страницы и экрана ошибки ссылку на `ChangelogView`; гость её не видит.
+`FooterInitializer` при создании каждого `UI` задаёт общие ссылки футера через `setCommonFooterLinks` и номер
+версии через `setFooterVersion`, см. раздел [Футер страницы](../components/README.md#футер-страницы)
+components/README.md. Вошедший Пользователь видит в футере каждой страницы, гостевой страницы и экрана ошибки
+ссылку на `ChangelogView`; гость её не видит. Номер версии берётся из свойства `spring.application.version`: Spring
+Boot заполняет его из `Implementation-Version` манифеста исполняемого jar. При запуске из IDE и в тестах свойства
+нет, и футер выводит только название.
 
 ## Прокси-сервисы
 

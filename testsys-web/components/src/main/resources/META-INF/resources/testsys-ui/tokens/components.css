@@ -103,9 +103,9 @@
 .ts-page { width:100%; max-width:var(--container-fit); margin:0 auto; padding:var(--space-4) 0; display:flex; flex-direction:column; gap:var(--row-gap); flex:1 0 auto; }
 .ts-footer { flex:none; border-top:1px solid var(--line); background:var(--surface-card); }
 .ts-footer__inner { max-width:var(--container-fit); margin:0 auto; padding:var(--space-3) 0; display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
-.ts-footer__brand { display:flex; align-items:center; gap:var(--space-3); }
+.ts-footer__brand { display:flex; align-items:center; gap:var(--space-3); margin-left:auto; }
 .ts-footer__name { color:var(--text-secondary); font:var(--fw-semibold) var(--fs-sm) var(--font-mono); }
-.ts-footer__year { color:var(--text-tertiary); font:var(--fw-regular) var(--fs-sm) var(--font-mono); }
+.ts-footer__version { color:var(--text-tertiary); font:var(--fw-regular) var(--fs-sm) var(--font-mono); }
 .ts-footer__links { display:flex; align-items:center; gap:var(--space-4); font-size:var(--fs-sm); }
 .ts-footer__link { color:var(--text-secondary); }
 .ts-footer__link:hover { color:var(--text-primary); }

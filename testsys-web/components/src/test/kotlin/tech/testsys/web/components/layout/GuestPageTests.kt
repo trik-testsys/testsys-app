@@ -23,7 +23,7 @@ import tech.testsys.web.components.findAll
 import tech.testsys.web.components.forms.passwordInput
 import tech.testsys.web.components.forms.segmentedControl
 import tech.testsys.web.components.forms.textInput
-import java.time.Year
+import tech.testsys.web.components.testTexts
 
 class GuestPageTests : MockVaadinTests() {
     private class GuestView(body: GuestPageScope.() -> Unit) : TestSysView() {
@@ -191,10 +191,10 @@ class GuestPageTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should show the footer with the year`() {
+    fun `should show the footer with the brand name`() {
         val footer = build {}.child(1)
 
-        assertTrue(footer.element.textRecursively.contains(Year.now().value.toString()))
+        assertEquals(testTexts.messages.uiPage.brandName(), footer.find("ts-footer__name").element.text)
     }
 
     @Test

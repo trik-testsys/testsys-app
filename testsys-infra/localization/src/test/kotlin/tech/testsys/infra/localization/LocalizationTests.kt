@@ -226,11 +226,6 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should show the year without digit grouping in footer year`() {
-            assertEquals("2026", l.uiPage.footerYear(year = 2026))
-        }
-
-        @Test
         fun `should name the footer navigation in footer links`() {
             assertEquals("Ссылки футера", l.uiPage.footerLinks())
         }

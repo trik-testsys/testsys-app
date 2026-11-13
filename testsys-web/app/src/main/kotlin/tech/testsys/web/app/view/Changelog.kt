@@ -1,6 +1,17 @@
 package tech.testsys.web.app.view
 
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver
+import tech.testsys.domain.model.user.Administrator
+import tech.testsys.domain.model.user.CompatibleUserRole
+import tech.testsys.domain.model.user.Developer
+import tech.testsys.domain.model.user.Judge
+import tech.testsys.domain.model.user.Manager
+import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.Observer
+import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.Student
+import tech.testsys.domain.model.user.Supervisor
+import tech.testsys.domain.model.user.User
 
 /** SemVer 2.0 version without build metadata: the numeric core and the optional pre-release identifiers. */
 private val SEMVER = Regex("""(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?""")
@@ -16,23 +27,59 @@ internal val versionOrder: Comparator<String> = Comparator { left, right ->
         ?: comparePreReleases(leftPreRelease, rightPreRelease)
 }
 
+/** Common part of a version, which every user sees. */
+private const val COMMON_PART = "common"
+
+/** Parts of a version in their order on the page: the common part, then the parts of the roles. */
+internal val CHANGELOG_PARTS = listOf(
+    COMMON_PART, "administrator", "manager", "student", "developer", "judge", "supervisor", "participant", "observer",
+)
+
 /**
- * Returns the user changelog of the region [languageTag]: the files `changelog/<languageTag>/<version>.md` of the
- * classpath as pairs of the version and its Markdown text, from the newest version to the oldest.
+ * Returns the user changelog of the region [languageTag]: the files `changelog/<languageTag>/<version>/<part>.md` of
+ * the classpath as pairs of the version and the Markdown text of its [parts], from the newest version to the oldest.
  *
- * @throws IllegalStateException if a file name is not a SemVer version.
+ * @throws IllegalStateException if a directory name is not a SemVer version or a file name is not a part.
  */
-internal fun readChangelog(languageTag: String): List<Pair<String, String>> =
-    PathMatchingResourcePatternResolver().getResources("classpath*:changelog/$languageTag/*.md")
+internal fun readChangelog(languageTag: String, parts: Set<String> = CHANGELOG_PARTS.toSet()): List<Pair<String, String>> =
+    PathMatchingResourcePatternResolver().getResources("classpath*:changelog/$languageTag/*/*.md")
         .map { resource ->
-            val version = checkNotNull(resource.filename).removeSuffix(".md").also(::parseVersion)
-            version to resource.getContentAsString(Charsets.UTF_8)
+            val part = checkNotNull(resource.filename).removeSuffix(".md")
+            check(part in CHANGELOG_PARTS) { "Changelog file '$part.md' is not named by a part of a version" }
+            val version = resource.url.path.substringBeforeLast('/').substringAfterLast('/').also(::parseVersion)
+            Triple(version, part, resource)
+        }
+        .filter { (_, part, _) -> part in parts }
+        .groupBy({ (version, _, _) -> version }, { (_, part, resource) -> part to resource })
+        .map { (version, files) ->
+            version to files.sortedBy { (part, _) -> CHANGELOG_PARTS.indexOf(part) }
+                .joinToString("\n") { (_, resource) -> resource.getContentAsString(Charsets.UTF_8) }
         }
         .sortedWith(compareBy(versionOrder.reversed()) { (version, _) -> version })
 
+/** Returns the changelog parts [user] sees: the common part and the parts of their roles, all parts for a supervisor. */
+internal fun changelogPartsOf(user: User<*>): Set<String> = when (user) {
+    is MultipleRoleUser -> if (user.data.roles.any { role -> role is Supervisor }) {
+        CHANGELOG_PARTS.toSet()
+    } else {
+        setOf(COMMON_PART) + user.data.roles.map(::partOf)
+    }
+    is Participant -> setOf(COMMON_PART, "participant")
+    is Observer -> setOf(COMMON_PART, "observer")
+}
+
+private fun partOf(role: CompatibleUserRole): String = when (role) {
+    is Administrator -> "administrator"
+    is Manager -> "manager"
+    is Student -> "student"
+    is Developer -> "developer"
+    is Judge -> "judge"
+    is Supervisor -> "supervisor"
+}
+
 private fun parseVersion(version: String): Pair<List<String>, List<String>> {
     val match = SEMVER.matchEntire(version)
-    checkNotNull(match) { "Changelog file '$version.md' is not named by a SemVer version" }
+    checkNotNull(match) { "Changelog directory '$version' is not named by a SemVer version" }
     val preRelease = match.groupValues[CORE_PARTS + 1]
     return match.groupValues.subList(1, CORE_PARTS + 1) to if (preRelease.isEmpty()) emptyList() else preRelease.split('.')
 }

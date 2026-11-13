@@ -5,13 +5,16 @@ import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.H3
+import com.vaadin.flow.component.markdown.Markdown
 import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.springframework.boot.test.context.SpringBootTest
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.security.UserKind
 
@@ -27,6 +30,18 @@ class ChangelogViewTests : MockSpringVaadinTests() {
         assertEquals(ChangelogView::class.java, currentView)
         assertTrue("1.0.0-beta.1" in _find<H3> { classes = "ts-block__title" }.map { title -> title.text })
         assertEquals("changelog", _get<RouterLink> { classes = "ts-footer__link" }.href)
+    }
+
+    @Test
+    fun `should show the signed-in user only the changelog parts of their roles`() {
+        signIn(fixtures.grantRole(fixtures.multipleRoleUser(), CommunityRole.Developer))
+
+        UI.getCurrent().navigate(ChangelogView::class.java)
+
+        val content = _find<Markdown>().joinToString("\n") { markdown -> markdown.content }
+        assertTrue("### Все Пользователи" in content)
+        assertTrue("### Разработчик" in content)
+        assertFalse("### Администратор" in content)
     }
 
     @Test

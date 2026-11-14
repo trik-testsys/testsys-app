@@ -140,6 +140,7 @@ internal enum class CssClass(internal val value: String) {
     GuestNoticeInfo("ts-guest-notice--info"),
     GuestNoticeWarning("ts-guest-notice--warning"),
     GuestNoticeDate("ts-guest-notice__date"),
+    GuestNoticeLink("ts-guest-notice__link"),
     GuestNoticeText("ts-guest-notice__text"),
     GuestNotices("ts-guest__notices"),
     GuestTagline("ts-guest__tagline"),

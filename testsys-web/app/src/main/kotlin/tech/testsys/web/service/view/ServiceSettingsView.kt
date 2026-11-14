@@ -2,81 +2,99 @@ package tech.testsys.web.service.view
 
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
+import tech.testsys.infra.localization.PageService
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.SettingsSnapshot
 import tech.testsys.infra.settings.api.catalog.SettingKey
-import tech.testsys.infra.settings.api.catalog.SettingKind
 import tech.testsys.infra.settings.api.service.SettingsChangeResult
 import tech.testsys.infra.settings.api.service.SettingsPersistence
 import tech.testsys.infra.settings.api.service.SettingsService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.IconName
-import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.alert
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
- * Service-only atomic settings editor, refreshed on navigation and after successful changes.
+ * Service-only settings editor with a block per settings group; a block saves its changed settings atomically, and
+ * the page is refreshed on navigation and after successful changes.
  *
  * @since 1.0.0-beta.1
  */
 @Route("settings")
-@PageTitle("Настройки Системы")
 @RolesAllowed("SERVICE")
 class ServiceSettingsView(
     private val headers: ServiceHeaders,
     private val settings: SettingsService,
     private val runtime: RuntimeSettings,
-) : TestSysView(), BeforeEnterObserver {
+) : TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    private val texts: PageService get() = currentLocalization().pageService
+
+    override fun getPageTitle(): String = texts.settingsTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) = showSettings()
 
     private fun showSettings() {
         val overview = settings.overview()
         val snapshot = overview.snapshot
-        val form = ServiceSettingsForm(snapshot)
-        page(headers.header(active = ServiceHeaders.SETTINGS_SECTION)) {
-            head("Настройки Системы")
-            row {
-                block(title = "Настройки") {
-                    if (overview.persistence == SettingsPersistence.Known) {
-                        editing(onSave = {
-                            val changes = form.changes()
-                            if (changes == null) false else applyChanges(overview.revision, changes, form)
-                        }, onCancel = form::cancel)
-                    } else {
-                        row { text("Сохранённое состояние неопределённо. Изменения заблокированы до перезапуска.") }
-                    }
-                    GROUPS.forEach { (group, keys) ->
-                        sectionTitle(group)
-                        keys.forEach { key ->
-                            row {
-                                val input =
-                                    textInput(LABELS.getValue(key), labelSize = 5, size = 6, hint = key.property)
-                                form.bind(key, input)
-                                input.isEditable = overview.persistence == SettingsPersistence.Known
-                                horizontal(size = 1) { action(label = settingHelp(key, snapshot), icon = IconName.Info, iconOnly = true) }
+        val isKnown = overview.persistence == SettingsPersistence.Known
+        page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
+            head(texts.settingsTitle())
+            // Two blocks a row: the groups are short, and full-width blocks leave the page mostly empty.
+            GROUPS.withIndex().chunked(BLOCKS_IN_ROW).forEach { groups ->
+                row {
+                    groups.forEach { (index, entry) ->
+                        val (group, keys) = entry
+                        block(title = groupTitle(group), size = BLOCK_SIZE) {
+                            // Each block binds only its keys, so its form changes only them.
+                            val form = ServiceSettingsForm(snapshot)
+                            if (isKnown) {
+                                editing(onSave = {
+                                    val changes = form.changes()
+                                    if (changes == null) false else applyChanges(overview.revision, changes, form)
+                                }, onCancel = form::cancel)
+                            } else if (index == 0) {
+                                row { alert(FeedbackKind.Warning, texts.settingsUncertain()) }
                             }
-                            separator()
+
+                            keys.forEach { key ->
+                                row {
+                                    val input = textInput(label(key), labelSize = 10, size = 12, hint = key.property)
+                                    form.bind(key, input)
+                                    input.isEditable = isKnown
+                                    horizontal(size = 2) {
+                                        action(label = settingHelp(key, snapshot), icon = IconName.Info, iconOnly = true)
+                                    }
+                                }
+                            }
+
+                            val savedMaxMessageBytes = snapshot.values.int(SettingKey.MaxMessageBytes)
+                            if (SettingKey.MaxMessageBytes in keys && savedMaxMessageBytes != snapshot.activeMaxMessageBytes) {
+                                row {
+                                    alert(
+                                        FeedbackKind.Info,
+                                        texts.settingsRestartPending(active = snapshot.activeMaxMessageBytes, saved = savedMaxMessageBytes),
+                                    )
+                                }
+                            }
                         }
                     }
+                }
+            }
+            row {
+                block(title = texts.settingsGroupCommunities(), size = BLOCK_SIZE) {
                     row {
-                        textInput("Публичное Сообщество (ID)", labelSize = 5, size = 4) {
+                        textInput(texts.settingsPublicCommunity(), labelSize = 10, size = 12) {
                             value = runtime.publicCommunityId.value.toString()
                             isEditable = false
-                        }
-                    }
-                    if (snapshot.values.int(SettingKey.MaxMessageBytes) != snapshot.activeMaxMessageBytes) {
-                        row {
-                            text(
-                                "Размер входящего сообщения: действующий предел — ${snapshot.activeMaxMessageBytes} байт, " +
-                                    "сохранённый — ${snapshot.values[SettingKey.MaxMessageBytes]} байт. " +
-                                    "Для применения требуется перезапуск.",
-                            )
                         }
                     }
                 }
@@ -87,7 +105,7 @@ class ServiceSettingsView(
     private fun applyChanges(revision: Long, changes: Map<SettingKey, String>, form: ServiceSettingsForm): Boolean {
         return when (val result = settings.change(revision, changes)) {
             is SettingsChangeResult.Applied -> {
-                toast(FeedbackKind.Success, "Настройки применены")
+                toast(FeedbackKind.Success, texts.settingsApplied())
                 showSettings()
                 true
             }
@@ -96,77 +114,80 @@ class ServiceSettingsView(
                 false
             }
             SettingsChangeResult.Stale -> {
-                toast(FeedbackKind.Error, "Настройки изменились. Обновите страницу браузера и повторите изменения")
+                toast(FeedbackKind.Error, texts.settingsStale())
                 false
             }
             SettingsChangeResult.Failed -> {
-                toast(FeedbackKind.Error, "Не удалось применить настройки. Прежние значения сохранены; обновите страницу")
+                toast(FeedbackKind.Error, texts.settingsFailed())
                 false
             }
             SettingsChangeResult.Uncertain -> {
-                toast(FeedbackKind.Error, "Исход сохранения неопределён. Изменения заблокированы до перезапуска")
+                toast(FeedbackKind.Error, texts.settingsUncertainResult())
                 showSettings()
                 false
             }
         }
     }
 
-    private fun settingHelp(key: SettingKey, snapshot: SettingsSnapshot): String {
-        val activeLimit = if (key.isRestartRequired) " Действующий предел — ${snapshot.activeMaxMessageBytes} байт." else ""
-        return "${description(key)}\n\n${inputFormat(key)}.\n\nИзменения вступят в силу ${applicationBoundary(key)}.$activeLimit"
+    private fun settingHelp(key: SettingKey, snapshot: SettingsSnapshot): String = when (key) {
+        SettingKey.MaxParticipants -> texts.settingsHelpMaxParticipants()
+        SettingKey.ConfirmationCodeLifetime -> texts.settingsHelpConfirmationCodeLifetime()
+        SettingKey.MaxConfirmationAttempts -> texts.settingsHelpMaxConfirmationAttempts()
+        SettingKey.CommunityInviteTtl -> texts.settingsHelpCommunityInviteTtl()
+        SettingKey.ClassInviteTtl -> texts.settingsHelpClassInviteTtl()
+        SettingKey.GradingMaxAttempts -> texts.settingsHelpGradingMaxAttempts()
+        SettingKey.TotalTimeout -> texts.settingsHelpTotalTimeout()
+        SettingKey.RpcTimeout -> texts.settingsHelpRpcTimeout()
+        SettingKey.ShouldRecordVideo -> texts.settingsHelpShouldRecordVideo()
+        SettingKey.PollInterval -> texts.settingsHelpPollInterval()
+        SettingKey.StatusTimeout -> texts.settingsHelpStatusTimeout()
+        SettingKey.MaxMessageBytes -> texts.settingsHelpMaxMessageBytes(active = snapshot.activeMaxMessageBytes)
+        SettingKey.MaxTimeLimitMillis -> texts.settingsHelpMaxTimeLimitMillis()
+        SettingKey.ScorePrefix -> texts.settingsHelpScorePrefix()
+        SettingKey.CleanupMinimumAge -> texts.settingsHelpCleanupMinimumAge()
+        SettingKey.CleanupBatchSize -> texts.settingsHelpCleanupBatchSize()
     }
 
-    private fun description(key: SettingKey): String = when (key) {
-        SettingKey.MaxParticipants -> "Максимальное общее количество Участников в одном Соревновании."
-        SettingKey.ConfirmationCodeLifetime -> "Время, в течение которого можно подтвердить почту выданным кодом."
-        SettingKey.MaxConfirmationAttempts -> "Количество попыток ввода кода подтверждения почты."
-        SettingKey.CommunityInviteTtl -> "Срок действия Кода-приглашения в Сообщество."
-        SettingKey.ClassInviteTtl -> "Срок действия Кода-приглашения в Класс."
-        SettingKey.GradingMaxAttempts -> "Общее число транспортных попыток запуска проверки на Проверяющем узле."
-        SettingKey.TotalTimeout -> "Общее время на подготовку, ожидание Проверяющего узла и выполнение проверки."
-        SettingKey.RpcTimeout -> "Срок одного запроса проверки к узлу; ограничен оставшимся общим временем проверки."
-        SettingKey.ShouldRecordVideo -> "Запрашивать у Проверяющего узла видеозапись проверки."
-        SettingKey.PollInterval -> "Промежуток между фоновыми опросами состояния Проверяющих узлов."
-        SettingKey.StatusTimeout -> "Максимальное время ожидания ответа о состоянии Проверяющего узла."
-        SettingKey.MaxMessageBytes -> "Максимальный размер входящего gRPC-сообщения от Проверяющего узла."
-        SettingKey.MaxTimeLimitMillis -> "Верхняя граница ограничения времени в Полигоне, которую проверяет Диагностика."
-        SettingKey.ScorePrefix -> "Текст, по которому Диагностика распознаёт вывод баллов в Полигоне. Регистр учитывается."
-        SettingKey.CleanupMinimumAge -> "Минимальное время после изменения файла без записи в БД, позволяющее удалить его при очистке."
-        SettingKey.CleanupBatchSize -> "Максимальное количество записей или файлов в одном пакете очистки."
+    private fun label(key: SettingKey): String = when (key) {
+        SettingKey.MaxParticipants -> texts.settingsLabelMaxParticipants()
+        SettingKey.ConfirmationCodeLifetime -> texts.settingsLabelConfirmationCodeLifetime()
+        SettingKey.MaxConfirmationAttempts -> texts.settingsLabelMaxConfirmationAttempts()
+        SettingKey.CommunityInviteTtl -> texts.settingsLabelCommunityInviteTtl()
+        SettingKey.ClassInviteTtl -> texts.settingsLabelClassInviteTtl()
+        SettingKey.GradingMaxAttempts -> texts.settingsLabelGradingMaxAttempts()
+        SettingKey.TotalTimeout -> texts.settingsLabelTotalTimeout()
+        SettingKey.RpcTimeout -> texts.settingsLabelRpcTimeout()
+        SettingKey.ShouldRecordVideo -> texts.settingsLabelShouldRecordVideo()
+        SettingKey.PollInterval -> texts.settingsLabelPollInterval()
+        SettingKey.StatusTimeout -> texts.settingsLabelStatusTimeout()
+        SettingKey.MaxMessageBytes -> texts.settingsLabelMaxMessageBytes()
+        SettingKey.MaxTimeLimitMillis -> texts.settingsLabelMaxTimeLimitMillis()
+        SettingKey.ScorePrefix -> texts.settingsLabelScorePrefix()
+        SettingKey.CleanupMinimumAge -> texts.settingsLabelCleanupMinimumAge()
+        SettingKey.CleanupBatchSize -> texts.settingsLabelCleanupBatchSize()
     }
 
-    private fun inputFormat(key: SettingKey): String = when (key.kind) {
-        SettingKind.Integer -> {
-            val range = if (key == SettingKey.MaxParticipants) "Неотрицательное" else "Положительное"
-            "$range целое число типа Kotlin Int" + if (key == SettingKey.MaxMessageBytes) ", в байтах" else ""
-        }
-        SettingKind.Long -> "Неотрицательное целое число типа Kotlin Long, в миллисекундах"
-        SettingKind.Boolean -> "true — включена, false — выключена"
-        SettingKind.Duration -> "Положительная длительность ISO-8601, например PT5M"
-        SettingKind.Text -> "Текст не должен быть пустым или состоять только из пробелов; пробелы сохраняются"
+    private fun groupTitle(group: SettingsGroup): String = when (group) {
+        SettingsGroup.Competitions -> texts.settingsGroupCompetitions()
+        SettingsGroup.EmailConfirmation -> texts.settingsGroupEmailConfirmation()
+        SettingsGroup.Invites -> texts.settingsGroupInvites()
+        SettingsGroup.Grading -> texts.settingsGroupGrading()
+        SettingsGroup.Diagnostics -> texts.settingsGroupDiagnostics()
+        SettingsGroup.FileCleanup -> texts.settingsGroupFileCleanup()
     }
 
-    private fun applicationBoundary(key: SettingKey): String = when (key) {
-        SettingKey.MaxParticipants -> "при последующих добавлениях Участников; существующие Участники останутся в Соревновании"
-        SettingKey.ConfirmationCodeLifetime, SettingKey.MaxConfirmationAttempts ->
-            "при создании или перезаписи запроса подтверждения почты"
-        SettingKey.CommunityInviteTtl, SettingKey.ClassInviteTtl -> "при создании, замене или продлении Кода-приглашения"
-        SettingKey.GradingMaxAttempts, SettingKey.TotalTimeout, SettingKey.RpcTimeout, SettingKey.ShouldRecordVideo ->
-            "при приёме новой проверки. Уже принятые проверки сохранят прежние настройки до завершения"
-        SettingKey.PollInterval -> "после сохранения: расписание опроса будет перестроено с новым интервалом"
-        SettingKey.StatusTimeout -> "при следующем запросе статуса узла"
-        SettingKey.MaxMessageBytes -> "после перезапуска приложения. Поле показывает сохранённое значение"
-        SettingKey.MaxTimeLimitMillis, SettingKey.ScorePrefix -> "при следующей Диагностике"
-        SettingKey.CleanupMinimumAge, SettingKey.CleanupBatchSize ->
-            "при следующем явном проходе очистки. Сохранение настройки не запускает очистку"
-    }
+    /** Settings blocks in the order of the page. */
+    private enum class SettingsGroup { Competitions, EmailConfirmation, Invites, Grading, Diagnostics, FileCleanup }
 
     private companion object {
+        private const val BLOCKS_IN_ROW = 2
+        private const val BLOCK_SIZE = 12
+
         private val GROUPS = listOf(
-            "Соревнования" to listOf(SettingKey.MaxParticipants),
-            "Подтверждение почты" to listOf(SettingKey.ConfirmationCodeLifetime, SettingKey.MaxConfirmationAttempts),
-            "Приглашения" to listOf(SettingKey.CommunityInviteTtl, SettingKey.ClassInviteTtl),
-            "Проверка" to listOf(
+            SettingsGroup.Competitions to listOf(SettingKey.MaxParticipants),
+            SettingsGroup.EmailConfirmation to listOf(SettingKey.ConfirmationCodeLifetime, SettingKey.MaxConfirmationAttempts),
+            SettingsGroup.Invites to listOf(SettingKey.CommunityInviteTtl, SettingKey.ClassInviteTtl),
+            SettingsGroup.Grading to listOf(
                 SettingKey.GradingMaxAttempts,
                 SettingKey.TotalTimeout,
                 SettingKey.RpcTimeout,
@@ -175,27 +196,8 @@ class ServiceSettingsView(
                 SettingKey.StatusTimeout,
                 SettingKey.MaxMessageBytes,
             ),
-            "Диагностика" to listOf(SettingKey.MaxTimeLimitMillis, SettingKey.ScorePrefix),
-            "Очистка файлов" to listOf(SettingKey.CleanupMinimumAge, SettingKey.CleanupBatchSize),
-        )
-
-        private val LABELS = mapOf(
-            SettingKey.MaxParticipants to "Лимит Участников",
-            SettingKey.ConfirmationCodeLifetime to "Срок кода подтверждения",
-            SettingKey.MaxConfirmationAttempts to "Попытки подтверждения",
-            SettingKey.CommunityInviteTtl to "Срок приглашения в Сообщество",
-            SettingKey.ClassInviteTtl to "Срок приглашения в Класс",
-            SettingKey.GradingMaxAttempts to "Транспортные попытки",
-            SettingKey.TotalTimeout to "Общий срок проверки",
-            SettingKey.RpcTimeout to "Предельный срок запроса проверки",
-            SettingKey.ShouldRecordVideo to "Видеозапись",
-            SettingKey.PollInterval to "Интервал опроса",
-            SettingKey.StatusTimeout to "Предельный срок опроса",
-            SettingKey.MaxMessageBytes to "Размер входящего сообщения",
-            SettingKey.MaxTimeLimitMillis to "Предел времени Диагностики, мс",
-            SettingKey.ScorePrefix to "Префикс баллов",
-            SettingKey.CleanupMinimumAge to "Возраст файла для очистки",
-            SettingKey.CleanupBatchSize to "Размер пакета очистки",
+            SettingsGroup.Diagnostics to listOf(SettingKey.MaxTimeLimitMillis, SettingKey.ScorePrefix),
+            SettingsGroup.FileCleanup to listOf(SettingKey.CleanupMinimumAge, SettingKey.CleanupBatchSize),
         )
     }
 }

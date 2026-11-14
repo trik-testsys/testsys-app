@@ -1,6 +1,6 @@
 package tech.testsys.web.service.view
 
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.infra.database.api.announcement.Announcement
@@ -8,6 +8,7 @@ import tech.testsys.infra.database.api.announcement.AnnouncementKind
 import tech.testsys.infra.database.api.announcement.AnnouncementRejection
 import tech.testsys.infra.database.api.announcement.AnnouncementSave
 import tech.testsys.infra.database.api.announcement.Announcements
+import tech.testsys.infra.localization.PageService
 import tech.testsys.web.app.view.LoadedTable
 import tech.testsys.web.app.view.loadTable
 import tech.testsys.web.app.view.pageOf
@@ -27,6 +28,7 @@ import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
@@ -39,60 +41,74 @@ import java.time.LocalDateTime
  * @since %CURRENT_VERSION%
  */
 @Route("announcements")
-@PageTitle("Объявления")
 @RolesAllowed("SERVICE")
 class ServiceAnnouncementsView(
     private val headers: ServiceHeaders,
     private val announcements: Announcements,
     private val clock: Clock,
-) : TestSysView() {
+) : TestSysView(),
+    HasDynamicTitle {
+    private val texts: PageService get() = currentLocalization().pageService
+
     private lateinit var rows: LoadedTable<Announcement>
     private lateinit var history: LoadedTable<Announcement>
 
     init {
-        page(headers.header(active = ServiceHeaders.ANNOUNCEMENTS_SECTION)) {
-            head("Объявления")
+        page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
+            head(texts.announcementsTitle())
             row {
-                block(title = "Объявления страницы входа") {
-                    actions { action("Добавить", icon = IconName.Plus) { onClick { openDialog(announcement = null) } } }
+                block(title = texts.announcementsCurrent()) {
+                    actions { action(texts.add(), icon = IconName.Plus) { onClick { openDialog(announcement = null) } } }
                     rows = loadTable(
                         key = { announcement: Announcement -> announcement.id.value },
                         fetch = { request -> pageOf(announcements.findAll().filter(::isCurrent), request) },
                     ) {
-                        dateTimeColumn("Начало показа", size = 4) { announcement -> announcement.shownFrom.toUserDateTime() }
-                        dateTimeColumn("Окончание показа", size = 4) { announcement -> announcement.shownUntil.toUserDateTime() }
-                        column("Тип", size = 3) { announcement -> badge(kindLabel(announcement.kind), toneOf(announcement.kind)) }
-                        textColumn("Текст") { announcement -> announcement.text }
-                        menuColumn(ariaLabel = { announcement -> "Действия с объявлением «${announcement.text}»" }) { announcement ->
-                            item("Изменить") { openDialog(announcement) }
-                            destructiveItem("Закрыть") { close(announcement) }
+                        dateTimeColumn(texts.announcementsShownFrom(), size = 4) { announcement -> announcement.shownFrom.toUserDateTime() }
+                        dateTimeColumn(texts.announcementsShownUntil(), size = 4) { announcement ->
+                            announcement.shownUntil.toUserDateTime()
                         }
-                        empty("Объявлений нет", "Добавьте объявление: оно появится под ссылками страницы входа.")
+                        column(texts.announcementsKind(), size = 3) { announcement ->
+                            badge(kindLabel(announcement.kind), toneOf(announcement.kind))
+                        }
+                        textColumn(texts.announcementsLink(), size = LINK_COLUMN_SIZE) { announcement -> announcement.link }
+                        textColumn(texts.announcementsText()) { announcement -> announcement.text }
+                        menuColumn(ariaLabel = { announcement -> texts.announcementsActions(text = announcement.text) }) { announcement ->
+                            item(texts.announcementsEdit()) { openDialog(announcement) }
+                            destructiveItem(texts.close()) { close(announcement) }
+                        }
+                        empty(texts.announcementsEmpty(), texts.announcementsEmptyHint())
                     }
                 }
             }
             row {
-                block(title = "История") {
+                block(title = texts.announcementsHistory()) {
                     // ponytail: both lists filter the whole storage list; separate queries if the table grows.
                     history = loadTable(
                         key = { announcement: Announcement -> announcement.id.value },
                         fetch = { request -> pageOf(announcements.findAll().filterNot(::isCurrent), request) },
                     ) {
-                        dateTimeColumn("Начало показа", size = 4) { announcement -> announcement.shownFrom.toUserDateTime() }
-                        dateTimeColumn("Завершено", size = 4) { announcement ->
+                        dateTimeColumn(texts.announcementsShownFrom(), size = 4) { announcement -> announcement.shownFrom.toUserDateTime() }
+                        dateTimeColumn(texts.announcementsFinishedAt(), size = 4) { announcement ->
                             (announcement.closedAt ?: announcement.shownUntil).toUserDateTime()
                         }
-                        column("Причина", size = 3) { announcement ->
-                            badge(if (announcement.closedAt == null) "По времени" else "Вручную", Tone.Neutral)
+                        column(texts.announcementsReason(), size = 3) { announcement ->
+                            val isManual = announcement.closedAt != null
+                            val reason = if (isManual) texts.announcementsReasonManual() else texts.announcementsReasonByTime()
+                            badge(reason, Tone.Neutral)
                         }
-                        column("Тип", size = 3) { announcement -> badge(kindLabel(announcement.kind), toneOf(announcement.kind)) }
-                        textColumn("Текст") { announcement -> announcement.text }
-                        empty("Завершённых объявлений нет", "Сюда попадут объявления после окончания показа или закрытия.")
+                        column(texts.announcementsKind(), size = 3) { announcement ->
+                            badge(kindLabel(announcement.kind), toneOf(announcement.kind))
+                        }
+                        textColumn(texts.announcementsLink(), size = LINK_COLUMN_SIZE) { announcement -> announcement.link }
+                        textColumn(texts.announcementsText()) { announcement -> announcement.text }
+                        empty(texts.announcementsHistoryEmpty(), texts.announcementsHistoryEmptyHint())
                     }
                 }
             }
         }
     }
+
+    override fun getPageTitle(): String = texts.announcementsTitle()
 
     private fun isCurrent(announcement: Announcement): Boolean =
         announcement.closedAt == null && announcement.shownUntil.isAfter(clock.instant())
@@ -103,38 +119,50 @@ class ServiceAnnouncementsView(
     }
 
     private fun openDialog(announcement: Announcement?) {
-        dialog(title = if (announcement == null) "Новое объявление" else "Изменение объявления") {
+        dialog(title = if (announcement == null) texts.announcementsAddTitle() else texts.announcementsEditTitle()) {
             lateinit var text: ValueInput<String>
+            lateinit var link: ValueInput<String>
             lateinit var kind: ValueInput<AnnouncementKind?>
             lateinit var shownFrom: ValueInput<LocalDateTime?>
             lateinit var shownUntil: ValueInput<LocalDateTime?>
             row {
-                text = textInput("Текст", labelSize = 8, size = 16, hint = "Одна строка без форматирования, до 300 символов") {
+                text = textInput(texts.announcementsText(), labelSize = 8, size = 16, hint = texts.announcementsTextHint()) {
                     value = announcement?.text.orEmpty()
                 }
             }
             row {
-                kind = select("Тип", labelSize = 8, size = 16, items = AnnouncementKind.entries, itemLabel = ::kindLabel) {
+                link = textInput(texts.announcementsLink(), labelSize = 8, size = 16, hint = texts.announcementsLinkHint()) {
+                    value = announcement?.link.orEmpty()
+                }
+            }
+            row {
+                kind = select(
+                    texts.announcementsKind(),
+                    labelSize = 8,
+                    size = 16,
+                    items = AnnouncementKind.entries,
+                    itemLabel = ::kindLabel,
+                ) {
                     value = announcement?.kind ?: AnnouncementKind.Info
                 }
             }
             row {
-                shownFrom = dateTimeInput("Начало показа", labelSize = 8, size = 16) {
+                shownFrom = dateTimeInput(texts.announcementsShownFrom(), labelSize = 8, size = 16) {
                     value = announcement?.shownFrom?.toUserDateTime()
                 }
             }
             row {
-                shownUntil = dateTimeInput("Окончание показа", labelSize = 8, size = 16) {
+                shownUntil = dateTimeInput(texts.announcementsShownUntil(), labelSize = 8, size = 16) {
                     value = announcement?.shownUntil?.toUserDateTime()
                 }
             }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction(if (announcement == null) "Добавить" else "Сохранить") {
+                action(texts.cancel()) { onClick { dialog.close() } }
+                mainAction(if (announcement == null) texts.add() else texts.save()) {
                     onClick {
-                        kind.showError("Укажите тип".takeIf { kind.value == null })
-                        shownFrom.showError("Укажите начало показа".takeIf { shownFrom.value == null })
-                        shownUntil.showError("Укажите окончание показа".takeIf { shownUntil.value == null })
+                        kind.showError(texts.announcementsKindRequired().takeIf { kind.value == null })
+                        shownFrom.showError(texts.announcementsShownFromRequired().takeIf { shownFrom.value == null })
+                        shownUntil.showError(texts.announcementsShownUntilRequired().takeIf { shownUntil.value == null })
                         val chosenKind = kind.value ?: return@onClick
                         val from = shownFrom.value?.toUserInstant() ?: return@onClick
                         val until = shownUntil.value?.toUserInstant() ?: return@onClick
@@ -142,6 +170,7 @@ class ServiceAnnouncementsView(
                         val result = save(
                             announcement,
                             text = text.value,
+                            link = link.value,
                             kind = chosenKind,
                             shownFrom = from,
                             shownUntil = until,
@@ -149,18 +178,24 @@ class ServiceAnnouncementsView(
                         when (result) {
                             is AnnouncementSave.Saved -> {
                                 dialog.close()
-                                toast(FeedbackKind.Success, if (announcement == null) "Объявление добавлено" else "Объявление изменено")
+                                val saved = if (announcement == null) texts.announcementsAdded() else texts.announcementsChanged()
+                                toast(FeedbackKind.Success, saved)
                                 refreshLists()
                             }
                             is AnnouncementSave.Rejected -> {
                                 val error = rejectionText(result.reason)
-                                val isPeriodError = result.reason == AnnouncementRejection.EmptyPeriod
-                                text.showError(error.takeUnless { isPeriodError })
-                                shownUntil.showError(error.takeIf { isPeriodError })
+                                val field = when (result.reason) {
+                                    AnnouncementRejection.BlankText, AnnouncementRejection.TextTooLong -> text
+                                    AnnouncementRejection.InvalidLink, AnnouncementRejection.LinkTooLong -> link
+                                    AnnouncementRejection.EmptyPeriod -> shownUntil
+                                }
+                                text.showError(error.takeIf { field == text })
+                                link.showError(error.takeIf { field == link })
+                                shownUntil.showError(error.takeIf { field == shownUntil })
                             }
                             AnnouncementSave.NotFound -> {
                                 dialog.close()
-                                toast(FeedbackKind.Error, "Объявление не найдено")
+                                toast(FeedbackKind.Error, texts.announcementsNotFound())
                                 refreshLists()
                             }
                         }
@@ -170,24 +205,30 @@ class ServiceAnnouncementsView(
         }.open()
     }
 
-    private fun save(announcement: Announcement?, text: String, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant) =
-        if (announcement == null) {
-            announcements.create(text = text, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
-        } else {
-            announcements.update(announcement.id, text = text, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
-        }
+    private fun save(
+        announcement: Announcement?,
+        text: String,
+        link: String,
+        kind: AnnouncementKind,
+        shownFrom: Instant,
+        shownUntil: Instant,
+    ) = if (announcement == null) {
+        announcements.create(text = text, link = link, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
+    } else {
+        announcements.update(announcement.id, text = text, link = link, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
+    }
 
     private fun close(announcement: Announcement) {
         confirm(
-            title = "Закрыть объявление?",
-            text = "Объявление «${announcement.text}» пропадёт со страницы входа и перейдёт в историю. Вернуть его будет нельзя.",
-            action = "Закрыть",
+            title = texts.announcementsCloseTitle(),
+            text = texts.announcementsCloseText(text = announcement.text),
+            action = texts.close(),
             isDanger = true,
         ) {
             if (announcements.close(announcement.id, clock.instant())) {
-                toast(FeedbackKind.Success, "Объявление закрыто")
+                toast(FeedbackKind.Success, texts.announcementsClosed())
             } else {
-                toast(FeedbackKind.Error, "Объявление уже завершено")
+                toast(FeedbackKind.Error, texts.announcementsAlreadyFinished())
             }
             refreshLists()
         }
@@ -199,8 +240,8 @@ class ServiceAnnouncementsView(
     }
 
     private fun kindLabel(kind: AnnouncementKind): String = when (kind) {
-        AnnouncementKind.Info -> "Информация"
-        AnnouncementKind.Warning -> "Предупреждение"
+        AnnouncementKind.Info -> texts.announcementsKindInfo()
+        AnnouncementKind.Warning -> texts.announcementsKindWarning()
     }
 
     private fun toneOf(kind: AnnouncementKind): Tone = when (kind) {
@@ -209,8 +250,16 @@ class ServiceAnnouncementsView(
     }
 
     private fun rejectionText(reason: AnnouncementRejection): String = when (reason) {
-        AnnouncementRejection.BlankText -> "Укажите текст"
-        AnnouncementRejection.TextTooLong -> "Текст длиннее 300 символов"
-        AnnouncementRejection.EmptyPeriod -> "Окончание показа должно быть позже начала"
+        AnnouncementRejection.BlankText -> texts.announcementsRejectionBlankText()
+        AnnouncementRejection.TextTooLong -> texts.announcementsRejectionTextTooLong()
+        AnnouncementRejection.InvalidLink -> texts.announcementsRejectionInvalidLink()
+        AnnouncementRejection.LinkTooLong -> texts.announcementsRejectionLinkTooLong()
+        AnnouncementRejection.EmptyPeriod -> texts.announcementsRejectionEmptyPeriod()
+    }
+
+    private companion object {
+
+        /** Grid share of the link column in both tables. */
+        const val LINK_COLUMN_SIZE = 4
     }
 }

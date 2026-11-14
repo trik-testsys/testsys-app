@@ -1302,3 +1302,246 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
   (https://ru.wiktionary.org/wiki/пользователь, read 2026-11-13).
 - «Заметные Пользователям» means user-visible. If invisible but relevant changes (security or reliability fixes)
   are listed, «изменения, касающиеся Пользователей» covers them without evaluation (reviewer suggestion, no source).
+
+## Service cabinet (`page_service`)
+
+- «Служебный кабинет», «служебный интерфейс» keep lowercase «кабинет»: the domain Кабинет (definitions.md item 13) is
+  the page through which a Пользователь reaches the System, while the service identity has no Пользователь behind
+  it. Project reading, no language source.
+- «байт» after numerals: Викисловарь gives Р. ед. «байта», Р. мн. «байтов» and the counting form (Сч.) «байт».
+  The counting form fits CLDR `many` («400000000 байт»), but `few` needs «байта» («1024 байта», «два байта»).
+  Fixed on 2026-10-30 at the human's explicit request: `page_service.settings.restart_pending` and
+  `settings.help.max_message_bytes` now select on each `:integer useGrouping=never` number (`one`/`many` «байт»,
+  `few` «байта»; `restart_pending` matches `$active $saved` over all nine pairs), so «1024 байта», «4194304 байта»,
+  «400000000 байт», «1048571 байт» are pinned by golden checks. The earlier invariant «1024 байт» was ungrammatical.
+  Source:
+  https://ru.wiktionary.org/wiki/байт (read 2026-10-30). Independent review confirmed the `few` rule with Грамота.ру:
+  № 237033 (20.02.2008) «6 байт (4 байта)»; № 306541 (08.09.2020) «33 петабайта» after numerals ending in два, три,
+  четыре; № 265242 (22.12.2010) zero ending «байт» after numerals; № 310954 (05.09.2023) «536 байт… 1220 байт».
+  Source: https://gramota.ru/poisk?query=байт&mode=spravka (read 2026-10-30). Whether ICU4J 78.1 `:unit unit=byte
+  unitDisplay=long` renders «1024 байта» in `ru` is unverified; the fix does not use `:unit`. Review of the fix added
+  Грамота.ру № 216796 (05.03.2007): «Правильно: 460 килобайт, так как в этом случае используется счетная форма»
+  (https://gramota.ru/poisk?query=байт&mode=spravka, read 2026-10-30).
+- «Дешифровка ID»: Викисловарь «дешифровать» — «раскрывать (раскрыть) шифр, код; разбирать … текст с таким шифром,
+  кодом …», synonyms «расшифровать», «декодировать»; «дешифровка» — the action of that verb, no stylistic label. An ID
+  that packs time, node and counter is a code in this sense, so the page head «Дешифровка ID» and the button
+  «Расшифровать» are consistent. Sources: https://ru.wiktionary.org/wiki/дешифровать,
+  https://ru.wiktionary.org/wiki/дешифровка (read 2026-10-30). Independent review confirmed: «дешифровка» — feminine,
+  type 3*a, synonyms «дешифрование», «дешифрирование».
+- «неопределённый» short forms: the neuter «неопределённо» («Сохранённое состояние неопределённо») is correct, but
+  the one-word masculine «неопределён» («Исход сохранения неопределён») is non-standard. The adjective's masculine short
+  form is «неопределёнен»: Русский орфографический словарь (Лопатин, Иванова) «неопределённый; кр. ф. -ёнен, -ённа»;
+  Словарь трудностей «-ёнен, -ённа, -ённо, -ённы»; Викисловарь «неопределёнен, неопределённа, неопределённо,
+  неопределённы», type 1*a, senses «точно не установленный», «неясный», «уклончивый». The participle reading is
+  «не определён», written separately (Правила 1956, § 89, п. 2 а: «долг не уплачен, дом не достроен»). Fixed on
+  2026-10-30 at the human's explicit request: `page_service.settings.uncertain_result`, `grading.uncertain` and
+  `grading.import.uncertain` now read «не определён»; the neuter «неопределённо» in `settings.uncertain` and
+  `grading.uncertain_registry` stays. Sources:
+  https://gramota.ru/poisk?query=неопределённый&mode=slovari, https://ru.wiktionary.org/wiki/неопределённый,
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/23 (read 2026-10-30).
+  Independent review of the fix (2026-10-30) confirmed «не определён» as the short participle of «определить» and found
+  the same short forms «-ёнен, -ённа» in Зарва, «Русское словесное ударение», and Кузнецов, «Большой толковый
+  словарь» (sense «Точно не установленный»); the one-word «неопределён» matches no listed form. A справка search for
+  «не определен» found no Q&A on separate versus joined spelling (https://gramota.ru/poisk?query=не определен&mode=spravka,
+  read 2026-10-30).
+- «Часть псевдонима, без учёта регистра» keeps lowercase «псевдонима» verbatim, unlike
+  `page_administrator.users.nickname_hint` («Часть Псевдонима»), so it is a plain literal, not a `glossary.nickname`
+  reference. «Регистр» in this sense: see «Без учёта регистра» above.
+- «Адресов в конфигурации грейдера: 1. Импортируйте их …» keeps the plural «их» for any count, including 1; it reads
+  as the addresses in general. Kept verbatim; inference only.
+- «Служба» (header user name): Викисловарь sense 5 «учреждение, заведение, отдел предприятия, выполняющий
+  определённый вид работы», sense 6 (комп.) «программа, постоянно находящаяся в памяти и выполняющая серверные функции
+  без прямого общения с пользователем», sense 4 (религ.) a church service. Sense 6 fits the service identity; no
+  vulgar or offensive senses. Source: https://ru.wiktionary.org/wiki/служба (read 2026-10-30).
+- «грейдер» (`page_service.grading.empty_configured`): Викисловарь lists only a road-building machine (спец.) and
+  a road built with it (разг.), from English *grader*; no computing sense. The project uses it as jargon for the grading
+  component (features.md, testsys.dev.grading.balancing); fine for operators, a general reader may misread it. Source:
+  https://ru.wiktionary.org/wiki/грейдер (read 2026-10-30).
+- Glossary forms added for `page_service`, confirmed in Викисловарь (read 2026-10-30): «соревнование» type 7a,
+  П. ед. «соревновании» (https://ru.wiktionary.org/wiki/соревнование); «диагностика» type 3a, Им. «диагностика»,
+  Р. «диагностики», П. «диагностике» (https://ru.wiktionary.org/wiki/диагностика); «полигон» type 1a, П. ед.
+  «полигоне», no separate locative (https://ru.wiktionary.org/wiki/полигон).
+
+### Announcements page and the Supervisor Role actions (`page_service.announcements.*`, `page_service.user.supervisor.*`)
+
+Notes for the messages moved from hardcoded literals on 2026-11-14; the wording was kept verbatim. «Объявление»
+itself: see «Объявления» as the accessible name of the guest page notices above.
+
+- «Закрыть объявление?», «Объявление закрыто»: Викисловарь «закрыть» — perfective transitive, five senses: 1 shut a
+  door or lid; 2 shut a case, a book, the eyes; 3 «об организации, учреждении» — «прекратить работу, расформировать,
+  ликвидировать» («закрыть рынок», «закрыть фирму»); 4 разг. home canning; 5 жарг. «посадить кого-либо под арест или
+  в тюрьму» («Его закрыли на три года»). No sense names ending a published notice; the UI use extends sense 3
+  (inference). The jargon sense 5 needs an animate object and does not arise. Source:
+  https://ru.wiktionary.org/wiki/закрыть (read 2026-11-14).
+- Applicable second reading of the bare label «Закрыть» (project usage, not a dictionary fact): in the same bundle
+  `page_service.close` closes a dialog (`ServiceGradingDialogs`), while the announcement row menu and the
+  confirmation use the same word for ending an announcement for good. The confirmation title «Закрыть объявление?»
+  and its text («пропадёт со страницы входа и перейдёт в историю. Вернуть его будет нельзя.») resolve it before
+  the action runs; the row-menu item alone does not. A web search for «закрыть объявление» (2026-11-14, result
+  pages not opened) returned classified-ad help pages that say «снять с продажи» / «снять с публикации» instead,
+  so the collocation is unconfirmed as a set phrase. Alternatives if the label is ever changed: «Завершить»
+  (matches «Завершено», «Объявление уже завершено», features.md «объявление завершено»), «Снять с показа».
+- «Выдать Роль Супервайзера»: Викисловарь «выдать» — perfective transitive; sense 1 «дать в соответствии
+  с установленным порядком; … передать в чье-л. распоряжение»; sense 3 (перен.) «сделать известным, раскрыть; … передать
+  (противнику, врагу) секретные сведения»; sense 2 (перен.) to give in marriage; senses 6–7 (перен., разг.) «Ну ты
+  и выдал!». With the object «Роль» and the dative «Пользователю» only sense 1 fits. The betrayal sense needs the
+  person as the direct object («выдать Пользователя»), which no message has: the bare confirmation label «Выдать»
+  always follows the title «Выдать Роль Супервайзера Пользователю «…»?» (inference). features.md
+  (testsys.dev.service.supervisorRole) uses the same verbs «выдать … и снять». Source:
+  https://ru.wiktionary.org/wiki/выдать (read 2026-11-14).
+- «Снять Роль Супервайзера с Пользователя»: senses of «снять» are in «Снять Роль Администратора нельзя» above. The
+  government «снять что с кого» follows the model of sense 9 «снять с должности»; here the Role is the object and
+  the person stands after «с», so the vulgar animate-object sense does not arise (inference, no new source).
+- «членство в Публичном Сообществе в этой Роли»: Викисловарь «членство» — neuter, type 1a, one sense «пребывание
+  членом какой-либо организации», example «Членство в товариществе собственников жилья …» («в» + prepositional).
+  The second «в этой Роли» repeats the wording of definitions.md item 32 («становится членом Публичного Сообщества
+  в этой Роли»). Source: https://ru.wiktionary.org/wiki/членство (read 2026-11-14).
+- «пропадёт со страницы входа»: Викисловарь «пропа́сть» — perfective intransitive, ten senses; 4 «перестать быть
+  видимым или слышимым» and 5 «исчезнуть, утратиться» fit; 6 «погибнуть, умереть», 7 and 8 need a person; 1
+  «потеряться» could suggest an accidental loss, but the sentence continues «и перейдёт в историю». Future 3 sg
+  «пропадёт». No colloquial label on the fitting senses. Source: https://ru.wiktionary.org/wiki/пропасть (first
+  100 000 of 110 114 characters read 2026-11-14).
+- «Предупреждение» / «Информация» as announcement kinds: Викисловарь «предупреждение» — neuter, type 7a, four
+  senses without labels: 1–3 a notice of a coming danger or trouble / an advance notification, 4 «упреждение,
+  предотвращение чего-либо нежелательного» («Предупреждение преступлений …»). As a badge next to an announcement
+  text senses 2–3 apply; sense 4 needs a genitive object. The disciplinary sense (a warning as a penalty) is not
+  listed on the page and needs a person as the addressee. features.md names the kinds «информация или
+  предупреждение». Source: https://ru.wiktionary.org/wiki/предупреждение (read 2026-11-14).
+- «Вручную» / «По времени» as finish reasons: Викисловарь «вручную» — one sense «ручным способом, без применения
+  механизмов, машин, приборов, автоматов, компьютера», partial antonyms «автоматически», «автоматизированно»; so the
+  pair reads "closed by a person" versus "ended by the period". «По времени» is verbatim from features.md
+  («иначе по времени и окончание показа»); no dictionary page was read for it. Source:
+  https://ru.wiktionary.org/wiki/вручную (read 2026-11-14).
+- «Завершено» as the header of the finish-moment column is a short neuter participle used as a date label, like
+  «Создан» in `page_service.user.created`; it could also be read as a status column, but the cells hold a date and
+  time (inference from usage).
+- Glossary: `glossary.supervisor` gained `ins sg` «Супервайзером» for «станет Супервайзером» (form listed in
+  «Супервайзер»: declension and the glossary term above). «объявление» stays a lowercase literal: it is not a term
+  of definitions.md.
+
+### Independent review evidence for the announcements and Supervisor Role messages (2026-11-14)
+
+Reviewer research, read 2026-11-14 through a fetch tool that returns a model summary, so quotations may be
+paraphrased.
+
+- «член» in «станет … членом Публичного Сообщества»: Викисловарь lists seven senses, among them 3 (разг.) «мужской
+  половой орган», 5 (одуш.) a person belonging to a group or organisation («Пиво отпускается только членам
+  профсоюза») and 6 «участник чего-нибудь» («Член экспедиции»). The genitive of a community selects senses 5–6, so
+  the colloquial sense does not arise (inference); the wording repeats definitions.md item 32. Тв. ед. «членом».
+  Source: https://ru.wiktionary.org/wiki/член
+- «показ» in «Начало показа», «Окончание показа», «после окончания показа»: one sense, «действие по значению гл.
+  показать», no label; Р. ед. «показа». Matches «период показа» in features.md.
+  Source: https://ru.wiktionary.org/wiki/показ
+- «потерять» in «Пользователь потеряет Роль Супервайзера и членство…»: four senses without labels; 3 «перестать
+  иметь что-либо, обладать чем-либо; не сохранить, не сберечь» and 4 «утратить что-либо, лишиться» fit. Sense 1,
+  loss through carelessness («Потерять перчатки»), is implausible in a confirmation of an operator's action
+  (inference). features.md uses «теряет Роль и это членство». Source: https://ru.wiktionary.org/wiki/потерять
+- «завершить» behind «Завершено», «Объявление уже завершено», «Завершённых объявлений нет»: sense 1 is labelled
+  «книжн., ритор.» («Завершить пятилетку»), senses 2–4 have no labels; no sense names ending a notice's display.
+  The messages use the general "bring to an end" sense, following features.md and the bundle precedent
+  «Незавершённые проверки» (inference). Source: https://ru.wiktionary.org/wiki/завершить
+- «супервайзер» re-read: Тв. ед. «супервайзером» confirms the new `ins sg` form.
+  Source: https://ru.wiktionary.org/wiki/супервайзер
+- Usage, not a norm: the auto.ru help page for managing classified ads names the actions «Снять с продажи»,
+  «Удалить», «Активировать» and does not use «закрыть объявление». A different domain, so it only supports the
+  note above that the collocation is not an established set phrase. Source: https://auto.ru/support/car-editing-ads
+- Project observation, not a language source: `page_service.close` («Закрыть») labels both dismissing a dialog in
+  `ServiceGradingDialogs` and ending an announcement for good. In ru-RU the confirmation title and text resolve
+  it; a future region may need two words, which would need a separate key (reviewer inference).
+- Unverified: «По времени» has no dictionary source; gramota.ru was not consulted.
+
+### Service home table, node table and the User's Communities (2026-11-14)
+
+- «Назначение» as the column header next to «Раздел»: Викисловарь lists 1. the action of «назначать/назначить»
+  (appointing someone to a post); 2. «цель применения, круг решаемых задач»; 3. мед. a doctor's prescription;
+  4. книжн. «предназначение», «миссия». Cells hold short descriptions of sections, so sense 2 applies; sense 1 needs
+  a person or post and could arise only next to Role assignment, which this table does not show (inference). No
+  offensive sense. Source: https://ru.wiktionary.org/wiki/назначение (read 2026-11-14).
+- «Включить» / «Отключить» as row actions of a Проверяющий узел: Викисловарь «включить» sense 1 «ввести, внести
+  в состав, в число кого-либо, чего-либо», sense 2 «привести в действие, пустить в ход», sense 3 (техн.)
+  «присоединить к системе действующих аппаратов; подключить»; «отключить» sense 1 «прервать связь в сети … с системой
+  действующих аппаратов», sense 2 (перен.) to distract someone; antonyms «подключать», «включать». Applicable second
+  reading: «Включить»/«Отключить» on a server row may be read as powering the node on or off. The column «Участие»,
+  the badges «Участвует»/«Отключён» and the toasts «… участвует в проверке» / «… отключён от проверки» resolve it to
+  inclusion in grading (inference). The pair matches the existing `grading.import.existing_inactive` «отключён».
+  Sources: https://ru.wiktionary.org/wiki/включить, https://ru.wiktionary.org/wiki/отключить (read 2026-11-14,
+  fetch summaries).
+- «Отключён» (badge) is masculine because it agrees with «Проверяющий узел»; next to the availability badge
+  «Недоступен» it could be confused with a network disconnect, which the column split «Состояние» / «Участие»
+  resolves (inference).
+- «Причина» as the node table column next to «Состояние» (`page_service.grading.reason`, added 2026-11-14):
+  Викисловарь «причина» — inanimate feminine, type 1a, three senses without labels: 1 «явление, обстоятельство,
+  непосредственно порождающее, обусловливающее другое явление»; 2 «тот, кто является виновником чего-либо»; 3
+  «основание, повод, предлог для каких-либо действий, поступков». Sense 1 applies: the cell holds the technical
+  cause of the «Недоступен» state (a gRPC status such as `DEADLINE_EXCEEDED`) and is empty for other states. The
+  bare header does not say what it is the reason of; its place right after «Состояние» resolves it (inference).
+  The identical «Причина» in `page_service.announcements.reason` is the finish reason of an announcement (sense
+  3); the keys stay separate because another region may need different words. Source:
+  https://ru.wiktionary.org/wiki/причина (read 2026-11-14, fetch summary).
+- «Участие» as a column header: Викисловарь sense 1 «совместная с кем-либо деятельность, вовлечённость в какую-либо
+  деятельность»; sense 2 sympathy («с участием взглянул»); sense 3 экон./фин. a stake in a company. Only sense 1 fits
+  a column of «Участвует»/«Отключён» badges. Source: https://ru.wiktionary.org/wiki/участие (read 2026-11-14).
+- «Метрики Системы (вход с учётной записью Grafana)»: parentheses keep the description a noun phrase and stop
+  «вход» from reading as a second item of a list after a comma. «С учётной записью» rather than the former
+  «её собственными учётными записями» (deleted `home.monitoring_text`). Reviewer check: Russian Windows strings
+  quoted in a Lenovo manual read «Выполнять вход с учетной записью Майкрософт» and «Войти вместо этого с локальной
+  учетной записью», so «вход с учётной записью X» is established software usage, not a norm source
+  (https://download.lenovo.com/pccbbs/pubs/s150_11_14ast/html_ru/RU/switch_local_ms_account.html, read 2026-11-14,
+  fetch summary). Викисловарь «учётная запись» (неол., информ.): a record created on registration in an information
+  resource, synonym «аккаунт» (https://ru.wiktionary.org/wiki/учётная_запись, read 2026-11-14).
+- «Метрики Системы»: Викисловарь lists three homonyms of «метрика»: I филол./муз. (verse structure, rhythm);
+  II матем. (distance rule) and техн. «вычисляемая величина, характеризующая какое-либо явление»; III «выписка
+  из метрической книги; свидетельство о рождении». Next to «Системы» and the Grafana row sense II техн. applies; the
+  birth-certificate sense does not arise (reviewer inference). Source: https://ru.wiktionary.org/wiki/метрика
+  (read 2026-11-14, fetch summary).
+- «Пользователь не состоит в Сообществах»: «состоять в» + prepositional follows definitions.md items 3–4 («состоит
+  только в одном Сообществе»). «Открыть в Кабинете Супервайзера» uses the existing `glossary.cabinet` `loc sg` and
+  `glossary.supervisor` `gen sg`, matching `page_supervisor.title`.
+
+### Independent review evidence for `page_service.grading.reason` (2026-11-14)
+
+- «Причина» as the header of the unavailability-reason column: МАС and Ушаков, as reproduced on kartaslov.ru, give the
+  same senses as Викисловарь without stylistic labels for the applicable one («явление, обстоятельство,
+  непосредственно порождающее, обусловливающее другое явление — следствие»). Ушаков adds a regional sense marked
+  «обл.» («то, что причинилось, непредвиденный случай») and the colloquial phrase «Что за причина?»; neither arises
+  for a one-word column header (reviewer inference). features.md uses the same word: «недоступен — с причиной».
+  «Причина недоступности» is a more explicit optional variant, not applied. Sources:
+  https://ru.wiktionary.org/wiki/причина, https://kartaslov.ru/значение-слова/причина (read 2026-11-14 through a
+  fetch tool that returns a model summary).
+
+### Announcement links (`page_service.announcements.link*`, `ui_page.guest.notice_new_tab`, 2026-11-14)
+
+- «Ссылка» has a homonym: Викисловарь lists «ссылка I» (ист.: exile, forced resettlement; the place of exile) and
+  «ссылка II» (a reference to a source; a quotation or note; прогр. a reference type); both inanimate feminine, 3*a,
+  stress «ссы́лка». The fetch summary listed no separate hyperlink sense; the hyperlink reading is established UI
+  usage (the project already has «Ссылки футера»). As a field label next to «Текст» and a column of addresses the
+  exile sense does not arise (inference). Source: https://ru.wiktionary.org/wiki/ссылка (read 2026-11-14, fetch
+  summary).
+- «Полный адрес» is used instead of «абсолютный адрес» from features.md: the plain word suits the operator hint,
+  and «начинающийся с http:// или https://» names the allowed schemes. The rejection adds «без имени пользователя
+  и пароля» for the user information part of a URL (`user:password@host`); lowercase «пользователь» there is the
+  URL component, not the domain term Пользователь. Project wording choice, no language source.
+- Screen-reader caption for a link opening a new tab: W3C technique G201 puts the warning into the control name as
+  «All about Knitting (opens in new window)», a parenthesised phrase after arbitrary link text. The Russian caption
+  «(откроется в новой вкладке)» follows that pattern; the parentheses keep it a separate remark after any text,
+  including text that ends with a full stop. Source: https://www.w3.org/WAI/WCAG22/Techniques/general/G201 (read
+  2026-11-14, fetch summary). Unverified: no Russian usage source with the exact phrase was found (two searches on
+  2026-11-14 returned only general accessibility articles and browser forum threads); «открывается в новой вкладке»
+  is an equally possible variant.
+- Independent review findings (2026-11-14, fetch summaries, quotations may be paraphrased):
+  - «Полный адрес» as the plain equivalent of an absolute URL: MDN ru «Что такое URL?» says the address bar needs
+    «полный (или абсолютный) URL» (https://developer.mozilla.org/ru/docs/Learn/Understanding_URLs); a Т-Банк glossary
+    article: «Абсолютные — это полный адрес сайта, в котором есть протокол передачи данных, доменное имя и путь»
+    (https://secrets.tbank.ru/razvitie/kakim-dolzhen-byt-url-dlya-saita/). Usage sources, not dictionaries; neither
+    names the user information part.
+  - «в новой вкладке»: Yandex Browser help lists «Открыть ссылку в новой вкладке»
+    (https://yandex.ru/support/browser/ru/useful-features/hotkeys), vendor usage. Викисловарь «вкладка», sense 2:
+    an additional browser window in the same program instance, no stylistic label
+    (https://ru.wiktionary.org/wiki/вкладка). «в», not «на», follows the window sense (inference).
+  - The caption is a separate hidden element; without a space before «(» copied text and braille output would read
+    «…в субботу(откроется…». The component therefore emits a space before the caption; the message stays unchanged.
+  - Lowercase «пароля» in `rejection.invalid_link` names the URL password part, not the domain term Пароль
+    (project reading).
+  - «2048» without a digit-group space: a Habr article on spaces says groups are separated for more than four digits
+    (https://habr.com/en/articles/136348/), no handbook cited; project precedent writes «1024 байта». Not verified
+    against a primary typography handbook.

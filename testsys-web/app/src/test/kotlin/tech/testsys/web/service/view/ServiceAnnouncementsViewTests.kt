@@ -69,6 +69,7 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
         kind = AnnouncementKind.Warning,
         shownFrom = Instant.parse("2099-03-09T09:00:00Z"),
         shownUntil = Instant.parse("2099-03-14T21:00:00Z"),
+        link = "https://example.com/works",
     )
 
     private val running = Announcement(
@@ -118,17 +119,21 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the announcements page from the service header`() {
+    fun `should open the announcements page from the service menu`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<ServiceHomeView>()._get<RouterLink> { text = "Объявления" }._click()
+        // The page under test stays in the UI beside the routed home page, so the menu link is looked up in the latter.
+        UI.getCurrent()._get<ServiceHomeView>()
+            ._find<RouterLink> { classes = "ts-mega__link" }
+            .single { link -> link._get<Span>().text == "Объявления" }
+            ._click()
 
         assertEquals(ServiceAnnouncementsView::class.java, currentView)
     }
 
     @Test
-    fun `should show the period in the user time zone, the kind and the text of each current announcement`() {
-        assertEquals(listOf(listOf("09.03.2099 12:00", "15.03.2099 00:00", "Предупреждение", "Плановые работы в субботу")), currentRows())
+    fun `should show the period in the user time zone, the kind, the link and the text of each current announcement`() {
+        assertEquals(listOf(listOf("09.03.2099 12:00", "15.03.2099 00:00", "Предупреждение", stored.link, stored.text)), currentRows())
     }
 
     @Test
@@ -137,8 +142,8 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
 
         openPage()
 
-        assertEquals(listOf(stored.text, running.text), currentRows().map { row -> row[3] })
-        assertEquals(listOf(closedManually.text, expired.text), historyRows().map { row -> row[4] })
+        assertEquals(listOf(stored.text, running.text), currentRows().map { row -> row[4] })
+        assertEquals(listOf(closedManually.text, expired.text), historyRows().map { row -> row[5] })
     }
 
     @Test
@@ -152,14 +157,14 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should show the reason and the moment of finishing of each finished announcement`() {
-        every { announcements.findAll() } returns listOf(closedManually, expired)
+    fun `should show the reason and the moment of finishing and the link of each finished announcement`() {
+        every { announcements.findAll() } returns listOf(closedManually.copy(link = "http://example.org/fixed"), expired)
 
         openPage()
 
         val expected = listOf(
-            listOf("09.03.2026 12:00", "10.03.2026 10:30", "Вручную", "Информация", closedManually.text),
-            listOf("01.03.2026 12:00", "06.03.2026 00:00", "По времени", "Предупреждение", expired.text),
+            listOf("09.03.2026 12:00", "10.03.2026 10:30", "Вручную", "Информация", "http://example.org/fixed", closedManually.text),
+            listOf("01.03.2026 12:00", "06.03.2026 00:00", "По времени", "Предупреждение", "—", expired.text),
         )
         assertEquals(expected, historyRows())
     }
@@ -216,11 +221,13 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
             kind = AnnouncementKind.Info,
             shownFrom = Instant.parse("2099-04-01T06:00:00Z"),
             shownUntil = Instant.parse("2099-04-08T06:00:00Z"),
+            link = "https://example.com/season",
         )
         every { announcements.findAll() } returns listOf(added, stored)
         every {
             announcements.create(
                 text = added.text,
+                link = "https://example.com/season",
                 kind = AnnouncementKind.Info,
                 shownFrom = added.shownFrom,
                 shownUntil = added.shownUntil,
@@ -228,6 +235,7 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
         } returns AnnouncementSave.Saved(added)
         openAddDialog()
         textField()._value = added.text
+        linkField()._value = "https://example.com/season"
         startPicker().value = LocalDateTime.of(2099, 4, 1, 9, 0)
         endPicker().value = LocalDateTime.of(2099, 4, 8, 9, 0)
 
@@ -236,6 +244,7 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
         verify(exactly = 1) {
             announcements.create(
                 text = added.text,
+                link = "https://example.com/season",
                 kind = AnnouncementKind.Info,
                 shownFrom = added.shownFrom,
                 shownUntil = added.shownUntil,
@@ -243,7 +252,7 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
         }
         assertTrue(UI.getCurrent()._find<Dialog>().none { dialog -> dialog.isOpened })
         assertEquals("Объявление добавлено", lastToastTitle())
-        assertEquals(listOf("Новый сезон", stored.text), currentRows().map { row -> row[3] })
+        assertEquals(listOf("Новый сезон", stored.text), currentRows().map { row -> row[4] })
     }
 
     @Test
@@ -255,40 +264,61 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
 
         assertEquals("Укажите начало показа", startPicker().errorMessage)
         assertEquals("Укажите окончание показа", endPicker().errorMessage)
-        verify(exactly = 0) { announcements.create(any(), any(), any(), any()) }
+        verify(exactly = 0) { announcements.create(any(), any(), any(), any(), any()) }
     }
 
     @ParameterizedTest
     @CsvSource("BlankText, Укажите текст", "TextTooLong, Текст длиннее 300 символов")
     fun `should keep the dialog open with an error on the text if the text is refused`(reason: AnnouncementRejection, error: String) {
-        every { announcements.create(any(), any(), any(), any()) } returns AnnouncementSave.Rejected(reason)
+        every { announcements.create(any(), any(), any(), any(), any()) } returns AnnouncementSave.Rejected(reason)
         openFilledAddDialog()
 
         openDialog()._get<Button> { text = "Добавить" }._click()
 
         assertEquals(error, textField().errorMessage)
+        assertFalse(linkField().isInvalid)
+        assertFalse(endPicker().isInvalid)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "InvalidLink, 'Укажите полный адрес, начинающийся с http:// или https://, без имени пользователя и пароля'",
+        "LinkTooLong, Ссылка длиннее 2048 символов",
+    )
+    fun `should keep the dialog open with an error on the link if the link is refused`(reason: AnnouncementRejection, error: String) {
+        every { announcements.create(any(), any(), any(), any(), any()) } returns AnnouncementSave.Rejected(reason)
+        openFilledAddDialog()
+        linkField()._value = "javascript:alert(1)"
+
+        openDialog()._get<Button> { text = "Добавить" }._click()
+
+        assertEquals(error, linkField().errorMessage)
+        assertFalse(textField().isInvalid)
         assertFalse(endPicker().isInvalid)
     }
 
     @Test
     fun `should keep the dialog open with an error on the end if the period is empty`() {
-        every { announcements.create(any(), any(), any(), any()) } returns AnnouncementSave.Rejected(AnnouncementRejection.EmptyPeriod)
+        val refusal = AnnouncementSave.Rejected(AnnouncementRejection.EmptyPeriod)
+        every { announcements.create(any(), any(), any(), any(), any()) } returns refusal
         openFilledAddDialog()
 
         openDialog()._get<Button> { text = "Добавить" }._click()
 
         assertEquals("Окончание показа должно быть позже начала", endPicker().errorMessage)
         assertFalse(textField().isInvalid)
+        assertFalse(linkField().isInvalid)
     }
 
     @Test
     fun `should change an announcement starting from its current values`() {
-        val changed = stored.copy(text = "Работы перенесены")
+        val changed = stored.copy(text = "Работы перенесены", link = "https://example.com/moved")
         every { announcements.findAll() } returns listOf(changed)
         every {
             announcements.update(
                 stored.id,
                 text = changed.text,
+                link = "https://example.com/moved",
                 kind = AnnouncementKind.Warning,
                 shownFrom = stored.shownFrom,
                 shownUntil = stored.shownUntil,
@@ -296,19 +326,41 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
         } returns AnnouncementSave.Saved(changed)
         announcementMenu()._clickItemWithCaption("Изменить")
         assertEquals(LocalDateTime.of(2099, 3, 9, 12, 0), startPicker().value)
+        assertEquals("https://example.com/works", linkField().value)
         textField()._value = changed.text
+        linkField()._value = "https://example.com/moved"
 
         openDialog()._get<Button> { text = "Сохранить" }._click()
 
         assertTrue(UI.getCurrent()._find<Dialog>().none { dialog -> dialog.isOpened })
         assertEquals("Объявление изменено", lastToastTitle())
-        assertEquals(listOf(listOf("09.03.2099 12:00", "15.03.2099 00:00", "Предупреждение", changed.text)), currentRows())
+        assertEquals(listOf(listOf("09.03.2099 12:00", "15.03.2099 00:00", "Предупреждение", changed.link, changed.text)), currentRows())
+    }
+
+    @Test
+    fun `should pass the cleared link to remove it from the announcement`() {
+        every { announcements.update(any(), any(), any(), any(), any(), any()) } returns AnnouncementSave.Saved(stored.copy(link = null))
+        announcementMenu()._clickItemWithCaption("Изменить")
+        linkField()._value = ""
+
+        openDialog()._get<Button> { text = "Сохранить" }._click()
+
+        verify(exactly = 1) {
+            announcements.update(
+                stored.id,
+                text = stored.text,
+                link = "",
+                kind = AnnouncementKind.Warning,
+                shownFrom = stored.shownFrom,
+                shownUntil = stored.shownUntil,
+            )
+        }
     }
 
     @Test
     fun `should close the dialog, report the missing announcement and reread the list if it is not found`() {
         every { announcements.findAll() } returns emptyList()
-        every { announcements.update(any(), any(), any(), any(), any()) } returns AnnouncementSave.NotFound
+        every { announcements.update(any(), any(), any(), any(), any(), any()) } returns AnnouncementSave.NotFound
         announcementMenu()._clickItemWithCaption("Изменить")
 
         openDialog()._get<Button> { text = "Сохранить" }._click()
@@ -369,7 +421,12 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
 
     private fun openDialog(): Dialog = UI.getCurrent()._find<Dialog>().single { dialog -> dialog.isOpened }
 
-    private fun textField(): TextField = openDialog()._get<TextField>()
+    private fun textField(): TextField = dialogField("Текст")
+
+    private fun linkField(): TextField = dialogField("Ссылка")
+
+    private fun dialogField(label: String): TextField =
+        openDialog()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == label }
 
     private fun startPicker(): DateTimePicker = openDialog()._find<DateTimePicker>().first()
 
@@ -380,7 +437,7 @@ class ServiceAnnouncementsViewTests : ServiceMockVaadinTests() {
     private fun historyTable(): Table = UI.getCurrent()._find<Table>().last()
 
     /** Returns the texts of the cells of each current row, without the menu cell. */
-    private fun currentRows(): List<List<String>> = rowTexts(currentTable()).map { row -> row.take(4) }
+    private fun currentRows(): List<List<String>> = rowTexts(currentTable()).map { row -> row.take(5) }
 
     /** Returns the texts of the cells of each history row. */
     private fun historyRows(): List<List<String>> = rowTexts(historyTable())

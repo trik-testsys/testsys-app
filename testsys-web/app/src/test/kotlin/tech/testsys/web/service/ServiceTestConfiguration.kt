@@ -49,6 +49,11 @@ const val SERVICE_TEST_SECRET: String = "test-service-code-that-is-only-used-by-
 
 const val SERVICE_TEST_GRAFANA_URL: String = "https://grafana.example.test/monitoring/"
 
+/** Version of the system in the footer of the service UI in tests. */
+const val SERVICE_TEST_VERSION: String = "1.2.3"
+
+const val SERVICE_TEST_APP_URL: String = "https://testsys.example.test/testsys/"
+
 private val serviceTestAccessTokenHasher = AccessTokenHasher("0123456789abcdef".repeat(4))
 
 /** Users of every kind that the mocked service user search finds by id. */
@@ -61,8 +66,11 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
             name = "Мария Иванова"
             email = "maria@example.com"
             roles {
-                administrator {}
-                student { data = studentData {} }
+                administrator { memberOf(listOf(3002, 3001)) }
+                student {
+                    memberOf(listOf(3001))
+                    data = studentData {}
+                }
             }
         }
     },
@@ -108,12 +116,26 @@ val SERVICE_TEST_PUBLIC_COMMUNITY_OWNER: MultipleRoleUser = multipleRoleUser {
     }
 }
 
-/** Makes the mocked [search] find nothing by conditions and find each of [SERVICE_TEST_USERS] by its id. */
+/** Names of the communities of [SERVICE_TEST_USERS] that the mocked service user search finds. */
+val SERVICE_TEST_COMMUNITY_NAMES: Map<CommunityId, String> = mapOf(
+    CommunityId(42) to "Публичное Сообщество",
+    CommunityId(3001) to "Олимпиада 2026",
+    CommunityId(3002) to "Кружок робототехники",
+)
+
+/**
+ * Makes the mocked [search] find nothing by conditions, find each of [SERVICE_TEST_USERS] by its id and find the names
+ * of [SERVICE_TEST_COMMUNITY_NAMES].
+ */
 fun stubServiceTestUsers(search: ServiceUserSearch) {
     every { search.find(any(), any()) } answers { Page(emptyList(), secondArg(), 0) }
     every { search.findById(any()) } returns null
     (SERVICE_TEST_USERS + SERVICE_TEST_PUBLIC_COMMUNITY_OWNER).forEach { user ->
         every { search.findById(ServiceUserId(user.id.value)) } returns user
+    }
+    every { search.findCommunityNames(any()) } answers {
+        val ids = firstArg<Collection<CommunityId>>()
+        SERVICE_TEST_COMMUNITY_NAMES.filterKeys { id -> id in ids }
     }
 }
 
@@ -179,7 +201,8 @@ class ServiceTestConfiguration {
     fun serviceSettings(): ServiceWebSettings = ServiceWebSettings.from(
         MockEnvironment().withProperty("testsys.service.secret", SERVICE_TEST_SECRET)
             .withProperty("testsys.service.address", "127.0.0.1").withProperty("testsys.service.port", "0")
-            .withProperty("testsys.service.grafana-url", SERVICE_TEST_GRAFANA_URL),
+            .withProperty("testsys.service.grafana-url", SERVICE_TEST_GRAFANA_URL)
+            .withProperty("testsys.service.app-url", SERVICE_TEST_APP_URL),
     )
 
     @Bean

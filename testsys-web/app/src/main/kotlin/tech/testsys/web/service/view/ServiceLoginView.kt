@@ -1,7 +1,7 @@
 package tech.testsys.web.service.view
 
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import tech.testsys.web.components.TestSysView
@@ -10,6 +10,7 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.passwordInput
+import tech.testsys.web.components.texts.currentLocalization
 import tech.testsys.web.service.security.ServiceSignIn
 import tech.testsys.web.service.security.ServiceSignInResult
 
@@ -19,20 +20,24 @@ import tech.testsys.web.service.security.ServiceSignInResult
  * @since 1.0.0-beta.1
  */
 @Route("login")
-@PageTitle("Служебный вход")
 @AnonymousAllowed
-class ServiceLoginView(private val signIn: ServiceSignIn) : TestSysView() {
+class ServiceLoginView(private val signIn: ServiceSignIn) :
+    TestSysView(),
+    HasDynamicTitle {
     init {
-        guestPage("Служебный интерфейс") {
-            card(title = "Служебный вход", description = "Введите код входа в служебный интерфейс.") {
-                val code = passwordInput("Код")
-                mainAction("Войти") {
+        val texts = currentLocalization().pageService
+        guestPage(texts.loginInterface()) {
+            card(title = texts.loginTitle(), description = texts.loginDescription()) {
+                val code = passwordInput(texts.loginCode())
+                mainAction(texts.loginSubmit()) {
                     clickOnEnter()
                     onClick { submit(code) }
                 }
             }
         }
     }
+
+    override fun getPageTitle(): String = currentLocalization().pageService.loginTitle()
 
     private fun submit(code: ValueInput<String>) {
         val result = try {
@@ -41,11 +46,11 @@ class ServiceLoginView(private val signIn: ServiceSignIn) : TestSysView() {
             code.value = ""
         }
 
+        val texts = currentLocalization().pageService
         when (result) {
             ServiceSignInResult.Success -> UI.getCurrent().navigate(ServiceHomeView::class.java)
-            ServiceSignInResult.InvalidCode -> toast(FeedbackKind.Error, "Неверный код")
-            ServiceSignInResult.Blocked ->
-                toast(FeedbackKind.Error, title = "Вход временно заблокирован", description = "Повторите попытку через 5 минут.")
+            ServiceSignInResult.InvalidCode -> toast(FeedbackKind.Error, texts.loginInvalidCode())
+            ServiceSignInResult.Blocked -> toast(FeedbackKind.Error, title = texts.loginBlocked(), description = texts.loginBlockedHint())
         }
     }
 }

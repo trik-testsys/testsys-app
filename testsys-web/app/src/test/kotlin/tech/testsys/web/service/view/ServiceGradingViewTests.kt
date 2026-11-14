@@ -1,6 +1,7 @@
 package tech.testsys.web.service.view
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._clickItemWithCaption
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
@@ -10,17 +11,20 @@ import com.vaadin.flow.component.PollEvent
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.checkbox.Checkbox
+import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.component.dialog.Dialog
-import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.html.Table
+import com.vaadin.flow.component.html.TableBody
+import com.vaadin.flow.component.html.TableCell
+import com.vaadin.flow.component.html.TableRow
+import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.TextField
-import com.vaadin.flow.router.RouterLink
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotSame
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -100,10 +104,10 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the grading page from the service header`() {
+    fun `should open the grading page from the service menu`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<RouterLink> { text = "Проверка" }._click()
+        clickMenuLink("Проверка")
 
         assertEquals(ServiceGradingView::class.java, currentView)
     }
@@ -111,17 +115,18 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
     @Nested
     inner class QueueTests {
         @Test
-        fun `should show unfinished runs by state and their total`() {
-            val values = QUEUE_LABELS.map(::fieldValue)
+        fun `should show unfinished runs by state and their total in read-only fields`() {
+            val counters = QUEUE_LABELS.map(::counter)
 
-            assertEquals(listOf("1", "2", "3", "4", "10"), values)
+            assertEquals(listOf(1, 2, 3, 4, 10), counters.map { counter -> counter.value })
+            assertTrue(counters.all { counter -> counter.isReadOnly })
         }
     }
 
     @Nested
     inner class NodeTests {
         @Test
-        fun `should show participation and the latest known availability of each node`() {
+        fun `should show the address the latest known availability and the participation of each node`() {
             every { registry.overview() } returns overview(
                 GradingNodeEntry(StoredGradingNode(active, isActive = true), GradingNodeStatus.Available(queued = 2, capacity = 4)),
                 GradingNodeEntry(StoredGradingNode(inactive, isActive = false), GradingNodeStatus.Unreachable("UNAVAILABLE")),
@@ -131,12 +136,19 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
             UI.getCurrent().navigate(ServiceHomeView::class.java)
             UI.getCurrent().navigate(ServiceGradingView::class.java)
 
-            assertEquals("Вкл" to "main", participationState(active))
-            assertEquals("Выкл" to "destructive", participationState(inactive))
+            assertEquals(listOf(active.target, inactive.target, configured.target), rows().map { row -> cellText(row, ADDRESS) })
             assertEquals("Доступен" to "ts-status--success", badges(active).first())
             assertEquals("Недоступен" to "ts-status--danger", badges(inactive).first())
-            assertTrue(nodeRow(inactive).element.textRecursively.contains("UNAVAILABLE"))
+            assertEquals("UNAVAILABLE", cellText(nodeRow(inactive), REASON))
             assertEquals("Неизвестно" to "ts-status--warning", badges(configured).first())
+            assertEquals(listOf("Участвует" to "ts-status--success"), participationBadges(active))
+            assertEquals(listOf("Отключён" to "ts-status--neutral"), participationBadges(inactive))
+        }
+
+        @Test
+        fun `should offer the change opposite to the saved participation of each node`() {
+            assertEquals(listOf("Отключить", "Удалить"), menuItems(active))
+            assertEquals(listOf("Включить", "Удалить"), menuItems(inactive))
         }
 
         @ParameterizedTest
@@ -217,15 +229,11 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
             UI.getCurrent().navigate(ServiceHomeView::class.java)
             UI.getCurrent().navigate(ServiceGradingView::class.java)
 
-            assertTrue(
-                UI.getCurrent()._find<Div>().any { div ->
-                    div.text == "Сохранённое состояние реестра неопределённо. Изменения заблокированы до перезапуска"
-                },
-            )
+            val page = UI.getCurrent()._get<ServiceGradingView>().element.textRecursively
+            assertTrue(page.contains("Сохранённое состояние реестра неопределённо. Изменения заблокированы до перезапуска"), page)
             assertFalse(UI.getCurrent()._get<Button> { text = "Добавить" }.isEnabled)
             assertFalse(UI.getCurrent()._get<Button> { text = "Импортировать из конфигурации" }.isEnabled)
-            assertFalse(participation(active).isEnabled)
-            assertFalse(nodeRow(active)._get<Button> { text = "Удалить" }.isEnabled)
+            assertTrue(nodeMenu(active).items.none { item -> item.isEnabled })
         }
     }
 
@@ -285,7 +293,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
             openDialog()._get<Button> { text = "Добавить" }._click()
 
             assertTrue(UI.getCurrent()._find<Dialog>().none { dialog -> dialog.isOpened })
-            assertEquals("Исход сохранения неопределён", lastToastTitle())
+            assertEquals("Исход сохранения не определён", lastToastTitle())
             assertFalse(UI.getCurrent()._get<Button> { text = "Добавить" }.isEnabled)
         }
 
@@ -312,50 +320,44 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
     @Nested
     inner class ParticipationTests {
         @Test
-        fun `should enable apply only while participation differs from the saved value`() {
-            val apply = nodeRow(active)._get<Button> { text = "Применить" }
-            assertFalse(apply.isEnabled)
-
-            participation(active)._click()
-
-            assertTrue(apply.isEnabled)
-        }
-
-        @Test
-        fun `should switch the shown participation on press without saving it`() {
-            participation(active)._click()
-
-            assertEquals("Выкл" to "destructive", participationState(active))
-            verify(exactly = 0) { registry.setActive(any(), any()) }
-        }
-
-        @Test
-        fun `should return to the saved participation and disable apply on a second press`() {
-            participation(inactive)._click()
-
-            participation(inactive)._click()
-
-            assertEquals("Выкл" to "destructive", participationState(inactive))
-            assertFalse(nodeRow(inactive)._get<Button> { text = "Применить" }.isEnabled)
-        }
-
-        @Test
-        fun `should save changed participation of a node`() {
+        fun `should exclude a participating node from grading at once`() {
             every { registry.setActive(active, false) } returns GradingNodeChangeResult.Applied
-            participation(active)._click()
 
-            nodeRow(active)._get<Button> { text = "Применить" }._click()
+            nodeMenu(active)._clickItemWithCaption("Отключить")
 
             verify(exactly = 1) { registry.setActive(active, false) }
             assertEquals("Проверяющий узел отключён от проверки", lastToastTitle())
         }
 
         @Test
+        fun `should include an excluded node in grading at once`() {
+            every { registry.setActive(inactive, true) } returns GradingNodeChangeResult.Applied
+
+            nodeMenu(inactive)._clickItemWithCaption("Включить")
+
+            verify(exactly = 1) { registry.setActive(inactive, true) }
+            assertEquals("Проверяющий узел участвует в проверке", lastToastTitle())
+        }
+
+        @Test
+        fun `should show the saved participation after a change`() {
+            every { registry.setActive(active, false) } returns GradingNodeChangeResult.Applied
+            every { registry.overview() } returns overview(
+                GradingNodeEntry(StoredGradingNode(active, isActive = false), GradingNodeStatus.Available(queued = 2, capacity = 4)),
+                GradingNodeEntry(StoredGradingNode(inactive, isActive = false), GradingNodeStatus.Unreachable("UNAVAILABLE")),
+            )
+
+            nodeMenu(active)._clickItemWithCaption("Отключить")
+
+            assertEquals(listOf("Включить", "Удалить"), menuItems(active))
+            assertEquals(listOf("Отключён" to "ts-status--neutral"), participationBadges(active))
+        }
+
+        @Test
         fun `should report a confirmed failure of a participation change`() {
             every { registry.setActive(inactive, true) } returns GradingNodeChangeResult.Failed
-            participation(inactive)._click()
 
-            nodeRow(inactive)._get<Button> { text = "Применить" }._click()
+            nodeMenu(inactive)._clickItemWithCaption("Включить")
 
             assertEquals("Не удалось применить изменение", lastToastTitle())
         }
@@ -363,17 +365,16 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
         @Test
         fun `should report an uncertain participation change and lock the page`() {
             every { registry.setActive(inactive, true) } returns GradingNodeChangeResult.Uncertain
-            participation(inactive)._click()
             every { registry.overview() } returns overview(
                 GradingNodeEntry(StoredGradingNode(active, isActive = true), GradingNodeStatus.Unknown),
                 GradingNodeEntry(StoredGradingNode(inactive, isActive = false), GradingNodeStatus.Unknown),
                 persistence = SettingsPersistence.Uncertain,
             )
 
-            nodeRow(inactive)._get<Button> { text = "Применить" }._click()
+            nodeMenu(inactive)._clickItemWithCaption("Включить")
 
-            assertEquals("Исход сохранения неопределён", lastToastTitle())
-            assertFalse(participation(inactive).isEnabled)
+            assertEquals("Исход сохранения не определён", lastToastTitle())
+            assertTrue(nodeMenu(inactive).items.none { item -> item.isEnabled })
             assertFalse(UI.getCurrent()._get<Button> { text = "Добавить" }.isEnabled)
         }
     }
@@ -381,9 +382,9 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
     @Nested
     inner class RemoveTests {
         @Test
-        fun `should remove a node after confirmation`() {
+        fun `should remove a node from the row menu after confirmation`() {
             every { registry.remove(active) } returns GradingNodeChangeResult.Applied
-            nodeRow(active)._get<Button> { text = "Удалить" }._click()
+            nodeMenu(active)._clickItemWithCaption("Удалить")
 
             openDialog()._get<Button> { text = "Удалить" }._click()
 
@@ -393,7 +394,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
 
         @Test
         fun `should keep a node when the removal is cancelled`() {
-            nodeRow(active)._get<Button> { text = "Удалить" }._click()
+            nodeMenu(active)._clickItemWithCaption("Удалить")
 
             openDialog()._get<Button> { text = "Отменить" }._click()
 
@@ -468,7 +469,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
             openDialog()._get<Button> { text = "Импортировать" }._click()
 
             val report = openDialog().element.textRecursively
-            assertTrue(report.contains("исход неопределён; импорт остановлен"))
+            assertTrue(report.contains("исход не определён; импорт остановлен"))
             assertTrue(report.contains("не добавлен: импорт остановлен"))
             assertTrue(UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.isEmpty())
         }
@@ -483,7 +484,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
 
         @Test
         fun `should update counters and the unavailability reason on a poll without rebuilding the page`() {
-            val counter = fieldArea("Всего незавершённых")
+            val counter = counter("Всего незавершённых")
             val row = nodeRow(inactive)
             every { queue.snapshot() } returns GradingQueueSnapshot(preparing = 0, waiting = 0, grading = 1, saving = 0)
             every { registry.overview() } returns overview(
@@ -493,10 +494,10 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
 
             poll()
 
-            assertSame(counter, fieldArea("Всего незавершённых"))
+            assertSame(counter, counter("Всего незавершённых"))
             assertSame(row, nodeRow(inactive))
-            assertEquals("1", fieldValue("Всего незавершённых"))
-            assertTrue(nodeRow(inactive).element.textRecursively.contains("DEADLINE_EXCEEDED"))
+            assertEquals(1, counter("Всего незавершённых").value)
+            assertEquals("DEADLINE_EXCEEDED", cellText(nodeRow(inactive), REASON))
         }
 
         @Test
@@ -510,23 +511,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
 
             assertEquals(listOf("Доступен" to "ts-status--success", "В очереди: 4/4" to "ts-status--danger"), badges(active))
             assertEquals(listOf("Неизвестно" to "ts-status--warning"), badges(inactive))
-            assertFalse(nodeRow(inactive).element.textRecursively.contains("UNAVAILABLE"))
-        }
-
-        @Test
-        fun `should keep unapplied participation when a poll rebuilds the page`() {
-            val row = nodeRow(active)
-            participation(active)._click()
-            every { registry.overview() } returns overview(
-                GradingNodeEntry(StoredGradingNode(active, isActive = true), GradingNodeStatus.Available(queued = 3, capacity = 4)),
-                GradingNodeEntry(StoredGradingNode(inactive, isActive = false), GradingNodeStatus.Unreachable("UNAVAILABLE")),
-            )
-
-            poll()
-
-            assertNotSame(row, nodeRow(active))
-            assertEquals("Выкл" to "destructive", participationState(active))
-            assertTrue(nodeRow(active)._get<Button> { text = "Применить" }.isEnabled)
+            assertEquals("", cellText(nodeRow(inactive), REASON))
         }
 
         @Test
@@ -539,14 +524,7 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
 
             poll()
 
-            assertEquals("Вкл" to "main", participationState(configured))
-        }
-
-        @Test
-        fun `should offer no manual refresh`() {
-            val refresh = UI.getCurrent()._find<Button> { text = "Обновить" }
-
-            assertTrue(refresh.isEmpty())
+            assertEquals(listOf("Отключить", "Удалить"), menuItems(configured))
         }
 
         @Test
@@ -569,29 +547,43 @@ class ServiceGradingViewTests : ServiceMockVaadinTests() {
         ComponentUtil.fireEvent(ui, PollEvent(ui, true))
     }
 
-    private fun fieldArea(label: String): Div =
-        UI.getCurrent()._find<Div> { classes = "ts-field__value" }.single { area -> area.element.getAttribute("aria-label") == label }
+    private fun counter(label: String): IntegerField =
+        UI.getCurrent()._find<IntegerField>().single { field -> field.ariaLabel.orElse(null) == label }
 
-    private fun fieldValue(label: String): String = fieldArea(label).element.textRecursively
+    private fun rows(): List<TableRow> = UI.getCurrent()._get<Table>()._get<TableBody>()._find<TableRow>()
 
-    private fun nodeRow(address: GradingNodeAddress): Div = UI.getCurrent()._find<Div> { classes = "ts-block__row" }
-        .single { row -> row.element.textRecursively.startsWith(address.target) }
+    private fun nodeRow(address: GradingNodeAddress): TableRow = rows().single { row -> cellText(row, ADDRESS) == address.target }
 
-    private fun participation(address: GradingNodeAddress): Button =
-        nodeRow(address)._find<Button>().single { button -> button.text in PARTICIPATION_LABELS }
+    private fun cell(row: TableRow, index: Int): TableCell = row._find<TableCell>()[index]
 
-    private fun participationState(address: GradingNodeAddress): Pair<String, String> =
-        participation(address).let { button -> button.text to button.element.getAttribute("data-ts-role") }
+    private fun cellText(row: TableRow, index: Int): String = cell(row, index).element.textRecursively
 
-    private fun badges(address: GradingNodeAddress): List<Pair<String, String>> = nodeRow(address)._find<Span> { classes = "ts-status" }
+    private fun menuItems(address: GradingNodeAddress): List<String> = nodeMenu(address).items.map { item -> item.element.textRecursively }
+
+    private fun badges(address: GradingNodeAddress): List<Pair<String, String>> = badgesOf(cell(nodeRow(address), STATUS))
+
+    private fun participationBadges(address: GradingNodeAddress): List<Pair<String, String>> =
+        badgesOf(cell(nodeRow(address), PARTICIPATION))
+
+    private fun badgesOf(cell: TableCell): List<Pair<String, String>> = cell._find<Span> { classes = "ts-status" }
         .map { badge -> badge.element.textRecursively to badge.classNames.single { name -> name.startsWith("ts-status--") } }
+
+    private fun nodeMenu(address: GradingNodeAddress): ContextMenu {
+        val trigger = UI.getCurrent()._find<Button>().single { button ->
+            button.element.getAttribute("aria-label") == "Действия с узлом ${address.target}"
+        }
+        return checkNotNull(ComponentUtil.getData(trigger, ContextMenu::class.java))
+    }
 
     private fun openDialog(): Dialog = UI.getCurrent()._find<Dialog>().single { dialog -> dialog.isOpened }
 
     private fun lastToastTitle(): String = UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.last().text
 
     private companion object {
-        val PARTICIPATION_LABELS = setOf("Вкл", "Выкл")
+        const val ADDRESS = 0
+        const val STATUS = 1
+        const val REASON = 2
+        const val PARTICIPATION = 3
         val QUEUE_LABELS = listOf(
             "Подготовка",
             "Ожидание отправки",

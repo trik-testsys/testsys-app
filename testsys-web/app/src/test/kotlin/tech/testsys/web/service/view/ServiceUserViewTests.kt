@@ -8,7 +8,12 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.H3
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.html.TableBody
+import com.vaadin.flow.component.html.TableCell
+import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.RouteParameters
 import io.mockk.clearMocks
@@ -104,12 +109,12 @@ class ServiceUserViewTests : ServiceMockVaadinTests() {
         }
 
         @Test
-        fun `should show the community and the assigned contests of an observer`() {
+        fun `should show the assigned contests of an observer`() {
             open(1003)
 
-            assertEquals("3001", textField("Сообщество (ID)").value)
             assertEquals("4001, 4002", textField("Туры (ID)").value)
             assertEquals(listOf("Наблюдатель"), tags())
+            assertEquals(emptyList<TextField>(), fields("Сообщество (ID)"))
         }
 
         @Test
@@ -119,6 +124,70 @@ class ServiceUserViewTests : ServiceMockVaadinTests() {
             assertEquals("Супервайзер Олег", textField("Псевдоним").value)
             assertEquals("oleg@example.com", textField("Почта").value)
             assertEquals(listOf("Супервайзер"), tags())
+        }
+    }
+
+    @Nested
+    inner class CommunitiesTests {
+        @Test
+        fun `should list the communities of a user with non-fixed roles by id with the roles in each`() {
+            open(1001)
+
+            assertEquals(
+                listOf(
+                    CommunityRow("3001", "Олимпиада 2026", listOf("Администратор", "Ученик")),
+                    CommunityRow("3002", "Кружок робототехники", listOf("Администратор")),
+                ),
+                communityRows(),
+            )
+        }
+
+        @Test
+        fun `should list the observed community of an observer`() {
+            open(1003)
+
+            assertEquals(listOf(CommunityRow("3001", "Олимпиада 2026", listOf("Наблюдатель"))), communityRows())
+        }
+
+        @Test
+        fun `should show that a user without memberships is in no community`() {
+            open(1005)
+
+            assertEquals(emptyList<CommunityRow>(), communityRows())
+            assertEquals("Пользователь не состоит в Сообществах", block("Сообщества")._get<Span> { classes = "ts-empty__title" }.text)
+        }
+
+        @Test
+        fun `should show no communities of a participant`() {
+            open(1002)
+
+            assertTrue(blocks("Сообщества").isEmpty())
+        }
+    }
+
+    @Nested
+    inner class OpenSupervisorTests {
+        @ParameterizedTest
+        @ValueSource(longs = [1001, 1002, 1003])
+        fun `should open a user a supervisor can sign in as in the cabinet of a supervisor in the same tab`(userId: Long) {
+            open(userId)
+            pendingJavaScript()
+
+            UI.getCurrent()._get<Button> { text = OPEN_SUPERVISOR }._click()
+
+            val transitions = pendingJavaScript().filter { call -> "window.open" in call.invocation.expression }
+            assertEquals(
+                listOf(listOf("https://testsys.example.test/testsys/supervisor/users/$userId", "_self")),
+                transitions.map { call -> call.invocation.parameters },
+            )
+        }
+
+        @ParameterizedTest
+        @ValueSource(longs = [1004, 1005])
+        fun `should not offer opening a supervisor or the owner of the public community`(userId: Long) {
+            open(userId)
+
+            assertTrue(UI.getCurrent()._find<Button> { text = OPEN_SUPERVISOR }.isEmpty())
         }
     }
 
@@ -221,7 +290,31 @@ class ServiceUserViewTests : ServiceMockVaadinTests() {
 
     private fun textField(label: String): TextField = fields(label).single()
 
-    private fun tags(): List<String> = UI.getCurrent()._find<Span> { classes = "ts-tag" }.map { tag -> tag.text }
+    private fun tags(): List<String> = block("Сведения")._find<Span> { classes = "ts-tag" }.map { tag -> tag.text }
+
+    private fun blocks(title: String): List<Section> = UI.getCurrent()._find<Section> { classes = "ts-block" }
+        .filter { block -> block._find<H3> { classes = "ts-block__title" }.single().text == title }
+
+    private fun block(title: String): Section = blocks(title).single()
+
+    private fun communityRows(): List<CommunityRow> = block("Сообщества")._find<TableBody>().single()._find<TableRow>()
+        .filter { row -> row._find<Span> { classes = "ts-empty__title" }.isEmpty() }
+        .map { row ->
+            val cells = row._find<TableCell>()
+            CommunityRow(
+                id = cells[0].element.textRecursively,
+                name = cells[1].element.textRecursively,
+                roles = cells[2]._find<Span> { classes = "ts-tag" }.map { tag -> tag.text },
+            )
+        }
+
+    private fun pendingJavaScript() = UI.getCurrent().internals.let { internals ->
+        internals.stateTree.runExecutionsBeforeClientResponse()
+        internals.dumpPendingJavaScriptInvocations()
+    }
+
+    /** Texts of a row of the communities table. */
+    private data class CommunityRow(val id: String, val name: String, val roles: List<String>)
 
     private fun roleActions(): List<String> = UI.getCurrent()._find<Button>()
         .map { button -> button.text }
@@ -238,5 +331,7 @@ class ServiceUserViewTests : ServiceMockVaadinTests() {
     private companion object {
         /** Public community of the runtime settings of the service test configuration. */
         val PUBLIC_COMMUNITY_ID = CommunityId(42)
+
+        const val OPEN_SUPERVISOR = "Открыть в Кабинете Супервайзера"
     }
 }

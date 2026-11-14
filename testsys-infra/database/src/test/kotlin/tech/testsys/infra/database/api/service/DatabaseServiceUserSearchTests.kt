@@ -548,6 +548,30 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
         }
     }
 
+    @Nested
+    inner class FindCommunityNamesTests {
+
+        @Test
+        fun `should return the names of existing communities and skip unknown ids`() {
+            val first = fixtures.community()
+            val second = fixtures.community()
+            fixtures.community()
+
+            val names = search.findCommunityNames(listOf(first.id, second.id, CommunityId(Long.MAX_VALUE)))
+
+            assertEquals(mapOf(first.id to first.data.name, second.id to second.data.name), names)
+        }
+
+        @Test
+        fun `should return no names without ids`() {
+            fixtures.community()
+
+            val names = search.findCommunityNames(emptyList())
+
+            assertEquals(emptyMap<CommunityId, String>(), names)
+        }
+    }
+
     private fun idsOf(page: Page<User<*>>): List<Long> = page.content.map { user -> user.id.value }
 
     private fun named(name: String): MultipleRoleUser = fixtures.multipleRoleUser {

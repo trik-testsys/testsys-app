@@ -9,6 +9,7 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasAriaLabel
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.ListItem
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
@@ -315,6 +316,25 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should make only an announcement with a link open it in a new tab`() {
+        val announcements = mockk<Announcements>()
+        every { announcements.findActive(NOW) } returns listOf(
+            announcement(
+                text = "Плановые работы",
+                kind = AnnouncementKind.Warning,
+                shownFrom = Instant.parse("2026-03-09T21:30:00Z"),
+                link = "https://example.com/works",
+            ),
+            announcement(text = "Новый сезон", kind = AnnouncementKind.Info, shownFrom = Instant.parse("2026-03-01T09:00:00Z")),
+        )
+
+        val notices = openWith(announcements)._find<ListItem>()
+
+        val links = notices.map { notice -> notice._find<Anchor>().map { link -> link.href to link.target.orElse(null) } }
+        assertEquals(listOf(listOf("https://example.com/works" to "_blank"), emptyList()), links)
+    }
+
+    @Test
     fun `should show no announcements list if no announcement is active`() {
         val announcements = mockk<Announcements>()
         every { announcements.findActive(NOW) } returns emptyList()
@@ -400,12 +420,13 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
         return view
     }
 
-    private fun announcement(text: String, kind: AnnouncementKind, shownFrom: Instant) = Announcement(
+    private fun announcement(text: String, kind: AnnouncementKind, shownFrom: Instant, link: String? = null) = Announcement(
         id = AnnouncementId(1),
         text = text,
         kind = kind,
         shownFrom = shownFrom,
         shownUntil = NOW.plusSeconds(1),
+        link = link,
     )
 
     companion object {

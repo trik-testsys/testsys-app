@@ -1,7 +1,7 @@
 package tech.testsys.web.service.view
 
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
@@ -10,6 +10,7 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.Administrator
+import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.Judge
 import tech.testsys.domain.model.user.Manager
@@ -25,6 +26,7 @@ import tech.testsys.infra.database.api.service.ServiceUserFilter
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserRole
 import tech.testsys.infra.database.api.service.ServiceUserSearch
+import tech.testsys.infra.localization.PageService.RoleNameRole
 import tech.testsys.web.app.view.loadTable
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.data.Page
@@ -35,22 +37,11 @@ import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.multiSelect
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
+import tech.testsys.web.components.texts.currentLocalization
 import tech.testsys.domain.contract.persistence.Sort as DomainSort
 
 /** Route parameter of [ServiceUserView] with the id of a user of any kind. */
 internal const val SERVICE_USER_ID_PARAMETER = "userId"
-
-/** Labels of the roles a user can be searched by, in the order of the filter. */
-private val ROLE_LABELS: Map<ServiceUserRole, String> = mapOf(
-    ServiceUserRole.ADMINISTRATOR to "Администратор",
-    ServiceUserRole.DEVELOPER to "Разработчик",
-    ServiceUserRole.JUDGE to "Судья",
-    ServiceUserRole.MANAGER to "Организатор",
-    ServiceUserRole.STUDENT to "Ученик",
-    ServiceUserRole.PARTICIPANT to "Участник",
-    ServiceUserRole.OBSERVER to "Наблюдатель",
-    ServiceUserRole.SUPERVISOR to "Супервайзер",
-)
 
 /**
  * Service search of users of every kind by id, name, e-mail, roles and related community, class or competition;
@@ -59,16 +50,18 @@ private val ROLE_LABELS: Map<ServiceUserRole, String> = mapOf(
  * @since 1.0.0-beta.1
  */
 @Route("users")
-@PageTitle("Пользователи")
 @RolesAllowed("SERVICE")
-class ServiceUsersView(private val headers: ServiceHeaders, private val search: ServiceUserSearch) : TestSysView() {
+class ServiceUsersView(private val headers: ServiceHeaders, private val search: ServiceUserSearch) :
+    TestSysView(),
+    HasDynamicTitle {
     private var applied = ServiceUserFilter()
 
     init {
-        page(headers.header(active = ServiceHeaders.USERS_SECTION)) {
-            head("Пользователи")
+        val texts = currentLocalization().pageService
+        page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
+            head(texts.usersTitle())
             row {
-                block(title = "Пользователи") {
+                block(title = texts.usersTitle()) {
                     loadTable(
                         key = { user: User<*> -> user.id.value },
                         fetch = { request ->
@@ -76,11 +69,11 @@ class ServiceUsersView(private val headers: ServiceHeaders, private val search: 
                             Page(users.content, users.totalElements.toInt())
                         },
                     ) {
-                        codeColumn("ID", sortKey = "id", size = 5) { user -> user.id.value.toString() }
-                        textColumn("Псевдоним", sortKey = "name", size = 7) { user -> dataOf(user).name }
-                        textColumn("Почта", size = 6) { user -> emailOf(user) }
-                        column("Роли") { user -> roleLabelsOf(user).forEach { role -> tag(role) } }
-                        empty("Пользователи не найдены", "Измените условия поиска.")
+                        codeColumn(texts.id(), sortKey = "id", size = 5) { user -> user.id.value.toString() }
+                        textColumn(texts.nickname(), sortKey = "name", size = 7) { user -> dataOf(user).name }
+                        textColumn(texts.email(), size = 6) { user -> emailOf(user) }
+                        column(texts.roles()) { user -> roleLabelsOf(user).forEach { role -> tag(role) } }
+                        empty(texts.usersEmpty(), texts.usersEmptyHint())
                         onRowClick(isNavigation = true) { user -> openUser(user) }
                     }
 
@@ -89,6 +82,8 @@ class ServiceUsersView(private val headers: ServiceHeaders, private val search: 
             }
         }
     }
+
+    override fun getPageTitle(): String = currentLocalization().pageService.usersTitle()
 
     /** Adds the search conditions; applying them publishes a new filter only if every identifier is a number. */
     private fun BlockScope.searchFilters() {
@@ -99,6 +94,7 @@ class ServiceUsersView(private val headers: ServiceHeaders, private val search: 
         lateinit var community: ValueInput<String>
         lateinit var studyClass: ValueInput<String>
         lateinit var competition: ValueInput<String>
+        val texts = currentLocalization().pageService
         filters(
             onApply = {
                 val isValid = listOf(id, community, studyClass, competition).map { field -> field.validateId() }.all { valid -> valid }
@@ -125,18 +121,18 @@ class ServiceUsersView(private val headers: ServiceHeaders, private val search: 
             },
         ) {
             row {
-                id = textInput("ID", labelSize = 3, size = 9, hint = "Точное совпадение")
-                name = textInput("Псевдоним", labelSize = 3, size = 9, hint = "Часть псевдонима, без учёта регистра")
+                id = textInput(texts.id(), labelSize = 3, size = 9, hint = texts.usersIdHint())
+                name = textInput(texts.nickname(), labelSize = 3, size = 9, hint = texts.usersNicknameHint())
             }
             row {
-                email = textInput("Почта", labelSize = 3, size = 9, hint = "Часть почты, без учёта регистра")
-                roles = multiSelect("Роли", labelSize = 3, size = 9, items = ServiceUserRole.entries, itemLabel = ROLE_LABELS::getValue)
+                email = textInput(texts.email(), labelSize = 3, size = 9, hint = texts.usersEmailHint())
+                roles = multiSelect(texts.roles(), labelSize = 3, size = 9, items = ServiceUserRole.entries, itemLabel = ::roleLabel)
             }
             row {
-                community = textInput("Сообщество (ID)", labelSize = 3, size = 9)
-                studyClass = textInput("Класс (ID)", labelSize = 3, size = 9)
+                community = textInput(texts.communityId(), labelSize = 3, size = 9)
+                studyClass = textInput(texts.classId(), labelSize = 3, size = 9)
             }
-            row { competition = textInput("Соревнование (ID)", labelSize = 3, size = 9) }
+            row { competition = textInput(texts.competitionId(), labelSize = 3, size = 9) }
         }
     }
 }
@@ -156,19 +152,23 @@ internal fun emailOf(user: User<*>): String? = when (user) {
 
 /** Returns the labels of the roles of [user], one per role. */
 internal fun roleLabelsOf(user: User<*>): List<String> = when (user) {
-    is MultipleRoleUser -> user.data.roles.map { role ->
-        when (role) {
-            is Administrator -> ROLE_LABELS.getValue(ServiceUserRole.ADMINISTRATOR)
-            is Developer -> ROLE_LABELS.getValue(ServiceUserRole.DEVELOPER)
-            is Judge -> ROLE_LABELS.getValue(ServiceUserRole.JUDGE)
-            is Manager -> ROLE_LABELS.getValue(ServiceUserRole.MANAGER)
-            is Student -> ROLE_LABELS.getValue(ServiceUserRole.STUDENT)
-            is Supervisor -> ROLE_LABELS.getValue(ServiceUserRole.SUPERVISOR)
-        }
-    }
-    is Participant -> listOf(ROLE_LABELS.getValue(ServiceUserRole.PARTICIPANT))
-    is Observer -> listOf(ROLE_LABELS.getValue(ServiceUserRole.OBSERVER))
+    is MultipleRoleUser -> user.data.roles.map(::roleLabelOf)
+    is Participant -> listOf(roleLabel(ServiceUserRole.PARTICIPANT))
+    is Observer -> listOf(roleLabel(ServiceUserRole.OBSERVER))
 }
+
+/** Returns the label of the non-fixed [role]. */
+internal fun roleLabelOf(role: CompatibleUserRole): String = when (role) {
+    is Administrator -> roleLabel(ServiceUserRole.ADMINISTRATOR)
+    is Developer -> roleLabel(ServiceUserRole.DEVELOPER)
+    is Judge -> roleLabel(ServiceUserRole.JUDGE)
+    is Manager -> roleLabel(ServiceUserRole.MANAGER)
+    is Student -> roleLabel(ServiceUserRole.STUDENT)
+    is Supervisor -> roleLabel(ServiceUserRole.SUPERVISOR)
+}
+
+/** Returns the label of [role]; the searchable roles and the variants of the message share their names. */
+internal fun roleLabel(role: ServiceUserRole): String = currentLocalization().pageService.roleName(RoleNameRole.valueOf(role.name))
 
 /** Opens the card of [user]. */
 private fun openUser(user: User<*>) {
@@ -178,7 +178,7 @@ private fun openUser(user: User<*>) {
 /** Marks this identifier field invalid unless it is empty or a number after trimming, and returns whether it is valid. */
 private fun ValueInput<String>.validateId(): Boolean {
     val isValid = value.isBlank() || idValue() != null
-    errorMessage = if (isValid) null else "Введите число"
+    errorMessage = if (isValid) null else currentLocalization().pageService.numberRequired()
     isInvalid = !isValid
     return isValid
 }

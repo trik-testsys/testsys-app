@@ -4,6 +4,7 @@ import com.vaadin.flow.data.binder.Binder
 import tech.testsys.infra.settings.api.SettingsSnapshot
 import tech.testsys.infra.settings.api.catalog.SettingKey
 import tech.testsys.web.components.forms.ValueInput
+import tech.testsys.web.components.texts.currentLocalization
 
 internal class ServiceSettingsForm(private val initial: SettingsSnapshot) {
     private val binder = Binder<MutableMap<SettingKey, String>>()
@@ -12,7 +13,7 @@ internal class ServiceSettingsForm(private val initial: SettingsSnapshot) {
 
     fun bind(key: SettingKey, field: ValueInput<String>) {
         fields[key] = field
-        binder.forField(field).withValidator({ value -> value.isNotBlank() }, "Укажите значение")
+        binder.forField(field).withValidator({ value -> value.isNotBlank() }, currentLocalization().pageService.settingsValueRequired())
             .bind({ bean -> bean.getValue(key) }, { bean, value -> bean[key] = value })
         field.value = initial.values[key]
     }
@@ -31,7 +32,7 @@ internal class ServiceSettingsForm(private val initial: SettingsSnapshot) {
     fun errors(errors: Map<SettingKey, String>) {
         errors.forEach { (key, _) ->
             fields.getValue(key).apply {
-                errorMessage = "Проверьте формат и допустимый диапазон значения"
+                errorMessage = currentLocalization().pageService.settingsValueInvalid()
                 isInvalid = true
             }
         }

@@ -63,7 +63,7 @@
 - Тексты служебного интерфейса перенесены в сообщения локализации `page_service`
   ([#39](https://github.com/trik-testsys/testsys-app/pull/39)).
 - Добавлена история изменений проекта, проверка её пополнения в PR и подстановка её секции в описание релиза GitHub
-  (%PR_LINK%).
+  ([#40](https://github.com/trik-testsys/testsys-app/pull/40)).
 
 ## 1.0.0-beta.1 — 2026-10-29
 

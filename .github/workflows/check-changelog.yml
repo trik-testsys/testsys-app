@@ -1,0 +1,34 @@
+name: Check changelog
+
+on:
+  pull_request:
+    branches: [ "dev" ]
+    types: [ opened, synchronize, reopened, labeled, unlabeled ]
+
+jobs:
+  check-changelog:
+    # The `skip-changelog` label exempts a pull request that changes nothing worth an entry.
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+
+    steps:
+      # The checkout is the merge commit of the pull request; its first parent is the base branch.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Require an entry for the current version
+        run: |
+          if git diff --quiet HEAD^1 HEAD -- CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md::Add an entry to CHANGELOG.md or set the skip-changelog label"
+            exit 1
+          fi
+          if ! grep -qx '## %CURRENT_VERSION%' CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md::CHANGELOG.md has no '## %CURRENT_VERSION%' heading"
+            exit 1
+          fi

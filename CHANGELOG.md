@@ -59,3 +59,52 @@
   ([#34](https://github.com/trik-testsys/testsys-app/pull/34)).
 - Переработаны компоненты веб-интерфейса ([#35](https://github.com/trik-testsys/testsys-app/pull/35)).
 - Добавлена история изменений проекта и проверка её пополнения в PR (%PR_LINK%).
+
+## 1.0.0-beta.1 — 2026-10-29
+
+Первая бета-версия.
+
+### Minor
+
+- Доменная модель, билдеры и их DSL
+  ([#4](https://github.com/trik-testsys/testsys-app/pull/4), [#5](https://github.com/trik-testsys/testsys-app/pull/5),
+  [#10](https://github.com/trik-testsys/testsys-app/pull/10)).
+- Хранение доменных сущностей в PostgreSQL, учёт загруженных Ресурсов Задач, ускорение запросов
+  ([#6](https://github.com/trik-testsys/testsys-app/pull/6),
+  [#12](https://github.com/trik-testsys/testsys-app/pull/12),
+  [#26](https://github.com/trik-testsys/testsys-app/pull/26)).
+- Локализация сообщений в формате MessageFormat 2
+  ([#7](https://github.com/trik-testsys/testsys-app/pull/7),
+  [#11](https://github.com/trik-testsys/testsys-app/pull/11)).
+- Хеширование Кодов-доступа ([#14](https://github.com/trik-testsys/testsys-app/pull/14)).
+- Операции Разработчика, в том числе диагностика Задач
+  ([#13](https://github.com/trik-testsys/testsys-app/pull/13),
+  [#15](https://github.com/trik-testsys/testsys-app/pull/15),
+  [#19](https://github.com/trik-testsys/testsys-app/pull/19)).
+- gRPC-грейдер для проверки Решений на Проверяющих узлах ([#16](https://github.com/trik-testsys/testsys-app/pull/16)).
+- Операции Судьи, Участника и Ученика, Организатора, Администратора, Наблюдателя и Супервайзера, Коды-приглашения
+  ([#17](https://github.com/trik-testsys/testsys-app/pull/17),
+  [#20](https://github.com/trik-testsys/testsys-app/pull/20),
+  [#21](https://github.com/trik-testsys/testsys-app/pull/21),
+  [#22](https://github.com/trik-testsys/testsys-app/pull/22),
+  [#23](https://github.com/trik-testsys/testsys-app/pull/23),
+  [#24](https://github.com/trik-testsys/testsys-app/pull/24),
+  [#30](https://github.com/trik-testsys/testsys-app/pull/30)).
+- Аудит операций и новая структура тестов ([#25](https://github.com/trik-testsys/testsys-app/pull/25)).
+- Веб-интерфейс: дизайн-система компонентов и страницы Кабинетов
+  ([#9](https://github.com/trik-testsys/testsys-app/pull/9),
+  [#27](https://github.com/trik-testsys/testsys-app/pull/27),
+  [#28](https://github.com/trik-testsys/testsys-app/pull/28)).
+- Служебный интерфейс ([#29](https://github.com/trik-testsys/testsys-app/pull/29)).
+- Развёртывание через Docker Compose и workflow релиза ([#30](https://github.com/trik-testsys/testsys-app/pull/30)).
+- Журналирование ([#31](https://github.com/trik-testsys/testsys-app/pull/31)).
+- Новая реализация входа в Систему ([#32](https://github.com/trik-testsys/testsys-app/pull/32)).
+
+### Patch
+
+- Параметр `createdAt` передаётся всем наследникам доменных сущностей
+  ([#1](https://github.com/trik-testsys/testsys-app/pull/1)).
+- Добавлена проверка исходной ветки PR в `dev` ([#2](https://github.com/trik-testsys/testsys-app/pull/2)).
+- Исправлено версионирование сущностей ([#8](https://github.com/trik-testsys/testsys-app/pull/8)).
+- Образ релиза публикуется в GitHub Packages вместо Docker Hub
+  ([#33](https://github.com/trik-testsys/testsys-app/pull/33)).

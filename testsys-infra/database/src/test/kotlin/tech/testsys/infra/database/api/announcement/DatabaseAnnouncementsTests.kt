@@ -115,6 +115,31 @@ class DatabaseAnnouncementsTests : DatabaseIntegrationTests() {
         }
 
         @Test
+        fun `should keep the closing moment of a closed announcement`() {
+            val stored = create(text = "Старый текст", shownFrom = DAY_1, shownUntil = DAY_3)
+            announcements.close(stored.id, DAY_2)
+            val expected = Announcement(
+                id = stored.id,
+                text = "Новый текст",
+                kind = AnnouncementKind.Warning,
+                shownFrom = DAY_1,
+                shownUntil = DAY_4,
+                closedAt = DAY_2,
+            )
+
+            val result = announcements.update(
+                stored.id,
+                text = "Новый текст",
+                kind = AnnouncementKind.Warning,
+                shownFrom = DAY_1,
+                shownUntil = DAY_4,
+            )
+
+            assertEquals(AnnouncementSave.Saved(expected), result)
+            assertEquals(listOf(expected), announcements.findAll())
+        }
+
+        @Test
         fun `should report a missing announcement`() {
             val result = announcements.update(
                 AnnouncementId(1),
@@ -130,22 +155,56 @@ class DatabaseAnnouncementsTests : DatabaseIntegrationTests() {
     }
 
     @Nested
-    inner class DeleteTests {
+    inner class CloseTests {
 
         @Test
-        fun `should delete the announcement and keep the others`() {
-            val deleted = create(text = "Удаляемое", shownFrom = DAY_1, shownUntil = DAY_2)
-            val kept = create(text = "Оставшееся", shownFrom = DAY_1, shownUntil = DAY_2)
+        fun `should close a shown announcement at the moment, keep it in the list and stop showing it`() {
+            val closed = create(text = "Закрываемое", shownFrom = DAY_1, shownUntil = DAY_3)
+            val kept = create(text = "Оставшееся", shownFrom = DAY_1, shownUntil = DAY_3)
 
-            val wasDeleted = announcements.delete(deleted.id)
+            val isClosed = announcements.close(closed.id, DAY_2)
 
-            assertTrue(wasDeleted)
-            assertEquals(listOf(kept), announcements.findAll())
+            assertTrue(isClosed)
+            assertEquals(listOf(kept, closed.copy(closedAt = DAY_2)), announcements.findAll())
+            assertEquals(listOf(kept), announcements.findActive(DAY_2))
+        }
+
+        @Test
+        fun `should close an announcement whose showing has not started yet`() {
+            val future = create(text = "Будущее", shownFrom = DAY_3, shownUntil = DAY_4)
+
+            val isClosed = announcements.close(future.id, DAY_2)
+
+            assertTrue(isClosed)
+            assertEquals(listOf(future.copy(closedAt = DAY_2)), announcements.findAll())
+            assertEquals(emptyList<Announcement>(), announcements.findActive(DAY_3))
+        }
+
+        @Test
+        fun `should refuse an already closed announcement and keep the first closing moment`() {
+            val stored = create(text = "Текст", shownFrom = DAY_1, shownUntil = DAY_4)
+            announcements.close(stored.id, DAY_2)
+
+            val isClosed = announcements.close(stored.id, DAY_3)
+
+            assertFalse(isClosed)
+            assertEquals(listOf(stored.copy(closedAt = DAY_2)), announcements.findAll())
+        }
+
+        @ParameterizedTest
+        @MethodSource("tech.testsys.infra.database.api.announcement.DatabaseAnnouncementsTests#finishedMoments")
+        fun `should refuse an announcement whose showing has ended without changing it`(at: Instant) {
+            val stored = create(text = "Текст", shownFrom = DAY_1, shownUntil = DAY_2)
+
+            val isClosed = announcements.close(stored.id, at)
+
+            assertFalse(isClosed)
+            assertEquals(listOf(stored), announcements.findAll())
         }
 
         @Test
         fun `should report a missing announcement`() {
-            assertFalse(announcements.delete(AnnouncementId(1)))
+            assertFalse(announcements.close(AnnouncementId(1), DAY_1))
         }
     }
 
@@ -192,6 +251,17 @@ class DatabaseAnnouncementsTests : DatabaseIntegrationTests() {
         }
 
         @Test
+        fun `should not return a closed announcement within its period`() {
+            val closed = create(text = "Закрытое", shownFrom = DAY_1, shownUntil = DAY_4)
+            val running = create(text = "Идёт", shownFrom = DAY_1, shownUntil = DAY_4)
+            announcements.close(closed.id, DAY_2)
+
+            val result = announcements.findActive(DAY_3)
+
+            assertEquals(listOf(running), result)
+        }
+
+        @Test
         fun `should return an empty list if no announcement is shown`() {
             create(text = "Будущее", shownFrom = DAY_3, shownUntil = DAY_4)
 
@@ -209,6 +279,9 @@ class DatabaseAnnouncementsTests : DatabaseIntegrationTests() {
         private val DAY_2 = Instant.parse("2026-01-02T00:00:00Z")
         private val DAY_3 = Instant.parse("2026-01-03T00:00:00Z")
         private val DAY_4 = Instant.parse("2026-01-04T00:00:00Z")
+
+        @JvmStatic
+        fun finishedMoments(): List<Instant> = listOf(DAY_2, DAY_3)
 
         @JvmStatic
         fun refusals(): List<Arguments> = listOf(

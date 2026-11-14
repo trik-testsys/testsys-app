@@ -23,12 +23,12 @@ interface AnnouncementJpaEntityRepository : SnowflakeJpaEntityRepository<Announc
     fun findAllByOrderByShownFromDescIdDesc(): List<AnnouncementJpaEntity>
 
     /**
-     * Reads at most [limit] announcements shown at [at], the latest start of showing first.
+     * Reads at most [limit] announcements shown at [at] and not closed, the latest start of showing first.
      *
      * @since %CURRENT_VERSION%
      */
     @Query(
-        "select a from AnnouncementJpaEntity a where a.shownFrom <= :at and a.shownUntil > :at " +
+        "select a from AnnouncementJpaEntity a where a.closedAt is null and a.shownFrom <= :at and a.shownUntil > :at " +
             "order by a.shownFrom desc, a.id desc",
     )
     fun findActive(@Param("at") at: Instant, limit: Limit): List<AnnouncementJpaEntity>

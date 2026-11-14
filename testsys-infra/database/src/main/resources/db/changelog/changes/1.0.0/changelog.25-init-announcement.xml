@@ -31,8 +31,10 @@
             <column name="shown_until" type="TIMESTAMP WITH TIME ZONE">
                 <constraints nullable="false"/>
             </column>
+            <column name="closed_at" type="TIMESTAMP WITH TIME ZONE"/>
         </createTable>
-        <createIndex tableName="ts_announcement" indexName="ix_ts_announcement_shown_until_shown_from">
+        <createIndex tableName="ts_announcement" indexName="ix_ts_announcement_closed_at_shown_until_shown_from">
+            <column name="closed_at"/>
             <column name="shown_until"/>
             <column name="shown_from"/>
         </createIndex>

@@ -27,12 +27,14 @@ import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
+import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
 
 /**
- * Service list of the announcements of the sign-in page, including future and finished ones; «Добавить» creates an
- * announcement and the row menu changes or deletes any of them.
+ * Service lists of the announcements of the sign-in page: the current ones, including future ones, and the history of
+ * the finished ones with the reason and the moment of finishing. «Добавить» creates an announcement and the row menu
+ * of a current one changes or closes it.
  *
  * @since %CURRENT_VERSION%
  */
@@ -42,8 +44,10 @@ import java.time.LocalDateTime
 class ServiceAnnouncementsView(
     private val headers: ServiceHeaders,
     private val announcements: Announcements,
+    private val clock: Clock,
 ) : TestSysView() {
     private lateinit var rows: LoadedTable<Announcement>
+    private lateinit var history: LoadedTable<Announcement>
 
     init {
         page(headers.header(active = ServiceHeaders.ANNOUNCEMENTS_SECTION)) {
@@ -53,7 +57,7 @@ class ServiceAnnouncementsView(
                     actions { action("Добавить", icon = IconName.Plus) { onClick { openDialog(announcement = null) } } }
                     rows = loadTable(
                         key = { announcement: Announcement -> announcement.id.value },
-                        fetch = { request -> pageOf(announcements.findAll(), request) },
+                        fetch = { request -> pageOf(announcements.findAll().filter(::isCurrent), request) },
                     ) {
                         dateTimeColumn("Начало показа", size = 4) { announcement -> announcement.shownFrom.toUserDateTime() }
                         dateTimeColumn("Окончание показа", size = 4) { announcement -> announcement.shownUntil.toUserDateTime() }
@@ -61,13 +65,41 @@ class ServiceAnnouncementsView(
                         textColumn("Текст") { announcement -> announcement.text }
                         menuColumn(ariaLabel = { announcement -> "Действия с объявлением «${announcement.text}»" }) { announcement ->
                             item("Изменить") { openDialog(announcement) }
-                            destructiveItem("Удалить") { delete(announcement) }
+                            destructiveItem("Закрыть") { close(announcement) }
                         }
                         empty("Объявлений нет", "Добавьте объявление: оно появится под ссылками страницы входа.")
                     }
                 }
             }
+            row {
+                block(title = "История") {
+                    // ponytail: both lists filter the whole storage list; separate queries if the table grows.
+                    history = loadTable(
+                        key = { announcement: Announcement -> announcement.id.value },
+                        fetch = { request -> pageOf(announcements.findAll().filterNot(::isCurrent), request) },
+                    ) {
+                        dateTimeColumn("Начало показа", size = 4) { announcement -> announcement.shownFrom.toUserDateTime() }
+                        dateTimeColumn("Завершено", size = 4) { announcement ->
+                            (announcement.closedAt ?: announcement.shownUntil).toUserDateTime()
+                        }
+                        column("Причина", size = 3) { announcement ->
+                            badge(if (announcement.closedAt == null) "По времени" else "Вручную", Tone.Neutral)
+                        }
+                        column("Тип", size = 3) { announcement -> badge(kindLabel(announcement.kind), toneOf(announcement.kind)) }
+                        textColumn("Текст") { announcement -> announcement.text }
+                        empty("Завершённых объявлений нет", "Сюда попадут объявления после окончания показа или закрытия.")
+                    }
+                }
+            }
         }
+    }
+
+    private fun isCurrent(announcement: Announcement): Boolean =
+        announcement.closedAt == null && announcement.shownUntil.isAfter(clock.instant())
+
+    private fun refreshLists() {
+        rows.refresh()
+        history.refresh()
     }
 
     private fun openDialog(announcement: Announcement?) {
@@ -118,7 +150,7 @@ class ServiceAnnouncementsView(
                             is AnnouncementSave.Saved -> {
                                 dialog.close()
                                 toast(FeedbackKind.Success, if (announcement == null) "Объявление добавлено" else "Объявление изменено")
-                                rows.refresh()
+                                refreshLists()
                             }
                             is AnnouncementSave.Rejected -> {
                                 val error = rejectionText(result.reason)
@@ -128,8 +160,8 @@ class ServiceAnnouncementsView(
                             }
                             AnnouncementSave.NotFound -> {
                                 dialog.close()
-                                toast(FeedbackKind.Error, "Объявление уже удалено")
-                                rows.refresh()
+                                toast(FeedbackKind.Error, "Объявление не найдено")
+                                refreshLists()
                             }
                         }
                     }
@@ -145,19 +177,19 @@ class ServiceAnnouncementsView(
             announcements.update(announcement.id, text = text, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
         }
 
-    private fun delete(announcement: Announcement) {
+    private fun close(announcement: Announcement) {
         confirm(
-            title = "Удалить объявление?",
-            text = "Объявление «${announcement.text}» пропадёт со страницы входа.",
-            action = "Удалить",
+            title = "Закрыть объявление?",
+            text = "Объявление «${announcement.text}» пропадёт со страницы входа и перейдёт в историю. Вернуть его будет нельзя.",
+            action = "Закрыть",
             isDanger = true,
         ) {
-            if (announcements.delete(announcement.id)) {
-                toast(FeedbackKind.Success, "Объявление удалено")
+            if (announcements.close(announcement.id, clock.instant())) {
+                toast(FeedbackKind.Success, "Объявление закрыто")
             } else {
-                toast(FeedbackKind.Error, "Объявление уже удалено")
+                toast(FeedbackKind.Error, "Объявление уже завершено")
             }
-            rows.refresh()
+            refreshLists()
         }
     }
 

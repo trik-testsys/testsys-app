@@ -62,9 +62,10 @@ class DatabaseAnnouncements(private val announcementJpaEntityRepository: Announc
     }
 
     @Transactional
-    override fun delete(id: AnnouncementId): Boolean {
+    override fun close(id: AnnouncementId, at: Instant): Boolean {
         val entity = announcementJpaEntityRepository.findById(id.value).orElse(null) ?: return false
-        announcementJpaEntityRepository.delete(entity)
+        if (entity.closedAt != null || !entity.shownUntil.isAfter(at)) return false
+        entity.closedAt = at
         return true
     }
 
@@ -84,6 +85,7 @@ class DatabaseAnnouncements(private val announcementJpaEntityRepository: Announc
         },
         shownFrom = shownFrom,
         shownUntil = shownUntil,
+        closedAt = closedAt,
     )
 
     private fun AnnouncementKind.toJpa() = when (this) {

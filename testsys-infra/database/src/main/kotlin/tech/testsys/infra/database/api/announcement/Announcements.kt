@@ -3,14 +3,14 @@ package tech.testsys.infra.database.api.announcement
 import java.time.Instant
 
 /**
- * Storage of the announcements of the sign-in page: listing, the active ones, creation, change and deletion.
+ * Storage of the announcements of the sign-in page: listing, the active ones, creation, change and closing.
  *
  * @since %CURRENT_VERSION%
  */
 interface Announcements {
 
     /**
-     * Finds every announcement, including future and finished ones.
+     * Finds every announcement, including future, closed and finished ones.
      *
      * @return the announcements, the latest start of showing first and the larger id first on a tie.
      * @since %CURRENT_VERSION%
@@ -18,7 +18,8 @@ interface Announcements {
     fun findAll(): List<Announcement>
 
     /**
-     * Finds at most three announcements shown at [at]: from the start of showing inclusive to the end exclusive.
+     * Finds at most three announcements shown at [at]: not closed, from the start of showing inclusive to the end
+     * exclusive.
      *
      * @return the announcements, the latest start of showing first and the larger id first on a tie.
      * @since %CURRENT_VERSION%
@@ -44,12 +45,14 @@ interface Announcements {
     fun update(id: AnnouncementId, text: String, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant): AnnouncementSave
 
     /**
-     * Deletes the announcement [id].
+     * Closes the announcement [id] at [at] if it is not closed and its end of showing is later than [at], including
+     * an announcement whose showing has not started yet.
      *
-     * @return `true` if the announcement existed.
+     * @return `true` if this call closed the announcement; `false` if it is missing, already closed or its end of
+     * showing is not later than [at], and nothing is changed then.
      * @since %CURRENT_VERSION%
      */
-    fun delete(id: AnnouncementId): Boolean
+    fun close(id: AnnouncementId, at: Instant): Boolean
 }
 
 /**
@@ -62,13 +65,14 @@ interface Announcements {
 value class AnnouncementId(val value: Long)
 
 /**
- * Announcement of the sign-in page, active from [shownFrom] inclusive to [shownUntil] exclusive.
+ * Announcement of the sign-in page, active from [shownFrom] inclusive to [shownUntil] exclusive unless closed.
  *
  * @property id the identifier of the announcement.
  * @property text the one-line plain text, trimmed.
  * @property kind the kind of the announcement.
  * @property shownFrom the moment the announcement starts being shown.
  * @property shownUntil the moment the announcement stops being shown, later than [shownFrom].
+ * @property closedAt the moment the announcement was closed manually, or `null` if it is not closed.
  * @since %CURRENT_VERSION%
  */
 data class Announcement(
@@ -77,6 +81,7 @@ data class Announcement(
     val kind: AnnouncementKind,
     val shownFrom: Instant,
     val shownUntil: Instant,
+    val closedAt: Instant? = null,
 )
 
 /**

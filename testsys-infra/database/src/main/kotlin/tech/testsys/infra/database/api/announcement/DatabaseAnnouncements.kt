@@ -7,6 +7,8 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.announcement.AnnouncementJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.announcement.AnnouncementKindJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.announcement.AnnouncementJpaEntityRepository
+import java.net.URI
+import java.net.URISyntaxException
 import java.time.Instant
 
 /**
@@ -28,14 +30,21 @@ class DatabaseAnnouncements(private val announcementJpaEntityRepository: Announc
         announcementJpaEntityRepository.findActive(at, Limit.of(MAX_ACTIVE)).map { entity -> entity.toAnnouncement() }
 
     @Transactional
-    override fun create(text: String, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant): AnnouncementSave {
+    override fun create(text: String, link: String?, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant): AnnouncementSave {
         val trimmed = text.trim()
-        rejectionOf(text = trimmed, shownFrom = shownFrom, shownUntil = shownUntil)?.let { reason ->
+        val trimmedLink = link?.trim()?.ifEmpty { null }
+        rejectionOf(text = trimmed, link = trimmedLink, shownFrom = shownFrom, shownUntil = shownUntil)?.let { reason ->
             return AnnouncementSave.Rejected(reason)
         }
 
         val saved = announcementJpaEntityRepository.save(
-            AnnouncementJpaEntity(text = trimmed, kind = kind.toJpa(), shownFrom = shownFrom, shownUntil = shownUntil),
+            AnnouncementJpaEntity(
+                text = trimmed,
+                kind = kind.toJpa(),
+                shownFrom = shownFrom,
+                shownUntil = shownUntil,
+                link = trimmedLink,
+            ),
         )
         return AnnouncementSave.Saved(saved.toAnnouncement())
     }
@@ -44,17 +53,20 @@ class DatabaseAnnouncements(private val announcementJpaEntityRepository: Announc
     override fun update(
         id: AnnouncementId,
         text: String,
+        link: String?,
         kind: AnnouncementKind,
         shownFrom: Instant,
         shownUntil: Instant,
     ): AnnouncementSave {
         val entity = announcementJpaEntityRepository.findById(id.value).orElse(null) ?: return AnnouncementSave.NotFound
         val trimmed = text.trim()
-        rejectionOf(text = trimmed, shownFrom = shownFrom, shownUntil = shownUntil)?.let { reason ->
+        val trimmedLink = link?.trim()?.ifEmpty { null }
+        rejectionOf(text = trimmed, link = trimmedLink, shownFrom = shownFrom, shownUntil = shownUntil)?.let { reason ->
             return AnnouncementSave.Rejected(reason)
         }
 
         entity.text = trimmed
+        entity.link = trimmedLink
         entity.kind = kind.toJpa()
         entity.shownFrom = shownFrom
         entity.shownUntil = shownUntil
@@ -69,11 +81,22 @@ class DatabaseAnnouncements(private val announcementJpaEntityRepository: Announc
         return true
     }
 
-    private fun rejectionOf(text: String, shownFrom: Instant, shownUntil: Instant): AnnouncementRejection? = when {
+    private fun rejectionOf(text: String, link: String?, shownFrom: Instant, shownUntil: Instant): AnnouncementRejection? = when {
         text.isEmpty() -> AnnouncementRejection.BlankText
         text.codePointCount(0, text.length) > MAX_TEXT_LENGTH -> AnnouncementRejection.TextTooLong
+        link != null && !isWebAddress(link) -> AnnouncementRejection.InvalidLink
+        link != null && link.codePointCount(0, link.length) > MAX_LINK_LENGTH -> AnnouncementRejection.LinkTooLong
         !shownUntil.isAfter(shownFrom) -> AnnouncementRejection.EmptyPeriod
         else -> null
+    }
+
+    private fun isWebAddress(value: String): Boolean {
+        val uri = try {
+            URI(value)
+        } catch (_: URISyntaxException) {
+            return false
+        }
+        return uri.isAbsolute && uri.scheme.lowercase() in WEB_SCHEMES && !uri.host.isNullOrEmpty() && uri.rawUserInfo == null
     }
 
     private fun AnnouncementJpaEntity.toAnnouncement() = Announcement(
@@ -86,6 +109,7 @@ class DatabaseAnnouncements(private val announcementJpaEntityRepository: Announc
         shownFrom = shownFrom,
         shownUntil = shownUntil,
         closedAt = closedAt,
+        link = link,
     )
 
     private fun AnnouncementKind.toJpa() = when (this) {
@@ -98,7 +122,13 @@ class DatabaseAnnouncements(private val announcementJpaEntityRepository: Announc
         /** Length of the `text` column. */
         const val MAX_TEXT_LENGTH = 300
 
+        /** Length of the `link` column. */
+        const val MAX_LINK_LENGTH = 2048
+
         /** Number of active announcements the sign-in page shows. */
         const val MAX_ACTIVE = 3
+
+        /** Schemes of the links an announcement may open, compared in lower case. */
+        val WEB_SCHEMES = setOf("http", "https")
     }
 }

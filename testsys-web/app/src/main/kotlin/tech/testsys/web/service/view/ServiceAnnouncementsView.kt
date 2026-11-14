@@ -70,6 +70,7 @@ class ServiceAnnouncementsView(
                         column(texts.announcementsKind(), size = 3) { announcement ->
                             badge(kindLabel(announcement.kind), toneOf(announcement.kind))
                         }
+                        textColumn(texts.announcementsLink(), size = LINK_COLUMN_SIZE) { announcement -> announcement.link }
                         textColumn(texts.announcementsText()) { announcement -> announcement.text }
                         menuColumn(ariaLabel = { announcement -> texts.announcementsActions(text = announcement.text) }) { announcement ->
                             item(texts.announcementsEdit()) { openDialog(announcement) }
@@ -98,6 +99,7 @@ class ServiceAnnouncementsView(
                         column(texts.announcementsKind(), size = 3) { announcement ->
                             badge(kindLabel(announcement.kind), toneOf(announcement.kind))
                         }
+                        textColumn(texts.announcementsLink(), size = LINK_COLUMN_SIZE) { announcement -> announcement.link }
                         textColumn(texts.announcementsText()) { announcement -> announcement.text }
                         empty(texts.announcementsHistoryEmpty(), texts.announcementsHistoryEmptyHint())
                     }
@@ -119,12 +121,18 @@ class ServiceAnnouncementsView(
     private fun openDialog(announcement: Announcement?) {
         dialog(title = if (announcement == null) texts.announcementsAddTitle() else texts.announcementsEditTitle()) {
             lateinit var text: ValueInput<String>
+            lateinit var link: ValueInput<String>
             lateinit var kind: ValueInput<AnnouncementKind?>
             lateinit var shownFrom: ValueInput<LocalDateTime?>
             lateinit var shownUntil: ValueInput<LocalDateTime?>
             row {
                 text = textInput(texts.announcementsText(), labelSize = 8, size = 16, hint = texts.announcementsTextHint()) {
                     value = announcement?.text.orEmpty()
+                }
+            }
+            row {
+                link = textInput(texts.announcementsLink(), labelSize = 8, size = 16, hint = texts.announcementsLinkHint()) {
+                    value = announcement?.link.orEmpty()
                 }
             }
             row {
@@ -162,6 +170,7 @@ class ServiceAnnouncementsView(
                         val result = save(
                             announcement,
                             text = text.value,
+                            link = link.value,
                             kind = chosenKind,
                             shownFrom = from,
                             shownUntil = until,
@@ -175,9 +184,14 @@ class ServiceAnnouncementsView(
                             }
                             is AnnouncementSave.Rejected -> {
                                 val error = rejectionText(result.reason)
-                                val isPeriodError = result.reason == AnnouncementRejection.EmptyPeriod
-                                text.showError(error.takeUnless { isPeriodError })
-                                shownUntil.showError(error.takeIf { isPeriodError })
+                                val field = when (result.reason) {
+                                    AnnouncementRejection.BlankText, AnnouncementRejection.TextTooLong -> text
+                                    AnnouncementRejection.InvalidLink, AnnouncementRejection.LinkTooLong -> link
+                                    AnnouncementRejection.EmptyPeriod -> shownUntil
+                                }
+                                text.showError(error.takeIf { field == text })
+                                link.showError(error.takeIf { field == link })
+                                shownUntil.showError(error.takeIf { field == shownUntil })
                             }
                             AnnouncementSave.NotFound -> {
                                 dialog.close()
@@ -191,12 +205,18 @@ class ServiceAnnouncementsView(
         }.open()
     }
 
-    private fun save(announcement: Announcement?, text: String, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant) =
-        if (announcement == null) {
-            announcements.create(text = text, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
-        } else {
-            announcements.update(announcement.id, text = text, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
-        }
+    private fun save(
+        announcement: Announcement?,
+        text: String,
+        link: String,
+        kind: AnnouncementKind,
+        shownFrom: Instant,
+        shownUntil: Instant,
+    ) = if (announcement == null) {
+        announcements.create(text = text, link = link, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
+    } else {
+        announcements.update(announcement.id, text = text, link = link, kind = kind, shownFrom = shownFrom, shownUntil = shownUntil)
+    }
 
     private fun close(announcement: Announcement) {
         confirm(
@@ -232,6 +252,14 @@ class ServiceAnnouncementsView(
     private fun rejectionText(reason: AnnouncementRejection): String = when (reason) {
         AnnouncementRejection.BlankText -> texts.announcementsRejectionBlankText()
         AnnouncementRejection.TextTooLong -> texts.announcementsRejectionTextTooLong()
+        AnnouncementRejection.InvalidLink -> texts.announcementsRejectionInvalidLink()
+        AnnouncementRejection.LinkTooLong -> texts.announcementsRejectionLinkTooLong()
         AnnouncementRejection.EmptyPeriod -> texts.announcementsRejectionEmptyPeriod()
+    }
+
+    private companion object {
+
+        /** Grid share of the link column in both tables. */
+        const val LINK_COLUMN_SIZE = 4
     }
 }

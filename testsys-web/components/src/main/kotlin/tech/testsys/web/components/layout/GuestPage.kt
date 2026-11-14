@@ -5,6 +5,8 @@ package tech.testsys.web.components.layout
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.Text
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Anchor
+import com.vaadin.flow.component.html.AnchorTarget
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.ListItem
@@ -17,12 +19,15 @@ import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.buildBrand
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.ICON_SIZE_SMALL
+import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAriaHidden
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
+import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.data.formatDate
 import tech.testsys.web.components.texts.UiLocalization
 import tech.testsys.web.components.texts.currentUiLocalization
@@ -136,22 +141,40 @@ class GuestNoticesScope internal constructor(private val texts: UiLocalization) 
     internal val items = mutableListOf<ListItem>()
 
     /**
-     * Adds a notice with the [date] and the one-line plain [text] shown as is, highlighted by its [kind].
+     * Adds a notice with the [date] and the one-line plain [text] shown as is, highlighted by its [kind]; with [href]
+     * the whole notice is a link that opens [href] as is in a new tab.
      *
      * @throws IllegalArgumentException if [text] is blank.
      * @since %CURRENT_VERSION%
      */
-    fun notice(date: LocalDate, text: String, kind: GuestNoticeKind) {
+    fun notice(date: LocalDate, text: String, kind: GuestNoticeKind, href: String? = null) {
         require(text.isNotBlank()) { "Guest notice of $date must have a text" }
 
         val tone = when (kind) {
             GuestNoticeKind.Info -> CssClass.GuestNoticeInfo
             GuestNoticeKind.Warning -> CssClass.GuestNoticeWarning
         }
+        val textSpan = Span(Text(text)).apply { addClassName(CssClass.GuestNoticeText) }
         items += ListItem(
             Span(formatDate(date, texts)).apply { addClassName(CssClass.GuestNoticeDate) },
-            Span(Text(text)).apply { addClassName(CssClass.GuestNoticeText) },
+            href?.let { address -> noticeLink(address, textSpan) } ?: textSpan,
         ).apply { addClassNames(CssClass.GuestNotice, tone) }
+    }
+
+    private fun noticeLink(href: String, text: Span): Anchor = Anchor().apply {
+        this.href = href
+        setTarget(AnchorTarget.BLANK)
+        element.setAttribute(HtmlAttribute.Rel, NOOPENER)
+        addClassName(CssClass.GuestNoticeLink)
+        add(text, svgIcon(IconName.ExternalLink, size = ICON_SIZE_SMALL))
+        // The space keeps the hidden caption a separate word in the accessible name and in copied text.
+        add(Text(" "), Span(texts.messages.uiPage.guestNoticeNewTab()).apply { addClassName(CssClass.SrOnly) })
+    }
+
+    private companion object {
+
+        /** `rel` value that hides this page from the page the notice opens in a new tab. */
+        const val NOOPENER = "noopener"
     }
 }
 

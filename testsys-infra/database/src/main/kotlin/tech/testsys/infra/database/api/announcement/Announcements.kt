@@ -27,22 +27,31 @@ interface Announcements {
     fun findActive(at: Instant): List<Announcement>
 
     /**
-     * Creates an announcement with the [text] trimmed, the [kind] and the period from [shownFrom] to [shownUntil].
+     * Creates an announcement with the [text] and the [link] trimmed, the [kind] and the period from [shownFrom]
+     * to [shownUntil]; a blank or `null` [link] means no link.
      *
-     * @return the created announcement, or the first reason of refusal, checking the text before the period; nothing
-     * is stored on refusal.
+     * @return the created announcement, or the first reason of refusal, checking the text, then the link, then the
+     * period; nothing is stored on refusal.
      * @since %CURRENT_VERSION%
      */
-    fun create(text: String, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant): AnnouncementSave
+    fun create(text: String, link: String?, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant): AnnouncementSave
 
     /**
-     * Replaces the text, the kind and the period of the announcement [id], checking them as [create] does.
+     * Replaces the text, the link, the kind and the period of the announcement [id], checking them as [create] does;
+     * a blank or `null` [link] removes the link.
      *
      * @return the changed announcement, the first reason of refusal or [AnnouncementSave.NotFound]; nothing is stored
      * on refusal.
      * @since %CURRENT_VERSION%
      */
-    fun update(id: AnnouncementId, text: String, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant): AnnouncementSave
+    fun update(
+        id: AnnouncementId,
+        text: String,
+        link: String?,
+        kind: AnnouncementKind,
+        shownFrom: Instant,
+        shownUntil: Instant,
+    ): AnnouncementSave
 
     /**
      * Closes the announcement [id] at [at] if it is not closed and its end of showing is later than [at], including
@@ -73,6 +82,7 @@ value class AnnouncementId(val value: Long)
  * @property shownFrom the moment the announcement starts being shown.
  * @property shownUntil the moment the announcement stops being shown, later than [shownFrom].
  * @property closedAt the moment the announcement was closed manually, or `null` if it is not closed.
+ * @property link the absolute http or https address the announcement opens, trimmed, or `null` if it has no link.
  * @since %CURRENT_VERSION%
  */
 data class Announcement(
@@ -82,6 +92,7 @@ data class Announcement(
     val shownFrom: Instant,
     val shownUntil: Instant,
     val closedAt: Instant? = null,
+    val link: String? = null,
 )
 
 /**
@@ -157,6 +168,20 @@ enum class AnnouncementRejection {
      * @since %CURRENT_VERSION%
      */
     TextTooLong,
+
+    /**
+     * The link is not an absolute http or https address with a host and without user information.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    InvalidLink,
+
+    /**
+     * The link is longer than 2048 code points.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    LinkTooLong,
 
     /**
      * The end of showing is not later than its start.

@@ -264,6 +264,11 @@ class LocalizationTests {
         fun `should name the guest page announcements in guest notices`() {
             assertEquals("Объявления", l.uiPage.guestNotices())
         }
+
+        @Test
+        fun `should warn about the new tab in guest notice new tab`() {
+            assertEquals("(откроется в новой вкладке)", l.uiPage.guestNoticeNewTab())
+        }
     }
 
     @Nested
@@ -7269,6 +7274,19 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should label the link in announcements link`() {
+            assertEquals("Ссылка", l.pageService.announcementsLink())
+        }
+
+        @Test
+        fun `should name the format and the empty value in announcements link hint`() {
+            assertEquals(
+                "Необязательно. Полный адрес, начинающийся с http:// или https://. Пустое поле — без ссылки.",
+                l.pageService.announcementsLinkHint(),
+            )
+        }
+
+        @Test
         fun `should quote the announcement text in guillemets in announcements actions`() {
             assertEquals(
                 "Действия с объявлением «Работы 12 мая»",
@@ -7340,6 +7358,19 @@ class LocalizationTests {
         @Test
         fun `should name the length limit in announcements rejection text too long`() {
             assertEquals("Текст длиннее 300 символов", l.pageService.announcementsRejectionTextTooLong())
+        }
+
+        @Test
+        fun `should name the allowed address in announcements rejection invalid link`() {
+            assertEquals(
+                "Укажите полный адрес, начинающийся с http:// или https://, без имени пользователя и пароля",
+                l.pageService.announcementsRejectionInvalidLink(),
+            )
+        }
+
+        @Test
+        fun `should name the length limit in announcements rejection link too long`() {
+            assertEquals("Ссылка длиннее 2048 символов", l.pageService.announcementsRejectionLinkTooLong())
         }
 
         @Test

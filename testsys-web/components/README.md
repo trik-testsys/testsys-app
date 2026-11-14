@@ -131,7 +131,7 @@ class ProfileView : TestSysView() {
 |--------------------------|------------|
 | `card(title, description, step = null) { }` | Карточка: заголовок, одна поясняющая фраза с меткой шага `step` перед ней и содержимое `GuestCardScope` |
 | `links { }` | Строка под карточкой — `ContentScope`; соседние `linkAction` разделяет средняя точка |
-| `notices { notice(date, text, kind) }` | Список коротких записей под строкой ссылок: дата и строка текста, тон `GuestNoticeKind.Info` или `Warning` |
+| `notices { notice(date, text, kind, href = null) }` | Список коротких записей под строкой ссылок: дата и строка текста, тон `GuestNoticeKind.Info` или `Warning`; с `href` запись — ссылка |
 
 - `card`, `links` и `notices` вызываются не больше одного раза каждый (`IllegalStateException`); строка ссылок всегда
   стоит под карточкой, список записей — под строкой ссылок. Пустые `title` или `description` —
@@ -139,6 +139,9 @@ class ProfileView : TestSysView() {
 - Список записей — `section` с доступным именем `ui_page.guest.notices`; записи идут в порядке вызовов `notice`.
   Дату ядро форматирует числовым форматом даты локали, текст выводится как есть, без Markdown и HTML. Без вызовов
   `notice` списка нет. Пустой `text` — `IllegalArgumentException`.
+- С `href` текст записи и иконка внешней ссылки становятся ссылкой `a` с этим адресом, `target="_blank"`
+  и `rel="noopener"`; дата остаётся вне ссылки. Ядро не проверяет адрес и выводит его как есть. Доступное имя
+  ссылки — текст записи и скрытая подпись `ui_page.guest.notice_new_tab` о том, что ссылка откроется в новой вкладке.
 - Заголовок карточки — `h1` страницы с типографикой h2.
 - `GuestCardScope` размещает элементы друг под другом: `textInput`, `codeInput` и `passwordInput` с параметрами
   `label`, `hint` и `aside`, `segmentedControl(label, items, itemLabel)` на всю ширину и широкий `mainAction(label)`.

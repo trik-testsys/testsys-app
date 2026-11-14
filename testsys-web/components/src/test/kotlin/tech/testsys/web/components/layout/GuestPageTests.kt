@@ -241,6 +241,34 @@ class GuestPageTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should make a notice with an address a link opening it in a new tab`() {
+        val item = build {
+            notices { notice(LocalDate.of(2026, 3, 9), "Плановые работы", GuestNoticeKind.Warning, href = "https://example.com/news?id=1") }
+        }.find("ts-guest-notice")
+
+        val link = item.find("ts-guest-notice__link")
+        assertEquals("a", link.element.tag)
+        assertEquals("https://example.com/news?id=1", link.element.getAttribute("href"))
+        assertEquals("_blank", link.element.getAttribute("target"))
+        assertEquals("noopener", link.element.getAttribute("rel"))
+        assertEquals("Плановые работы", link.find("ts-guest-notice__text").element.textRecursively)
+        assertEquals(1, link.findAll("ts-icon").size)
+        assertEquals(testTexts.messages.uiPage.guestNoticeNewTab(), link.find("ts-sr-only").element.text)
+        assertEquals(item, item.find("ts-guest-notice__date").parent.get())
+        assertEquals(setOf("ts-guest-notice", "ts-guest-notice--warning"), item.classes())
+    }
+
+    @Test
+    fun `should show a notice without an address without a link`() {
+        val item = build {
+            notices { notice(LocalDate.of(2026, 3, 9), "Плановые работы", GuestNoticeKind.Info) }
+        }.find("ts-guest-notice")
+
+        assertTrue(item.findAll("ts-guest-notice__link").isEmpty())
+        assertEquals(listOf("span", "span"), item.children.map { child -> child.element.tag }.toList())
+    }
+
+    @Test
     fun `should show no notices list without notices`() {
         val root = build {
             links { linkAction("Зарегистрироваться") }

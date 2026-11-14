@@ -1508,3 +1508,40 @@ paraphrased.
   «Причина недоступности» is a more explicit optional variant, not applied. Sources:
   https://ru.wiktionary.org/wiki/причина, https://kartaslov.ru/значение-слова/причина (read 2026-11-14 through a
   fetch tool that returns a model summary).
+
+### Announcement links (`page_service.announcements.link*`, `ui_page.guest.notice_new_tab`, 2026-11-14)
+
+- «Ссылка» has a homonym: Викисловарь lists «ссылка I» (ист.: exile, forced resettlement; the place of exile) and
+  «ссылка II» (a reference to a source; a quotation or note; прогр. a reference type); both inanimate feminine, 3*a,
+  stress «ссы́лка». The fetch summary listed no separate hyperlink sense; the hyperlink reading is established UI
+  usage (the project already has «Ссылки футера»). As a field label next to «Текст» and a column of addresses the
+  exile sense does not arise (inference). Source: https://ru.wiktionary.org/wiki/ссылка (read 2026-11-14, fetch
+  summary).
+- «Полный адрес» is used instead of «абсолютный адрес» from features.md: the plain word suits the operator hint,
+  and «начинающийся с http:// или https://» names the allowed schemes. The rejection adds «без имени пользователя
+  и пароля» for the user information part of a URL (`user:password@host`); lowercase «пользователь» there is the
+  URL component, not the domain term Пользователь. Project wording choice, no language source.
+- Screen-reader caption for a link opening a new tab: W3C technique G201 puts the warning into the control name as
+  «All about Knitting (opens in new window)», a parenthesised phrase after arbitrary link text. The Russian caption
+  «(откроется в новой вкладке)» follows that pattern; the parentheses keep it a separate remark after any text,
+  including text that ends with a full stop. Source: https://www.w3.org/WAI/WCAG22/Techniques/general/G201 (read
+  2026-11-14, fetch summary). Unverified: no Russian usage source with the exact phrase was found (two searches on
+  2026-11-14 returned only general accessibility articles and browser forum threads); «открывается в новой вкладке»
+  is an equally possible variant.
+- Independent review findings (2026-11-14, fetch summaries, quotations may be paraphrased):
+  - «Полный адрес» as the plain equivalent of an absolute URL: MDN ru «Что такое URL?» says the address bar needs
+    «полный (или абсолютный) URL» (https://developer.mozilla.org/ru/docs/Learn/Understanding_URLs); a Т-Банк glossary
+    article: «Абсолютные — это полный адрес сайта, в котором есть протокол передачи данных, доменное имя и путь»
+    (https://secrets.tbank.ru/razvitie/kakim-dolzhen-byt-url-dlya-saita/). Usage sources, not dictionaries; neither
+    names the user information part.
+  - «в новой вкладке»: Yandex Browser help lists «Открыть ссылку в новой вкладке»
+    (https://yandex.ru/support/browser/ru/useful-features/hotkeys), vendor usage. Викисловарь «вкладка», sense 2:
+    an additional browser window in the same program instance, no stylistic label
+    (https://ru.wiktionary.org/wiki/вкладка). «в», not «на», follows the window sense (inference).
+  - The caption is a separate hidden element; without a space before «(» copied text and braille output would read
+    «…в субботу(откроется…». The component therefore emits a space before the caption; the message stays unchanged.
+  - Lowercase «пароля» in `rejection.invalid_link` names the URL password part, not the domain term Пароль
+    (project reading).
+  - «2048» without a digit-group space: a Habr article on spaces says groups are separated for more than four digits
+    (https://habr.com/en/articles/136348/), no handbook cited; project precedent writes «1024 байта». Not verified
+    against a primary typography handbook.

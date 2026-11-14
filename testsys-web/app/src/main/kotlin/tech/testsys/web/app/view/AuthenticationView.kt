@@ -74,7 +74,12 @@ class AuthenticationView(
             }
             notices {
                 announcements.findActive(clock.instant()).forEach { announcement ->
-                    notice(announcement.shownFrom.toUserDateTime().toLocalDate(), announcement.text, announcement.kind.toNoticeKind())
+                    notice(
+                        announcement.shownFrom.toUserDateTime().toLocalDate(),
+                        announcement.text,
+                        announcement.kind.toNoticeKind(),
+                        href = announcement.link,
+                    )
                 }
             }
         }

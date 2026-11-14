@@ -37,6 +37,7 @@ internal enum class HtmlAttribute(internal val value: String) {
     DataGuideStart("data-guide-start"),
     DataTsUploadGeneration("data-ts-upload-generation"),
     Placeholder("placeholder"),
+    Rel("rel"),
     TabIndex("tabindex"),
     Title("title"),
 }

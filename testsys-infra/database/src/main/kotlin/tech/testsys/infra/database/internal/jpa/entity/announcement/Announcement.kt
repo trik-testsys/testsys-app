@@ -26,6 +26,7 @@ enum class AnnouncementKindJpaEnum {
  * @property kind the kind of the announcement.
  * @property shownFrom the moment the announcement starts being shown, inclusive.
  * @property shownUntil the moment the announcement stops being shown, exclusive; later than [shownFrom].
+ * @property link the absolute http or https address the announcement opens, trimmed, or `null` if it has no link.
  * @property closedAt the moment the announcement was closed manually, or `null` if it is not closed.
  * @since %CURRENT_VERSION%
  */
@@ -37,6 +38,7 @@ class AnnouncementJpaEntity(
     var kind: AnnouncementKindJpaEnum,
     var shownFrom: Instant,
     var shownUntil: Instant,
+    var link: String? = null,
     var closedAt: Instant? = null,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)

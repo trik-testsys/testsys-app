@@ -7,23 +7,29 @@ import com.vaadin.flow.component.Text
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.ListItem
 import com.vaadin.flow.component.html.Main
 import com.vaadin.flow.component.html.Paragraph
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.html.UnorderedList
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.buildBrand
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
+import tech.testsys.web.components.data.formatDate
 import tech.testsys.web.components.texts.UiLocalization
 import tech.testsys.web.components.texts.currentUiLocalization
+import java.time.LocalDate
 
 /**
- * Scope of a guest page: one card in the middle and a line of links under it.
+ * Scope of a guest page: one card in the middle, a line of links under it and the notices under the links.
  *
  * @since 1.0.0-beta.1
  */
@@ -31,6 +37,8 @@ import tech.testsys.web.components.texts.currentUiLocalization
 class GuestPageScope internal constructor(private val main: Main, private val texts: UiLocalization) {
     private var hasCard = false
     private var hasLinks = false
+    private var hasNotices = false
+    private var noticeList: Section? = null
 
     /**
      * Adds the card titled [title] with one explaining [description], the [step] label of a multi-step scenario before
@@ -69,9 +77,32 @@ class GuestPageScope internal constructor(private val main: Main, private val te
         hasLinks = true
 
         val line = Div().apply { addClassName(CssClass.GuestLinks) }
-        main.add(line)
+        main.addComponentAtIndex(noticeList?.let(main::indexOf) ?: main.componentCount, line)
         ContentScope(line, texts, Placement.Body).content()
         separateLinks(line)
+    }
+
+    /**
+     * Adds the list of short notices built by [content] under the links, in the order of the `notice` calls; without
+     * notices the page shows no list.
+     *
+     * @throws IllegalStateException if the page already has notices.
+     * @since %CURRENT_VERSION%
+     */
+    fun notices(content: GuestNoticesScope.() -> Unit) {
+        check(!hasNotices) { "Guest page already has notices" }
+        hasNotices = true
+
+        val items = GuestNoticesScope(texts).apply(content).items
+        if (items.isEmpty()) return
+
+        val list = UnorderedList(*items.toTypedArray())
+        val section = Section(list).apply {
+            addClassName(CssClass.GuestNotices)
+            element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiPage.guestNotices())
+        }
+        main.add(section)
+        noticeList = section
     }
 
     private fun separateLinks(line: Div) {
@@ -94,6 +125,57 @@ class GuestPageScope internal constructor(private val main: Main, private val te
  */
 @TestSysDsl
 class GuestCardScope internal constructor(internal val body: ContentScope)
+
+/**
+ * Scope of the notices of a guest page.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@TestSysDsl
+class GuestNoticesScope internal constructor(private val texts: UiLocalization) {
+    internal val items = mutableListOf<ListItem>()
+
+    /**
+     * Adds a notice with the [date] and the one-line plain [text] shown as is, highlighted by its [kind].
+     *
+     * @throws IllegalArgumentException if [text] is blank.
+     * @since %CURRENT_VERSION%
+     */
+    fun notice(date: LocalDate, text: String, kind: GuestNoticeKind) {
+        require(text.isNotBlank()) { "Guest notice of $date must have a text" }
+
+        val tone = when (kind) {
+            GuestNoticeKind.Info -> CssClass.GuestNoticeInfo
+            GuestNoticeKind.Warning -> CssClass.GuestNoticeWarning
+        }
+        items += ListItem(
+            Span(formatDate(date, texts)).apply { addClassName(CssClass.GuestNoticeDate) },
+            Span(Text(text)).apply { addClassName(CssClass.GuestNoticeText) },
+        ).apply { addClassNames(CssClass.GuestNotice, tone) }
+    }
+}
+
+/**
+ * Kind of a notice of a guest page.
+ *
+ * @since %CURRENT_VERSION%
+ */
+enum class GuestNoticeKind {
+
+    /**
+     * Information.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    Info,
+
+    /**
+     * Warning.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    Warning,
+}
 
 /** Number of the leading children of a guest page `main`: the brand and the tagline. */
 private const val BRAND_PARTS = 2

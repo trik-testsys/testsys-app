@@ -350,7 +350,9 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 с одной карточкой и строкой ссылок, см. [Гостевая страница](../components/README.md#гостевая-страница). Ссылки
 открывают другие гостевые страницы навигацией, поэтому адрес возврата в сессии сохраняется.
 `AuthenticationView` переключателем «Способ входа» показывает поля почты и Пароля или поле Кода-доступа;
-кнопка «Войти» общая для обоих способов.
+кнопка «Войти» общая для обоих способов. При построении страница читает `Announcements.findActive` на момент
+`Clock` общего родителя и показывает объявления под строкой ссылок через `notices`. Дата записи — день начала
+показа в часовом поясе браузера. Сбой чтения не перехватывается.
 
 `CabinetHeaders` строит шапку Кабинета. Её он собирает из Пользователя, которого
 загружает `CurrentUser` при каждом построении страницы. Пометку о входе Супервайзера и действие возврата
@@ -618,12 +620,12 @@ Cookie сессии основного интерфейса называется
 [ServiceWebConfiguration](src/main/kotlin/tech/testsys/web/service/ServiceWebConfiguration.kt) подключает только
 служебные страницы: `ServiceLoginView` по адресу `login`, `ServiceHomeView` в корне своего сервера,
 `ServiceSettingsView` по адресу `settings`, `ServiceGradingView` по адресу `grading`, `ServiceUsersView` по адресу
-`users`, `ServiceUserView` по адресу `users/:userId` и `ServiceTrikStudioVersionsView` по адресу
-`trik-studio-versions`.
+`users`, `ServiceUserView` по адресу `users/:userId`, `ServiceTrikStudioVersionsView` по адресу
+`trik-studio-versions` и `ServiceAnnouncementsView` по адресу `announcements`.
 Он не подключает `CurrentUser`, `CabinetHeaders` и прокси-сервисы доменных операций.
 `ServiceLoginView` — гостевая страница с одной карточкой входа по коду. Остальные служебные страницы показывают
-Header из `ServiceHeaders`: разделы «Главная», «Настройки», «Проверка», «Пользователи» и «Версии TRIK Studio»
-и меню «Служба» с действием «Выйти».
+Header из `ServiceHeaders`: разделы «Главная», «Настройки», «Проверка», «Пользователи», «Версии TRIK Studio»
+и «Объявления» и меню «Служба» с действием «Выйти».
 `ServicePrincipal` хранит только техническую идентичность с полномочием `ROLE_SERVICE`.
 
 Кнопка «Grafana» в блоке «Мониторинг» на `ServiceHomeView` открывает в той же вкладке адрес
@@ -809,6 +811,23 @@ database/README.md. Требования — в
 ошибку тостом и перечитывает таблицу. «Удалить» спрашивает подтверждение; если версию успели начать использовать
 или удалить, страница показывает ошибку тостом. После изменения или удаления таблица перечитывается.
 
+## Объявления в служебном кабинете
+
+Раздел «Объявления» шапки открывает маршрут `announcements`. Страница требует `ROLE_SERVICE` и работает
+с объявлениями через `Announcements` общего родителя; его устройство описано в разделе
+[«Объявления»](../../testsys-infra/database/README.md#объявления) database/README.md. Требования — в
+[testsys.dev.service.announcements](../../docs/domain/features.md#testsysdevserviceannouncements-implemented).
+
+Таблица `ServiceAnnouncementsView` показывает начало и окончание показа в часовом поясе браузера, тип бейджем
+«Информация» или «Предупреждение» и текст. Её `loadTable` загружает в фоне, как таблицу версий TRIK Studio.
+«Добавить» в шапке блока открывает диалог с полями «Текст», «Тип», «Начало показа» и «Окончание показа»; тип
+по умолчанию — «Информация». «Изменить» в меню строки открывает тот же диалог с текущими значениями. Даты диалог
+читает в часовом поясе браузера; пустая дата отмечается ошибкой на поле без обращения к хранилищу. Отказ хранилища
+оставляет диалог открытым: причина, связанная с текстом, показывается на поле «Текст», пустой период — на поле
+«Окончание показа». Если объявление удалили, пока диалог изменения был открыт, диалог закрывается, страница
+показывает ошибку тостом и перечитывает таблицу. «Удалить» спрашивает подтверждение. После сохранения
+или удаления страница показывает уведомление и перечитывает таблицу.
+
 ## Логирование
 
 Требования описаны в фичах `testsys.dev.logging.calls`, `testsys.dev.logging.navigation`
@@ -822,7 +841,7 @@ database/README.md. Требования — в
 | Advisor | Где объявлен | Что оборачивает | Порядок |
 |---------|--------------|-----------------|---------|
 | `callLoggingAdvisor` | `MainWebConfiguration` | Те же методы прокси-сервисов, что и `operationMetricsAdvisor` | `HIGHEST_PRECEDENCE + 1`: внутри метрик, снаружи повтора транзакций |
-| `infrastructureCallLoggingAdvisor` | `InfraConfiguration` в общем родителе | Бины классов из пакетов `tech.testsys.infra.*`, которые реализуют порт из `tech.testsys.domain.contract` или `SettingsService`, `SettingsStore`, `GradingNodeStore`, `GradingNodeRegistry`, `ServiceUserSearch`, `ServiceTrikStudioVersions`; оборачиваются только методы с именами из этих интерфейсов | `HIGHEST_PRECEDENCE`: снаружи транзакции и её повторов |
+| `infrastructureCallLoggingAdvisor` | `InfraConfiguration` в общем родителе | Бины классов из пакетов `tech.testsys.infra.*`, которые реализуют порт из `tech.testsys.domain.contract` или `SettingsService`, `SettingsStore`, `GradingNodeStore`, `GradingNodeRegistry`, `ServiceUserSearch`, `ServiceTrikStudioVersions`, `Announcements`; оборачиваются только методы с именами из этих интерфейсов | `HIGHEST_PRECEDENCE`: снаружи транзакции и её повторов |
 
 Вызов, повторённый после конфликта транзакций, записывается один раз. Вложенный вызов другого обёрнутого бина
 записывается отдельно.

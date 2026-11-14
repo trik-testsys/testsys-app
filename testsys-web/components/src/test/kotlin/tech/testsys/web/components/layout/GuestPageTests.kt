@@ -24,6 +24,7 @@ import tech.testsys.web.components.forms.passwordInput
 import tech.testsys.web.components.forms.segmentedControl
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.testTexts
+import java.time.LocalDate
 
 class GuestPageTests : MockVaadinTests() {
     private class GuestView(body: GuestPageScope.() -> Unit) : TestSysView() {
@@ -187,6 +188,82 @@ class GuestPageTests : MockVaadinTests() {
                 links {}
                 links {}
             }
+        }
+    }
+
+    @Test
+    fun `should show the named notices under the links in the given order`() {
+        val main = build {
+            notices {
+                notice(LocalDate.of(2026, 3, 9), "Плановые работы", GuestNoticeKind.Warning)
+                notice(LocalDate.of(2026, 3, 1), "Новый сезон", GuestNoticeKind.Info)
+            }
+            links { linkAction("Зарегистрироваться") }
+            card("Вход", "Описание") {}
+        }.child(0)
+
+        assertTrue("ts-guest__links" in main.child(3).classes())
+        val notices = main.child(4)
+        assertTrue("ts-guest__notices" in notices.classes())
+        assertEquals("section", notices.element.tag)
+        assertEquals(testTexts.messages.uiPage.guestNotices(), notices.element.getAttribute("aria-label"))
+        val items = notices.findAll("ts-guest-notice")
+        assertEquals(listOf("li", "li"), items.map { item -> item.element.tag })
+        assertEquals(listOf("09.03.2026", "01.03.2026"), items.map { item -> item.find("ts-guest-notice__date").element.text })
+        assertEquals(
+            listOf("Плановые работы", "Новый сезон"),
+            items.map { item -> item.find("ts-guest-notice__text").element.textRecursively },
+        )
+    }
+
+    @Test
+    fun `should mark each notice with the class of its kind`() {
+        val items = build {
+            notices {
+                notice(LocalDate.of(2026, 3, 9), "Плановые работы", GuestNoticeKind.Warning)
+                notice(LocalDate.of(2026, 3, 1), "Новый сезон", GuestNoticeKind.Info)
+            }
+        }.findAll("ts-guest-notice")
+
+        assertTrue("ts-guest-notice--warning" in items[0].classes())
+        assertFalse("ts-guest-notice--info" in items[0].classes())
+        assertTrue("ts-guest-notice--info" in items[1].classes())
+    }
+
+    @Test
+    fun `should show the notice text literally without markup`() {
+        val text = build {
+            notices { notice(LocalDate.of(2026, 3, 9), "*Важно* <b>сегодня</b>", GuestNoticeKind.Info) }
+        }.find("ts-guest-notice__text")
+
+        assertEquals("*Важно* <b>сегодня</b>", text.element.textRecursively)
+        assertTrue(text.element.children.allMatch { child -> child.isTextNode })
+    }
+
+    @Test
+    fun `should show no notices list without notices`() {
+        val root = build {
+            links { linkAction("Зарегистрироваться") }
+            notices {}
+        }
+
+        assertTrue(root.findAll("ts-guest__notices").isEmpty())
+    }
+
+    @Test
+    fun `should reject second notices`() {
+        assertThrows<IllegalStateException> {
+            build {
+                notices {}
+                notices {}
+            }
+        }
+    }
+
+    @Test
+    fun `should reject a blank notice text`() {
+        assertThrows<IllegalArgumentException> {
+            build { notices { notice(LocalDate.of(2026, 3, 9), " ", GuestNoticeKind.Info) } }
         }
     }
 

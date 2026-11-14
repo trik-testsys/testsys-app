@@ -23,6 +23,7 @@
 | `api/settings`                | `DatabaseSettingsStore` — хранение служебных настроек                                      | —         |
 | `api/registry`                | `DatabaseGradingNodeStore` — хранение реестра Проверяющих узлов                            | —         |
 | `api/session`                 | `DatabaseCabinetSignInStore` — хранение входов в интерфейсы, см. раздел [«Входы в интерфейсы»](#входы-в-интерфейсы) | — |
+| `api/announcement`            | `DatabaseAnnouncements` — хранение объявлений страницы входа, см. раздел [«Объявления»](#объявления) | — |
 | `internal/jpa/id`             | Генератор идентификаторов                                                                  | —         |
 | `internal/utils`              | Общие помощники: `syncJoinTable`, `findLinkedIds`, `findAllInChunks`, `findAllByIdOrError`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
 
@@ -716,3 +717,23 @@ API хранения задаёт вход sealed-типом `StoredCabinetSignI
 Транзакция повторяется по разделу [«Повтор транзакций»](#повтор-транзакций), и повтор отклоняет значение как уже
 зарегистрированное. Если версию начали использовать параллельно с удалением, удаление нарушает внешний ключ,
 и транзакция откатывается без изменений.
+
+## Объявления
+
+`DatabaseAnnouncements` в пакете `api/announcement` реализует `Announcements`: хранит объявления страницы входа
+в `ts_announcement`. Объявление — техническая запись вне доменных агрегатов. Требования — в
+[testsys.dev.service.announcements](../../docs/domain/features.md#testsysdevserviceannouncements-implemented).
+
+Строка хранит текст (`VARCHAR(300)`), тип `kind` и период показа `shown_from`–`shown_until`. Ограничения `CHECK`
+допускают только типы `INFO` и `WARNING` (`ck_ts_announcement_kind`) и требуют, чтобы окончание было позже начала
+(`ck_ts_announcement_period`). Выборку активных объявлений поддерживает индекс
+`ix_ts_announcement_shown_until_shown_from`.
+
+`findAll` и `findActive` читают в транзакции с `readOnly = true` и сортируют сначала по более позднему началу показа,
+а при равенстве — по большему ID. `findActive` возвращает не больше трёх объявлений, у которых начало показа
+не позже переданного момента, а окончание позже него. `create` и `update` отбрасывают пробелы по краям текста
+и проверяют сначала текст, затем период. Пустой текст, текст длиннее 300 кодовых точек Unicode и окончание
+не позже начала возвращают `Rejected` с причиной `AnnouncementRejection`, и строка не сохраняется. `update`
+заменяет все поля; для отсутствующего ID он возвращает `NotFound`. `delete` сообщает, была ли строка.
+Параллельные изменения одного объявления сталкиваются на версии строки. Транзакция повторяется по разделу
+[«Повтор транзакций»](#повтор-транзакций), и сохраняется последнее изменение.

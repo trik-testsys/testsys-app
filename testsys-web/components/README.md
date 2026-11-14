@@ -131,9 +131,14 @@ class ProfileView : TestSysView() {
 |--------------------------|------------|
 | `card(title, description, step = null) { }` | Карточка: заголовок, одна поясняющая фраза с меткой шага `step` перед ней и содержимое `GuestCardScope` |
 | `links { }` | Строка под карточкой — `ContentScope`; соседние `linkAction` разделяет средняя точка |
+| `notices { notice(date, text, kind) }` | Список коротких записей под строкой ссылок: дата и строка текста, тон `GuestNoticeKind.Info` или `Warning` |
 
-- `card` и `links` вызываются не больше одного раза каждый (`IllegalStateException`); строка ссылок всегда стоит
-  под карточкой. Пустые `title` или `description` — `IllegalArgumentException`.
+- `card`, `links` и `notices` вызываются не больше одного раза каждый (`IllegalStateException`); строка ссылок всегда
+  стоит под карточкой, список записей — под строкой ссылок. Пустые `title` или `description` —
+  `IllegalArgumentException`.
+- Список записей — `section` с доступным именем `ui_page.guest.notices`; записи идут в порядке вызовов `notice`.
+  Дату ядро форматирует числовым форматом даты локали, текст выводится как есть, без Markdown и HTML. Без вызовов
+  `notice` списка нет. Пустой `text` — `IllegalArgumentException`.
 - Заголовок карточки — `h1` страницы с типографикой h2.
 - `GuestCardScope` размещает элементы друг под другом: `textInput`, `codeInput` и `passwordInput` с параметрами
   `label`, `hint` и `aside`, `segmentedControl(label, items, itemLabel)` на всю ширину и широкий `mainAction(label)`.
@@ -291,7 +296,8 @@ Driver перемещает выделение и прокручивает ст�
 | Скоуп | Доступно |
 |-------|----------|
 | `PageScope` | `head` (до рядов и футера), `row`, `guide`, `footer` |
-| `GuestPageScope` | `card`, `links` (гостевая страница) |
+| `GuestPageScope` | `card`, `links`, `notices` (гостевая страница) |
+| `GuestNoticesScope` | `notice` (запись под строкой ссылок гостевой страницы) |
 | `GuestCardScope` | `textInput`, `codeInput`, `passwordInput` с подписью сверху, `segmentedControl`, `mainAction` |
 | `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
@@ -963,7 +969,7 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 
 | Бандл | Группы ключей | Тексты |
 |-------|---------------|--------|
-| `ui_page` | `brand`, `header`, `navigation`, `footer`, `guide` | Каркас страницы: имя продукта в шапке, футере и заголовке вкладки, шапка, навигация, футер и гайды |
+| `ui_page` | `brand`, `header`, `navigation`, `footer`, `guide`, `guest` | Каркас страницы: имя продукта в шапке, футере и заголовке вкладки, шапка, навигация, футер, гайды и записи гостевой страницы |
 | `ui_form` | `field`, `date_field`, `calendar`, `lookup`, `editing` | Ограничения полей, составные поля дат, календарь, лукап и множественный выбор, переключатель редактирования |
 | `ui_data` | `table`, `table_filters`, `pagination` | Таблица, её фильтры и пагинация |
 | `ui_overlay` | `dialog`, `menu` | Диалоги и меню действий |

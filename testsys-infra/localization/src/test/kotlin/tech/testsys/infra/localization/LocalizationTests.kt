@@ -259,6 +259,11 @@ class LocalizationTests {
         fun `should name the close button in guide close`() {
             assertEquals("Закрыть гайд", l.uiPage.guideClose())
         }
+
+        @Test
+        fun `should name the guest page announcements in guest notices`() {
+            assertEquals("Объявления", l.uiPage.guestNotices())
+        }
     }
 
     @Nested

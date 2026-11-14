@@ -307,6 +307,13 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                 "impersonated_by" to "NULL",
                 "last_seen_at" to TIME,
             ),
+            "ts_announcement" to mapOf(
+                "id" to "1",
+                "text" to "'announcement'",
+                "kind" to "'INFO'",
+                "shown_from" to TIME,
+                "shown_until" to OTHER_TIME,
+            ),
         )
         private val multipleRoleCredentials = mapOf(
             "password_hash" to "'hash'",
@@ -538,6 +545,17 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                 ),
             )
             addAll(cabinetSignInUsers())
+            addAll(enumCases("ts_announcement", "kind", listOf("INFO", "WARNING")))
+            for ((shownFrom, shownUntil) in listOf(TIME to OTHER_TIME, TIME to TIME, OTHER_TIME to TIME)) {
+                add(
+                    RowCase(
+                        table = "ts_announcement",
+                        values = mapOf("shown_from" to shownFrom, "shown_until" to shownUntil),
+                        isAccepted = shownUntil == OTHER_TIME && shownFrom == TIME,
+                        constraint = "ck_ts_announcement_period",
+                    ),
+                )
+            }
             addAll(
                 enumCases(
                     table = "ts_diagnostic_report",

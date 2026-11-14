@@ -23,6 +23,7 @@ import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.User
+import tech.testsys.infra.database.api.announcement.Announcements
 import tech.testsys.infra.database.api.service.ServiceSupervisorRole
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserId
@@ -167,6 +168,11 @@ class ServiceTestConfiguration {
     fun serviceTrikStudioVersions(): ServiceTrikStudioVersions = mockk {
         every { findAll() } returns emptyList()
         every { findUsedTags() } returns emptySet()
+    }
+
+    @Bean
+    fun announcements(): Announcements = mockk {
+        every { findAll() } returns emptyList()
     }
 
     @Bean

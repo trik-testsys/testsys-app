@@ -226,6 +226,7 @@ Workflow лежат в `.github/workflows`.
 | Служебную замену Кодов-приглашений с истёкшим сроком | `refreshClassInvite` в `ManagerOperations` и `refreshCommunityInvite` в `AdministratorOperations`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Служебные чтение и запись данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
 | Хранение входов в основной и служебный интерфейсы | `testsys-infra:database`, пакет `api/session`, см. [database/README.md](../../testsys-infra/database/README.md#входы-в-интерфейсы) |
+| Хранение объявлений страницы входа | `testsys-infra:database`, пакет `api/announcement`, см. [database/README.md](../../testsys-infra/database/README.md#объявления) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
 | Дашборд, настройку мониторинга или сбора логов | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/config/loki.yml`, `deploy/config/alloy.alloy`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |

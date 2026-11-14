@@ -1233,6 +1233,30 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
   for `group`, `region` and `table` (first 400 000 of 831 600 characters of the Russian `nvda.po` read without
   result).
 
+## «Объявления» as the accessible name of the guest page notices (`ui_page.guest.notices`)
+
+- «Объявление» is a neuter inanimate noun, Zaliznyak type 7a, stress «объявле́ние»; Им. мн. «объявления», Р. мн.
+  «объявлений». Викисловарь gives two senses: 1. the act of announcing («без объявления войны»); 2. a notice
+  published for general information («подал объявление об уроке»), synonyms «сообщение», «извещение», colloquial
+  «объява». No offensive, slang or jargon label. The plural «Объявления» naming a list of 1–3 short service news
+  items under the sign-in card takes sense 2; sense 1 needs an object («объявление войны», «объявление итогов»)
+  and does not arise for a bare list name (inference). Source: https://ru.wiktionary.org/wiki/объявление (read
+  2026-11-14).
+- Possible second reading: «объявления» as classified ads («доска объявлений», «подать объявление о продаже»).
+  Викисловарь does not list it as a separate sense: it falls under sense 2, whose example «подал объявление об
+  уроке» is itself a newspaper ad (re-read 2026-11-14 by the independent review). On a sign-in page of a grading
+  service with dated notices of the administration the "for sale" reading is implausible (inference from context).
+- «Уведомление» is also used on the same sign-in page for refusal messages (`docs/domain/features.md`: «При отказе
+  показывается уведомление с его причиной»), another reason not to name this list «Уведомления» (project usage).
+- Kept apart from «Уведомления» (`ui_page.header.notifications`): those are a signed-in Пользователь's own
+  notifications in the Cabinet header, while the guest list is the same for every visitor. Using «Уведомления»
+  here would merge two different features under one name (project-usage inference).
+- Alternative «Новости»: also fits, but the list carries both info and warning tones (maintenance, deadlines),
+  which read more naturally as «объявления» than «новости»; not taken, the coordinator's intended text is kept.
+- The name does not repeat the role word: a named `<section>` is exposed as a `region` landmark, and W3C APG says
+  «Do not use the landmark role as part of the label» (see «Таблица» above, same source). «Область объявлений»
+  would double it.
+
 ## Changelog page (`page_changelog`)
 
 ### «История изменений» as the name of the product changelog

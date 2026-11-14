@@ -9,12 +9,15 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasAriaLabel
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.ListItem
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.server.VaadinSession
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -30,16 +33,31 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.security.core.session.SessionRegistry
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.model.user.SingleRoleUser
+import tech.testsys.infra.database.api.announcement.Announcement
+import tech.testsys.infra.database.api.announcement.AnnouncementId
+import tech.testsys.infra.database.api.announcement.AnnouncementKind
+import tech.testsys.infra.database.api.announcement.Announcements
 import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.web.app.MockSpringVaadinTests
+import tech.testsys.web.app.security.AccessCodeSignIn
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
+import tech.testsys.web.app.security.PasswordSignIn
 import tech.testsys.web.app.security.UserKind
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 
 @SpringBootTest
 class AuthenticationViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var sessionRegistry: SessionRegistry
+
+    @Autowired
+    private lateinit var passwordSignIn: PasswordSignIn
+
+    @Autowired
+    private lateinit var accessCodeSignIn: AccessCodeSignIn
 
     // Failed access codes are counted per client address in a limiter shared by the whole Spring context.
     @BeforeEach
@@ -277,6 +295,37 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should list the announcements active at the current moment under the links with the start date in the user zone`() {
+        val announcements = mockk<Announcements>()
+        every { announcements.findActive(NOW) } returns listOf(
+            announcement(text = "Плановые работы", kind = AnnouncementKind.Warning, shownFrom = Instant.parse("2026-03-09T21:30:00Z")),
+            announcement(text = "Новый сезон", kind = AnnouncementKind.Info, shownFrom = Instant.parse("2026-03-01T09:00:00Z")),
+        )
+
+        val notices = openWith(announcements)._find<ListItem>()
+
+        assertEquals(
+            listOf("10.03.2026Плановые работы", "01.03.2026Новый сезон"),
+            notices.map { notice -> notice.element.textRecursively },
+        )
+        assertEquals(
+            listOf("ts-guest-notice--warning", "ts-guest-notice--info"),
+            notices.map { notice -> notice.classNames.single { name -> name.startsWith("ts-guest-notice--") } },
+        )
+    }
+
+    @Test
+    fun `should show no announcements list if no announcement is active`() {
+        val announcements = mockk<Announcements>()
+        every { announcements.findActive(NOW) } returns emptyList()
+
+        val view = openWith(announcements)
+
+        assertEquals(emptyList<ListItem>(), view._find<ListItem>())
+        assertEquals(1, view._find<Button> { text = "Зарегистрироваться" }.size)
+    }
+
+    @Test
     fun `should open the registration page by its link`() {
         UI.getCurrent().navigate(AuthenticationView::class.java)
 
@@ -343,8 +392,25 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     private fun lastToastTitle(): String = UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.last().text
 
+    /** Opens the sign-in page that reads [announcements] at [NOW]; the guest UI shows dates in Europe/Moscow (UTC+3). */
+    private fun openWith(announcements: Announcements): AuthenticationView {
+        val view = AuthenticationView(passwordSignIn, accessCodeSignIn, announcements, Clock.fixed(NOW, ZoneOffset.UTC))
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+        return view
+    }
+
+    private fun announcement(text: String, kind: AnnouncementKind, shownFrom: Instant) = Announcement(
+        id = AnnouncementId(1),
+        text = text,
+        kind = kind,
+        shownFrom = shownFrom,
+        shownUntil = NOW.plusSeconds(1),
+    )
+
     companion object {
         private const val DEFAULT_CLIENT_ADDRESS = "127.0.0.1"
+        private val NOW = Instant.parse("2026-03-12T10:00:00Z")
 
         @JvmStatic
         fun fixedRoleStartPages(): List<Arguments> = listOf(

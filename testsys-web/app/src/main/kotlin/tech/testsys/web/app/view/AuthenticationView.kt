@@ -4,6 +4,8 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.server.auth.AnonymousAllowed
+import tech.testsys.infra.database.api.announcement.AnnouncementKind
+import tech.testsys.infra.database.api.announcement.Announcements
 import tech.testsys.web.app.security.AccessCodeSignIn
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.PasswordSignIn
@@ -17,12 +19,14 @@ import tech.testsys.web.components.forms.passwordInput
 import tech.testsys.web.components.forms.segmentedControl
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GuestNoticeKind
 import tech.testsys.web.components.texts.currentLocalization
+import java.time.Clock
 
 /**
  * Sign-in page (testsys.web.page.authentication): signs a user with non-fixed roles in by the e-mail address and the
  * password and a fixed-role user by the access code, chosen by a switch on the guest card, then opens the page saved
- * before signing in, or the start page of the user. Links lead to access restoration and registration.
+ * before signing in, or the start page of the user. Links lead to restoration and registration, announcements follow.
  *
  * @since 1.0.0-beta.1
  */
@@ -31,6 +35,8 @@ import tech.testsys.web.components.texts.currentLocalization
 class AuthenticationView(
     private val passwordSignIn: PasswordSignIn,
     private val accessCodeSignIn: AccessCodeSignIn,
+    private val announcements: Announcements,
+    private val clock: Clock,
 ) : TestSysView(), HasDynamicTitle {
     init {
         val texts = currentLocalization().pageGuest
@@ -66,6 +72,11 @@ class AuthenticationView(
                 text(texts.signInNoAccount())
                 linkAction(texts.register()) { onClick { UI.getCurrent().navigate(RegistrationView::class.java) } }
             }
+            notices {
+                announcements.findActive(clock.instant()).forEach { announcement ->
+                    notice(announcement.shownFrom.toUserDateTime().toLocalDate(), announcement.text, announcement.kind.toNoticeKind())
+                }
+            }
         }
     }
 
@@ -98,6 +109,12 @@ class AuthenticationView(
             UI.getCurrent().navigate(returnAddress)
         }
     }
+}
+
+/** Returns the kind of the notice that shows an announcement of this kind. */
+private fun AnnouncementKind.toNoticeKind(): GuestNoticeKind = when (this) {
+    AnnouncementKind.Info -> GuestNoticeKind.Info
+    AnnouncementKind.Warning -> GuestNoticeKind.Warning
 }
 
 /** Way of signing in chosen on the sign-in page. */

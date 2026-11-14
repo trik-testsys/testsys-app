@@ -6128,6 +6128,11 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should name the announcements link in header announcements`() {
+            assertEquals("Объявления", l.pageService.headerAnnouncements())
+        }
+
+        @Test
         fun `should name the decoding link in header id decoding`() {
             assertEquals("Дешифровка ID", l.pageService.headerIdDecoding())
         }
@@ -6916,6 +6921,81 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should use the user term in user not found`() {
+            assertEquals("Пользователь не найден", l.pageService.userNotFound())
+        }
+
+        @Test
+        fun `should decline the role and supervisor terms in user supervisor grant`() {
+            assertEquals("Выдать Роль Супервайзера", l.pageService.userSupervisorGrant())
+        }
+
+        @Test
+        fun `should name the user in dative and quote the nickname in user supervisor grant title`() {
+            assertEquals(
+                "Выдать Роль Супервайзера Пользователю «Маша»?",
+                l.pageService.userSupervisorGrantTitle(name = "Маша"),
+            )
+        }
+
+        @Test
+        fun `should use the instrumental supervisor term and the public community in user supervisor grant text`() {
+            assertEquals(
+                "Пользователь станет Супервайзером и членом Публичного Сообщества в этой Роли.",
+                l.pageService.userSupervisorGrantText(),
+            )
+        }
+
+        @Test
+        fun `should label the confirmation in user supervisor grant action`() {
+            assertEquals("Выдать", l.pageService.userSupervisorGrantAction())
+        }
+
+        @Test
+        fun `should report the granted role in user supervisor granted`() {
+            assertEquals("Роль Супервайзера выдана", l.pageService.userSupervisorGranted())
+        }
+
+        @Test
+        fun `should decline the role and supervisor terms in user supervisor revoke`() {
+            assertEquals("Снять Роль Супервайзера", l.pageService.userSupervisorRevoke())
+        }
+
+        @Test
+        fun `should name the user in genitive and quote the nickname in user supervisor revoke title`() {
+            assertEquals(
+                "Снять Роль Супервайзера с Пользователя «Маша»?",
+                l.pageService.userSupervisorRevokeTitle(name = "Маша"),
+            )
+        }
+
+        @Test
+        fun `should name the lost role and membership in user supervisor revoke text`() {
+            assertEquals(
+                "Пользователь потеряет Роль Супервайзера и членство в Публичном Сообществе в этой Роли.",
+                l.pageService.userSupervisorRevokeText(),
+            )
+        }
+
+        @Test
+        fun `should label the confirmation in user supervisor revoke action`() {
+            assertEquals("Снять", l.pageService.userSupervisorRevokeAction())
+        }
+
+        @Test
+        fun `should report the revoked role in user supervisor revoked`() {
+            assertEquals("Роль Супервайзера снята", l.pageService.userSupervisorRevoked())
+        }
+
+        @Test
+        fun `should name the user in dative in user supervisor not allowed`() {
+            assertEquals(
+                "Этому Пользователю нельзя выдать Роль Супервайзера",
+                l.pageService.userSupervisorNotAllowed(),
+            )
+        }
+
+        @Test
         fun `should name the versions in versions title`() {
             assertEquals("Версии TRIK Studio", l.pageService.versionsTitle())
         }
@@ -7028,6 +7108,196 @@ class LocalizationTests {
         @Test
         fun `should report a registered tag in versions rejection tag registered`() {
             assertEquals("Такой тег уже зарегистрирован", l.pageService.versionsRejectionTagRegistered())
+        }
+
+        @Test
+        fun `should name the announcements in announcements title`() {
+            assertEquals("Объявления", l.pageService.announcementsTitle())
+        }
+
+        @Test
+        fun `should name the sign in page list in announcements current`() {
+            assertEquals("Объявления страницы входа", l.pageService.announcementsCurrent())
+        }
+
+        @Test
+        fun `should name the history block in announcements history`() {
+            assertEquals("История", l.pageService.announcementsHistory())
+        }
+
+        @Test
+        fun `should label the start of showing in announcements shown from`() {
+            assertEquals("Начало показа", l.pageService.announcementsShownFrom())
+        }
+
+        @Test
+        fun `should label the end of showing in announcements shown until`() {
+            assertEquals("Окончание показа", l.pageService.announcementsShownUntil())
+        }
+
+        @Test
+        fun `should label the finish moment in announcements finished at`() {
+            assertEquals("Завершено", l.pageService.announcementsFinishedAt())
+        }
+
+        @Test
+        fun `should label the finish reason in announcements reason`() {
+            assertEquals("Причина", l.pageService.announcementsReason())
+        }
+
+        @Test
+        fun `should name the expired period in announcements reason by time`() {
+            assertEquals("По времени", l.pageService.announcementsReasonByTime())
+        }
+
+        @Test
+        fun `should name the manual closing in announcements reason manual`() {
+            assertEquals("Вручную", l.pageService.announcementsReasonManual())
+        }
+
+        @Test
+        fun `should label the kind in announcements kind`() {
+            assertEquals("Тип", l.pageService.announcementsKind())
+        }
+
+        @Test
+        fun `should name the information kind in announcements kind info`() {
+            assertEquals("Информация", l.pageService.announcementsKindInfo())
+        }
+
+        @Test
+        fun `should name the warning kind in announcements kind warning`() {
+            assertEquals("Предупреждение", l.pageService.announcementsKindWarning())
+        }
+
+        @Test
+        fun `should label the text in announcements text`() {
+            assertEquals("Текст", l.pageService.announcementsText())
+        }
+
+        @Test
+        fun `should name the format and the length limit in announcements text hint`() {
+            assertEquals("Одна строка без форматирования, до 300 символов", l.pageService.announcementsTextHint())
+        }
+
+        @Test
+        fun `should quote the announcement text in guillemets in announcements actions`() {
+            assertEquals(
+                "Действия с объявлением «Работы 12 мая»",
+                l.pageService.announcementsActions(text = "Работы 12 мая"),
+            )
+        }
+
+        @Test
+        fun `should label the change item in announcements edit`() {
+            assertEquals("Изменить", l.pageService.announcementsEdit())
+        }
+
+        @Test
+        fun `should report no announcements in announcements empty`() {
+            assertEquals("Объявлений нет", l.pageService.announcementsEmpty())
+        }
+
+        @Test
+        fun `should suggest adding an announcement in announcements empty hint`() {
+            assertEquals(
+                "Добавьте объявление: оно появится под ссылками страницы входа.",
+                l.pageService.announcementsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should report no finished announcements in announcements history empty`() {
+            assertEquals("Завершённых объявлений нет", l.pageService.announcementsHistoryEmpty())
+        }
+
+        @Test
+        fun `should explain what gets into the history in announcements history empty hint`() {
+            assertEquals(
+                "Сюда попадут объявления после окончания показа или закрытия.",
+                l.pageService.announcementsHistoryEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should name the new announcement in announcements add title`() {
+            assertEquals("Новое объявление", l.pageService.announcementsAddTitle())
+        }
+
+        @Test
+        fun `should name the change of an announcement in announcements edit title`() {
+            assertEquals("Изменение объявления", l.pageService.announcementsEditTitle())
+        }
+
+        @Test
+        fun `should ask for the kind in announcements kind required`() {
+            assertEquals("Укажите тип", l.pageService.announcementsKindRequired())
+        }
+
+        @Test
+        fun `should ask for the start of showing in announcements shown from required`() {
+            assertEquals("Укажите начало показа", l.pageService.announcementsShownFromRequired())
+        }
+
+        @Test
+        fun `should ask for the end of showing in announcements shown until required`() {
+            assertEquals("Укажите окончание показа", l.pageService.announcementsShownUntilRequired())
+        }
+
+        @Test
+        fun `should ask for the text in announcements rejection blank text`() {
+            assertEquals("Укажите текст", l.pageService.announcementsRejectionBlankText())
+        }
+
+        @Test
+        fun `should name the length limit in announcements rejection text too long`() {
+            assertEquals("Текст длиннее 300 символов", l.pageService.announcementsRejectionTextTooLong())
+        }
+
+        @Test
+        fun `should require the end after the start in announcements rejection empty period`() {
+            assertEquals(
+                "Окончание показа должно быть позже начала",
+                l.pageService.announcementsRejectionEmptyPeriod(),
+            )
+        }
+
+        @Test
+        fun `should report the added announcement in announcements added`() {
+            assertEquals("Объявление добавлено", l.pageService.announcementsAdded())
+        }
+
+        @Test
+        fun `should report the changed announcement in announcements changed`() {
+            assertEquals("Объявление изменено", l.pageService.announcementsChanged())
+        }
+
+        @Test
+        fun `should report a missing announcement in announcements not found`() {
+            assertEquals("Объявление не найдено", l.pageService.announcementsNotFound())
+        }
+
+        @Test
+        fun `should ask to confirm the closing in announcements close title`() {
+            assertEquals("Закрыть объявление?", l.pageService.announcementsCloseTitle())
+        }
+
+        @Test
+        fun `should quote the announcement text in guillemets in announcements close text`() {
+            assertEquals(
+                "Объявление «Работы 12 мая» пропадёт со страницы входа и перейдёт в историю. Вернуть его будет нельзя.",
+                l.pageService.announcementsCloseText(text = "Работы 12 мая"),
+            )
+        }
+
+        @Test
+        fun `should report the closed announcement in announcements closed`() {
+            assertEquals("Объявление закрыто", l.pageService.announcementsClosed())
+        }
+
+        @Test
+        fun `should report the already finished announcement in announcements already finished`() {
+            assertEquals("Объявление уже завершено", l.pageService.announcementsAlreadyFinished())
         }
 
         @Test

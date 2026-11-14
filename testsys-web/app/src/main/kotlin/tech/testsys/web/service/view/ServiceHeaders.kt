@@ -39,7 +39,7 @@ class ServiceHeaders(private val authentication: AuthenticationContext) {
             menuColumn(
                 texts.headerData(),
                 texts.headerUsers() to ServiceUsersView::class.java,
-                "Объявления" to ServiceAnnouncementsView::class.java,
+                texts.headerAnnouncements() to ServiceAnnouncementsView::class.java,
             ),
             menuColumn(texts.headerTools(), texts.headerIdDecoding() to ServiceIdDecodingView::class.java),
         )

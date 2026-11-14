@@ -1361,3 +1361,91 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
   П. ед. «соревновании» (https://ru.wiktionary.org/wiki/соревнование); «диагностика» type 3a, Им. «диагностика»,
   Р. «диагностики», П. «диагностике» (https://ru.wiktionary.org/wiki/диагностика); «полигон» type 1a, П. ед.
   «полигоне», no separate locative (https://ru.wiktionary.org/wiki/полигон).
+
+### Announcements page and the Supervisor Role actions (`page_service.announcements.*`, `page_service.user.supervisor.*`)
+
+Notes for the messages moved from hardcoded literals on 2026-11-14; the wording was kept verbatim. «Объявление»
+itself: see «Объявления» as the accessible name of the guest page notices above.
+
+- «Закрыть объявление?», «Объявление закрыто»: Викисловарь «закрыть» — perfective transitive, five senses: 1 shut a
+  door or lid; 2 shut a case, a book, the eyes; 3 «об организации, учреждении» — «прекратить работу, расформировать,
+  ликвидировать» («закрыть рынок», «закрыть фирму»); 4 разг. home canning; 5 жарг. «посадить кого-либо под арест или
+  в тюрьму» («Его закрыли на три года»). No sense names ending a published notice; the UI use extends sense 3
+  (inference). The jargon sense 5 needs an animate object and does not arise. Source:
+  https://ru.wiktionary.org/wiki/закрыть (read 2026-11-14).
+- Applicable second reading of the bare label «Закрыть» (project usage, not a dictionary fact): in the same bundle
+  `page_service.close` closes a dialog (`ServiceGradingDialogs`), while the announcement row menu and the
+  confirmation use the same word for ending an announcement for good. The confirmation title «Закрыть объявление?»
+  and its text («пропадёт со страницы входа и перейдёт в историю. Вернуть его будет нельзя.») resolve it before
+  the action runs; the row-menu item alone does not. A web search for «закрыть объявление» (2026-11-14, result
+  pages not opened) returned classified-ad help pages that say «снять с продажи» / «снять с публикации» instead,
+  so the collocation is unconfirmed as a set phrase. Alternatives if the label is ever changed: «Завершить»
+  (matches «Завершено», «Объявление уже завершено», features.md «объявление завершено»), «Снять с показа».
+- «Выдать Роль Супервайзера»: Викисловарь «выдать» — perfective transitive; sense 1 «дать в соответствии
+  с установленным порядком; … передать в чье-л. распоряжение»; sense 3 (перен.) «сделать известным, раскрыть; … передать
+  (противнику, врагу) секретные сведения»; sense 2 (перен.) to give in marriage; senses 6–7 (перен., разг.) «Ну ты
+  и выдал!». With the object «Роль» and the dative «Пользователю» only sense 1 fits. The betrayal sense needs the
+  person as the direct object («выдать Пользователя»), which no message has: the bare confirmation label «Выдать»
+  always follows the title «Выдать Роль Супервайзера Пользователю «…»?» (inference). features.md
+  (testsys.dev.service.supervisorRole) uses the same verbs «выдать … и снять». Source:
+  https://ru.wiktionary.org/wiki/выдать (read 2026-11-14).
+- «Снять Роль Супервайзера с Пользователя»: senses of «снять» are in «Снять Роль Администратора нельзя» above. The
+  government «снять что с кого» follows the model of sense 9 «снять с должности»; here the Role is the object and
+  the person stands after «с», so the vulgar animate-object sense does not arise (inference, no new source).
+- «членство в Публичном Сообществе в этой Роли»: Викисловарь «членство» — neuter, type 1a, one sense «пребывание
+  членом какой-либо организации», example «Членство в товариществе собственников жилья …» («в» + prepositional).
+  The second «в этой Роли» repeats the wording of definitions.md item 32 («становится членом Публичного Сообщества
+  в этой Роли»). Source: https://ru.wiktionary.org/wiki/членство (read 2026-11-14).
+- «пропадёт со страницы входа»: Викисловарь «пропа́сть» — perfective intransitive, ten senses; 4 «перестать быть
+  видимым или слышимым» and 5 «исчезнуть, утратиться» fit; 6 «погибнуть, умереть», 7 and 8 need a person; 1
+  «потеряться» could suggest an accidental loss, but the sentence continues «и перейдёт в историю». Future 3 sg
+  «пропадёт». No colloquial label on the fitting senses. Source: https://ru.wiktionary.org/wiki/пропасть (first
+  100 000 of 110 114 characters read 2026-11-14).
+- «Предупреждение» / «Информация» as announcement kinds: Викисловарь «предупреждение» — neuter, type 7a, four
+  senses without labels: 1–3 a notice of a coming danger or trouble / an advance notification, 4 «упреждение,
+  предотвращение чего-либо нежелательного» («Предупреждение преступлений …»). As a badge next to an announcement
+  text senses 2–3 apply; sense 4 needs a genitive object. The disciplinary sense (a warning as a penalty) is not
+  listed on the page and needs a person as the addressee. features.md names the kinds «информация или
+  предупреждение». Source: https://ru.wiktionary.org/wiki/предупреждение (read 2026-11-14).
+- «Вручную» / «По времени» as finish reasons: Викисловарь «вручную» — one sense «ручным способом, без применения
+  механизмов, машин, приборов, автоматов, компьютера», partial antonyms «автоматически», «автоматизированно»; so the
+  pair reads "closed by a person" versus "ended by the period". «По времени» is verbatim from features.md
+  («иначе по времени и окончание показа»); no dictionary page was read for it. Source:
+  https://ru.wiktionary.org/wiki/вручную (read 2026-11-14).
+- «Завершено» as the header of the finish-moment column is a short neuter participle used as a date label, like
+  «Создан» in `page_service.user.created`; it could also be read as a status column, but the cells hold a date and
+  time (inference from usage).
+- Glossary: `glossary.supervisor` gained `ins sg` «Супервайзером» for «станет Супервайзером» (form listed in
+  «Супервайзер»: declension and the glossary term above). «объявление» stays a lowercase literal: it is not a term
+  of definitions.md.
+
+### Independent review evidence for the announcements and Supervisor Role messages (2026-11-14)
+
+Reviewer research, read 2026-11-14 through a fetch tool that returns a model summary, so quotations may be
+paraphrased.
+
+- «член» in «станет … членом Публичного Сообщества»: Викисловарь lists seven senses, among them 3 (разг.) «мужской
+  половой орган», 5 (одуш.) a person belonging to a group or organisation («Пиво отпускается только членам
+  профсоюза») and 6 «участник чего-нибудь» («Член экспедиции»). The genitive of a community selects senses 5–6, so
+  the colloquial sense does not arise (inference); the wording repeats definitions.md item 32. Тв. ед. «членом».
+  Source: https://ru.wiktionary.org/wiki/член
+- «показ» in «Начало показа», «Окончание показа», «после окончания показа»: one sense, «действие по значению гл.
+  показать», no label; Р. ед. «показа». Matches «период показа» in features.md.
+  Source: https://ru.wiktionary.org/wiki/показ
+- «потерять» in «Пользователь потеряет Роль Супервайзера и членство…»: four senses without labels; 3 «перестать
+  иметь что-либо, обладать чем-либо; не сохранить, не сберечь» and 4 «утратить что-либо, лишиться» fit. Sense 1,
+  loss through carelessness («Потерять перчатки»), is implausible in a confirmation of an operator's action
+  (inference). features.md uses «теряет Роль и это членство». Source: https://ru.wiktionary.org/wiki/потерять
+- «завершить» behind «Завершено», «Объявление уже завершено», «Завершённых объявлений нет»: sense 1 is labelled
+  «книжн., ритор.» («Завершить пятилетку»), senses 2–4 have no labels; no sense names ending a notice's display.
+  The messages use the general "bring to an end" sense, following features.md and the bundle precedent
+  «Незавершённые проверки» (inference). Source: https://ru.wiktionary.org/wiki/завершить
+- «супервайзер» re-read: Тв. ед. «супервайзером» confirms the new `ins sg` form.
+  Source: https://ru.wiktionary.org/wiki/супервайзер
+- Usage, not a norm: the auto.ru help page for managing classified ads names the actions «Снять с продажи»,
+  «Удалить», «Активировать» and does not use «закрыть объявление». A different domain, so it only supports the
+  note above that the collocation is not an established set phrase. Source: https://auto.ru/support/car-editing-ads
+- Project observation, not a language source: `page_service.close` («Закрыть») labels both dismissing a dialog in
+  `ServiceGradingDialogs` and ending an announcement for good. In ru-RU the confirmation title and text resolve
+  it; a future region may need two words, which would need a separate key (reviewer inference).
+- Unverified: «По времени» has no dictionary source; gramota.ru was not consulted.

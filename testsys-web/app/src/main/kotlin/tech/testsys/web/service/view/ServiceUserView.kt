@@ -111,25 +111,26 @@ class ServiceUserView(
         val isSupervisor = user.data.roles.any { role -> role is Supervisor }
         val id = ServiceUserId(user.id.value)
         val publicCommunityId = runtime.publicCommunityId
+        val texts = currentLocalization().pageService
         if (isSupervisor) {
-            action("Снять Роль Супервайзера") {
+            action(texts.userSupervisorRevoke()) {
                 onClick {
                     confirm(
-                        title = "Снять Роль Супервайзера с Пользователя «${user.data.name}»?",
-                        text = "Пользователь потеряет Роль Супервайзера и членство в Публичном Сообществе в этой Роли.",
-                        action = "Снять",
+                        title = texts.userSupervisorRevokeTitle(name = user.data.name),
+                        text = texts.userSupervisorRevokeText(),
+                        action = texts.userSupervisorRevokeAction(),
                         isDanger = true,
-                    ) { report(supervisorRole.revoke(id, publicCommunityId), "Роль Супервайзера снята") }
+                    ) { report(supervisorRole.revoke(id, publicCommunityId), texts.userSupervisorRevoked()) }
                 }
             }
         } else {
-            action("Выдать Роль Супервайзера") {
+            action(texts.userSupervisorGrant()) {
                 onClick {
                     confirm(
-                        title = "Выдать Роль Супервайзера Пользователю «${user.data.name}»?",
-                        text = "Пользователь станет Супервайзером и членом Публичного Сообщества в этой Роли.",
-                        action = "Выдать",
-                    ) { report(supervisorRole.grant(id, publicCommunityId), "Роль Супервайзера выдана") }
+                        title = texts.userSupervisorGrantTitle(name = user.data.name),
+                        text = texts.userSupervisorGrantText(),
+                        action = texts.userSupervisorGrantAction(),
+                    ) { report(supervisorRole.grant(id, publicCommunityId), texts.userSupervisorGranted()) }
                 }
             }
         }
@@ -141,8 +142,8 @@ class ServiceUserView(
                 toast(FeedbackKind.Success, success)
                 show(change.user)
             }
-            SupervisorRoleChange.NotFound -> toast(FeedbackKind.Error, "Пользователь не найден")
-            SupervisorRoleChange.NotAllowed -> toast(FeedbackKind.Error, "Этому Пользователю нельзя выдать Роль Супервайзера")
+            SupervisorRoleChange.NotFound -> toast(FeedbackKind.Error, currentLocalization().pageService.userNotFound())
+            SupervisorRoleChange.NotAllowed -> toast(FeedbackKind.Error, currentLocalization().pageService.userSupervisorNotAllowed())
         }
     }
 }

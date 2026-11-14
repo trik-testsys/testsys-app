@@ -31,7 +31,8 @@ class WebContextEnvironmentTests {
         val settings = ServiceWebSettings.from(
             MockEnvironment().withProperty("testsys.service.secret", "X".repeat(64))
                 .withProperty("testsys.service.address", "127.0.0.1").withProperty("testsys.service.port", "9090")
-                .withProperty("testsys.service.grafana-url", "http://127.0.0.1:3000/"),
+                .withProperty("testsys.service.grafana-url", "http://127.0.0.1:3000/")
+                .withProperty("testsys.service.app-url", "http://127.0.0.1:8080/"),
         )
 
         WebContextEnvironment.configureService(service, settings)
@@ -75,7 +76,8 @@ class WebContextEnvironmentTests {
             "testsys.service.secret=${"F".repeat(64)}\n" +
                 "testsys.service.address=127.0.0.1\n" +
                 "testsys.service.port=1010\n" +
-                "testsys.service.grafana-url=http://127.0.0.1:3000/\n",
+                "testsys.service.grafana-url=http://127.0.0.1:3000/\n" +
+                "testsys.service.app-url=http://127.0.0.1:8080/\n",
         )
         val environment = StandardEnvironment().apply {
             propertySources.replace(

@@ -6138,6 +6138,11 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should name the metrics product in header grafana`() {
+            assertEquals("Grafana", l.pageService.headerGrafana())
+        }
+
+        @Test
         fun `should name the service sign in in login title`() {
             assertEquals("Служебный вход", l.pageService.loginTitle())
         }
@@ -6183,31 +6188,59 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should name the monitoring block in home monitoring`() {
-            assertEquals("Мониторинг", l.pageService.homeMonitoring())
+        fun `should name the section column in home section`() {
+            assertEquals("Раздел", l.pageService.homeSection())
         }
 
         @Test
-        fun `should use the genitive system term in home monitoring text`() {
+        fun `should name the purpose column in home purpose`() {
+            assertEquals("Назначение", l.pageService.homePurpose())
+        }
+
+        @Test
+        fun `should use the genitive system term in home description settings`() {
+            assertEquals("Служебные настройки Системы", l.pageService.homeDescriptionSettings())
+        }
+
+        @Test
+        fun `should describe the grading section in home description grading`() {
+            assertEquals("Очередь проверок и Проверяющие узлы", l.pageService.homeDescriptionGrading())
+        }
+
+        @Test
+        fun `should describe the versions section in home description trik studio versions`() {
             assertEquals(
-                "Метрики Системы открываются в Grafana. В Grafana входят её собственными учётными записями.",
-                l.pageService.homeMonitoringText(),
+                "Версии TRIK Studio и теги Docker-образов",
+                l.pageService.homeDescriptionTrikStudioVersions(),
             )
         }
 
         @Test
-        fun `should name the monitoring product in home grafana`() {
-            assertEquals("Grafana", l.pageService.homeGrafana())
+        fun `should use the genitive plural user term in home description users`() {
+            assertEquals("Поиск Пользователей и их карточки", l.pageService.homeDescriptionUsers())
+        }
+
+        @Test
+        fun `should describe the announcements section in home description announcements`() {
+            assertEquals("Объявления страницы входа", l.pageService.homeDescriptionAnnouncements())
+        }
+
+        @Test
+        fun `should describe the decoding section in home description id decoding`() {
+            assertEquals("Момент выдачи и части ID", l.pageService.homeDescriptionIdDecoding())
+        }
+
+        @Test
+        fun `should use the genitive system term in home description grafana`() {
+            assertEquals(
+                "Метрики Системы (вход с учётной записью Grafana)",
+                l.pageService.homeDescriptionGrafana(),
+            )
         }
 
         @Test
         fun `should use the genitive system term in settings title`() {
             assertEquals("Настройки Системы", l.pageService.settingsTitle())
-        }
-
-        @Test
-        fun `should name the settings block in settings block`() {
-            assertEquals("Настройки", l.pageService.settingsBlock())
         }
 
         @Test
@@ -6279,6 +6312,11 @@ class LocalizationTests {
         @Test
         fun `should ask to check the value in settings value invalid`() {
             assertEquals("Проверьте формат и допустимый диапазон значения", l.pageService.settingsValueInvalid())
+        }
+
+        @Test
+        fun `should use the plural community term in settings group communities`() {
+            assertEquals("Сообщества", l.pageService.settingsGroupCommunities())
         }
 
         @Test
@@ -6641,18 +6679,48 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should label the enabled participation in grading on`() {
-            assertEquals("Вкл", l.pageService.gradingOn())
+        fun `should name the address column in grading address`() {
+            assertEquals("Адрес", l.pageService.gradingAddress())
         }
 
         @Test
-        fun `should label the disabled participation in grading off`() {
-            assertEquals("Выкл", l.pageService.gradingOff())
+        fun `should name the status column in grading status`() {
+            assertEquals("Состояние", l.pageService.gradingStatus())
         }
 
         @Test
-        fun `should label the apply action in grading apply`() {
-            assertEquals("Применить", l.pageService.gradingApply())
+        fun `should name the unreachability reason column in grading reason`() {
+            assertEquals("Причина", l.pageService.gradingReason())
+        }
+
+        @Test
+        fun `should name the participation column in grading participation`() {
+            assertEquals("Участие", l.pageService.gradingParticipation())
+        }
+
+        @Test
+        fun `should label the participating node in grading participation active`() {
+            assertEquals("Участвует", l.pageService.gradingParticipationActive())
+        }
+
+        @Test
+        fun `should use the masculine form in grading participation inactive`() {
+            assertEquals("Отключён", l.pageService.gradingParticipationInactive())
+        }
+
+        @Test
+        fun `should label the include action in grading activate`() {
+            assertEquals("Включить", l.pageService.gradingActivate())
+        }
+
+        @Test
+        fun `should label the exclude action in grading deactivate`() {
+            assertEquals("Отключить", l.pageService.gradingDeactivate())
+        }
+
+        @Test
+        fun `should insert the node address in grading actions`() {
+            assertEquals("Действия с узлом 10.0.0.5:8080", l.pageService.gradingActions(address = "10.0.0.5:8080"))
         }
 
         @Test
@@ -6918,6 +6986,26 @@ class LocalizationTests {
         @Test
         fun `should label the creation moment in user created`() {
             assertEquals("Создан", l.pageService.userCreated())
+        }
+
+        @Test
+        fun `should use the cabinet and supervisor terms in user open supervisor`() {
+            assertEquals("Открыть в Кабинете Супервайзера", l.pageService.userOpenSupervisor())
+        }
+
+        @Test
+        fun `should use the plural community term in user communities`() {
+            assertEquals("Сообщества", l.pageService.userCommunities())
+        }
+
+        @Test
+        fun `should name the name column in user community name`() {
+            assertEquals("Название", l.pageService.userCommunityName())
+        }
+
+        @Test
+        fun `should use the locative plural community term in user communities empty`() {
+            assertEquals("Пользователь не состоит в Сообществах", l.pageService.userCommunitiesEmpty())
         }
 
         @Test

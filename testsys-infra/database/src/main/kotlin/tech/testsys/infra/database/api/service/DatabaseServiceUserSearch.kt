@@ -41,13 +41,15 @@ import tech.testsys.infra.database.internal.jpa.entity.user.multiple.UserMultipl
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ContestToObserverJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ParticipantDataJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.group.CommunityJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.requireId
 import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Service search of [User] entities of every kind over [UserJpaEntity] rows: one specification selects and counts
- * the rows, and the persistence adapters of the user kinds assemble the found users.
+ * the rows, and the persistence adapters of the user kinds assemble the found users; community names come from
+ * [CommunityJpaEntity] rows.
  *
  * @since 1.0.0-beta.1
  */
@@ -58,6 +60,7 @@ class DatabaseServiceUserSearch(
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val participantRepository: ParticipantRepository,
     private val observerRepository: ObserverRepository,
+    private val communityJpaEntityRepository: CommunityJpaEntityRepository,
 ) : ServiceUserSearch {
 
     @Transactional(readOnly = true)
@@ -79,6 +82,11 @@ class DatabaseServiceUserSearch(
     @Transactional(readOnly = true)
     override fun findById(id: ServiceUserId): User<*>? =
         userJpaEntityRepository.findByIdOrNull(id.value)?.let { row -> assemble(listOf(row)).single() }
+
+    @Transactional(readOnly = true)
+    override fun findCommunityNames(ids: Collection<CommunityId>): Map<CommunityId, String> =
+        communityJpaEntityRepository.findAllById(ids.map { id -> id.value })
+            .associate { community -> CommunityId(community.requireId()) to community.name }
 
     /**
      * Selects the user rows matching every condition of [filter], requiring the roles in the community if both are

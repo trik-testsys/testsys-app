@@ -1,11 +1,14 @@
 package tech.testsys.web.service.view
 
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
+import tech.testsys.bootstrap.ServiceWebSettings
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
@@ -13,10 +16,13 @@ import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.infra.database.api.service.ServiceSupervisorRole
 import tech.testsys.infra.database.api.service.ServiceUserId
+import tech.testsys.infra.database.api.service.ServiceUserRole
 import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.infra.database.api.service.SupervisorRoleChange
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.operation.config.PublicCommunityOwner
+import tech.testsys.web.app.view.loadTable
+import tech.testsys.web.app.view.pageOf
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.display.field
@@ -35,9 +41,8 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 /**
- * Service card of a user of any kind with its data read on opening; the access code is not shown. A user with
- * non-fixed roles other than the owner of the public community gets the role of a supervisor granted or revoked
- * after a confirmation (testsys.dev.service.supervisorRole).
+ * Service card of a user of any kind with its data and communities, without the access code, opening the user in the
+ * cabinet of a supervisor and granting or revoking the supervisor role (testsys.dev.service.supervisorRole).
  *
  * @since 1.0.0-beta.1
  */
@@ -48,6 +53,7 @@ class ServiceUserView(
     private val search: ServiceUserSearch,
     private val supervisorRole: ServiceSupervisorRole,
     private val runtime: RuntimeSettings,
+    private val settings: ServiceWebSettings,
 ) : TestSysView(),
     BeforeEnterObserver,
     HasDynamicTitle {
@@ -70,15 +76,27 @@ class ServiceUserView(
         page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
             head(texts.userHead(name = dataOf(user).name)) { crumb(texts.usersTitle(), ServiceUsersView::class.java) }
             detailsBlock(user)
+            if (user !is Participant) communitiesBlock(user)
         }
     }
 
     private fun PageScope.detailsBlock(user: User<*>) {
         val texts = currentLocalization().pageService
+        val isPublicCommunityOwner = user is MultipleRoleUser && user.data.email == PublicCommunityOwner.EMAIL
+        val isSupervisor = user is MultipleRoleUser && user.data.roles.any { role -> role is Supervisor }
         row {
             block(title = texts.userDetails()) {
-                if (user is MultipleRoleUser && user.data.email != PublicCommunityOwner.EMAIL) {
-                    actions { supervisorRoleAction(user) }
+                if (!isPublicCommunityOwner) {
+                    actions {
+                        if (user is MultipleRoleUser) supervisorRoleAction(user)
+                        // A supervisor signs in as any user except supervisors and the owner of the public community.
+                        if (!isSupervisor) {
+                            action(texts.userOpenSupervisor()) {
+                                val target = "${settings.appUrl.trimEnd('/')}/supervisor/users/${user.id.value}"
+                                onClick { UI.getCurrent().page.setLocation(target) }
+                            }
+                        }
+                    }
                 }
                 row {
                     codeInput(texts.id(), labelSize = 3, size = 9) { value = user.id.value.toString() }
@@ -96,7 +114,6 @@ class ServiceUserView(
                         codeInput(texts.competitionId(), labelSize = 3, size = 9) { value = user.data.competition.id.value.toString() }
                     }
                     is Observer -> row {
-                        codeInput(texts.communityId(), labelSize = 3, size = 9) { value = user.data.community.id.value.toString() }
                         codeInput(texts.contestIds(), labelSize = 3, size = 9) {
                             value = user.data.contests.ids.joinToString(", ") { contestId -> contestId.value.toString() }
                         }
@@ -105,6 +122,45 @@ class ServiceUserView(
             }.isEditable = false
         }
     }
+
+    /** Adds the table of the communities of [user] in ascending id order with its roles in each of them. */
+    private fun PageScope.communitiesBlock(user: User<*>) {
+        val texts = currentLocalization().pageService
+        // Role labels need the UI of this request; the background load reads only the names.
+        val roles = rolesByCommunity(user)
+        row {
+            block(title = texts.userCommunities()) {
+                loadTable(
+                    key = { community: UserCommunity -> community.id },
+                    fetch = { request -> pageOf(communitiesOf(roles), request) },
+                ) {
+                    codeColumn(texts.id(), size = 5) { community -> community.id.value.toString() }
+                    textColumn(texts.userCommunityName(), size = 9) { community -> community.name }
+                    column(texts.roles()) { community -> community.roles.forEach { role -> tag(role) } }
+                    empty(texts.userCommunitiesEmpty())
+                }
+            }
+        }
+    }
+
+    private fun rolesByCommunity(user: User<*>): Map<CommunityId, List<String>> {
+        val roles: List<Pair<CommunityId, String>> = when (user) {
+            is MultipleRoleUser -> user.data.roles.flatMap { role -> role.memberOf.ids.map { id -> id to roleLabelOf(role) } }
+            is Observer -> listOf(user.data.community.id to roleLabel(ServiceUserRole.OBSERVER))
+            is Participant -> emptyList()
+        }
+        return roles.groupBy(keySelector = { (id, _) -> id }, valueTransform = { (_, role) -> role })
+    }
+
+    private fun communitiesOf(rolesByCommunity: Map<CommunityId, List<String>>): List<UserCommunity> {
+        val names = search.findCommunityNames(rolesByCommunity.keys)
+        return rolesByCommunity.entries
+            .sortedBy { (id, _) -> id.value }
+            .map { (id, communityRoles) -> UserCommunity(id = id, name = names[id], roles = communityRoles) }
+    }
+
+    /** Community [id] of a user with its [name], or `null` if it is missing, and the [roles] of the user in it. */
+    private data class UserCommunity(val id: CommunityId, val name: String?, val roles: List<String>)
 
     /** Adds the action that grants the supervisor role to [user] or revokes it, after a confirmation. */
     private fun ContentScope.supervisorRoleAction(user: MultipleRoleUser) {

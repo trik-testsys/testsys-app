@@ -33,6 +33,13 @@ interface ServiceUserSearch {
      * @since 1.0.0-beta.1
      */
     fun findById(id: ServiceUserId): User<*>?
+
+    /**
+     * Finds the names of the communities with [ids]; ids of missing communities are skipped.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findCommunityNames(ids: Collection<CommunityId>): Map<CommunityId, String>
 }
 
 /**

@@ -15,14 +15,15 @@ import tech.testsys.infra.settings.api.service.SettingsService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.IconName
-import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.alert
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.texts.currentLocalization
 
 /**
- * Service-only atomic settings editor, refreshed on navigation and after successful changes.
+ * Service-only settings editor with a block per settings group; a block saves its changed settings atomically, and
+ * the page is refreshed on navigation and after successful changes.
  *
  * @since 1.0.0-beta.1
  */
@@ -44,46 +45,56 @@ class ServiceSettingsView(
     private fun showSettings() {
         val overview = settings.overview()
         val snapshot = overview.snapshot
-        val form = ServiceSettingsForm(snapshot)
+        val isKnown = overview.persistence == SettingsPersistence.Known
         page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
             head(texts.settingsTitle())
-            row {
-                block(title = texts.settingsBlock()) {
-                    if (overview.persistence == SettingsPersistence.Known) {
-                        editing(onSave = {
-                            val changes = form.changes()
-                            if (changes == null) false else applyChanges(overview.revision, changes, form)
-                        }, onCancel = form::cancel)
-                    } else {
-                        row { text(texts.settingsUncertain()) }
-                    }
-                    GROUPS.forEach { (group, keys) ->
-                        sectionTitle(groupTitle(group))
-                        keys.forEach { key ->
-                            row {
-                                val input =
-                                    textInput(label(key), labelSize = 5, size = 6, hint = key.property)
-                                form.bind(key, input)
-                                input.isEditable = overview.persistence == SettingsPersistence.Known
-                                horizontal(size = 1) { action(label = settingHelp(key, snapshot), icon = IconName.Info, iconOnly = true) }
+            // Two blocks a row: the groups are short, and full-width blocks leave the page mostly empty.
+            GROUPS.withIndex().chunked(BLOCKS_IN_ROW).forEach { groups ->
+                row {
+                    groups.forEach { (index, entry) ->
+                        val (group, keys) = entry
+                        block(title = groupTitle(group), size = BLOCK_SIZE) {
+                            // Each block binds only its keys, so its form changes only them.
+                            val form = ServiceSettingsForm(snapshot)
+                            if (isKnown) {
+                                editing(onSave = {
+                                    val changes = form.changes()
+                                    if (changes == null) false else applyChanges(overview.revision, changes, form)
+                                }, onCancel = form::cancel)
+                            } else if (index == 0) {
+                                row { alert(FeedbackKind.Warning, texts.settingsUncertain()) }
                             }
-                            separator()
+
+                            keys.forEach { key ->
+                                row {
+                                    val input = textInput(label(key), labelSize = 10, size = 12, hint = key.property)
+                                    form.bind(key, input)
+                                    input.isEditable = isKnown
+                                    horizontal(size = 2) {
+                                        action(label = settingHelp(key, snapshot), icon = IconName.Info, iconOnly = true)
+                                    }
+                                }
+                            }
+
+                            val savedMaxMessageBytes = snapshot.values.int(SettingKey.MaxMessageBytes)
+                            if (SettingKey.MaxMessageBytes in keys && savedMaxMessageBytes != snapshot.activeMaxMessageBytes) {
+                                row {
+                                    alert(
+                                        FeedbackKind.Info,
+                                        texts.settingsRestartPending(active = snapshot.activeMaxMessageBytes, saved = savedMaxMessageBytes),
+                                    )
+                                }
+                            }
                         }
                     }
+                }
+            }
+            row {
+                block(title = texts.settingsGroupCommunities(), size = BLOCK_SIZE) {
                     row {
-                        textInput(texts.settingsPublicCommunity(), labelSize = 5, size = 4) {
+                        textInput(texts.settingsPublicCommunity(), labelSize = 10, size = 12) {
                             value = runtime.publicCommunityId.value.toString()
                             isEditable = false
-                        }
-                    }
-                    if (snapshot.values.int(SettingKey.MaxMessageBytes) != snapshot.activeMaxMessageBytes) {
-                        row {
-                            text(
-                                texts.settingsRestartPending(
-                                    active = snapshot.activeMaxMessageBytes,
-                                    saved = snapshot.values.int(SettingKey.MaxMessageBytes),
-                                ),
-                            )
                         }
                     }
                 }
@@ -165,10 +176,13 @@ class ServiceSettingsView(
         SettingsGroup.FileCleanup -> texts.settingsGroupFileCleanup()
     }
 
-    /** Sections of the settings form in the order of the page. */
+    /** Settings blocks in the order of the page. */
     private enum class SettingsGroup { Competitions, EmailConfirmation, Invites, Grading, Diagnostics, FileCleanup }
 
     private companion object {
+        private const val BLOCKS_IN_ROW = 2
+        private const val BLOCK_SIZE = 12
+
         private val GROUPS = listOf(
             SettingsGroup.Competitions to listOf(SettingKey.MaxParticipants),
             SettingsGroup.EmailConfirmation to listOf(SettingKey.ConfirmationCodeLifetime, SettingKey.MaxConfirmationAttempts),

@@ -10,6 +10,7 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.Administrator
+import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.Judge
 import tech.testsys.domain.model.user.Manager
@@ -151,22 +152,23 @@ internal fun emailOf(user: User<*>): String? = when (user) {
 
 /** Returns the labels of the roles of [user], one per role. */
 internal fun roleLabelsOf(user: User<*>): List<String> = when (user) {
-    is MultipleRoleUser -> user.data.roles.map { role ->
-        when (role) {
-            is Administrator -> roleLabel(ServiceUserRole.ADMINISTRATOR)
-            is Developer -> roleLabel(ServiceUserRole.DEVELOPER)
-            is Judge -> roleLabel(ServiceUserRole.JUDGE)
-            is Manager -> roleLabel(ServiceUserRole.MANAGER)
-            is Student -> roleLabel(ServiceUserRole.STUDENT)
-            is Supervisor -> roleLabel(ServiceUserRole.SUPERVISOR)
-        }
-    }
+    is MultipleRoleUser -> user.data.roles.map(::roleLabelOf)
     is Participant -> listOf(roleLabel(ServiceUserRole.PARTICIPANT))
     is Observer -> listOf(roleLabel(ServiceUserRole.OBSERVER))
 }
 
+/** Returns the label of the non-fixed [role]. */
+internal fun roleLabelOf(role: CompatibleUserRole): String = when (role) {
+    is Administrator -> roleLabel(ServiceUserRole.ADMINISTRATOR)
+    is Developer -> roleLabel(ServiceUserRole.DEVELOPER)
+    is Judge -> roleLabel(ServiceUserRole.JUDGE)
+    is Manager -> roleLabel(ServiceUserRole.MANAGER)
+    is Student -> roleLabel(ServiceUserRole.STUDENT)
+    is Supervisor -> roleLabel(ServiceUserRole.SUPERVISOR)
+}
+
 /** Returns the label of [role]; the searchable roles and the variants of the message share their names. */
-private fun roleLabel(role: ServiceUserRole): String = currentLocalization().pageService.roleName(RoleNameRole.valueOf(role.name))
+internal fun roleLabel(role: ServiceUserRole): String = currentLocalization().pageService.roleName(RoleNameRole.valueOf(role.name))
 
 /** Opens the card of [user]. */
 private fun openUser(user: User<*>) {

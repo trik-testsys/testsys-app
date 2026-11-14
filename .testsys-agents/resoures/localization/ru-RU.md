@@ -1449,3 +1449,62 @@ paraphrased.
   `ServiceGradingDialogs` and ending an announcement for good. In ru-RU the confirmation title and text resolve
   it; a future region may need two words, which would need a separate key (reviewer inference).
 - Unverified: «По времени» has no dictionary source; gramota.ru was not consulted.
+
+### Service home table, node table and the User's Communities (2026-11-14)
+
+- «Назначение» as the column header next to «Раздел»: Викисловарь lists 1. the action of «назначать/назначить»
+  (appointing someone to a post); 2. «цель применения, круг решаемых задач»; 3. мед. a doctor's prescription;
+  4. книжн. «предназначение», «миссия». Cells hold short descriptions of sections, so sense 2 applies; sense 1 needs
+  a person or post and could arise only next to Role assignment, which this table does not show (inference). No
+  offensive sense. Source: https://ru.wiktionary.org/wiki/назначение (read 2026-11-14).
+- «Включить» / «Отключить» as row actions of a Проверяющий узел: Викисловарь «включить» sense 1 «ввести, внести
+  в состав, в число кого-либо, чего-либо», sense 2 «привести в действие, пустить в ход», sense 3 (техн.)
+  «присоединить к системе действующих аппаратов; подключить»; «отключить» sense 1 «прервать связь в сети … с системой
+  действующих аппаратов», sense 2 (перен.) to distract someone; antonyms «подключать», «включать». Applicable second
+  reading: «Включить»/«Отключить» on a server row may be read as powering the node on or off. The column «Участие»,
+  the badges «Участвует»/«Отключён» and the toasts «… участвует в проверке» / «… отключён от проверки» resolve it to
+  inclusion in grading (inference). The pair matches the existing `grading.import.existing_inactive` «отключён».
+  Sources: https://ru.wiktionary.org/wiki/включить, https://ru.wiktionary.org/wiki/отключить (read 2026-11-14,
+  fetch summaries).
+- «Отключён» (badge) is masculine because it agrees with «Проверяющий узел»; next to the availability badge
+  «Недоступен» it could be confused with a network disconnect, which the column split «Состояние» / «Участие»
+  resolves (inference).
+- «Причина» as the node table column next to «Состояние» (`page_service.grading.reason`, added 2026-11-14):
+  Викисловарь «причина» — inanimate feminine, type 1a, three senses without labels: 1 «явление, обстоятельство,
+  непосредственно порождающее, обусловливающее другое явление»; 2 «тот, кто является виновником чего-либо»; 3
+  «основание, повод, предлог для каких-либо действий, поступков». Sense 1 applies: the cell holds the technical
+  cause of the «Недоступен» state (a gRPC status such as `DEADLINE_EXCEEDED`) and is empty for other states. The
+  bare header does not say what it is the reason of; its place right after «Состояние» resolves it (inference).
+  The identical «Причина» in `page_service.announcements.reason` is the finish reason of an announcement (sense
+  3); the keys stay separate because another region may need different words. Source:
+  https://ru.wiktionary.org/wiki/причина (read 2026-11-14, fetch summary).
+- «Участие» as a column header: Викисловарь sense 1 «совместная с кем-либо деятельность, вовлечённость в какую-либо
+  деятельность»; sense 2 sympathy («с участием взглянул»); sense 3 экон./фин. a stake in a company. Only sense 1 fits
+  a column of «Участвует»/«Отключён» badges. Source: https://ru.wiktionary.org/wiki/участие (read 2026-11-14).
+- «Метрики Системы (вход с учётной записью Grafana)»: parentheses keep the description a noun phrase and stop
+  «вход» from reading as a second item of a list after a comma. «С учётной записью» rather than the former
+  «её собственными учётными записями» (deleted `home.monitoring_text`). Reviewer check: Russian Windows strings
+  quoted in a Lenovo manual read «Выполнять вход с учетной записью Майкрософт» and «Войти вместо этого с локальной
+  учетной записью», so «вход с учётной записью X» is established software usage, not a norm source
+  (https://download.lenovo.com/pccbbs/pubs/s150_11_14ast/html_ru/RU/switch_local_ms_account.html, read 2026-11-14,
+  fetch summary). Викисловарь «учётная запись» (неол., информ.): a record created on registration in an information
+  resource, synonym «аккаунт» (https://ru.wiktionary.org/wiki/учётная_запись, read 2026-11-14).
+- «Метрики Системы»: Викисловарь lists three homonyms of «метрика»: I филол./муз. (verse structure, rhythm);
+  II матем. (distance rule) and техн. «вычисляемая величина, характеризующая какое-либо явление»; III «выписка
+  из метрической книги; свидетельство о рождении». Next to «Системы» and the Grafana row sense II техн. applies; the
+  birth-certificate sense does not arise (reviewer inference). Source: https://ru.wiktionary.org/wiki/метрика
+  (read 2026-11-14, fetch summary).
+- «Пользователь не состоит в Сообществах»: «состоять в» + prepositional follows definitions.md items 3–4 («состоит
+  только в одном Сообществе»). «Открыть в Кабинете Супервайзера» uses the existing `glossary.cabinet` `loc sg` and
+  `glossary.supervisor` `gen sg`, matching `page_supervisor.title`.
+
+### Independent review evidence for `page_service.grading.reason` (2026-11-14)
+
+- «Причина» as the header of the unavailability-reason column: МАС and Ушаков, as reproduced on kartaslov.ru, give the
+  same senses as Викисловарь without stylistic labels for the applicable one («явление, обстоятельство,
+  непосредственно порождающее, обусловливающее другое явление — следствие»). Ушаков adds a regional sense marked
+  «обл.» («то, что причинилось, непредвиденный случай») and the colloquial phrase «Что за причина?»; neither arises
+  for a one-word column header (reviewer inference). features.md uses the same word: «недоступен — с причиной».
+  «Причина недоступности» is a more explicit optional variant, not applied. Sources:
+  https://ru.wiktionary.org/wiki/причина, https://kartaslov.ru/значение-слова/причина (read 2026-11-14 through a
+  fetch tool that returns a model summary).

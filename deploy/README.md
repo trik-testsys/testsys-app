@@ -176,9 +176,9 @@ Git Bash на Windows при запуске `docker` преобразует зн
 Импорт не помечен `optional:`, поэтому без любого из файлов приложение не запустится. Импортированные файлы
 перекрывают `application.yml` внутри jar, а тот — значения по умолчанию модулей.
 
-Секреты, адрес Grafana и адреса Проверяющих узлов Compose передаёт переменными окружения. Override каждого окружения задаёт
-сервису `app` один и тот же блок `environment:`: `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD`,
-`TESTSYS_SERVICE_SECRET`, `TESTSYS_ACCESS_TOKEN_SECRET`, `TESTSYS_GRAFANA_URL`,
+Секреты, адреса Grafana и основного интерфейса и адреса Проверяющих узлов Compose передаёт переменными окружения.
+Override каждого окружения задаёт сервису `app` один и тот же блок `environment:`: `TESTSYS_DB_PASSWORD`,
+`TESTSYS_MAIL_PASSWORD`, `TESTSYS_SERVICE_SECRET`, `TESTSYS_ACCESS_TOKEN_SECRET`, `TESTSYS_GRAFANA_URL`, `TESTSYS_APP_URL`,
 `TESTSYS_GRADING_NODES` и `TESTSYS_GRADING_IMPORT_NODES`. Значения берутся из файла переменных окружения
 под тем же именем, см. [Файлы переменных](#файлы-переменных). Как переменная доходит до ключа и почему её ключ
 не задают в файлах окружения — в разделе «Параметры приложения»
@@ -365,7 +365,7 @@ Prometheus — источник по умолчанию. Пользовател�
 | `GF_SECURITY_ADMIN_PASSWORD` | `deploy/compose.prod.yml` из переменной Compose `TESTSYS_GRAFANA_ADMIN_PASSWORD` | Пароль `admin`; Grafana применяет его, только когда создаёт свою базу в пустом томе |
 
 Без `GF_SECURITY_ADMIN_PASSWORD` в dev администратор получает стандартный пароль Grafana. Тот же
-`TESTSYS_GRAFANA_URL` override передаёт приложению под тем же именем, поэтому кнопка «Grafana»
+`TESTSYS_GRAFANA_URL` override передаёт приложению под тем же именем, поэтому раздел «Grafana»
 служебного кабинета открывает Grafana своего проекта. Compose не сверяет порт в этом адресе с опубликованным портом
 Grafana; их согласует тот, кто задаёт переменные. Префикс в файлах переменных по умолчанию — `/grafana/`; другой
 путь в адресе Grafana принимает без изменений Compose-файлов. В e2e Grafana нет, а `TESTSYS_GRAFANA_URL` нужен только

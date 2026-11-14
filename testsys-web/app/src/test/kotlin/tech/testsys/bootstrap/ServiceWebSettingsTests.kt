@@ -92,12 +92,47 @@ class ServiceWebSettingsTests {
         assertEquals(GRAFANA_URL_ERROR, failure.message)
     }
 
-    private fun serviceEnvironment(secret: String = "C".repeat(64)): MockEnvironment = MockEnvironment()
+    @Test
+    fun `should accept an absolute https main interface address with a context path and keep it unchanged`() {
+        val settings = ServiceWebSettings.from(
+            serviceEnvironment(appUrl = "https://testsys.example.test/testsys/")
+                .withProperty("testsys.service.grafana-url", "http://127.0.0.1:3000/"),
+        )
+
+        assertEquals("https://testsys.example.test/testsys/", settings.appUrl)
+    }
+
+    @Test
+    fun `should reject a missing main interface address`() {
+        val environment = listenerEnvironment().withProperty("testsys.service.grafana-url", "http://127.0.0.1:3000/")
+
+        val failure = assertThrows(IllegalArgumentException::class.java) { ServiceWebSettings.from(environment) }
+
+        assertEquals(APP_URL_ERROR, failure.message)
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = ["", "testsys.example.test/", "/testsys/", "ftp://testsys.example.test/", "https://user:password@testsys.example.test/"],
+    )
+    fun `should reject an invalid main interface address`(appUrl: String) {
+        val environment = serviceEnvironment(appUrl = appUrl).withProperty("testsys.service.grafana-url", "http://127.0.0.1:3000/")
+
+        val failure = assertThrows(IllegalArgumentException::class.java) { ServiceWebSettings.from(environment) }
+
+        assertEquals(APP_URL_ERROR, failure.message)
+    }
+
+    private fun serviceEnvironment(secret: String = "C".repeat(64), appUrl: String = "http://127.0.0.1:8080/"): MockEnvironment =
+        listenerEnvironment(secret).withProperty("testsys.service.app-url", appUrl)
+
+    private fun listenerEnvironment(secret: String = "C".repeat(64)): MockEnvironment = MockEnvironment()
         .withProperty("testsys.service.secret", secret)
         .withProperty("testsys.service.address", "127.0.0.1")
         .withProperty("testsys.service.port", "0")
 
     private companion object {
         const val GRAFANA_URL_ERROR = "testsys.service.grafana-url must be an absolute http or https URL without user information"
+        const val APP_URL_ERROR = "testsys.service.app-url must be an absolute http or https URL without user information"
     }
 }

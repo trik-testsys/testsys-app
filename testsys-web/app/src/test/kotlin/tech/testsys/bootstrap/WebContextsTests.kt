@@ -17,6 +17,7 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean
 import org.springframework.web.context.WebApplicationContext
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.UserRepository
+import tech.testsys.infra.database.api.announcement.Announcements
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserFilter
 import tech.testsys.infra.database.api.service.ServiceUserSearch
@@ -81,6 +82,7 @@ class WebContextsTests {
                 UserRepository::class.java,
                 ServiceUserSearch::class.java,
                 ServiceTrikStudioVersions::class.java,
+                Announcements::class.java,
             )
             for (type in sharedTypes) {
                 assertSame(runtime.infrastructure.getBean(type), main.getBean(type))

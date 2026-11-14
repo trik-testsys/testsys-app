@@ -32,6 +32,11 @@ class ServiceHeaders(private val authentication: AuthenticationContext) {
                 label = "Версии TRIK Studio",
                 destination = HeaderDestination.Route(ServiceTrikStudioVersionsView::class.java),
             ),
+            NavItem(
+                key = ANNOUNCEMENTS_SECTION,
+                label = "Объявления",
+                destination = HeaderDestination.Route(ServiceAnnouncementsView::class.java),
+            ),
         ),
         active = active,
         user = HeaderUser(name = USER_NAME) { destructiveItem("Выйти") { authentication.logout() } },
@@ -43,6 +48,7 @@ class ServiceHeaders(private val authentication: AuthenticationContext) {
         const val GRADING_SECTION: String = "grading"
         const val USERS_SECTION: String = "users"
         const val VERSIONS_SECTION: String = "trik-studio-versions"
+        const val ANNOUNCEMENTS_SECTION: String = "announcements"
 
         /** Name shown in the header: the service identity has no person behind it. */
         private const val USER_NAME: String = "Служба"

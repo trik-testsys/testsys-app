@@ -56,6 +56,8 @@ jobs:
           git merge --squash origin/dev
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" buildSrc/src/main/kotlin/testsys.conventions.gradle.kts
           git grep -lz '%CURRENT_VERSION%' -- '*.kt' | xargs -0 -r sed -i "s/%CURRENT_VERSION%/$VERSION/g"
+          # Only the heading of the unreleased section changes: the format description names the placeholder too.
+          sed -i "s/^## %CURRENT_VERSION%$/## $VERSION — $(date -u +%F)/" CHANGELOG.md
           git add -A
           git commit -m "Release $VERSION"
           git push --force origin "HEAD:refs/heads/release/$VERSION"
@@ -138,6 +140,18 @@ jobs:
         run: >-
           git push --atomic origin "${SHA}:refs/heads/master" "${DEV_MERGE}:refs/heads/dev"
           "+refs/tags/${TAG}:refs/tags/${TAG}"
+
+      # A description written by hand when publishing the release is kept.
+      - name: Fill the release description from the changelog
+        if: ${{ github.event.release.body == '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          awk -v v="$VERSION" 'index($0, "## " v " — ") == 1 { on = 1; next } on && /^## / { exit } on' \
+            CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+          fi
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4

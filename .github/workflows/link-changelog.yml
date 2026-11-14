@@ -1,0 +1,45 @@
+name: Link changelog
+
+on:
+  pull_request:
+    branches: [ "dev" ]
+    types: [ opened, synchronize, reopened ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  link:
+    name: Link changelog entries to the pull request
+    # A branch of a fork cannot be pushed to.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: write
+
+    steps:
+      # A push made with GITHUB_TOKEN starts no workflows, so the checks would not run on the new commit;
+      # RELEASE_TOKEN is a personal token whose push starts them.
+      - name: Checkout the pull request branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      # Only the unreleased section changes: the format description above it names the placeholder too.
+      - name: Replace the placeholder with the pull request link
+        env:
+          NUMBER: ${{ github.event.pull_request.number }}
+          URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          sed -i "/^## %CURRENT_VERSION%$/,\$ s|%PR_LINK%|[#$NUMBER]($URL)|g" CHANGELOG.md
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          git commit -am "docs: Linked changelog entries to #$NUMBER"
+          git push

@@ -14,7 +14,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * signed-in user sees: the common part and the parts of their roles, from the newest version to the oldest. Every
  * signed-in user opens it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @Route("changelog")
 @PermitAll

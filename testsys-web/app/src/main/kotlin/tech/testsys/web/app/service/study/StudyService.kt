@@ -72,7 +72,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.checkContestAccess] for a participant.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkContestAccess(contestId: ContestId): StudyContestContextVo =
@@ -81,7 +81,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.checkContestAccess] for a student of [classId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkContestAccess(classId: ClassId, contestId: ContestId): StudyContestContextVo =
@@ -90,7 +90,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.checkTaskAccess] for a participant.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkTaskAccess(contestId: ContestId, taskId: TaskId): StudyTaskContextVo =
@@ -99,7 +99,7 @@ class StudyService(
     /**
      * Runs [StudyOperations.checkTaskAccess] for a student of [classId].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkTaskAccess(classId: ClassId, contestId: ContestId, taskId: TaskId): StudyTaskContextVo =

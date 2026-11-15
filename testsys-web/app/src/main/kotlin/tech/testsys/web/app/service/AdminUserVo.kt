@@ -117,7 +117,7 @@ data class AdministratorRoleVo(override val memberOf: List<CommunityId>) : RoleV
 /**
  * The supervisor role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 data class SupervisorRoleVo(override val memberOf: List<CommunityId>) : RoleVo
 

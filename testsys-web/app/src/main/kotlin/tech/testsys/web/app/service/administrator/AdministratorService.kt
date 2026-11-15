@@ -71,7 +71,7 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     /**
      * Runs [AdministratorOperations.checkUserAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkUserAccess(userId: UserId): Pair<AdminUserVo, Set<CommunityId>> {
@@ -128,7 +128,7 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     /**
      * Runs [AdministratorOperations.checkAdministratorRole].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkAdministratorRole(): List<CommunityVo> =

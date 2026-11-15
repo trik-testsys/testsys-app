@@ -214,7 +214,7 @@ class AdministratorOperations(
      * Returns [userId] available to [user] without its last login, with the ids of the communities created by [user], so
      * that a page checks access and picks the role sections before it loads them. Refusals match [viewUser].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.admin.viewUser")
     fun checkUserAccess(user: MultipleRoleUser, userId: UserId): OperationResult<Pair<User<*>, Set<CommunityId>>, CheckUserAccessError> =
@@ -491,7 +491,7 @@ class AdministratorOperations(
      * Returns the communities created by [user] without their user counts, so that a page checks the role and builds its
      * community filter before it loads its lists. Missing role is an expected failure; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.admin.viewCommunities")
     fun checkAdministratorRole(user: MultipleRoleUser): OperationResult<List<Community>, CheckAdministratorRoleError> =
@@ -788,7 +788,7 @@ class AdministratorOperations(
      * Returns [communityId] owned by [user] without its invite codes and users, so that a page checks access before it loads
      * them. Missing role, community and access are expected failures; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.admin.viewInvites")
     fun checkCommunityAccess(user: MultipleRoleUser, communityId: CommunityId): OperationResult<Community, CheckCommunityAccessError> =

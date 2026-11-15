@@ -10,7 +10,7 @@ import java.time.Instant
 /**
  * Kind of an [AnnouncementJpaEntity].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @InternalDatabaseApi
 enum class AnnouncementKindJpaEnum {
@@ -28,7 +28,7 @@ enum class AnnouncementKindJpaEnum {
  * @property shownUntil the moment the announcement stops being shown, exclusive; later than [shownFrom].
  * @property link the absolute http or https address the announcement opens, trimmed, or `null` if it has no link.
  * @property closedAt the moment the announcement was closed manually, or `null` if it is not closed.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @Entity
 @InternalDatabaseApi

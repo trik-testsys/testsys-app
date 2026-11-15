@@ -38,7 +38,7 @@ import java.time.LocalDateTime
  * the finished ones with the reason and the moment of finishing. «Добавить» creates an announcement and the row menu
  * of a current one changes or closes it.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @Route("announcements")
 @RolesAllowed("SERVICE")

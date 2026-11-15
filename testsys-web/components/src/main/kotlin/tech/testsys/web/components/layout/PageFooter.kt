@@ -62,7 +62,7 @@ class PageFooterScope internal constructor() {
  * error screen. [links] runs at each footer build, so the set can depend on the state at that moment, such as whether
  * the user is signed in; a repeated call replaces the set.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 fun setCommonFooterLinks(ui: UI, links: PageFooterScope.() -> Unit) {
     ComponentUtil.setData(ui, CommonFooterLinks::class.java, CommonFooterLinks(links))
@@ -75,7 +75,7 @@ private class CommonFooterLinks(val content: PageFooterScope.() -> Unit)
  * Sets the version of the system that every footer built on [ui] shows after the brand name; with `null` the footer
  * shows no version.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 fun setFooterVersion(ui: UI, version: String?) {
     ComponentUtil.setData(ui, FooterVersion::class.java, version?.let(::FooterVersion))

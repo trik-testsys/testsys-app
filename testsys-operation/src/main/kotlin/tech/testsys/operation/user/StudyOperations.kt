@@ -237,7 +237,7 @@ class StudyOperations(
      * Returns the first entry time of [user] and the original [contestId] in their competition without its tasks, so that a
      * page checks access before it loads them. Refusals are those of [viewContest]; saves nothing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.study.viewContest")
     fun checkContestAccess(
@@ -264,7 +264,7 @@ class StudyOperations(
      * Returns [classId], the first entry time of [user] in it and the original [contestId] without its tasks, so that a page
      * checks access before it loads them. Refusals are those of [viewContest]; saves nothing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.study.viewContest")
     fun checkContestAccess(
@@ -293,7 +293,7 @@ class StudyOperations(
      * in, without its resources and submissions, so that a page checks access before it loads them. Refusals are those
      * of [viewTask]; saves nothing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.study.viewTask")
     fun checkTaskAccess(
@@ -331,7 +331,7 @@ class StudyOperations(
      * without its resources and submissions, so that a page checks access before it loads them. Refusals are those
      * of [viewTask]; saves nothing.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.study.viewTask")
     fun checkTaskAccess(
@@ -790,7 +790,7 @@ class StudyOperations(
      * @property studyClass the selected class of a student, or `null` for a participant.
      * @property enteredAt the saved first entry time in this context, or `null` before entry.
      * @property contest the original contest.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data class StudyContestContext(val studyClass: Class?, val enteredAt: Instant?, val contest: Contest)
 
@@ -802,7 +802,7 @@ class StudyOperations(
      * @property contest the original contest.
      * @property task the original task.
      * @property languages the distinct languages of the developer solutions of the last committed revision, in their order.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data class StudyTaskContext(
         val studyClass: Class?,

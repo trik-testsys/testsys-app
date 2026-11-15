@@ -49,7 +49,7 @@ interface CabinetSignInStore {
     /**
      * Deletes the sign-ins in which the supervisor [supervisorId] signed in as another user and returns them.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun deleteImpersonatedBy(supervisorId: CabinetSignInUserId): List<StoredCabinetSignIn>
 

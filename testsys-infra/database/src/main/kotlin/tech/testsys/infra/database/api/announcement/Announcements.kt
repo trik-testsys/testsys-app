@@ -5,7 +5,7 @@ import java.time.Instant
 /**
  * Storage of the announcements of the sign-in page: listing, the active ones, creation, change and closing.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 interface Announcements {
 
@@ -13,7 +13,7 @@ interface Announcements {
      * Finds every announcement, including future, closed and finished ones.
      *
      * @return the announcements, the latest start of showing first and the larger id first on a tie.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun findAll(): List<Announcement>
 
@@ -22,7 +22,7 @@ interface Announcements {
      * exclusive.
      *
      * @return the announcements, the latest start of showing first and the larger id first on a tie.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun findActive(at: Instant): List<Announcement>
 
@@ -32,7 +32,7 @@ interface Announcements {
      *
      * @return the created announcement, or the first reason of refusal, checking the text, then the link, then the
      * period; nothing is stored on refusal.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun create(text: String, link: String?, kind: AnnouncementKind, shownFrom: Instant, shownUntil: Instant): AnnouncementSave
 
@@ -42,7 +42,7 @@ interface Announcements {
      *
      * @return the changed announcement, the first reason of refusal or [AnnouncementSave.NotFound]; nothing is stored
      * on refusal.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun update(
         id: AnnouncementId,
@@ -59,7 +59,7 @@ interface Announcements {
      *
      * @return `true` if this call closed the announcement; `false` if it is missing, already closed or its end of
      * showing is not later than [at], and nothing is changed then.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun close(id: AnnouncementId, at: Instant): Boolean
 }
@@ -68,7 +68,7 @@ interface Announcements {
  * Identifier of an [Announcement].
  *
  * @property value the raw id.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @JvmInline
 value class AnnouncementId(val value: Long)
@@ -83,7 +83,7 @@ value class AnnouncementId(val value: Long)
  * @property shownUntil the moment the announcement stops being shown, later than [shownFrom].
  * @property closedAt the moment the announcement was closed manually, or `null` if it is not closed.
  * @property link the absolute http or https address the announcement opens, trimmed, or `null` if it has no link.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 data class Announcement(
     val id: AnnouncementId,
@@ -98,21 +98,21 @@ data class Announcement(
 /**
  * Kind of an [Announcement].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 enum class AnnouncementKind {
 
     /**
      * Information.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     Info,
 
     /**
      * Warning.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     Warning,
 }
@@ -120,7 +120,7 @@ enum class AnnouncementKind {
 /**
  * Result of [Announcements.create] and [Announcements.update].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface AnnouncementSave {
 
@@ -128,7 +128,7 @@ sealed interface AnnouncementSave {
      * The announcement is stored.
      *
      * @property announcement the stored announcement.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data class Saved(val announcement: Announcement) : AnnouncementSave
 
@@ -136,14 +136,14 @@ sealed interface AnnouncementSave {
      * The announcement is not stored.
      *
      * @property reason the first failed check.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data class Rejected(val reason: AnnouncementRejection) : AnnouncementSave
 
     /**
      * No announcement has the id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data object NotFound : AnnouncementSave
 }
@@ -151,42 +151,42 @@ sealed interface AnnouncementSave {
 /**
  * Reason why [Announcements.create] or [Announcements.update] refused an announcement.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 enum class AnnouncementRejection {
 
     /**
      * The text is empty after trimming.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     BlankText,
 
     /**
      * The text is longer than 300 code points.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     TextTooLong,
 
     /**
      * The link is not an absolute http or https address with a host and without user information.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     InvalidLink,
 
     /**
      * The link is longer than 2048 code points.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     LinkTooLong,
 
     /**
      * The end of showing is not later than its start.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     EmptyPeriod,
 }

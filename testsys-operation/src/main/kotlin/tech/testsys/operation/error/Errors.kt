@@ -194,35 +194,35 @@ sealed interface EditCompetitionError : OperationError
 /**
  * Failure of checking the manager role before a page of the manager opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckManagerRoleError : OperationError
 
 /**
  * Failure of checking access to a class owned by the manager before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckManagerClassAccessError : OperationError
 
 /**
  * Failure of checking access to a competition owned by the manager before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckCompetitionAccessError : OperationError
 
 /**
  * Failure of checking access to a contest added to a class owned by the manager before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckClassContestAccessError : OperationError
 
 /**
  * Failure of checking access to a contest added to a competition owned by the manager before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckCompetitionContestAccessError : OperationError
 
@@ -640,21 +640,21 @@ sealed interface ViewCommunityContestsError : OperationError
 /**
  * Failure of checking the administrator role before a page of the administrator opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckAdministratorRoleError : OperationError
 
 /**
  * Failure of checking access to a community owned by the administrator before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckCommunityAccessError : OperationError
 
 /**
  * Failure of checking access to a user available to the administrator before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckUserAccessError : OperationError
 
@@ -869,21 +869,21 @@ sealed interface ViewSupervisorCommunitiesError : OperationError
 /**
  * Failure of checking the supervisor role before a page of the supervisor opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckSupervisorRoleError : OperationError
 
 /**
  * Failure of checking a non-supervisor user before its page of the supervisor opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckSupervisorUserAccessError : OperationError
 
 /**
  * Failure of checking a community before its page of the supervisor opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckSupervisorCommunityAccessError : OperationError
 
@@ -1001,7 +1001,7 @@ data class AdministratorInPublicCommunityError(val communityId: CommunityId) : A
  * The supervisor role is granted only in the service cabinet, so a supervisor cannot assign it.
  *
  * @property role the rejected role.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 data class SupervisorRoleNotGrantableError(val role: CommunityRole) : AddToCommunityError
 
@@ -1098,14 +1098,14 @@ sealed interface DownloadRecordingError : OperationError
 /**
  * Failure of checking the judge role before a page of the judge opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckJudgeRoleError : OperationError
 
 /**
  * Failure of checking access to a submission available to the judge before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckSubmissionAccessError : OperationError
 
@@ -1603,35 +1603,35 @@ sealed interface DetachDeveloperSolutionError : OperationError
 /**
  * Failure of checking the developer role before a page of the developer opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckDeveloperRoleError : OperationError
 
 /**
  * Failure of checking access to a task owned by the developer before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckTaskAccessError : OperationError
 
 /**
  * Failure of checking access to a resource of a task owned by the developer before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckResourceAccessError : OperationError
 
 /**
  * Failure of checking access to a testing request of a task owned by the developer before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckTaskValidationRequestAccessError : OperationError
 
 /**
  * Failure of checking access to a contest available to the developer before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckContestAccessError : OperationError
 // endregion
@@ -1868,7 +1868,7 @@ data class TaskNotExistsError(val taskId: TaskId) :
  * The testing request does not exist or belongs to another task.
  *
  * @property requestId the id of the missing request.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 data class TaskValidationRequestNotExistsError(val requestId: TaskValidationRequestId) :
     EntityNotExistsError,
@@ -2381,42 +2381,42 @@ sealed interface JoinClassError : OperationError
 /**
  * Failure of checking the student role before a page of the student opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckStudentRoleError : OperationError
 
 /**
  * Failure of checking access to a class of the student before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckStudentClassAccessError : OperationError
 
 /**
  * Failure of checking access to a contest in the participant's competition before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckParticipantContestAccessError : OperationError
 
 /**
  * Failure of checking access to a contest in the selected class before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckStudentContestAccessError : OperationError
 
 /**
  * Failure of checking access to a task of a contest in the participant's competition before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckParticipantTaskAccessError : OperationError
 
 /**
  * Failure of checking access to a task of a contest in the selected class before its page opens.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface CheckStudentTaskAccessError : OperationError
 

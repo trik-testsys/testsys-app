@@ -127,7 +127,7 @@ class JudgeOperations(
      * Checks that [user] holds the [Judge] role, so that a page checks the role before it loads its verdicts.
      * Missing judge role is an expected failure.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.judge.viewResults")
     fun checkJudgeRole(user: MultipleRoleUser): OperationResult<Unit, CheckJudgeRoleError> = operation<Unit, CheckJudgeRoleError> {
@@ -139,7 +139,7 @@ class JudgeOperations(
      * Returns the submission [submissionId] available to [user] without its details, verdict and judgment orders, so that a
      * page checks access before it loads them. Missing role, submission and access are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.judge.viewSolution")
     fun checkSubmissionAccess(

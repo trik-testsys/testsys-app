@@ -51,7 +51,7 @@ data class MultipleRoleUserRoles(
      * Supervisor role of a user.
      *
      * @property memberOf ids of the communities the role is held in.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data class SupervisorRoleInfo(val memberOf: List<CommunityId>)
 

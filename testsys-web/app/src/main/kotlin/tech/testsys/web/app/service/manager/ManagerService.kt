@@ -85,7 +85,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.checkManagerRole].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkManagerRole() {
@@ -95,7 +95,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.checkClassAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkClassAccess(classId: ClassId): ClassVo =
@@ -104,7 +104,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.checkCompetitionAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkCompetitionAccess(competitionId: CompetitionId): CompetitionVo =
@@ -113,7 +113,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.checkClassContestAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkClassContestAccess(classId: ClassId, contestId: ContestId): Pair<ClassVo, ContestVo> {
@@ -124,7 +124,7 @@ class ManagerService(private val operations: ManagerOperations, private val curr
     /**
      * Runs [ManagerOperations.checkCompetitionContestAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkCompetitionContestAccess(competitionId: CompetitionId, contestId: ContestId): Pair<CompetitionVo, ContestVo> {

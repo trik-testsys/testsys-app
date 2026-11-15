@@ -26,7 +26,7 @@ class ServiceUiConfiguration {
      * Shows the version of the system from `spring.application.version` in the footer of every service UI, as in the
      * main interface.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Bean
     fun serviceFooterVersion(environment: Environment): VaadinServiceInitListener {

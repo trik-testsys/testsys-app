@@ -60,7 +60,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.checkTaskValidationRequestAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkTaskValidationRequestAccess(taskId: TaskId, requestId: TaskValidationRequestId): Pair<TaskVo, TaskValidationRequestVo> {
@@ -118,7 +118,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.checkContestAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkContestAccess(contestId: ContestId): ContestVo =
@@ -222,7 +222,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.checkDeveloperRole].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkDeveloperRole(): List<CommunityVo> =
@@ -231,7 +231,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.checkTaskAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkTaskAccess(taskId: TaskId): TaskVo = operations.checkTaskAccess(currentUser.multipleRoleUser(), taskId).getOrThrow().toVo()
@@ -276,7 +276,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.checkResourceAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkResourceAccess(taskId: TaskId, versionBucket: VersionBucket): Pair<TaskVo, ResourceVo> {

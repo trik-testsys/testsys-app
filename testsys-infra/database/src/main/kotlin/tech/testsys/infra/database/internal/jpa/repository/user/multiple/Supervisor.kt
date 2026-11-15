@@ -26,7 +26,7 @@ interface SupervisorDataJpaEntityRepository : SnowflakeJpaEntityRepository<Super
     /**
      * Finds which of the users [userIds] hold the role, in one query.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Query("select e.userId from SupervisorDataJpaEntity e where e.userId in :userIds")
     fun findUserIdsByUserIdIn(@Param("userIds") userIds: Collection<Long>): List<Long>

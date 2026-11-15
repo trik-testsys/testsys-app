@@ -56,7 +56,7 @@ class StudentService(private val operations: StudentOperations, private val curr
     /**
      * Runs [StudentOperations.checkStudentRole].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkStudentRole() {
@@ -66,7 +66,7 @@ class StudentService(private val operations: StudentOperations, private val curr
     /**
      * Runs [StudentOperations.checkClassAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkClassAccess(classId: ClassId): ClassVo =

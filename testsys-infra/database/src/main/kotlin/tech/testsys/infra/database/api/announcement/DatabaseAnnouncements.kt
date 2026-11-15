@@ -15,7 +15,7 @@ import java.time.Instant
  * Storage of the announcements of the sign-in page over [AnnouncementJpaEntity] rows; a concurrent change of one
  * announcement keeps the last one.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

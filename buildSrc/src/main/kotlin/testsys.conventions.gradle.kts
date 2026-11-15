@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "tech.testsys"
-version = "1.0.0-beta.1"
+version = "1.0.0-beta.2"
 
 val libs = versionCatalogs.named("libs")
 

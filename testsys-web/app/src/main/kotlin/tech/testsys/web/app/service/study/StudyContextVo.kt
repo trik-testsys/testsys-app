@@ -15,7 +15,7 @@ import java.time.Instant
  * @property studyClass the selected class of a student, or `null` for a participant.
  * @property enteredAt the saved first entry time in this context, or `null` before entry.
  * @property contest the contest.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 data class StudyContestContextVo(val studyClass: ClassVo?, val enteredAt: Instant?, val contest: ContestVo)
 
@@ -28,7 +28,7 @@ data class StudyContestContextVo(val studyClass: ClassVo?, val enteredAt: Instan
  * @property contest the contest.
  * @property task the task.
  * @property languages the languages a solution can be sent in.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 data class StudyTaskContextVo(
     val studyClass: ClassVo?,

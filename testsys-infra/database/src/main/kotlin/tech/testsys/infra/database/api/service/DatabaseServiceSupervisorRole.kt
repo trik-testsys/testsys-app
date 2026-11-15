@@ -18,7 +18,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRep
  * Service grant and revocation of the supervisor role through [MultipleRoleUserRepository], which keeps the role data
  * row and the memberships in the role together.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @Component
 @OptIn(InternalDatabaseApi::class)

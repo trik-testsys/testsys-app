@@ -69,7 +69,7 @@ class MenuScope internal constructor() {
      * Adds an item named [label] that opens the route [target] with [parameters].
      *
      * @throws IllegalStateException if a destructive item is already added.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun link(label: String, target: Class<out Component>, parameters: RouteParameters = RouteParameters.empty()) {
         checkOrdinary(label)

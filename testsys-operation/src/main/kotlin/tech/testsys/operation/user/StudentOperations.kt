@@ -167,7 +167,7 @@ class StudentOperations(
      * Checks that [user] holds the [Student] role, so that a page checks the role before it loads the classes.
      * Missing student role is an expected failure.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.student.viewClasses")
     fun checkStudentRole(user: MultipleRoleUser): OperationResult<Unit, CheckStudentRoleError> = operation<Unit, CheckStudentRoleError> {
@@ -179,7 +179,7 @@ class StudentOperations(
      * Returns the class [classId] that lists [user] as a student without its contests, so that a page checks access before
      * it loads them. Missing role, class and enrollment are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.student.viewContests")
     fun checkClassAccess(user: MultipleRoleUser, classId: ClassId): OperationResult<Class, CheckStudentClassAccessError> =

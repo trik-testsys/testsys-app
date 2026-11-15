@@ -57,7 +57,7 @@ interface CabinetSignInJpaEntityRepository : SnowflakeJpaEntityRepository<Cabine
     /**
      * Reads the records in which the supervisor [impersonatedBy] signed in as another user.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun findAllByImpersonatedBy(impersonatedBy: Long): List<CabinetSignInJpaEntity>
 

@@ -14,7 +14,7 @@ import tech.testsys.web.components.texts.currentLocalization
  * Sets the footer of every new UI: the version of the system from `spring.application.version`, and for a signed-in
  * user the link to the changelog in the footer of each page, guest page and error screen (testsys.web.page.changelog).
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @SpringComponent
 class FooterInitializer(

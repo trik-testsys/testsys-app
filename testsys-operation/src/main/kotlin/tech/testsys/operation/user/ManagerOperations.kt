@@ -199,7 +199,7 @@ class ManagerOperations(
      * Checks that [user] holds the [Manager] role, so that a page checks the role before it loads its lists.
      * Missing manager role is an expected failure.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.manager.class.viewClasses")
     fun checkManagerRole(user: MultipleRoleUser): OperationResult<Unit, CheckManagerRoleError> = operation<Unit, CheckManagerRoleError> {
@@ -211,7 +211,7 @@ class ManagerOperations(
      * Returns [classId] owned by [user] without its invite, students and contests, so that a page checks access before it
      * loads them. Missing role, class and access are expected failures; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.manager.class.viewClass")
     fun checkClassAccess(user: MultipleRoleUser, classId: ClassId): OperationResult<Class, CheckManagerClassAccessError> =
@@ -355,7 +355,7 @@ class ManagerOperations(
      * Returns [competitionId] owned by [user] without its participants and contests, so that a page checks access before it
      * loads them. Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.manager.competition.viewCompetition")
     fun checkCompetitionAccess(
@@ -530,7 +530,7 @@ class ManagerOperations(
      * Returns [classId] owned by [user] with [contestId] added to it without the tasks and results, so that a page checks
      * access before it loads them. Missing role, class, contest, access and contest assignment are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.manager.viewContest")
     fun checkClassContestAccess(
@@ -552,7 +552,7 @@ class ManagerOperations(
      * Returns [competitionId] owned by [user] with [contestId] added to it without the tasks and results, so that a page
      * checks access before it loads them. Missing role, competition, contest, access and contest assignment are expected failures.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.manager.viewContest")
     fun checkCompetitionContestAccess(

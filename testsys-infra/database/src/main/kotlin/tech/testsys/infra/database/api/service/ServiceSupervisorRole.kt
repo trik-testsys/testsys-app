@@ -7,7 +7,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
  * Service grant and revocation of the supervisor role for the service cabinet; it bypasses the access rules of the
  * cabinets of users.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 interface ServiceSupervisorRole {
 
@@ -19,7 +19,7 @@ interface ServiceSupervisorRole {
      * @param publicCommunityId the id of the public community.
      * @return the stored user, [SupervisorRoleChange.NotFound] or [SupervisorRoleChange.NotAllowed] for a fixed-role
      * user and the owner of the public community; nothing is stored on refusal.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun grant(id: ServiceUserId, publicCommunityId: CommunityId): SupervisorRoleChange
 
@@ -31,7 +31,7 @@ interface ServiceSupervisorRole {
      * @param publicCommunityId the id of the public community.
      * @return the stored user, [SupervisorRoleChange.NotFound] or [SupervisorRoleChange.NotAllowed] for a fixed-role
      * user and the owner of the public community; nothing is stored on refusal.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun revoke(id: ServiceUserId, publicCommunityId: CommunityId): SupervisorRoleChange
 }
@@ -39,7 +39,7 @@ interface ServiceSupervisorRole {
 /**
  * Result of [ServiceSupervisorRole.grant] and [ServiceSupervisorRole.revoke].
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 sealed interface SupervisorRoleChange {
 
@@ -47,21 +47,21 @@ sealed interface SupervisorRoleChange {
      * The role is held or not held as requested.
      *
      * @property user the stored user.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data class Changed(val user: MultipleRoleUser) : SupervisorRoleChange
 
     /**
      * No user has the id.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data object NotFound : SupervisorRoleChange
 
     /**
      * The user has a fixed role or owns the public community.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     data object NotAllowed : SupervisorRoleChange
 }

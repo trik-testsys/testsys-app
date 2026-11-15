@@ -205,7 +205,7 @@ class AdministratorBuilder : CompatibleUserRoleBuilderWithoutData<Administrator>
 /**
  * Builder of the [Supervisor] role.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 class SupervisorBuilder : CompatibleUserRoleBuilderWithoutData<Supervisor>() {
 
@@ -406,7 +406,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     /**
      * Adds a [Supervisor] role configured by [builder].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun Roles.supervisor(builder: SupervisorBuilder.() -> Unit) {
         SupervisorBuilder()

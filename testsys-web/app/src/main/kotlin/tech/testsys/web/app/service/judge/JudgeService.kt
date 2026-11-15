@@ -38,7 +38,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     /**
      * Runs [JudgeOperations.checkJudgeRole].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkJudgeRole() {
@@ -48,7 +48,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
     /**
      * Runs [JudgeOperations.checkSubmissionAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkSubmissionAccess(submissionId: SubmissionId): SubmissionVo =

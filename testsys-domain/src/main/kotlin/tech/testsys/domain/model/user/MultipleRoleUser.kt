@@ -134,7 +134,7 @@ class Administrator(
 /**
  * The supervisor role: grants the right to create and manage other users; held only in the public community.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 class Supervisor(
     memberOf: LazyEntityList<CommunityId, Community>,

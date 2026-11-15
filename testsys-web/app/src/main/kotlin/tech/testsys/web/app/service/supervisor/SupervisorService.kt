@@ -70,7 +70,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
      * Runs [SupervisorOperations.checkUserAccess] for a route id, first as a multiple-role user and then as a fixed-role
      * one.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkUserAccessByIdValue(id: Long): AdminUserVo {
@@ -131,7 +131,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     /**
      * Runs [SupervisorOperations.checkSupervisorRole].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
     fun checkSupervisorRole(): List<CommunityVo> =

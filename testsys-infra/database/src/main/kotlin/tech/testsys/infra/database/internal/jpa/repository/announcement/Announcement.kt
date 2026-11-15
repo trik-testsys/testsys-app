@@ -11,21 +11,21 @@ import java.time.Instant
 /**
  * Repository of the announcements of the sign-in page.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @InternalDatabaseApi
 interface AnnouncementJpaEntityRepository : SnowflakeJpaEntityRepository<AnnouncementJpaEntity> {
     /**
      * Reads every announcement, the latest start of showing first.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun findAllByOrderByShownFromDescIdDesc(): List<AnnouncementJpaEntity>
 
     /**
      * Reads at most [limit] announcements shown at [at] and not closed, the latest start of showing first.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Query(
         "select a from AnnouncementJpaEntity a where a.closedAt is null and a.shownFrom <= :at and a.shownUntil > :at " +

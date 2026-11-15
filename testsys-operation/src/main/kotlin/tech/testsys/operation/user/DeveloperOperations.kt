@@ -250,7 +250,7 @@ class DeveloperOperations(
      * so that a page checks access before it loads the request. Missing role, task, ownership, and a missing request or
      * a request of another task are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.developer.task.testTask")
     fun checkTaskValidationRequestAccess(
@@ -430,7 +430,7 @@ class DeveloperOperations(
      * communities, so that a page checks access before it loads them. Missing role, contest and access are expected
      * failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.developer.contest.viewContest")
     fun checkContestAccess(user: MultipleRoleUser, contestId: ContestId): OperationResult<Contest, CheckContestAccessError> =
@@ -715,7 +715,7 @@ class DeveloperOperations(
      * checks the role before it loads its lists. Missing developer role is an expected failure; storage exceptions
      * propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.developer.task.viewTasks")
     fun checkDeveloperRole(user: MultipleRoleUser): OperationResult<List<Community>, CheckDeveloperRoleError> =
@@ -731,7 +731,7 @@ class DeveloperOperations(
      * Returns the task with [taskId] owned by [user] without its communities, so that a page checks access before it
      * loads the rest. Missing role, task and ownership are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.developer.task.viewTask")
     fun checkTaskAccess(user: MultipleRoleUser, taskId: TaskId): OperationResult<Task, CheckTaskAccessError> =
@@ -853,7 +853,7 @@ class DeveloperOperations(
      * a page checks access before it loads the history. Missing role, task, chain, ownership and a chain of another task
      * are expected failures; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.developer.resource.viewResource")
     fun checkResourceAccess(

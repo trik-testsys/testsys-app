@@ -92,7 +92,7 @@ class GuestPageScope internal constructor(private val main: Main, private val te
      * notices the page shows no list.
      *
      * @throws IllegalStateException if the page already has notices.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun notices(content: GuestNoticesScope.() -> Unit) {
         check(!hasNotices) { "Guest page already has notices" }
@@ -134,7 +134,7 @@ class GuestCardScope internal constructor(internal val body: ContentScope)
 /**
  * Scope of the notices of a guest page.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 @TestSysDsl
 class GuestNoticesScope internal constructor(private val texts: UiLocalization) {
@@ -145,7 +145,7 @@ class GuestNoticesScope internal constructor(private val texts: UiLocalization) 
      * the whole notice is a link that opens [href] as is in a new tab.
      *
      * @throws IllegalArgumentException if [text] is blank.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     fun notice(date: LocalDate, text: String, kind: GuestNoticeKind, href: String? = null) {
         require(text.isNotBlank()) { "Guest notice of $date must have a text" }
@@ -181,21 +181,21 @@ class GuestNoticesScope internal constructor(private val texts: UiLocalization) 
 /**
  * Kind of a notice of a guest page.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.2
  */
 enum class GuestNoticeKind {
 
     /**
      * Information.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     Info,
 
     /**
      * Warning.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     Warning,
 }

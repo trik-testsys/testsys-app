@@ -239,7 +239,7 @@ class SupervisorOperations(
      * Returns all communities without their user counts, so that a page checks the role and builds its community filter
      * before it loads its lists. Refusals match [viewCommunities]; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.supervisor.authorization")
     fun checkSupervisorRole(user: User<*>): OperationResult<List<Community>, CheckSupervisorRoleError> =
@@ -252,7 +252,7 @@ class SupervisorOperations(
      * Returns the non-supervisor user [userId] without its last login, so that a page checks it and picks the role sections
      * before it loads them. Refusals match [viewUser]; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.supervisor.authorization")
     fun checkUserAccess(user: User<*>, userId: UserId): OperationResult<User<*>, CheckSupervisorUserAccessError> =
@@ -267,7 +267,7 @@ class SupervisorOperations(
      * Returns [communityId] without its invite codes and users, so that a page checks it before it loads them. Missing role
      * and community are expected failures; nothing is written.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.2
      */
     @Feature("testsys.user.multi.supervisor.authorization")
     fun checkCommunityAccess(user: User<*>, communityId: CommunityId): OperationResult<Community, CheckSupervisorCommunityAccessError> =

@@ -1,5 +1,6 @@
 package tech.testsys.web.app.view
 
+import org.springframework.core.io.ClassPathResource
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CompatibleUserRole
@@ -27,6 +28,12 @@ internal val versionOrder: Comparator<String> = Comparator { left, right ->
         ?: comparePreReleases(leftPreRelease, rightPreRelease)
 }
 
+/**
+ * Name of the directory of the changes no release holds yet; a release renames the directory to its version. The name
+ * is assembled from pieces: a release replaces the whole placeholder in Kotlin sources with its version.
+ */
+internal const val UNRELEASED_VERSION = "%CURRENT_VERSION" + "%"
+
 /** Common part of a version, which every user sees. */
 private const val COMMON_PART = "common"
 
@@ -37,25 +44,35 @@ internal val CHANGELOG_PARTS = listOf(
 
 /**
  * Returns the user changelog of the region [languageTag]: the files `changelog/<languageTag>/<version>/<part>.md` of
- * the classpath as pairs of the version and the Markdown text of its [parts], from the newest version to the oldest.
+ * the classpath as pairs of the version and the Markdown text of its [parts]: [UNRELEASED_VERSION] first, then from
+ * the newest version to the oldest.
  *
- * @throws IllegalStateException if a directory name is not a SemVer version or a file name is not a part.
+ * @throws IllegalStateException if a directory name is neither a SemVer version nor [UNRELEASED_VERSION] or a file
+ * name is not a part.
  */
 internal fun readChangelog(languageTag: String, parts: Set<String> = CHANGELOG_PARTS.toSet()): List<Pair<String, String>> =
     PathMatchingResourcePatternResolver().getResources("classpath*:changelog/$languageTag/*/*.md")
         .map { resource ->
             val part = checkNotNull(resource.filename).removeSuffix(".md")
             check(part in CHANGELOG_PARTS) { "Changelog file '$part.md' is not named by a part of a version" }
-            val version = resource.url.path.substringBeforeLast('/').substringAfterLast('/').also(::parseVersion)
-            Triple(version, part, resource)
+            // The URL of a resource may escape the percent signs of the unreleased directory.
+            val version = resource.url.path.substringBeforeLast('/').substringAfterLast('/').replace("%25", "%")
+            if (version != UNRELEASED_VERSION) parseVersion(version)
+            version to part
         }
-        .filter { (_, part, _) -> part in parts }
-        .groupBy({ (version, _, _) -> version }, { (_, part, resource) -> part to resource })
-        .map { (version, files) ->
-            version to files.sortedBy { (part, _) -> CHANGELOG_PARTS.indexOf(part) }
-                .joinToString("\n") { (_, resource) -> resource.getContentAsString(Charsets.UTF_8) }
+        .filter { (_, part) -> part in parts }
+        .groupBy({ (version, _) -> version }, { (_, part) -> part })
+        .map { (version, versionParts) ->
+            // The class loader reads the file: the URL of a file found in a jar leaves the percent signs of the
+            // unreleased directory unescaped, and such a URL does not open.
+            version to versionParts.sortedBy(CHANGELOG_PARTS::indexOf).joinToString("\n") { part ->
+                ClassPathResource("changelog/$languageTag/$version/$part.md").getContentAsString(Charsets.UTF_8)
+            }
         }
-        .sortedWith(compareBy(versionOrder.reversed()) { (version, _) -> version })
+        .sortedWith(
+            compareBy<Pair<String, String>> { (version, _) -> version != UNRELEASED_VERSION }
+                .thenBy(versionOrder.reversed()) { (version, _) -> version },
+        )
 
 /** Returns the changelog parts [user] sees: the common part and the parts of their roles, all parts for a supervisor. */
 internal fun changelogPartsOf(user: User<*>): Set<String> = when (user) {

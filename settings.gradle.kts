@@ -1,5 +1,9 @@
 rootProject.name = "testsys-app"
 
+// Gradle skips files and directories named `%*%` by default, and the user changelog keeps unreleased changes in
+// `%CURRENT_VERSION%` directories.
+org.apache.tools.ant.DirectoryScanner.removeDefaultExclude("**/%*%")
+
 include(":testsys-domain")
 include(":testsys-operation")
 include(":testsys-web:components")

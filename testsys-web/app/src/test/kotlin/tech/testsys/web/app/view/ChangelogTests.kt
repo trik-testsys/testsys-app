@@ -62,6 +62,13 @@ class ChangelogTests {
         }
 
         @Test
+        fun `should read the unreleased changes before the newest version`() {
+            val changelog = readChangelog("test-unreleased")
+
+            assertEquals(listOf(UNRELEASED_VERSION to "- Изменение без релиза.\n", "1.0.0" to "- Версия 1.0.0.\n"), changelog)
+        }
+
+        @Test
         fun `should join the common part before the role parts of a version`() {
             val changelog = readChangelog("test")
 

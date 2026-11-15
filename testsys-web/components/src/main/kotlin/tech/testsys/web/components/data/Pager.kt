@@ -3,12 +3,18 @@
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.ICON_SIZE_SMALL
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
-import tech.testsys.web.components.core.pagerArrow
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setType
+import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.texts.UiLocalization
 
 /** Footer part of a table: the range of shown rows and the compact pager «‹ 3 / 71 ›»; [onPage] gets the page to go to. */
@@ -37,4 +43,12 @@ internal class Pager(private val texts: UiLocalization, private val onPage: (Int
         previous.isEnabled = page > 0
         next.isEnabled = page < pageCount - 1
     }
+}
+
+/** Builds an arrow button of a pager: a `.ts-pager__btn` with the small icon [name] and the accessible name [label]. */
+private fun pagerArrow(name: IconName, label: String): NativeButton = NativeButton().apply {
+    addClassName(CssClass.PagerBtn)
+    element.setAttribute(HtmlAttribute.AriaLabel, label)
+    element.setType(ElementType.Button)
+    add(svgIcon(name, ICON_SIZE_SMALL))
 }

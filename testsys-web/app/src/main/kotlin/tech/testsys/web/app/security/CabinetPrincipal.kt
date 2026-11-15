@@ -3,7 +3,6 @@ package tech.testsys.web.app.security
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import java.io.Serializable
 
@@ -17,7 +16,6 @@ enum class UserKind {
     MULTIPLE_ROLE,
     PARTICIPANT,
     OBSERVER,
-    SUPERVISOR,
 }
 
 /**
@@ -42,7 +40,6 @@ data class CabinetPrincipal(val userId: Long, val kind: UserKind, val impersonat
                 is MultipleRoleUser -> UserKind.MULTIPLE_ROLE
                 is Participant -> UserKind.PARTICIPANT
                 is Observer -> UserKind.OBSERVER
-                is Supervisor -> UserKind.SUPERVISOR
             }
             return CabinetPrincipal(userId = user.id.value, kind = kind)
         }

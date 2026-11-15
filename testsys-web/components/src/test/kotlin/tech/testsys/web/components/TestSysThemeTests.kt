@@ -158,6 +158,17 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should set markdown content on the design system scale`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertEquals("var(--fw-regular) var(--fs-sm)/var(--lh-sm) var(--font-sans)", rule(overrides, "vaadin-markdown")["font"])
+        assertTrue(rule(overrides, "vaadin-markdown :is(h1, h2)").getValue("font").contains("var(--fs-h3)"))
+        assertEquals("0", rule(overrides, "vaadin-markdown > :first-child")["margin-top"])
+        assertTrue(rule(overrides, "vaadin-markdown code").getValue("font").contains("var(--font-mono)"))
+        assertEquals("var(--ink-900)", rule(overrides, "vaadin-markdown pre")["background"])
+    }
+
+    @Test
     fun `should use only defined font size tokens`() {
         val typography = text("testsys-ui/tokens/typography.css")
         val components = text("testsys-ui/tokens/components.css")
@@ -177,6 +188,14 @@ class TestSysThemeTests {
             "background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
             rule(components, ".ts-drop")["transition"],
         )
+    }
+
+    @Test
+    fun `should fade in the loaded body and delay its skeleton`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertEquals("ts-fade-in var(--dur-base) var(--ease-out) backwards", rule(components, ".ts-block__body--load > *")["animation"])
+        assertEquals("150ms", rule(components, ".ts-block__body--load[aria-busy=\"true\"] > *")["animation-delay"])
     }
 
     @Test
@@ -240,8 +259,6 @@ class TestSysThemeTests {
     @ValueSource(
         strings = [
             "vaadin-custom-field[disabled] .ts-code",
-            "vaadin-radio-group.ts-seg[disabled]::part(group-field)",
-            "vaadin-switch[disabled]::part(switch)",
         ],
     )
     fun `should retain opaque disabled controls`(selector: String) {
@@ -257,7 +274,7 @@ class TestSysThemeTests {
 
         assertEquals("fixed", layout["table-layout"])
         assertEquals("var(--ts-table-width)", layout["width"])
-        assertEquals("calc(var(--ts-table-used) * 52px * var(--ts-page-columns, 24) / 24)", layout["min-width"])
+        assertEquals("calc(var(--ts-table-used) * 40px * var(--ts-page-columns, 24) / 24)", layout["min-width"])
         assertEquals("auto", rule(css, ".ts-table-scroll")["overflow-x"])
         assertEquals("anywhere", rule(css, ".ts-table-grid th, .ts-table-grid td")["overflow-wrap"])
     }
@@ -277,6 +294,13 @@ class TestSysThemeTests {
         assertEquals("stretch", rule(css, ".ts-row")["align-items"])
     }
 
+    @Test
+    fun `should align a block without stretch at the start of its row`() {
+        val css = text("testsys-ui/tokens/components.css")
+
+        assertEquals("start", rule(css, ".ts-block--no-stretch")["align-self"])
+    }
+
     @ParameterizedTest
     @CsvSource(
         delimiter = '|',
@@ -289,13 +313,6 @@ class TestSysThemeTests {
         val css = text("testsys-ui/tokens/components.css")
 
         assertEquals(value, rule(css, selector)[property])
-    }
-
-    @Test
-    fun `should keep the natural width of a brand image`() {
-        val css = text("testsys-ui/tokens/components.css")
-
-        assertEquals("auto", rule(css, ".ts-brand-image")["width"])
     }
 
     @Test

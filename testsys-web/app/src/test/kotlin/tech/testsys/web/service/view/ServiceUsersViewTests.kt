@@ -8,12 +8,12 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.customfield.CustomField
+import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
-import com.vaadin.flow.router.RouterLink
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.verify
@@ -79,10 +79,10 @@ class ServiceUsersViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the user search from the service header`() {
+    fun `should open the user search from the service menu`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<RouterLink> { text = "Пользователи" }._click()
+        clickMenuLink("Пользователи")
 
         assertEquals(ServiceUsersView::class.java, currentView)
     }
@@ -90,6 +90,19 @@ class ServiceUsersViewTests : ServiceMockVaadinTests() {
     @Test
     fun `should search all users on the first page when opened`() {
         verify { search.find(ServiceUserFilter(), firstPage) }
+    }
+
+    @Test
+    fun `should keep the title and the filters and show a load error in the users if they fail to load`() {
+        every { search.find(any(), any()) } throws IllegalStateException("User storage unavailable")
+
+        UI.getCurrent().navigate(ServiceHomeView::class.java)
+        UI.getCurrent().navigate(ServiceUsersView::class.java)
+
+        assertEquals("Пользователи", UI.getCurrent()._get<H1>().text)
+        assertTrue(UI.getCurrent()._find<Button> { text = "Применить" }.isNotEmpty())
+        val page = UI.getCurrent()._get<ServiceUsersView>().element.textRecursively
+        assertEquals(1, Regex("Не удалось загрузить").findAll(page).count())
     }
 
     @Test
@@ -104,7 +117,8 @@ class ServiceUsersViewTests : ServiceMockVaadinTests() {
         val texts = rows().map { row -> row.element.textRecursively }
 
         assertTrue("maria@example.com" in texts.first(), texts.first())
-        assertTrue(texts.drop(1).all { text -> "@" !in text }, texts.toString())
+        assertTrue(texts.drop(1).dropLast(1).all { text -> "@" !in text }, texts.toString())
+        assertTrue("oleg@example.com" in texts.last(), texts.last())
     }
 
     @Test
@@ -138,17 +152,19 @@ class ServiceUsersViewTests : ServiceMockVaadinTests() {
     @ParameterizedTest
     @ValueSource(strings = ["ID", "Сообщество (ID)", "Класс (ID)", "Соревнование (ID)"])
     fun `should mark a non-numeric identifier invalid and keep the search`(label: String) {
+        forgetOpeningSearch()
         textField(label)._value = "12a"
 
         apply()
 
         assertTrue(textField(label).isInvalid)
         assertEquals("Введите число", textField(label).errorMessage)
-        verify(exactly = 1) { search.find(any(), any()) }
+        verify(exactly = 0) { search.find(any(), any()) }
     }
 
     @Test
     fun `should clear the conditions and search all users after the reset`() {
+        forgetOpeningSearch()
         textField("Псевдоним")._value = "Мар"
         textField("ID")._value = "12a"
         apply()
@@ -157,7 +173,7 @@ class ServiceUsersViewTests : ServiceMockVaadinTests() {
 
         assertEquals("", textField("Псевдоним").value)
         assertFalse(textField("ID").isInvalid)
-        verify(exactly = 2) { search.find(ServiceUserFilter(), firstPage) }
+        verify(exactly = 1) { search.find(ServiceUserFilter(), firstPage) }
     }
 
     @Test
@@ -166,6 +182,11 @@ class ServiceUsersViewTests : ServiceMockVaadinTests() {
 
         assertEquals(ServiceUserView::class.java, currentView)
         assertEquals("users/1003", UI.getCurrent().internals.activeViewLocation.path)
+    }
+
+    /** Forgets the searches made while the page opened, which a test page may load more than once, keeping the stubs. */
+    private fun forgetOpeningSearch() {
+        clearMocks(search, answers = false)
     }
 
     private fun rows(): List<TableRow> = UI.getCurrent()._get<Table>()._get<TableBody>()._find<TableRow>()

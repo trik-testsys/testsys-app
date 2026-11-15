@@ -10,6 +10,7 @@ import tech.testsys.domain.model.user.Judge
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Student
+import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.annotation.InternalOperationsApi
 
 /**
@@ -35,6 +36,7 @@ fun MultipleRoleUser.heldRole(role: CommunityRole): CompatibleUserRole? = when (
     CommunityRole.Developer -> data.roles.filterIsInstance<Developer>()
     CommunityRole.Student -> data.roles.filterIsInstance<Student>()
     CommunityRole.Judge -> data.roles.filterIsInstance<Judge>()
+    CommunityRole.Supervisor -> data.roles.filterIsInstance<Supervisor>()
 }.singleOrNull()
 
 /**

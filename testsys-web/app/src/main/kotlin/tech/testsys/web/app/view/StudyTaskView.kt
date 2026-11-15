@@ -32,6 +32,7 @@ import tech.testsys.web.components.display.text
 import tech.testsys.web.components.display.verdict
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.FileDropHandle
 import tech.testsys.web.components.forms.UploadLimits
@@ -41,6 +42,7 @@ import tech.testsys.web.components.forms.fileDrop
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.PageScope
 import java.time.Clock
@@ -84,39 +86,44 @@ abstract class StudyTaskView(
     internal abstract fun accessOf(parameters: RouteParameters): StudyAccess
 
     private fun show(access: StudyAccess, contestId: ContestId, taskId: TaskId) {
-        // Checks the access and the entry before building, so that a refusal opens its error screen.
-        val task = access.viewTask(contestId, taskId)
-        val (enteredAt, contest, _) = access.viewContest(contestId)
+        // Checks the access and the entry before the blocks load, so that a refusal opens its error screen.
+        val context = access.checkTask(contestId, taskId)
+        val loaded = SharedFetch { access.viewTask(contestId, taskId) }
         val now = clock.instant()
-        val deadline = studyDeadline(contest, enteredAt)
-        val isSendable = task.languages.isNotEmpty() && (deadline == null || now.isBefore(deadline))
+        val deadline = studyDeadline(context.contest, context.enteredAt)
+        val isSendable = context.languages.isNotEmpty() && (deadline == null || now.isBefore(deadline))
         page(headers.cabinet(active = access.activeSection)) {
-            head(texts.taskTitle(name = task.task.name)) {
-                access.cabinetCrumbs(this)
-                crumb(texts.contestTitle(name = contest.name), access.contestPage, access.contestParameters(contestId))
+            head(texts.taskTitle(name = context.task.name)) {
+                access.cabinetCrumbs(this, context.studyClass)
+                crumb(texts.contestTitle(name = context.contest.name), access.contestPage, access.contestParameters(contestId))
             }
             guide(texts.taskGuide())
             var timer: TimerHandle? = null
             row {
                 block(size = TASK_DETAILS_COLUMNS, title = texts.detailsTitle()) {
                     guide(texts.taskDetailsGuide())
-                    row { codeInput(texts.id(), labelSize = 4, size = 6) { value = task.task.id.value.toString() } }
-                    row { textInput(texts.name(), labelSize = 4, size = 20) { value = task.task.name } }
-                    row { textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) { value = task.task.description } }
-                    row { field(texts.taskFiles(), labelSize = 4, size = 20) { resourceDownloads(access, contestId, task) } }
-                    row {
-                        field(texts.taskBest(), labelSize = 4, size = 20) {
-                            task.best?.score?.let { score -> verdict(score.toDouble()) } ?: text(texts.taskBestNone())
-                        }
-                    }
+                    load(loaded.forLoad()) { task -> detailsRows(access, contestId, task) }
                 }.isEditable = false
+                // The time left stays outside the load: it follows the clock, and the solution form follows its timer.
                 highlightBlock(title = texts.remainingTitle()) {
                     guide(texts.remainingGuide())
-                    timer = studyRemainingTime(contest, enteredAt, now, texts)
+                    timer = studyRemainingTime(context.contest, context.enteredAt, now, texts)
                 }
             }
-            solutionForm(access, contestId, task, isSendable, timer)
-            submissionsBlock(access, contestId, task, isSendable)
+            solutionForm(access, contestId, taskId, context.languages, isSendable, timer)
+            submissionsBlock(access, contestId, taskId, loaded, isSendable)
+        }
+    }
+
+    private fun BlockScope.detailsRows(access: StudyAccess, contestId: ContestId, task: StudyTaskVo) {
+        row { codeInput(texts.id(), labelSize = 4, size = 6) { value = task.task.id.value.toString() } }
+        row { textInput(texts.name(), labelSize = 4, size = 20) { value = task.task.name } }
+        row { textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) { value = task.task.description } }
+        row { field(texts.taskFiles(), labelSize = 4, size = 20) { resourceDownloads(access, contestId, task) } }
+        row {
+            field(texts.taskBest(), labelSize = 4, size = 20) {
+                task.best?.score?.let { score -> verdict(score.toDouble()) } ?: text(texts.taskBestNone())
+            }
         }
     }
 
@@ -147,13 +154,14 @@ abstract class StudyTaskView(
     }
 
     /**
-     * Adds the form sending a solution in one of the allowed languages; it is disabled if [isSendable] is false and follows the
-     * live [timer] otherwise.
+     * Adds the form sending a solution of [taskId] in one of [languages]; it is disabled if [isSendable] is false and follows
+     * the live [timer] otherwise.
      */
     private fun PageScope.solutionForm(
         access: StudyAccess,
         contestId: ContestId,
-        task: StudyTaskVo,
+        taskId: TaskId,
+        languages: List<TrikSupportedLanguage>,
         isSendable: Boolean,
         timer: TimerHandle?,
     ) {
@@ -162,7 +170,7 @@ abstract class StudyTaskView(
         lateinit var language: ValueInput<TrikSupportedLanguage?>
         row {
             block(title = texts.taskSendTitle()) {
-                if (task.languages.isEmpty()) {
+                if (languages.isEmpty()) {
                     row { alert(FeedbackKind.Warning, texts.taskSendUnavailable()) }
                 }
                 row {
@@ -170,10 +178,10 @@ abstract class StudyTaskView(
                         texts.taskSendLanguage(),
                         labelSize = 2,
                         size = 10,
-                        items = task.languages,
+                        items = languages,
                         itemLabel = ::languageLabel,
                     ) {
-                        task.languages.singleOrNull()?.let { only -> value = only }
+                        languages.singleOrNull()?.let { only -> value = only }
                         isEnabled = isSendable
                     }
                     drop = fileDrop(
@@ -204,7 +212,7 @@ abstract class StudyTaskView(
                         }
                         onClick {
                             val file = fileCopy.get()?.takeIf { (id, _) -> id in drop.fileIds }?.second
-                            send(access, contestId, task.task.id, language.value, file)
+                            send(access, contestId, taskId, language.value, file)
                         }
                     }
                 }
@@ -224,33 +232,49 @@ abstract class StudyTaskView(
         }
     }
 
-    private fun PageScope.submissionsBlock(access: StudyAccess, contestId: ContestId, task: StudyTaskVo, isSendable: Boolean) {
+    private fun PageScope.submissionsBlock(
+        access: StudyAccess,
+        contestId: ContestId,
+        taskId: TaskId,
+        loaded: SharedFetch<StudyTaskVo>,
+        isSendable: Boolean,
+    ) {
         row {
             block(title = texts.taskSubmissionsTitle()) {
                 guide(texts.taskSubmissionsGuide())
-                table(
-                    key = { submission: StudySubmissionVo -> submission.submission.id },
-                    fetch = { request -> pageOf(task.submissions.asReversed(), request) },
-                ) {
-                    dateTimeColumn(texts.taskSubmissionsSent(), size = 5) { submission -> submission.submission.createdAt.toUserDateTime() }
-                    textColumn(texts.taskSubmissionsFile(), size = 9) { submission -> submission.filename }
-                    column(texts.taskSubmissionsResult(), size = 8) { submission ->
-                        result(submission)
-                        if (submission == task.best) tag(texts.taskSubmissionsBest(), TagKind.Rating)
-                    }
-                    column("") { submission ->
-                        iconDownloadAction(texts.taskSubmissionsDownload(), produce = {
-                            val file = access.downloadSolution(contestId, task.task.id, submission.submission.id)
-                            val content = fileContentReader.read(file)
-                            DownloadContent(file.uploadedFilename, RESOURCE_CONTENT_TYPE, content.size.toLong()) { content.inputStream() }
-                        })
-                    }
-                    empty(
-                        texts.taskSubmissionsEmpty(),
-                        if (isSendable) texts.taskSubmissionsEmptyHintSendable() else texts.taskSubmissionsEmptyHintClosed(),
-                    )
-                }
+                load(loaded.forLoad()) { task -> submissionsTable(access, contestId, taskId, task, isSendable) }
             }
+        }
+    }
+
+    private fun BlockScope.submissionsTable(
+        access: StudyAccess,
+        contestId: ContestId,
+        taskId: TaskId,
+        task: StudyTaskVo,
+        isSendable: Boolean,
+    ) {
+        table(
+            key = { submission: StudySubmissionVo -> submission.submission.id },
+            fetch = { request -> pageOf(task.submissions.asReversed(), request) },
+        ) {
+            dateTimeColumn(texts.taskSubmissionsSent(), size = 5) { submission -> submission.submission.createdAt.toUserDateTime() }
+            textColumn(texts.taskSubmissionsFile(), size = 9) { submission -> submission.filename }
+            column(texts.taskSubmissionsResult(), size = 8) { submission ->
+                result(submission)
+                if (submission == task.best) tag(texts.taskSubmissionsBest(), TagKind.Rating)
+            }
+            column("") { submission ->
+                iconDownloadAction(texts.taskSubmissionsDownload(), produce = {
+                    val file = access.downloadSolution(contestId, taskId, submission.submission.id)
+                    val content = fileContentReader.read(file)
+                    DownloadContent(file.uploadedFilename, RESOURCE_CONTENT_TYPE, content.size.toLong()) { content.inputStream() }
+                })
+            }
+            empty(
+                texts.taskSubmissionsEmpty(),
+                if (isSendable) texts.taskSubmissionsEmptyHintSendable() else texts.taskSubmissionsEmptyHintClosed(),
+            )
         }
     }
 

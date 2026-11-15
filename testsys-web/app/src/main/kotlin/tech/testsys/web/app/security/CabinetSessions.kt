@@ -20,19 +20,23 @@ class CabinetSessions(
     private val signIns: RememberedSignIns,
 ) {
     /**
-     * Expires every session in which the user with non-fixed roles [userId] signed in themselves and deletes their
-     * remembered sign-ins, except the session with id [except] of the current request and its sign-in; sessions of a
-     * supervisor signed in as the user stay.
+     * Expires every session in which the user with non-fixed roles [userId] signed in themselves or, as a supervisor, as another
+     * user, except the session [except] of the current request, and deletes their remembered sign-ins, writing at INFO the end
+     * of the supervisor ones (testsys.user.multi.supervisor.impersonate); sessions of a supervisor as the user stay.
      *
      * @since 1.0.0-beta.1
      */
     fun expire(userId: Long, except: String? = null) {
-        registry.getAllSessions(CabinetPrincipal(userId = userId, kind = UserKind.MULTIPLE_ROLE), false)
+        val impersonations = registry.allPrincipals.filter { principal -> (principal as? CabinetPrincipal)?.impersonatedBy == userId }
+        (impersonations + CabinetPrincipal(userId = userId, kind = UserKind.MULTIPLE_ROLE))
+            .flatMap { principal -> registry.getAllSessions(principal, false) }
             .filter { session -> session.sessionId != except }
             .forEach { session -> session.expireNow() }
 
         val session = VaadinServletRequest.getCurrent()?.httpServletRequest?.getSession(false)
         val current = session?.takeIf { except != null && session.id == except }
         store.deleteOwn(CabinetSignInUserId(userId), exceptTokenHash = current?.let(signIns::tokenHashOf))
+        // The sessions of these sign-ins find them deleted and no longer record their end.
+        logEndedSupervisorSessions(store.deleteImpersonatedBy(CabinetSignInUserId(userId)))
     }
 }

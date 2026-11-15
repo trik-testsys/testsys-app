@@ -22,6 +22,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Student
+import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.infra.database.api.persistence.adapter.user.AbstractUserPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
@@ -33,6 +34,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.multiple.ManagerData
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.MultipleRoleToUserId
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.MultipleRoleToUserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.StudentDataJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.multiple.SupervisorDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.UserMultipleRoleJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassJpaEntityRepository
@@ -49,6 +51,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.multiple.JudgeDa
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.ManagerDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.MultipleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.StudentDataJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.user.multiple.SupervisorDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.multiple.MultipleRoleUserMapping
 import tech.testsys.infra.database.internal.mapping.user.multiple.MultipleRoleUserRoles
 import tech.testsys.infra.database.internal.utils.findAllInChunks
@@ -74,6 +77,7 @@ class MultipleRoleUserPersistenceAdapter(
     private val studentDataJpaEntityRepository: StudentDataJpaEntityRepository,
     private val judgeDataJpaEntityRepository: JudgeDataJpaEntityRepository,
     private val managerDataJpaEntityRepository: ManagerDataJpaEntityRepository,
+    private val supervisorDataJpaEntityRepository: SupervisorDataJpaEntityRepository,
     private val taskJpaEntityRepository: TaskJpaEntityRepository,
     private val contestJpaEntityRepository: ContestJpaEntityRepository,
     private val submissionJpaEntityRepository: SubmissionJpaEntityRepository,
@@ -118,6 +122,7 @@ class MultipleRoleUserPersistenceAdapter(
             CommunityRole.Developer -> syncDeveloperPresence(userId.value, isTarget = true)
             CommunityRole.Student -> syncStudentPresence(userId.value, isTarget = true)
             CommunityRole.Judge -> syncJudgePresence(userId.value, isTarget = true)
+            CommunityRole.Supervisor -> syncSupervisorPresence(userId.value, isTarget = true)
         }
         val membershipId = membershipIdOf(userId, communityId, role)
         if (!multipleRoleToUserJpaEntityRepository.existsById(membershipId)) {
@@ -152,6 +157,7 @@ class MultipleRoleUserPersistenceAdapter(
         studentDataJpaEntityRepository.findByUserId(userId)?.let(studentDataJpaEntityRepository::delete)
         judgeDataJpaEntityRepository.findByUserId(userId)?.let(judgeDataJpaEntityRepository::delete)
         managerDataJpaEntityRepository.findByUserId(userId)?.let(managerDataJpaEntityRepository::delete)
+        supervisorDataJpaEntityRepository.findByUserId(userId)?.let(supervisorDataJpaEntityRepository::delete)
         jpaEntityRepository.deleteById(userId)
     }
 
@@ -173,6 +179,7 @@ class MultipleRoleUserPersistenceAdapter(
             CommunityRole.Developer -> UserMultipleRoleJpaEnum.DEVELOPER
             CommunityRole.Student -> UserMultipleRoleJpaEnum.STUDENT
             CommunityRole.Judge -> UserMultipleRoleJpaEnum.JUDGE
+            CommunityRole.Supervisor -> UserMultipleRoleJpaEnum.SUPERVISOR
         },
         userId = userId.value,
         communityId = communityId.value,
@@ -193,6 +200,7 @@ class MultipleRoleUserPersistenceAdapter(
         val memberships =
             Memberships(findAllInChunks(ids = userIds, find = multipleRoleToUserJpaEntityRepository::findAllByIdUserIdIn))
         val administrators = findAllInChunks(ids = userIds, find = administratorDataJpaEntityRepository::findUserIdsByUserIdIn).toSet()
+        val supervisors = findAllInChunks(ids = userIds, find = supervisorDataJpaEntityRepository::findUserIdsByUserIdIn).toSet()
         val developers = buildDeveloperInfos(
             userIds = findAllInChunks(ids = userIds, find = developerDataJpaEntityRepository::findUserIdsByUserIdIn),
             memberships = memberships,
@@ -221,6 +229,11 @@ class MultipleRoleUserPersistenceAdapter(
                 student = students[userId],
                 judge = judges[userId],
                 manager = managers[userId],
+                supervisor = if (userId in supervisors) {
+                    MultipleRoleUserRoles.SupervisorRoleInfo(memberOf = memberships.of(userId, UserMultipleRoleJpaEnum.SUPERVISOR))
+                } else {
+                    null
+                },
             )
         }
     }
@@ -286,8 +299,18 @@ class MultipleRoleUserPersistenceAdapter(
         syncStudentPresence(userId, isTarget = UserMultipleRoleJpaEnum.STUDENT in targetRoleEnums)
         syncJudgePresence(userId, isTarget = UserMultipleRoleJpaEnum.JUDGE in targetRoleEnums)
         syncManagerPresence(userId, isTarget = UserMultipleRoleJpaEnum.MANAGER in targetRoleEnums)
+        syncSupervisorPresence(userId, isTarget = UserMultipleRoleJpaEnum.SUPERVISOR in targetRoleEnums)
 
         syncMemberships(userId, roles)
+    }
+
+    private fun syncSupervisorPresence(userId: Long, isTarget: Boolean) {
+        val current = supervisorDataJpaEntityRepository.findByUserId(userId)
+        when {
+            isTarget && current == null ->
+                supervisorDataJpaEntityRepository.save(SupervisorDataJpaEntity(userId = userId))
+            !isTarget && current != null -> supervisorDataJpaEntityRepository.delete(current)
+        }
     }
 
     private fun syncAdministratorPresence(userId: Long, isTarget: Boolean) {
@@ -363,6 +386,7 @@ class MultipleRoleUserPersistenceAdapter(
         is Student -> UserMultipleRoleJpaEnum.STUDENT
         is Judge -> UserMultipleRoleJpaEnum.JUDGE
         is Manager -> UserMultipleRoleJpaEnum.MANAGER
+        is Supervisor -> UserMultipleRoleJpaEnum.SUPERVISOR
     }
 
     /**

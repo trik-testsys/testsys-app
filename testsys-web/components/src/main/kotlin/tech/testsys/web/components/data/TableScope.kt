@@ -162,28 +162,20 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Adds the last column on [size] fractions with an action menu of each row filled by [content].
+     * Adds the last column on [size] fractions with an action menu of each row filled by [content]. The menu button
+     * of a row is named by [ariaLabel], or by the generic actions name if it is `null`.
      *
      * @throws IllegalStateException if the table already has a menu column.
      * @since 1.0.0-beta.1
      */
-    fun menuColumn(size: Int = 1, content: MenuScope.(T) -> Unit) {
-        menuColumn(ariaLabel = { texts.messages.uiOverlay.menuActions() }, size = size, content = content)
-    }
-
-    /**
-     * Adds the last action menu column on [size] fractions with a complete accessible name from [ariaLabel].
-     *
-     * @throws IllegalStateException if the table already has a menu column.
-     * @since 1.0.0-beta.1
-     */
-    fun menuColumn(ariaLabel: (T) -> String, size: Int = 1, content: MenuScope.(T) -> Unit) {
+    fun menuColumn(size: Int = 1, ariaLabel: ((T) -> String)? = null, content: MenuScope.(T) -> Unit) {
         check(!hasMenuColumn) { "Table already has a menu column" }
         require(size in 1..gridColumns) { "Table menu size must be in 1..$gridColumns, got $size" }
 
         hasMenuColumn = true
         columns += TableColumn(title = "", sortKey = null, size = size, kind = CellKind.Menu) { row, cell ->
-            ContentScope(cell, texts, Placement.Cell).iconMenu(ariaLabel(row)) { content(row) }
+            val label = ariaLabel?.invoke(row) ?: texts.messages.uiOverlay.menuActions()
+            ContentScope(cell, texts, Placement.Cell).iconMenu(label) { content(row) }
         }
     }
 
@@ -199,8 +191,9 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Runs [listener] for rows accepted by [isClickable], except clicks on their controls.
-     * [isNavigation] marks a click opening another page and styles its first text column as a link.
+     * Runs [listener] for rows accepted by [isClickable], except clicks on their controls; replaces an earlier call
+     * together with its [isNavigation] and [isClickable]. [isNavigation] marks a click opening another page and styles
+     * its first text column as a link.
      *
      * @param isClickable whether the row accepts clicks and receives interactive styling.
      * @param listener the action performed for an accepted row click.

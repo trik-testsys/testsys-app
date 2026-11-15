@@ -1,6 +1,6 @@
 package tech.testsys.web.service.view
 
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -9,19 +9,21 @@ import tech.testsys.infra.database.api.service.TrikStudioVersionDeletion
 import tech.testsys.infra.database.api.service.TrikStudioVersionRegistration
 import tech.testsys.infra.database.api.service.TrikStudioVersionRejection
 import tech.testsys.infra.database.api.service.TrikStudioVersionTagChange
+import tech.testsys.infra.localization.PageService
+import tech.testsys.web.app.view.LoadedTable
+import tech.testsys.web.app.view.loadTable
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.data.Page
-import tech.testsys.web.components.data.TableHandle
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Service list of the registered TRIK Studio versions with their version numbers and Docker image tags; «Добавить»
@@ -30,22 +32,24 @@ import tech.testsys.web.components.overlay.dialog
  * @since 1.0.0-beta.1
  */
 @Route("trik-studio-versions")
-@PageTitle("Версии TRIK Studio")
 @RolesAllowed("SERVICE")
 class ServiceTrikStudioVersionsView(
     private val headers: ServiceHeaders,
     private val versions: ServiceTrikStudioVersions,
-) : TestSysView() {
-    private lateinit var rows: TableHandle<TrikStudioVersion>
+) : TestSysView(),
+    HasDynamicTitle {
+    private val texts: PageService get() = currentLocalization().pageService
+
+    private lateinit var rows: LoadedTable<TrikStudioVersion>
     private var usedTags: Set<String> = emptySet()
 
     init {
-        page(headers.header(active = ServiceHeaders.VERSIONS_SECTION)) {
-            head("Версии TRIK Studio")
+        page(headers.header(active = ServiceHeaders.MENU_SECTION)) {
+            head(texts.versionsTitle())
             row {
-                block(title = "Версии TRIK Studio") {
-                    actions { action("Добавить", icon = IconName.Plus) { onClick { openAddDialog() } } }
-                    rows = table(
+                block(title = texts.versionsTitle()) {
+                    actions { action(texts.add(), icon = IconName.Plus) { onClick { openAddDialog() } } }
+                    rows = loadTable(
                         key = { version: TrikStudioVersion -> version.tag },
                         fetch = { request ->
                             val registered = versions.findAll()
@@ -53,33 +57,35 @@ class ServiceTrikStudioVersionsView(
                             Page(registered.drop(request.offset).take(request.limit), registered.size)
                         },
                     ) {
-                        codeColumn("Версия", size = 8) { version -> version.version }
-                        codeColumn("Тег образа") { version -> version.tag }
-                        menuColumn(ariaLabel = { version -> "Действия с версией ${version.version}" }) { version ->
-                            item("Изменить тег") { openTagDialog(version) }
-                            if (version.tag !in usedTags) destructiveItem("Удалить") { delete(version) }
+                        codeColumn(texts.versionsVersion(), size = 8) { version -> version.version }
+                        codeColumn(texts.versionsTag()) { version -> version.tag }
+                        menuColumn(ariaLabel = { version -> texts.versionsActions(version = version.version) }) { version ->
+                            item(texts.versionsChangeTag()) { openTagDialog(version) }
+                            if (version.tag !in usedTags) destructiveItem(texts.delete()) { delete(version) }
                         }
-                        empty("Версий TRIK Studio нет", "Добавьте версию: номер и тег Docker-образа.")
+                        empty(texts.versionsEmpty(), texts.versionsEmptyHint())
                     }
                 }
             }
         }
     }
 
+    override fun getPageTitle(): String = texts.versionsTitle()
+
     private fun openAddDialog() {
-        dialog(title = "Новая версия TRIK Studio") {
+        dialog(title = texts.versionsAddTitle()) {
             lateinit var version: ValueInput<String>
             lateinit var tag: ValueInput<String>
-            row { version = textInput("Версия", labelSize = 8, size = 16, hint = "2026.2") }
-            row { tag = textInput("Тег образа", labelSize = 8, size = 16, hint = "<репозиторий>:<тег>") }
+            row { version = textInput(texts.versionsVersion(), labelSize = 8, size = 16, hint = "2026.2") }
+            row { tag = textInput(texts.versionsTag(), labelSize = 8, size = 16, hint = texts.versionsTagHint()) }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Добавить") {
+                action(texts.cancel()) { onClick { dialog.close() } }
+                mainAction(texts.add()) {
                     onClick {
                         when (val result = versions.register(tag = tag.value, version = version.value)) {
                             is TrikStudioVersionRegistration.Registered -> {
                                 dialog.close()
-                                toast(FeedbackKind.Success, "Версия TRIK Studio добавлена")
+                                toast(FeedbackKind.Success, texts.versionsAdded())
                                 rows.refresh()
                             }
                             is TrikStudioVersionRegistration.Rejected -> {
@@ -96,23 +102,23 @@ class ServiceTrikStudioVersionsView(
     }
 
     private fun openTagDialog(version: TrikStudioVersion) {
-        dialog(title = "Тег версии ${version.version}") {
+        dialog(title = texts.versionsTagTitle(version = version.version)) {
             lateinit var tag: ValueInput<String>
-            row { tag = textInput("Тег образа", labelSize = 8, size = 16, hint = "<репозиторий>:<тег>") { value = version.tag } }
+            row { tag = textInput(texts.versionsTag(), labelSize = 8, size = 16, hint = texts.versionsTagHint()) { value = version.tag } }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Сохранить") {
+                action(texts.cancel()) { onClick { dialog.close() } }
+                mainAction(texts.save()) {
                     onClick {
                         when (val result = versions.changeTag(tag = version.tag, newTag = tag.value)) {
                             is TrikStudioVersionTagChange.Changed -> {
                                 dialog.close()
-                                toast(FeedbackKind.Success, "Тег версии TRIK Studio изменён")
+                                toast(FeedbackKind.Success, texts.versionsTagChanged())
                                 rows.refresh()
                             }
                             is TrikStudioVersionTagChange.Rejected -> tag.showError(rejectionText(result.reason))
                             TrikStudioVersionTagChange.NotFound -> {
                                 dialog.close()
-                                toast(FeedbackKind.Error, "Версия TRIK Studio уже удалена")
+                                toast(FeedbackKind.Error, texts.versionsAlreadyDeleted())
                                 rows.refresh()
                             }
                         }
@@ -124,15 +130,15 @@ class ServiceTrikStudioVersionsView(
 
     private fun delete(version: TrikStudioVersion) {
         confirm(
-            title = "Удалить версию TRIK Studio ${version.version}?",
-            text = "Версию нельзя будет выбрать для новых Задач и Туров.",
-            action = "Удалить",
+            title = texts.versionsDeleteTitle(version = version.version),
+            text = texts.versionsDeleteText(),
+            action = texts.delete(),
             isDanger = true,
         ) {
             when (versions.delete(version.tag)) {
-                TrikStudioVersionDeletion.Deleted -> toast(FeedbackKind.Success, "Версия TRIK Studio удалена")
-                TrikStudioVersionDeletion.InUse -> toast(FeedbackKind.Error, "Версия TRIK Studio уже используется")
-                TrikStudioVersionDeletion.NotFound -> toast(FeedbackKind.Error, "Версия TRIK Studio уже удалена")
+                TrikStudioVersionDeletion.Deleted -> toast(FeedbackKind.Success, texts.versionsDeleted())
+                TrikStudioVersionDeletion.InUse -> toast(FeedbackKind.Error, texts.versionsInUse())
+                TrikStudioVersionDeletion.NotFound -> toast(FeedbackKind.Error, texts.versionsAlreadyDeleted())
             }
             rows.refresh()
         }
@@ -155,11 +161,11 @@ class ServiceTrikStudioVersionsView(
     }
 
     private fun rejectionText(reason: TrikStudioVersionRejection): String = when (reason) {
-        TrikStudioVersionRejection.BlankVersion -> "Укажите версию"
-        TrikStudioVersionRejection.VersionTooLong -> "Версия длиннее 255 символов"
-        TrikStudioVersionRejection.VersionAlreadyRegistered -> "Такая версия уже зарегистрирована"
-        TrikStudioVersionRejection.BlankTag -> "Укажите тег"
-        TrikStudioVersionRejection.TagTooLong -> "Тег длиннее 512 символов"
-        TrikStudioVersionRejection.TagAlreadyRegistered -> "Такой тег уже зарегистрирован"
+        TrikStudioVersionRejection.BlankVersion -> texts.versionsRejectionBlankVersion()
+        TrikStudioVersionRejection.VersionTooLong -> texts.versionsRejectionVersionTooLong()
+        TrikStudioVersionRejection.VersionAlreadyRegistered -> texts.versionsRejectionVersionRegistered()
+        TrikStudioVersionRejection.BlankTag -> texts.versionsRejectionBlankTag()
+        TrikStudioVersionRejection.TagTooLong -> texts.versionsRejectionTagTooLong()
+        TrikStudioVersionRejection.TagAlreadyRegistered -> texts.versionsRejectionTagRegistered()
     }
 }

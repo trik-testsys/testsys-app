@@ -71,7 +71,6 @@ class ManagerContestViewTests : MockSpringVaadinTests() {
         val crumbs = UI.getCurrent()._get<Nav> { classes = "ts-crumbs" }._find<RouterLink>().associate { link -> link.text to link.href }
         assertEquals(
             mapOf(
-                "Главная" to "home",
                 "Кабинет Организатора" to "manager",
                 "Классы" to "manager/classes",
                 "Класс «Кружок»" to "manager/classes/${studyClass.id.value}",
@@ -116,7 +115,7 @@ class ManagerContestViewTests : MockSpringVaadinTests() {
 
         assertEquals(ManagerContestView::class.java, currentView)
         val crumbs = UI.getCurrent()._get<Nav> { classes = "ts-crumbs" }._find<RouterLink>().map { link -> link.text }
-        assertEquals(listOf("Главная", "Кабинет Организатора", "Соревнования", "Соревнование «Кубок»"), crumbs)
+        assertEquals(listOf("Кабинет Организатора", "Соревнования", "Соревнование «Кубок»"), crumbs)
     }
 
     private fun signInManager(): MultipleRoleUser =

@@ -5,25 +5,36 @@ package tech.testsys.web.components.layout
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.Text
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Anchor
+import com.vaadin.flow.component.html.AnchorTarget
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.ListItem
 import com.vaadin.flow.component.html.Main
 import com.vaadin.flow.component.html.Paragraph
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.html.UnorderedList
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.buildBrand
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.ICON_SIZE_SMALL
+import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
+import tech.testsys.web.components.core.svgIcon
+import tech.testsys.web.components.data.formatDate
 import tech.testsys.web.components.texts.UiLocalization
 import tech.testsys.web.components.texts.currentUiLocalization
+import java.time.LocalDate
 
 /**
- * Scope of a guest page: one card in the middle and a line of links under it.
+ * Scope of a guest page: one card in the middle, a line of links under it and the notices under the links.
  *
  * @since 1.0.0-beta.1
  */
@@ -31,6 +42,8 @@ import tech.testsys.web.components.texts.currentUiLocalization
 class GuestPageScope internal constructor(private val main: Main, private val texts: UiLocalization) {
     private var hasCard = false
     private var hasLinks = false
+    private var hasNotices = false
+    private var noticeList: Section? = null
 
     /**
      * Adds the card titled [title] with one explaining [description], the [step] label of a multi-step scenario before
@@ -69,9 +82,32 @@ class GuestPageScope internal constructor(private val main: Main, private val te
         hasLinks = true
 
         val line = Div().apply { addClassName(CssClass.GuestLinks) }
-        main.add(line)
+        main.addComponentAtIndex(noticeList?.let(main::indexOf) ?: main.componentCount, line)
         ContentScope(line, texts, Placement.Body).content()
         separateLinks(line)
+    }
+
+    /**
+     * Adds the list of short notices built by [content] under the links, in the order of the `notice` calls; without
+     * notices the page shows no list.
+     *
+     * @throws IllegalStateException if the page already has notices.
+     * @since 1.0.0-beta.2
+     */
+    fun notices(content: GuestNoticesScope.() -> Unit) {
+        check(!hasNotices) { "Guest page already has notices" }
+        hasNotices = true
+
+        val items = GuestNoticesScope(texts).apply(content).items
+        if (items.isEmpty()) return
+
+        val list = UnorderedList(*items.toTypedArray())
+        val section = Section(list).apply {
+            addClassName(CssClass.GuestNotices)
+            element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiPage.guestNotices())
+        }
+        main.add(section)
+        noticeList = section
     }
 
     private fun separateLinks(line: Div) {
@@ -94,6 +130,75 @@ class GuestPageScope internal constructor(private val main: Main, private val te
  */
 @TestSysDsl
 class GuestCardScope internal constructor(internal val body: ContentScope)
+
+/**
+ * Scope of the notices of a guest page.
+ *
+ * @since 1.0.0-beta.2
+ */
+@TestSysDsl
+class GuestNoticesScope internal constructor(private val texts: UiLocalization) {
+    internal val items = mutableListOf<ListItem>()
+
+    /**
+     * Adds a notice with the [date] and the one-line plain [text] shown as is, highlighted by its [kind]; with [href]
+     * the whole notice is a link that opens [href] as is in a new tab.
+     *
+     * @throws IllegalArgumentException if [text] is blank.
+     * @since 1.0.0-beta.2
+     */
+    fun notice(date: LocalDate, text: String, kind: GuestNoticeKind, href: String? = null) {
+        require(text.isNotBlank()) { "Guest notice of $date must have a text" }
+
+        val tone = when (kind) {
+            GuestNoticeKind.Info -> CssClass.GuestNoticeInfo
+            GuestNoticeKind.Warning -> CssClass.GuestNoticeWarning
+        }
+        val textSpan = Span(Text(text)).apply { addClassName(CssClass.GuestNoticeText) }
+        items += ListItem(
+            Span(formatDate(date, texts)).apply { addClassName(CssClass.GuestNoticeDate) },
+            href?.let { address -> noticeLink(address, textSpan) } ?: textSpan,
+        ).apply { addClassNames(CssClass.GuestNotice, tone) }
+    }
+
+    private fun noticeLink(href: String, text: Span): Anchor = Anchor().apply {
+        this.href = href
+        setTarget(AnchorTarget.BLANK)
+        element.setAttribute(HtmlAttribute.Rel, NOOPENER)
+        addClassName(CssClass.GuestNoticeLink)
+        add(text, svgIcon(IconName.ExternalLink, size = ICON_SIZE_SMALL))
+        // The space keeps the hidden caption a separate word in the accessible name and in copied text.
+        add(Text(" "), Span(texts.messages.uiPage.guestNoticeNewTab()).apply { addClassName(CssClass.SrOnly) })
+    }
+
+    private companion object {
+
+        /** `rel` value that hides this page from the page the notice opens in a new tab. */
+        const val NOOPENER = "noopener"
+    }
+}
+
+/**
+ * Kind of a notice of a guest page.
+ *
+ * @since 1.0.0-beta.2
+ */
+enum class GuestNoticeKind {
+
+    /**
+     * Information.
+     *
+     * @since 1.0.0-beta.2
+     */
+    Info,
+
+    /**
+     * Warning.
+     *
+     * @since 1.0.0-beta.2
+     */
+    Warning,
+}
 
 /** Number of the leading children of a guest page `main`: the brand and the tagline. */
 private const val BRAND_PARTS = 2

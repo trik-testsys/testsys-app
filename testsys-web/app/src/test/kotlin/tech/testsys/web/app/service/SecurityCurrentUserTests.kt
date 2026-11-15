@@ -11,12 +11,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder
 import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.multipleRoleUserData
-import tech.testsys.domain.builder.api.supervisor
-import tech.testsys.domain.builder.api.supervisorData
+import tech.testsys.domain.builder.api.observer
+import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -30,8 +29,7 @@ class SecurityCurrentUserTests {
     private val multipleRoleUsers = mockk<MultipleRoleUserRepository>()
     private val participants = mockk<ParticipantRepository>()
     private val observers = mockk<ObserverRepository>()
-    private val supervisors = mockk<SupervisorRepository>()
-    private val currentUser = SecurityCurrentUser(multipleRoleUsers, participants, observers, supervisors)
+    private val currentUser = SecurityCurrentUser(multipleRoleUsers, participants, observers)
     private val multipleRoleUser = multipleRoleUser {
         id = USER_ID
         createdAt = Instant.EPOCH
@@ -41,12 +39,13 @@ class SecurityCurrentUserTests {
             email = "user@example.com"
         }
     }
-    private val supervisor = supervisor {
+    private val observer = observer {
         id = USER_ID
         createdAt = Instant.EPOCH
-        data = supervisorData {
-            storedAccessToken(AccessTokenHash("supervisor-hash", HashAlgorithm.HmacSha256))
-            name = "Супервайзер"
+        data = observerData {
+            storedAccessToken(AccessTokenHash("observer-hash", HashAlgorithm.HmacSha256))
+            name = "Наблюдатель"
+            community(1)
         }
     }
 
@@ -57,12 +56,12 @@ class SecurityCurrentUserTests {
     inner class UserTests {
         @Test
         fun `should load the signed-in user of their kind`() {
-            every { supervisors.findById(SingleRoleUserId(USER_ID)) } returns supervisor
-            signIn(UserKind.SUPERVISOR)
+            every { observers.findById(SingleRoleUserId(USER_ID)) } returns observer
+            signIn(UserKind.OBSERVER)
 
             val user = currentUser.user()
 
-            assertSame(supervisor, user)
+            assertSame(observer, user)
         }
 
         @Test
@@ -93,8 +92,8 @@ class SecurityCurrentUserTests {
 
         @Test
         fun `should throw IllegalStateException if the signed-in user has a fixed role`() {
-            every { supervisors.findById(SingleRoleUserId(USER_ID)) } returns supervisor
-            signIn(UserKind.SUPERVISOR)
+            every { observers.findById(SingleRoleUserId(USER_ID)) } returns observer
+            signIn(UserKind.OBSERVER)
 
             assertThrows(IllegalStateException::class.java) { currentUser.multipleRoleUser() }
         }
@@ -104,12 +103,12 @@ class SecurityCurrentUserTests {
     inner class SingleRoleUserTests {
         @Test
         fun `should return the signed-in user with a fixed role`() {
-            every { supervisors.findById(SingleRoleUserId(USER_ID)) } returns supervisor
-            signIn(UserKind.SUPERVISOR)
+            every { observers.findById(SingleRoleUserId(USER_ID)) } returns observer
+            signIn(UserKind.OBSERVER)
 
             val user = currentUser.singleRoleUser()
 
-            assertSame(supervisor, user)
+            assertSame(observer, user)
         }
 
         @Test

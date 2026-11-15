@@ -16,8 +16,11 @@ import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
@@ -27,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.builder.api.judgmentOrderData
 import tech.testsys.domain.builder.api.studentData
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -36,6 +40,7 @@ import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
+import tech.testsys.web.app.service.judge.JudgeService
 
 @SpringBootTest
 class JudgeSolutionViewTests : MockSpringVaadinTests() {
@@ -50,6 +55,15 @@ class JudgeSolutionViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var judgmentOrders: JudgmentOrderRepository
+
+    @Autowired
+    private lateinit var judgeService: JudgeService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
+    @Autowired
+    private lateinit var fileContentReader: FileContentReader
 
     @Test
     fun `should show the details of the submission in read-only fields`() {
@@ -91,6 +105,26 @@ class JudgeSolutionViewTests : MockSpringVaadinTests() {
         open(fixtures.gradingSubmission(student()))
 
         assertEquals("Посылка", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
+    @Test
+    fun `should keep the title and issuing and show a load error in each block if the submission fails to load`() {
+        signIn(fixtures.judge())
+        val submission = fixtures.gradingSubmission(student())
+        val service = mockk<JudgeService>()
+        every { service.checkSubmissionAccess(submission.id) } returns judgeService.checkSubmissionAccess(submission.id)
+        every { service.viewSolution(submission.id) } throws IllegalStateException("Submission storage unavailable")
+        val view = JudgeSolutionView(headers, service, fileContentReader)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns RouteParameters(SUBMISSION_ID_PARAMETER, submission.id.value.toString())
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(event)
+
+        assertEquals("Посылка №${submission.id.value}", view._get<H1>().text)
+        assertEquals(3, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+        assertTrue(view._get<Button> { text = "Выставить вердикт" }.isEnabled)
     }
 
     @Test

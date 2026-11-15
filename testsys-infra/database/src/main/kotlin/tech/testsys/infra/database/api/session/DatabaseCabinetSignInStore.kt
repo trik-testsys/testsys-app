@@ -71,8 +71,8 @@ class DatabaseCabinetSignInStore(
         }
     }
 
-    override fun deleteAllOf(userId: CabinetSignInUserId): List<StoredCabinetSignIn> =
-        deleteRead { repository.findAllByUserIdOrImpersonatedBy(userId = userId.value, impersonatedBy = userId.value) }
+    override fun deleteImpersonatedBy(supervisorId: CabinetSignInUserId): List<StoredCabinetSignIn> =
+        deleteRead { repository.findAllByImpersonatedBy(supervisorId.value) }
 
     override fun deleteIdle(before: Instant): List<StoredCabinetSignIn> = deleteRead { repository.findAllByLastSeenAtBefore(before) }
 

@@ -9,6 +9,7 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H3
 import com.vaadin.flow.component.html.Hr
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.textfield.TextField
 import io.mockk.clearMocks
 import io.mockk.every
@@ -78,23 +79,23 @@ class ServiceSettingsViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should separate complete parameters under section headings without active value rows`() {
+    fun `should show every settings group and the public community in a block of its own without separators`() {
+        assertEquals(BLOCKS, _find<H3> { classes = "ts-block__title" }.map { heading -> heading.text })
+        assertEquals(listOf(1, 2, 2, 7, 2, 2, 1), BLOCKS.map { title -> block(title)._find<TextField>().size })
         assertEquals(
-            listOf("Соревнования", "Подтверждение почты", "Приглашения", "Проверка", "Диагностика", "Очистка файлов"),
-            _find<H3>().filter { heading -> heading.hasClassName("ts-block__section-title") }.map { heading -> heading.text },
+            listOf("Публичное Сообщество (ID)"),
+            block("Сообщества")._find<TextField>().map { field -> field.ariaLabel.orElseThrow() },
         )
-        val separators = _find<Hr>()
-        assertEquals(16, separators.size)
-        val body = _find<Div>().single { div -> div.hasClassName("ts-block__body") }
-        val children = body.children.toList()
-        assertTrue(
-            separators.all { separator ->
-                children[children.indexOf(separator) - 1]._find<TextField>().size == 1
-            },
-        )
+        assertTrue(_find<H3> { classes = "ts-block__section-title" }.isEmpty())
+        assertTrue(_find<Hr>().isEmpty())
         assertFalse(_find<Div>().any { div -> div.text.startsWith("Действует:") })
-        assertEquals("hr", children[children.lastIndex - 1].element.tag)
-        assertTrue(children.last().element.textRecursively.contains("Публичное Сообщество (ID)"))
+    }
+
+    @Test
+    fun `should offer editing in every settings group block except the read-only communities`() {
+        val editable = BLOCKS.filter { title -> block(title)._find<Button> { text = "Изменить" }.isNotEmpty() }
+
+        assertEquals(BLOCKS.dropLast(1), editable)
     }
 
     @ParameterizedTest
@@ -136,11 +137,12 @@ class ServiceSettingsViewTests : ServiceMockVaadinTests() {
 
     @Test
     fun `should restore values when editing is cancelled`() {
-        _get<Button> { text = "Изменить" }._click()
-        val field = _find<TextField>().first()
+        val competitions = block("Соревнования")
+        competitions._get<Button> { text = "Изменить" }._click()
+        val field = competitions._get<TextField>()
         field.value = "2"
 
-        _get<Button> { text = "Отменить" }._click()
+        competitions._get<Button> { text = "Отменить" }._click()
 
         assertEquals("100", field.value)
         assertTrue(field.isReadOnly)
@@ -151,23 +153,40 @@ class ServiceSettingsViewTests : ServiceMockVaadinTests() {
     fun `should submit only changed values with expected revision and show success after apply`() {
         val overview = settings.overview()
         every { settings.change(0, mapOf(SettingKey.MaxParticipants to "2")) } returns SettingsChangeResult.Applied(overview)
-        _get<Button> { text = "Изменить" }._click()
-        _find<TextField>().first().value = "2"
+        val competitions = block("Соревнования")
+        competitions._get<Button> { text = "Изменить" }._click()
+        competitions._get<TextField>().value = "2"
 
-        _get<Button> { text = "Сохранить" }._click()
+        competitions._get<Button> { text = "Сохранить" }._click()
 
         verify(exactly = 1) { settings.change(0, mapOf(SettingKey.MaxParticipants to "2")) }
         assertTrue(_find<TextField>().all { field -> field.isReadOnly })
     }
 
     @Test
+    fun `should submit only the changed values of the saved block`() {
+        every { settings.change(any(), any()) } returns SettingsChangeResult.Applied(settings.overview())
+        block("Соревнования")._get<Button> { text = "Изменить" }._click()
+        block("Соревнования")._get<TextField>().value = "2"
+        val invites = block("Приглашения")
+        invites._get<Button> { text = "Изменить" }._click()
+        invites._find<TextField>().first().value = "PT10M"
+
+        invites._get<Button> { text = "Сохранить" }._click()
+
+        verify(exactly = 1) { settings.change(any(), any()) }
+        verify(exactly = 1) { settings.change(0, mapOf(SettingKey.CommunityInviteTtl to "PT10M")) }
+    }
+
+    @Test
     fun `should keep stale form values until explicit reload`() {
         every { settings.change(any(), any()) } returns SettingsChangeResult.Stale
-        _get<Button> { text = "Изменить" }._click()
-        val field = _find<TextField>().first()
+        val competitions = block("Соревнования")
+        competitions._get<Button> { text = "Изменить" }._click()
+        val field = competitions._get<TextField>()
         field.value = "2"
 
-        _get<Button> { text = "Сохранить" }._click()
+        competitions._get<Button> { text = "Сохранить" }._click()
 
         assertEquals("2", field.value)
         assertFalse(field.isReadOnly)
@@ -176,11 +195,12 @@ class ServiceSettingsViewTests : ServiceMockVaadinTests() {
     @Test
     fun `should mark rejected field and keep editing after validation failure`() {
         every { settings.change(any(), any()) } returns SettingsChangeResult.Invalid(mapOf(SettingKey.MaxParticipants to "range"))
-        _get<Button> { text = "Изменить" }._click()
-        val field = _find<TextField>().first()
+        val competitions = block("Соревнования")
+        competitions._get<Button> { text = "Изменить" }._click()
+        val field = competitions._get<TextField>()
         field.value = "-1"
 
-        _get<Button> { text = "Сохранить" }._click()
+        competitions._get<Button> { text = "Сохранить" }._click()
 
         assertTrue(field.isInvalid)
         assertFalse(field.isReadOnly)
@@ -189,11 +209,12 @@ class ServiceSettingsViewTests : ServiceMockVaadinTests() {
     @Test
     fun `should preserve unsaved values and editing after a confirmed apply failure`() {
         every { settings.change(any(), any()) } returns SettingsChangeResult.Failed
-        _get<Button> { text = "Изменить" }._click()
-        val field = _find<TextField>().first()
+        val competitions = block("Соревнования")
+        competitions._get<Button> { text = "Изменить" }._click()
+        val field = competitions._get<TextField>()
         field.value = "2"
 
-        _get<Button> { text = "Сохранить" }._click()
+        competitions._get<Button> { text = "Сохранить" }._click()
 
         assertEquals("2", field.value)
         assertFalse(field.isReadOnly)
@@ -210,9 +231,11 @@ class ServiceSettingsViewTests : ServiceMockVaadinTests() {
 
         assertEquals("1024", _find<TextField>().single { field -> field.helperText == SettingKey.MaxMessageBytes.property }.value)
         assertTrue(
-            _find<Div>().any { text ->
-                text.text == "Размер входящего сообщения: действующий предел — 400000000 байт, " +
-                    "сохранённый — 1024 байт. Для применения требуется перезапуск."
+            block("Проверка")._find<Div> { classes = "ts-alert" }.any { alert ->
+                alert.element.textRecursively.contains(
+                    "Размер входящего сообщения: действующий предел — 400000000 байт, " +
+                        "сохранённый — 1024 байта. Для применения требуется перезапуск.",
+                )
             },
         )
         val field = _find<TextField>().single { field -> field.helperText == SettingKey.MaxMessageBytes.property }
@@ -229,5 +252,17 @@ class ServiceSettingsViewTests : ServiceMockVaadinTests() {
 
         assertTrue(_find<Button> { text = "Изменить" }.isEmpty())
         assertTrue(_find<TextField>().all { field -> field.isReadOnly })
+        assertTrue(
+            block("Соревнования").element.textRecursively
+                .contains("Сохранённое состояние неопределённо. Изменения заблокированы до перезапуска."),
+        )
+    }
+
+    private fun block(title: String): Section =
+        _find<Section> { classes = "ts-block" }.single { block -> block._find<H3> { classes = "ts-block__title" }.single().text == title }
+
+    private companion object {
+        val BLOCKS =
+            listOf("Соревнования", "Подтверждение почты", "Приглашения", "Проверка", "Диагностика", "Очистка файлов", "Сообщества")
     }
 }

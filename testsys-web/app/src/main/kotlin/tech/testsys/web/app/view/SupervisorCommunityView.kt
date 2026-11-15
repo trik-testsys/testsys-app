@@ -11,11 +11,10 @@ import tech.testsys.web.components.texts.currentLocalization
  * @since 1.0.0-beta.1
  */
 @Route("supervisor/communities/:communityId([0-9]+)")
-@RolesAllowed("SUPERVISOR")
+@RolesAllowed("MULTIPLE_ROLE")
 class SupervisorCommunityView(headers: CabinetHeaders, service: SupervisorService) : CommunityDetailsView(
     headers,
     service,
-    SupervisorView::class.java,
     SupervisorView::class.java,
     currentLocalization().pageSupervisor.title(),
     ::openSupervisorUser,

@@ -7,11 +7,15 @@ import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
+import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.H3
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
@@ -57,7 +61,6 @@ import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.app.service.developer.TaskValidationSnapshotVo
 import tech.testsys.web.app.service.developer.TestVo
-import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.app.service.toVo
 import tech.testsys.web.components.texts.currentTimeZone
 import tools.jackson.databind.ObjectMapper
@@ -78,9 +81,6 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var headers: CabinetHeaders
-
-    @Autowired
-    private lateinit var multipleRoleUserService: MultipleRoleUserService
 
     private val developers by lazy { DeveloperFixtures(fixtures, developerService, tasks, dataSource) }
 
@@ -134,6 +134,24 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         assertTrue(dialog._find<TextField>().any { field -> field.value == statementId.value.toString() })
         assertTrue(dialog._find<TextField>().any { field -> field.value == version.version })
         assertTrue(dialog._find<TextField>().all { field -> field.isReadOnly })
+    }
+
+    @Test
+    fun `should show the resources of a commit made meanwhile in the committed version after a refresh of the resource table`() {
+        developers.signInDeveloper()
+        val taskId = developers.committedTask(developers.trikStudioVersion())
+        val statementId = checkNotNull(developerService.viewTask(taskId).first.lastCommitted?.statement)
+        developerService.updateStatement(taskId, statementId, resourceName = "Новое условие", file = FileData("new.txt", byteArrayOf(2)))
+        val newStatementId = checkNotNull(developerService.viewTask(taskId).first.wip?.statement)
+        open(taskId)
+        developers.commit(taskId)
+        resourceBlock()._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+
+        clickButton("Посмотреть зафиксированную версию")
+
+        val dialog = openDialog()
+        assertTrue(dialog._find<TextField>().any { field -> field.value == "Новое условие" })
+        assertTrue(dialog._find<TextField>().any { field -> field.value == newStatementId.value.toString() })
     }
 
     @Test
@@ -371,6 +389,20 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should enable testing and reverting after a refresh of the testing history of a task changed meanwhile`() {
+        developers.signInDeveloper()
+        val taskId = developers.committedTask(developers.trikStudioVersion())
+        val statement = developerService.viewTask(taskId).first.lastCommitted?.statement
+        open(taskId)
+        developerService.detachStatement(taskId, checkNotNull(statement))
+
+        testingBlock()._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+
+        assertTrue(pageButton("Протестировать").isEnabled)
+        assertTrue(pageButton("Откатить").isEnabled)
+    }
+
+    @Test
     fun `should upload nothing until the language and expected score of a developer solution are given`() {
         developers.signInDeveloper()
         val task = developers.task()
@@ -500,6 +532,18 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should disable attaching and sharing if the resources and communities fail to load`() {
+        developers.signInDeveloper()
+        val task = developerService.viewTask(developers.committedTask(developers.trikStudioVersion())).first
+
+        testingPage(task, emptyList(), isSharingAndResourcesFailing = true)
+
+        assertFalse(pageButton("Прикрепить").isEnabled)
+        assertFalse(pageButton("Предоставить доступ").isEnabled)
+        assertEquals(2, Regex("Не удалось загрузить").findAll(page().element.textRecursively).count())
+    }
+
+    @Test
     fun `should announce a newly started testing request`() {
         developers.signInDeveloper()
         val task = developers.task()
@@ -525,6 +569,17 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
 
         assertEquals("Тестирование уже идёт", lastToastTitle())
         assertEquals("Дождитесь результата текущего запроса.", lastToastDescription())
+    }
+
+    @Test
+    fun `should keep testing unavailable when the testing history fails to load`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+
+        val service = testingPage(task, emptyList(), history = { error("History is unavailable") })
+
+        assertFalse(pageButton("Протестировать").isEnabled)
+        verify(exactly = 0) { service.testTask(any()) }
     }
 
     @Test
@@ -783,6 +838,32 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show a resource version uploaded meanwhile after a refresh of the resource table`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val statement = developers.statement(task.id, "Условие")
+        open(task.id)
+        developerService.updateStatement(task.id, statement.id, resourceName = "Новое условие")
+
+        resourceBlock()._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+
+        assertEquals(setOf("Новое условие"), resourceNames())
+    }
+
+    @Test
+    fun `should show a resource uploaded meanwhile after a refresh of the resource table`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        developers.statement(task.id, "Условие")
+        open(task.id)
+        developers.statement(task.id, "Второе условие")
+
+        resourceBlock()._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+
+        assertEquals(setOf("Условие", "Второе условие"), resourceNames())
+    }
+
+    @Test
     fun `should filter before pagination including resources beyond the first page`() {
         developers.signInDeveloper()
         val task = developers.task()
@@ -813,6 +894,15 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
 
     private fun resourceTable(): Table = UI.getCurrent()._find<Table>()
         .single { table -> "Прикреплено" in table.element.textRecursively }
+
+    private fun resourceBlock(): Section = blockOf(resourceTable())
+
+    private fun testingBlock(): Section = blockOf(UI.getCurrent()._get<H3> { text = "Тестирование" })
+
+    /** Returns the block that contains [component]. */
+    private fun blockOf(component: Component): Section =
+        generateSequence(component.parent.orElse(null)) { ancestor -> ancestor.parent.orElse(null) }
+            .filterIsInstance<Section>().first()
 
     private fun resourceRows(): List<TableRow> = resourceTable()._find<TableRow> { classes = "ts-row-clickable" }
 
@@ -883,8 +973,11 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         resources: List<ResourceVo> = emptyList(),
         regradeCount: Int? = null,
         regrades: List<Pair<RegradeVo, Int>> = emptyList(),
+        history: () -> List<TaskValidationRequestVo> = { requests },
+        isSharingAndResourcesFailing: Boolean = false,
     ): DeveloperService {
         val service = mockk<DeveloperService>()
+        every { service.checkTaskAccess(task.id) } returns task
         every { service.viewTask(task.id) } returns (task to emptyList())
         every { service.countRegradeSubmissions(task.id) } returns regradeCount
         every { service.viewRegrades(task.id) } returns regrades
@@ -894,8 +987,12 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
             every { service.viewResource(task.id, resource.versionBucket) } returns versions
         }
         every { service.viewTrikStudioVersions() } returns developerService.viewTrikStudioVersions()
-        every { service.viewTaskValidationRequests(task.id) } returns requests
-        val view = DeveloperTaskView(headers, service, multipleRoleUserService, mockk())
+        every { service.viewTaskValidationRequests(task.id) } answers { history() }
+        if (isSharingAndResourcesFailing) {
+            every { service.viewTask(task.id) } throws IllegalStateException("Community storage unavailable")
+            every { service.viewResources() } throws IllegalStateException("Resource storage unavailable")
+        }
+        val view = DeveloperTaskView(headers, service, mockk())
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns taskParameters(task.id)
         UI.getCurrent().removeAll()

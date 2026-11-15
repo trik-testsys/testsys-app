@@ -1,0 +1,43 @@
+name: Check changelog
+
+on:
+  pull_request:
+    branches: [ "dev" ]
+    types: [ opened, synchronize, reopened, labeled, unlabeled ]
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+
+    steps:
+      # The checkout is the merge commit of the pull request; its first parent is the base branch.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      # The `skip-changelog` label exempts a pull request that changes nothing worth an entry.
+      - name: Require an entry for the current version
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
+        run: |
+          if git diff --quiet HEAD^1 HEAD -- CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md::Add an entry to CHANGELOG.md or set the skip-changelog label"
+            exit 1
+          fi
+          if ! grep -qx '## %CURRENT_VERSION%' CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md::CHANGELOG.md has no '## %CURRENT_VERSION%' heading"
+            exit 1
+          fi
+
+      # The `skip-user-changelog` label exempts a pull request that changes nothing a user notices.
+      - name: Require user changes for the current version
+        if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'skip-user-changelog') }}
+        run: |
+          if git diff --quiet HEAD^1 HEAD -- 'testsys-web/app/src/main/resources/changelog/*/%CURRENT_VERSION%/*.md'; then
+            echo "::error::Describe the change for users in testsys-web/app/src/main/resources/changelog/<region>/%CURRENT_VERSION%/ or set the skip-user-changelog label"
+            exit 1
+          fi

@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.child
@@ -11,6 +13,55 @@ import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 
 class PageRowScopeTests : MockVaadinTests() {
+    @Test
+    fun `should stretch ordinary and highlight blocks by default`() {
+        val main = buildTestPage {
+            row {
+                block(size = 16) {}
+                highlightBlock(size = 8) {}
+            }
+        }
+
+        assertEquals(0, main.findAll("ts-block--no-stretch").size)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun `should apply stretch only to the configured ordinary block`(stretch: Boolean) {
+        val main = buildTestPage {
+            row {
+                block(size = 8, stretch = stretch) {}
+                block(size = 8, stretch = true) {}
+                highlightBlock(size = 8) {}
+            }
+        }
+
+        val blocks = main.child(0).children.toList()
+        assertEquals(!stretch, blocks[0].element.classList.contains("ts-block--no-stretch"))
+        assertEquals(false, blocks[1].element.classList.contains("ts-block--no-stretch"))
+        assertEquals(false, blocks[2].element.classList.contains("ts-block--no-stretch"))
+        assertEquals("span 8", blocks[0].element.style.get("grid-column"))
+        assertEquals("8.0", blocks[0].element.style.get("--ts-page-columns"))
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [true, false])
+    fun `should apply stretch only to the configured highlight block`(stretch: Boolean) {
+        val main = buildTestPage {
+            row {
+                block(size = 16) {}
+                highlightBlock(stretch = stretch) {}
+            }
+        }
+
+        val blocks = main.child(0).children.toList()
+        assertEquals(false, blocks[0].element.classList.contains("ts-block--no-stretch"))
+        assertEquals(!stretch, blocks[1].element.classList.contains("ts-block--no-stretch"))
+        assertTrue(blocks[1].element.classList.contains("ts-block--dark"))
+        assertEquals("span 8", blocks[1].element.style.get("grid-column"))
+        assertEquals("8.0", blocks[1].element.style.get("--ts-page-columns"))
+    }
+
     @Test
     fun `should size a block without size to the rest of the row`() {
         val main = buildTestPage {

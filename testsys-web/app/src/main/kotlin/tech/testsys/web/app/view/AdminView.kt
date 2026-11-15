@@ -12,7 +12,6 @@ import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.textArea
@@ -46,13 +45,12 @@ class AdminView(private val headers: CabinetHeaders, private val administratorSe
             return
         }
 
-        // Also checks the administrator role before the tables load, so that its absence opens the forbidden screen.
-        val communities = administratorService.viewCommunities().map { (community, _) -> community }
+        // Checks the administrator role before the tables load, so that its absence opens the forbidden screen.
+        val communities = administratorService.checkAdministratorRole()
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.title()) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 tabs(matchRouteParameters = true) {
                     tab(localization.pageCabinet.sectionCommunities(), AdminView::class.java, sectionParameters(COMMUNITIES_SECTION))
                     tab(localization.pageCabinet.sectionUsers(), AdminView::class.java, sectionParameters(USERS_SECTION))
@@ -78,7 +76,7 @@ class AdminView(private val headers: CabinetHeaders, private val administratorSe
         row {
             block(title = localization.pageCabinet.sectionCommunities()) {
                 guide(texts.communitiesGuide())
-                val rows = table(
+                val rows = loadTable(
                     key = { (community, _): Pair<CommunityVo, Long> -> community.id },
                     fetch = { request -> pageOf(administratorService.viewCommunities(), request) },
                 ) {

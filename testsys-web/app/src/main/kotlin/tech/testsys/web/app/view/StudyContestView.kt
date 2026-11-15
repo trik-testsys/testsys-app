@@ -17,6 +17,7 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
@@ -54,13 +55,14 @@ abstract class StudyContestView(private val headers: CabinetHeaders, private val
     internal abstract fun accessOf(parameters: RouteParameters): StudyAccess
 
     private fun show(access: StudyAccess, contestId: ContestId) {
-        // Checks the access before building, so that a refusal opens its error screen.
-        val (enteredAt, contest, tasks) = access.viewContest(contestId)
+        // Checks the access before the blocks load, so that a refusal opens its error screen.
+        val (studyClass, enteredAt, contest) = access.checkContest(contestId)
+        val loaded = SharedFetch { access.viewContest(contestId) }
         val now = clock.instant()
         val localization = currentLocalization()
         page(headers.cabinet(active = access.activeSection)) {
             head(texts.contestTitle(name = contest.name)) {
-                access.cabinetCrumbs(this)
+                access.cabinetCrumbs(this, studyClass)
                 if (enteredAt == null) {
                     actions {
                         mainAction(texts.contestStart()) {
@@ -82,7 +84,8 @@ abstract class StudyContestView(private val headers: CabinetHeaders, private val
             }
             guide(texts.contestGuide())
             row {
-                contestDetails(contest)
+                contestDetails(loaded)
+                // The time left stays outside the load: it follows the clock, not the loaded data.
                 highlightBlock(title = texts.remainingTitle()) {
                     guide(texts.remainingGuide())
                     studyRemainingTime(contest, enteredAt, now, texts)
@@ -92,12 +95,16 @@ abstract class StudyContestView(private val headers: CabinetHeaders, private val
                 row {
                     block(title = localization.pageCabinet.sectionTasks()) {
                         guide(texts.contestTasksGuide())
-                        table(key = { item: StudyContestTaskVo -> item.task.id }, fetch = { request -> pageOf(tasks, request) }) {
-                            textColumn(texts.name(), size = 12) { item -> item.task.name }
-                            numberColumn(texts.contestTasksScore(), size = 4) { item -> item.bestScore }
-                            column(texts.contestTasksLastSubmission()) { item -> submissionStatus(item.lastSubmission?.status, texts) }
-                            empty(texts.contestTasksEmpty())
-                            onRowClick(isNavigation = true) { item -> access.openTask(contestId, item.task.id) }
+                        load(loaded.forLoad { data -> data.third }) { tasks ->
+                            table(key = { item: StudyContestTaskVo -> item.task.id }, fetch = { request -> pageOf(tasks, request) }) {
+                                textColumn(texts.name(), size = 12) { item -> item.task.name }
+                                numberColumn(texts.contestTasksScore(), size = 4) { item -> item.bestScore }
+                                column(texts.contestTasksLastSubmission()) { item ->
+                                    submissionStatus(item.lastSubmission?.status, texts)
+                                }
+                                empty(texts.contestTasksEmpty())
+                                onRowClick(isNavigation = true) { item -> access.openTask(contestId, item.task.id) }
+                            }
                         }
                     }
                 }
@@ -109,17 +116,19 @@ abstract class StudyContestView(private val headers: CabinetHeaders, private val
     private fun canEnter(contest: ContestVo, now: Instant): Boolean =
         contest.startsAt?.let { start -> !now.isBefore(start) } != false && contest.endsAt?.let { end -> now.isBefore(end) } != false
 
-    private fun PageRowScope.contestDetails(contest: ContestVo) {
+    private fun PageRowScope.contestDetails(loaded: SharedFetch<Triple<Instant?, ContestVo, List<StudyContestTaskVo>>>) {
         block(size = CONTEST_DETAILS_COLUMNS, title = texts.detailsTitle()) {
             guide(texts.contestDetailsGuide())
-            row { codeInput(texts.id(), labelSize = 5, size = 6) { value = contest.id.value.toString() } }
-            row { textInput(texts.name(), labelSize = 5, size = 19) { value = contest.name } }
-            row { textArea(texts.description(), labelSize = 5, size = 19, maxLines = 4) { value = contest.description } }
-            row {
-                dateTimeInput(texts.startsAt(), labelSize = 5, size = 7) { value = contest.startsAt?.toUserDateTime() }
-                dateTimeInput(texts.endsAt(), labelSize = 5, size = 7) { value = contest.endsAt?.toUserDateTime() }
+            load(loaded.forLoad { data -> data.second }) { contest ->
+                row { codeInput(texts.id(), labelSize = 5, size = 6) { value = contest.id.value.toString() } }
+                row { textInput(texts.name(), labelSize = 5, size = 19) { value = contest.name } }
+                row { textArea(texts.description(), labelSize = 5, size = 19, maxLines = 4) { value = contest.description } }
+                row {
+                    dateTimeInput(texts.startsAt(), labelSize = 5, size = 7) { value = contest.startsAt?.toUserDateTime() }
+                    dateTimeInput(texts.endsAt(), labelSize = 5, size = 7) { value = contest.endsAt?.toUserDateTime() }
+                }
+                row { textInput(texts.attemptDuration(), labelSize = 5, size = 7) { value = studyDurationText(contest.attemptDuration) } }
             }
-            row { textInput(texts.attemptDuration(), labelSize = 5, size = 7) { value = studyDurationText(contest.attemptDuration) } }
         }.isEditable = false
     }
 }

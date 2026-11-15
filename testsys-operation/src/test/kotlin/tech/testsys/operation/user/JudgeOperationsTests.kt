@@ -459,6 +459,119 @@ class JudgeOperationsTests {
     }
 
     @Nested
+    inner class CheckJudgeRoleTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should accept a judge without reading storage`() {
+                operations.checkJudgeRole(judge).getOrThrow()
+
+                verify { allRepositories() wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedJudgeRoleError if user has only other roles`() {
+                assertRaises(MissedJudgeRoleError) { operations.checkJudgeRole(userWithOtherRolesThanJudge()) }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckSubmissionAccessTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the submission of a current student`() {
+                val submission = gradedSubmission(studentAuthor.id)
+                arrangeSubmission(submission)
+
+                val result = operations.checkSubmissionAccess(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertSame(submission, result)
+            }
+
+            @Test
+            fun `should return the submission of a current participant`() {
+                val submission = gradedSubmission(participantAuthor.id)
+                arrangeSubmission(submission)
+
+                val result = operations.checkSubmissionAccess(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertSame(submission, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedJudgeRoleError before reading the submission if user is not a judge`() {
+                assertRaises(MissedJudgeRoleError) {
+                    operations.checkSubmissionAccess(user = userWithOtherRolesThanJudge(), submissionId = SUBMISSION_ID)
+                }
+
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if submission is missing`() {
+                every { submissionRepository.findById(SUBMISSION_ID) } returns null
+
+                assertRaises(SubmissionNotExistsError(SUBMISSION_ID)) {
+                    operations.checkSubmissionAccess(user = judge, submissionId = SUBMISSION_ID)
+                }
+            }
+
+            @Test
+            fun `should deny access to a developer solution test`() {
+                arrangeSubmission(
+                    gradedSubmission(studentAuthor.id) {
+                        kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion("3.0.0") }
+                    },
+                )
+
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.checkSubmissionAccess(user = judge, submissionId = SUBMISSION_ID)
+                }
+            }
+
+            @Test
+            fun `should deny access when author no longer has the student role`() {
+                arrangeSubmission()
+                every { userRepository.findById(studentAuthor.id) } returns testMultipleRoleUser {}
+
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.checkSubmissionAccess(user = judge, submissionId = SUBMISSION_ID)
+                }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should read only the submission and its author without loading its details`() {
+                arrangeSubmission()
+
+                operations.checkSubmissionAccess(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                verify {
+                    listOf(repository, judgmentOrderRepository, taskRepository, contestRepository, solutionRepository, testRepository)
+                        .wasNot(Called)
+                }
+            }
+        }
+    }
+
+    @Nested
     inner class ChangeVerdictTests {
 
         private val submissionId = SubmissionId(2)

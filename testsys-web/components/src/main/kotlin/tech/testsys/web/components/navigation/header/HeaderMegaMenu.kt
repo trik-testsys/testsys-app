@@ -82,6 +82,13 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
     private var searchTarget: Component? = null
     private var query: String = ""
     private var groupCount: Int = item.menu.columns.size
+
+    /** Addresses of all menu routes: the opened location marks the closest of them, also in a filtered menu. */
+    private val hrefs: Set<String> = item.menu.columns
+        .flatMap { column -> listOfNotNull(column.destination) + column.links.map { link -> link.destination } }
+        .filterIsInstance<HeaderDestination.Route>()
+        .map { route -> RouterLink("", route.target, route.parameters).href }
+        .toSet()
     private val grid = Div().apply {
         addClassNames(CssClass.MegaGrid, CssClass.HeaderMegaGrid)
     }
@@ -132,7 +139,7 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
         columns.forEach { column ->
             val group = Div().apply { addClassName(CssClass.MegaCol) }
             val heading = column.destination?.let { destination ->
-                menuDestination(destinationLink(column.title, destination) { popup.close() }).apply {
+                menuDestination(destinationLink(column.title, destination) { popup.close() }, hrefs).apply {
                     element.classList.add(CssClass.HeaderMegaHeading)
                     highlight(this, column.title, query)
                 }
@@ -148,7 +155,7 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
             }
 
             column.links.forEach { link ->
-                val target = menuDestination(destinationLink(link.label, link.destination) { popup.close() })
+                val target = menuDestination(destinationLink(link.label, link.destination) { popup.close() }, hrefs)
                 target.element.classList.add(CssClass.MegaLink)
                 target.element.setText("")
                 target.element.appendChild(headerLinkTitle(link.label, query).element)
@@ -181,16 +188,16 @@ internal fun filteredMegaColumns(columns: List<HeaderMegaColumn>, query: String)
     }
 }
 
-/** Exact destinations retain their current marker when menu filtering creates fresh links. */
-private fun menuDestination(target: Component): Component = target.apply {
+/** Route destinations retain their current marker when menu filtering creates fresh links. */
+private fun menuDestination(target: Component, hrefs: Set<String>): Component = target.apply {
     if (this is RouterLink) {
-        configureExactRoute(this, ::markMenuCurrent)
+        configureNearestRoute(this, hrefs, ::markMenuCurrent)
     }
 }
 
-private fun markMenuCurrent(link: RouterLink, isCurrent: Boolean) {
-    link.element.setHighlight(isCurrent)
-    if (isCurrent) link.element.setAriaCurrent(AriaCurrent.Page) else link.element.setAriaCurrent(null)
+private fun markMenuCurrent(link: RouterLink, current: AriaCurrent?) {
+    link.element.setHighlight(current != null)
+    link.element.setAriaCurrent(current)
 }
 
 /** Title of a header item with literal, case-insensitive query matches marked. */

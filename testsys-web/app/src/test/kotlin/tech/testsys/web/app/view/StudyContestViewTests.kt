@@ -8,8 +8,11 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Table
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -25,6 +28,9 @@ import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.StudyFixtures
+import tech.testsys.web.app.service.student.StudentService
+import tech.testsys.web.app.service.study.StudyService
+import java.time.Clock
 import java.time.Duration
 
 @SpringBootTest
@@ -38,10 +44,22 @@ class StudyContestViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var participantEntries: ParticipantContestEntryRepository
 
+    @Autowired
+    private lateinit var studyService: StudyService
+
+    @Autowired
+    private lateinit var studentService: StudentService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
+    @Autowired
+    private lateinit var clock: Clock
+
     @Nested
     inner class StudentTests {
         @Test
-        fun `should lead the breadcrumbs to the main page, the cabinet and the class`() {
+        fun `should lead the breadcrumbs to the cabinet and the class`() {
             val student = study.student()
             val contest = study.runningContest(name = "Весенний тур")
             val studyClass = study.studentClass(listOf(student), listOf(contest), name = "Кружок")
@@ -51,7 +69,7 @@ class StudyContestViewTests : MockSpringVaadinTests() {
 
             assertEquals("Тур «Весенний тур»", UI.getCurrent()._get<H1>().text)
             assertEquals(
-                mapOf("Главная" to "home", "Кабинет Ученика" to "student", "Класс «Кружок»" to "student/classes/${studyClass.id.value}"),
+                mapOf("Кабинет Ученика" to "student", "Класс «Кружок»" to "student/classes/${studyClass.id.value}"),
                 StudyPages.crumbs(),
             )
         }
@@ -66,6 +84,30 @@ class StudyContestViewTests : MockSpringVaadinTests() {
             open(studyClass, contest)
 
             assertEquals("Тур", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        }
+
+        @Test
+        fun `should keep the title and show a load error in the details and the tasks if the contest fails to load`() {
+            val student = study.student()
+            val contest = study.runningContest(name = "Весенний тур", tasks = listOf(study.task()))
+            val studyClass = study.studentClass(listOf(student), listOf(contest))
+            study.studentEntry(student, studyClass, contest)
+            signIn(student)
+            val service = mockk<StudyService>()
+            every { service.checkContestAccess(studyClass.id, contest.id) } returns
+                studyService.checkContestAccess(studyClass.id, contest.id)
+            every { service.viewContest(studyClass.id, contest.id) } throws IllegalStateException("Contest storage unavailable")
+            val view = StudentContestView(headers, clock, service, studentService)
+            val event = mockk<BeforeEnterEvent>()
+            every { event.routeParameters } returns studentContestParameters(studyClass.id, contest.id)
+            UI.getCurrent().removeAll()
+            UI.getCurrent().add(view)
+
+            view.beforeEnter(event)
+
+            assertEquals("Тур «Весенний тур»", view._get<H1>().text)
+            assertEquals(2, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+            assertTrue(view._find<Button> { text = "Начать Тур" }.isEmpty())
         }
 
         @Test

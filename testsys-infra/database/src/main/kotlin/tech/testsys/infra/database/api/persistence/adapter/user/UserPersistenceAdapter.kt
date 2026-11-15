@@ -30,6 +30,7 @@ import tech.testsys.infra.database.internal.jpa.entity.group.CommunityJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.MultipleRoleToUserJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.multiple.SupervisorDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.UserMultipleRoleJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ParticipantDataJpaEntity
@@ -168,7 +169,7 @@ class UserPersistenceAdapter(
             builder.and(*predicates.toTypedArray())
         }
 
-    /** Selects every non-supervisor user, applying all conditions before pagination and counting. */
+    /** Selects every user without the supervisor role, applying all conditions before pagination and counting. */
     private fun supervisorSelection(filter: UserFilter): Specification<UserJpaEntity> = Specification { entity, query, builder ->
         val grounds = mutableListOf<Predicate>()
         val multipleRoles = filter.roles?.mapNotNull { role ->
@@ -224,7 +225,10 @@ class UserPersistenceAdapter(
                 .where(builder.equal(participant.get<Long>("userId"), entity.get<Long>("id")))
             grounds.add(builder.exists(participants))
         }
-        val predicates = mutableListOf(builder.or(*grounds.toTypedArray()))
+        val supervisors = query.subquery(Long::class.java)
+        val supervisor = supervisors.from(SupervisorDataJpaEntity::class.java)
+        supervisors.select(supervisor.get("userId")).where(builder.equal(supervisor.get<Long>("userId"), entity.get<Long>("id")))
+        val predicates = mutableListOf(builder.or(*grounds.toTypedArray()), builder.not(builder.exists(supervisors)))
         filter.name?.let { name -> predicates.add(builder.gt(builder.locate(builder.lower(entity.get("name")), name.lowercase()), 0)) }
         builder.and(*predicates.toTypedArray())
     }

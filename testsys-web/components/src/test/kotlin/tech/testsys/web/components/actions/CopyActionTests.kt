@@ -34,6 +34,29 @@ class CopyActionTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should copy and run the click listener set in configure`() {
+        var clicks = 0
+        buildTestContent { copyAction("Скопировать", value = { "code" }) { onClick { clicks++ } } }
+        pendingJavaScript()
+
+        _get<Button>()._click()
+
+        val calls = pendingJavaScript().filter { call -> "navigator.clipboard.writeText" in call.invocation.expression }
+        assertEquals(listOf("code"), calls.map { call -> call.invocation.parameters.first() })
+        assertEquals(1, clicks)
+    }
+
+    @Test
+    fun `should not copy while the action is loading`() {
+        buildTestContent { copyAction("Скопировать", value = { "code" }) { isLoading = true } }
+        pendingJavaScript()
+
+        _get<Button>()._click()
+
+        assertTrue(pendingJavaScript().none { call -> "navigator.clipboard.writeText" in call.invocation.expression })
+    }
+
+    @Test
     fun `should not copy anything before the click`() {
         buildTestContent { copyAction("Скопировать", value = { "code" }) }
 

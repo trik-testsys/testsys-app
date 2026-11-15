@@ -1,9 +1,12 @@
 package tech.testsys.web.service
 
+import com.vaadin.flow.spring.annotation.VaadinTaskExecutor
 import io.mockk.every
 import io.mockk.mockk
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.core.task.SyncTaskExecutor
+import org.springframework.core.task.TaskExecutor
 import org.springframework.mock.env.MockEnvironment
 import tech.testsys.bootstrap.ServiceWebSettings
 import tech.testsys.domain.builder.api.multipleRoleUser
@@ -13,14 +16,15 @@ import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.studentData
-import tech.testsys.domain.builder.api.supervisor
-import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.AccessTokenHasher
+import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.User
+import tech.testsys.infra.database.api.announcement.Announcements
+import tech.testsys.infra.database.api.service.ServiceSupervisorRole
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserSearch
@@ -37,12 +41,18 @@ import tech.testsys.infra.settings.api.catalog.SettingsValues
 import tech.testsys.infra.settings.api.service.SettingsOverview
 import tech.testsys.infra.settings.api.service.SettingsPersistence
 import tech.testsys.infra.settings.api.service.SettingsService
+import tech.testsys.operation.config.PublicCommunityOwner
 import java.time.Clock
 import java.time.Instant
 
 const val SERVICE_TEST_SECRET: String = "test-service-code-that-is-only-used-by-automated-tests-0123456789-ABCD"
 
 const val SERVICE_TEST_GRAFANA_URL: String = "https://grafana.example.test/monitoring/"
+
+/** Version of the system in the footer of the service UI in tests. */
+const val SERVICE_TEST_VERSION: String = "1.2.3"
+
+const val SERVICE_TEST_APP_URL: String = "https://testsys.example.test/testsys/"
 
 private val serviceTestAccessTokenHasher = AccessTokenHasher("0123456789abcdef".repeat(4))
 
@@ -56,8 +66,11 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
             name = "Мария Иванова"
             email = "maria@example.com"
             roles {
-                administrator {}
-                student { data = studentData {} }
+                administrator { memberOf(listOf(3002, 3001)) }
+                student {
+                    memberOf(listOf(3001))
+                    data = studentData {}
+                }
             }
         }
     },
@@ -80,21 +93,50 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
             name = "Наблюдатель Анна"
         }
     },
-    supervisor {
+    multipleRoleUser {
         id = 1004
         createdAt = Instant.parse("2026-03-14T09:30:00Z")
-        data = supervisorData {
-            accessToken("supervisor-token", serviceTestAccessTokenHasher)
+        data = multipleRoleUserData {
+            passwordHash = PasswordHash("supervisor-password-hash")
             name = "Супервайзер Олег"
+            email = "oleg@example.com"
+            roles { supervisor { memberOf(listOf(42)) } }
         }
     },
 )
 
-/** Makes the mocked [search] find nothing by conditions and find each of [SERVICE_TEST_USERS] by its id. */
+/** Technical owner of the public community, whom the service card offers no supervisor role action. */
+val SERVICE_TEST_PUBLIC_COMMUNITY_OWNER: MultipleRoleUser = multipleRoleUser {
+    id = 1005
+    createdAt = Instant.parse("2026-03-14T09:30:00Z")
+    data = multipleRoleUserData {
+        passwordHash = PasswordHash("owner-password-hash")
+        name = "Владелец"
+        email = PublicCommunityOwner.EMAIL
+    }
+}
+
+/** Names of the communities of [SERVICE_TEST_USERS] that the mocked service user search finds. */
+val SERVICE_TEST_COMMUNITY_NAMES: Map<CommunityId, String> = mapOf(
+    CommunityId(42) to "Публичное Сообщество",
+    CommunityId(3001) to "Олимпиада 2026",
+    CommunityId(3002) to "Кружок робототехники",
+)
+
+/**
+ * Makes the mocked [search] find nothing by conditions, find each of [SERVICE_TEST_USERS] by its id and find the names
+ * of [SERVICE_TEST_COMMUNITY_NAMES].
+ */
 fun stubServiceTestUsers(search: ServiceUserSearch) {
     every { search.find(any(), any()) } answers { Page(emptyList(), secondArg(), 0) }
     every { search.findById(any()) } returns null
-    SERVICE_TEST_USERS.forEach { user -> every { search.findById(ServiceUserId(user.id.value)) } returns user }
+    (SERVICE_TEST_USERS + SERVICE_TEST_PUBLIC_COMMUNITY_OWNER).forEach { user ->
+        every { search.findById(ServiceUserId(user.id.value)) } returns user
+    }
+    every { search.findCommunityNames(any()) } answers {
+        val ids = firstArg<Collection<CommunityId>>()
+        SERVICE_TEST_COMMUNITY_NAMES.filterKeys { id -> id in ids }
+    }
 }
 
 @TestConfiguration(proxyBeanMethods = false)
@@ -142,16 +184,25 @@ class ServiceTestConfiguration {
     fun serviceUserSearch(): ServiceUserSearch = mockk<ServiceUserSearch>().also(::stubServiceTestUsers)
 
     @Bean
+    fun serviceSupervisorRole(): ServiceSupervisorRole = mockk()
+
+    @Bean
     fun serviceTrikStudioVersions(): ServiceTrikStudioVersions = mockk {
         every { findAll() } returns emptyList()
         every { findUsedTags() } returns emptySet()
     }
 
     @Bean
+    fun announcements(): Announcements = mockk {
+        every { findAll() } returns emptyList()
+    }
+
+    @Bean
     fun serviceSettings(): ServiceWebSettings = ServiceWebSettings.from(
         MockEnvironment().withProperty("testsys.service.secret", SERVICE_TEST_SECRET)
             .withProperty("testsys.service.address", "127.0.0.1").withProperty("testsys.service.port", "0")
-            .withProperty("testsys.service.grafana-url", SERVICE_TEST_GRAFANA_URL),
+            .withProperty("testsys.service.grafana-url", SERVICE_TEST_GRAFANA_URL)
+            .withProperty("testsys.service.app-url", SERVICE_TEST_APP_URL),
     )
 
     @Bean
@@ -159,4 +210,8 @@ class ServiceTestConfiguration {
 
     @Bean
     fun cabinetSignInStore(): CabinetSignInStore = mockk(relaxed = true)
+
+    /** Runs the background work of pages in the calling thread, as `AppTestConfiguration` does for the main interface. */
+    @Bean(VaadinTaskExecutor.NAME, defaultCandidate = false)
+    fun vaadinTaskExecutor(): TaskExecutor = SyncTaskExecutor()
 }

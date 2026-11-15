@@ -16,7 +16,6 @@ import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap
 import com.vaadin.flow.router.HasDynamicTitle
-import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -62,15 +61,12 @@ class JudgeViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should start the breadcrumbs with the main page`() {
+    fun `should show no breadcrumbs on the role page`() {
         signIn(fixtures.judge())
 
         openSubmissions()
 
-        val crumbs = UI.getCurrent()._find<Nav> { classes = "ts-crumbs" }
-            .flatMap { nav -> nav._find<RouterLink>() }
-            .associate { link -> link.text to link.href }
-        assertEquals(mapOf("Главная" to "home"), crumbs)
+        assertTrue(UI.getCurrent()._find<Nav> { classes = "ts-crumbs" }.isEmpty())
     }
 
     @Test

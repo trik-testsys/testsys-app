@@ -17,7 +17,7 @@ import tech.testsys.domain.builder.user.ObserverDataBuilder
 import tech.testsys.domain.builder.user.ParticipantDataBuilder
 import tech.testsys.domain.builder.user.RegistrationRequestDataBuilder
 import tech.testsys.domain.builder.user.StudentBuilder
-import tech.testsys.domain.builder.user.SupervisorDataBuilder
+import tech.testsys.domain.builder.user.SupervisorBuilder
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.group.Class
@@ -41,7 +41,6 @@ import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.RegistrationRequest
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.config.CommunityConfig
 import java.time.Instant
 import java.util.UUID
@@ -198,13 +197,15 @@ fun testObserver(builder: ObserverDataBuilder.() -> Unit = {}): Observer = obser
     }
 }
 
-fun testSupervisor(builder: SupervisorDataBuilder.() -> Unit = {}): Supervisor = supervisor {
+fun testSupervisor(builder: SupervisorBuilder.() -> Unit = {}): MultipleRoleUser = multipleRoleUser {
     id = 19
     createdAt = Instant.EPOCH
-    data = supervisorData {
-        accessToken("supervisor", testAccessTokenHasher)
+    version = EntityVersion(0)
+    data = multipleRoleUserData {
         name = "Supervisor"
-        builder()
+        email = "supervisor@example.com"
+        passwordHash = PasswordHash("password-hash")
+        roles { supervisor(builder) }
     }
 }
 

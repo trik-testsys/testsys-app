@@ -22,6 +22,7 @@ enum class UserMultipleRoleJpaEnum {
     ADMINISTRATOR,
     JUDGE,
     MANAGER,
+    SUPERVISOR,
 }
 
 /**

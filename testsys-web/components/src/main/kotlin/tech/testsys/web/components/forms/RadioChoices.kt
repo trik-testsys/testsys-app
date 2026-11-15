@@ -12,10 +12,10 @@ import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.layout.BlockRowScope
-import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.GuestCardScope
 
 private const val MAX_SEGMENTED_CHOICES = 4
+private const val SEGMENTED_CHOICE_MODULE = "./testsys-ui/segmented-choice.ts"
 
 /**
  * Adds one radio choice from [items] shown by [itemLabel] on [size] columns, beside [labelSize] label columns.
@@ -36,34 +36,26 @@ fun <T : Any> BlockRowScope.radio(
     label,
     labelSize,
     size,
-    ChoiceField(label, items, itemLabel, itemMeta, isSegmented = false),
+    ChoiceField(label, items, itemLabel, itemMeta),
     hint,
     configure,
 )
 
 /**
- * Adds a segmented choice from [items] shown by [itemLabel] on [size] columns beside [labelSize] label columns.
+ * Adds a segmented choice of [items] across the width of a guest card; [label] is only its accessible name.
  *
  * @param T the type of the choices.
  * @since 1.0.0-beta.1
  */
-fun <T : Any> BlockRowScope.segmentedControl(
+fun <T : Any> GuestCardScope.segmentedControl(
     label: String,
-    labelSize: Int,
-    size: Int,
     items: List<T>,
     itemLabel: (T) -> String,
-    hint: String? = null,
-    itemMeta: ((T) -> String)? = null,
     configure: ValueInput<T?>.() -> Unit = {},
-): ValueInput<T?> = addInput(
-    label,
-    labelSize,
-    size,
-    ChoiceField(label, items, itemLabel, itemMeta, isSegmented = true),
-    hint,
-    configure,
-)
+): ValueInput<T?> {
+    val field = ChoiceField(label, items, itemLabel, itemMeta = null, isSegmented = true)
+    return body.placeLabelLessInput(label, field, configure)
+}
 
 @JsModule(SEGMENTED_CHOICE_MODULE)
 internal class ChoiceField<T : Any>(
@@ -71,7 +63,7 @@ internal class ChoiceField<T : Any>(
     private val choices: List<T>,
     itemLabel: (T) -> String,
     itemMeta: ((T) -> String)?,
-    isSegmented: Boolean,
+    isSegmented: Boolean = false,
 ) : RadioButtonGroup<T?>() {
     init {
         require(
@@ -110,36 +102,6 @@ internal class ChoiceField<T : Any>(
         super.setValue(value)
     }
 }
-
-/**
- * Adds a compact segmented filter of [items], ignoring the block edit mode.
- *
- * @param T the type of the choices.
- * @since 1.0.0-beta.1
- */
-fun <T : Any> ContentScope.segmentedControl(
-    label: String,
-    items: List<T>,
-    itemLabel: (T) -> String,
-    configure: ValueInput<T?>.() -> Unit = {},
-): ValueInput<T?> {
-    val field = ChoiceField(label, items, itemLabel, null, isSegmented = true)
-    if (placement.isCompact) field.addClassName(CssClass.SegSm)
-    return addLabelLessInput(label, field, configure)
-}
-
-/**
- * Adds a segmented choice of [items] across the width of a guest card; [label] is only its accessible name.
- *
- * @param T the type of the choices.
- * @since 1.0.0-beta.1
- */
-fun <T : Any> GuestCardScope.segmentedControl(
-    label: String,
-    items: List<T>,
-    itemLabel: (T) -> String,
-    configure: ValueInput<T?>.() -> Unit = {},
-): ValueInput<T?> = body.segmentedControl(label, items, itemLabel, configure)
 
 private fun Element.attachSegmentedChoice(): PendingJavaScriptResult = executeJs("window.testsysSegmentedChoice.attach(this)")
 

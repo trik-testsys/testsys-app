@@ -98,8 +98,9 @@ BuildKit. Runtime-этап на `eclipse-temurin:21-jre-noble` запускае�
 
 `.dockerignore` исключает из контекста историю Git, локальные результаты сборки и кэши, `.env`, файлы ключей,
 рабочие планы, документацию, каталог `deploy/` и настройки инструментов разработки. Файлы, нужные Gradle, Vaadin
-и сборке frontend, остаются. В checkout на Windows `gradlew` может иметь окончания строк CRLF, поэтому сборочный
-этап перед запуском заменяет их в этом файле на LF.
+и сборке frontend, остаются. Из исключённых файлов Markdown в контексте остаются тексты истории изменений
+`testsys-web/app/src/main/resources/changelog/`: это ресурсы приложения. В checkout на Windows `gradlew` может
+иметь окончания строк CRLF, поэтому сборочный этап перед запуском заменяет их в этом файле на LF.
 
 ## Скрипт
 
@@ -175,9 +176,9 @@ Git Bash на Windows при запуске `docker` преобразует зн
 Импорт не помечен `optional:`, поэтому без любого из файлов приложение не запустится. Импортированные файлы
 перекрывают `application.yml` внутри jar, а тот — значения по умолчанию модулей.
 
-Секреты, адрес Grafana и адреса Проверяющих узлов Compose передаёт переменными окружения. Override каждого окружения задаёт
-сервису `app` один и тот же блок `environment:`: `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD`,
-`TESTSYS_SUPERVISOR_ACCESS_TOKEN`, `TESTSYS_SERVICE_SECRET`, `TESTSYS_ACCESS_TOKEN_SECRET`, `TESTSYS_GRAFANA_URL`,
+Секреты, адреса Grafana и основного интерфейса и адреса Проверяющих узлов Compose передаёт переменными окружения.
+Override каждого окружения задаёт сервису `app` один и тот же блок `environment:`: `TESTSYS_DB_PASSWORD`,
+`TESTSYS_MAIL_PASSWORD`, `TESTSYS_SERVICE_SECRET`, `TESTSYS_ACCESS_TOKEN_SECRET`, `TESTSYS_GRAFANA_URL`, `TESTSYS_APP_URL`,
 `TESTSYS_GRADING_NODES` и `TESTSYS_GRADING_IMPORT_NODES`. Значения берутся из файла переменных окружения
 под тем же именем, см. [Файлы переменных](#файлы-переменных). Как переменная доходит до ключа и почему её ключ
 не задают в файлах окружения — в разделе «Параметры приложения»
@@ -216,7 +217,7 @@ Healthcheck сервиса `app` проверяет, что порты `8080`, `
 `bash -c ': </dev/tcp/127.0.0.1/8080 && : </dev/tcp/127.0.0.1/8081 && : </dev/tcp/127.0.0.1/8082'`.
 
 `TestSysRuntime` сначала запускает общий контекст инфраструктуры. В нём применяются миграции Liquibase,
-`PublicCommunityBootstrap` проверяет Публичное Сообщество, а `SupervisorBootstrap` — Супервайзера. Затем
+и `PublicCommunityBootstrap` проверяет Публичное Сообщество. Затем
 `TestSysRuntime` по очереди запускает основной, служебный и метрический контексты, и каждый открывает свой порт;
 порт метрик открывается последним. Если любой контекст не запустился, `TestSysRuntime` закрывает уже запущенные,
 и процесс завершается. Поэтому статус `healthy` означает, что миграции применены и все три сервера принимают
@@ -271,7 +272,7 @@ Override окружения монтирует в `/var/log/testsys` катал�
 
 Сервис `db-seed` в `deploy/compose.dev.yml` работает на образе `postgres:17-alpine` и запускает
 `deploy/db-seed/entrypoint.sh` при каждом `up`. Он зависит от `app` с условием `service_healthy`, поэтому стартует
-после миграций Liquibase, создания Публичного Сообщества и проверки Супервайзера в общем контексте инфраструктуры,
+после миграций Liquibase и создания Публичного Сообщества в общем контексте инфраструктуры,
 см. [Готовность приложения](#готовность-приложения). `psql` подключается к базе
 `testsys` от пользователя `testsys` с паролем из `TESTSYS_DB_PASSWORD`. Каталог данных образа postgres смонтирован
 в `tmpfs`, чтобы `db-seed` не оставлял анонимный том.
@@ -364,7 +365,7 @@ Prometheus — источник по умолчанию. Пользовател�
 | `GF_SECURITY_ADMIN_PASSWORD` | `deploy/compose.prod.yml` из переменной Compose `TESTSYS_GRAFANA_ADMIN_PASSWORD` | Пароль `admin`; Grafana применяет его, только когда создаёт свою базу в пустом томе |
 
 Без `GF_SECURITY_ADMIN_PASSWORD` в dev администратор получает стандартный пароль Grafana. Тот же
-`TESTSYS_GRAFANA_URL` override передаёт приложению под тем же именем, поэтому кнопка «Grafana»
+`TESTSYS_GRAFANA_URL` override передаёт приложению под тем же именем, поэтому раздел «Grafana»
 служебного кабинета открывает Grafana своего проекта. Compose не сверяет порт в этом адресе с опубликованным портом
 Grafana; их согласует тот, кто задаёт переменные. Префикс в файлах переменных по умолчанию — `/grafana/`; другой
 путь в адресе Grafana принимает без изменений Compose-файлов. В e2e Grafana нет, а `TESTSYS_GRAFANA_URL` нужен только

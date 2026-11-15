@@ -6,14 +6,16 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.contextmenu.MenuItem
 import com.vaadin.flow.component.html.Hr
+import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import tech.testsys.web.components.FirstTestView
+import tech.testsys.web.components.ItemTestView
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestPage
-import tech.testsys.web.components.button
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.table
@@ -32,13 +34,6 @@ class MenuTests : MockVaadinTests() {
         assertEquals("sm", trigger.element.getAttribute("data-ts-size"))
         assertTrue(menuOf(trigger).isOpenOnClick)
         assertEquals("ts-menu", menuOf(trigger).element.getAttribute("theme"))
-    }
-
-    @Test
-    fun `should open the menu from a text button`() {
-        buildTestPage { row { block(title = "Тур") { actions { menu(label = "Ещё") { item("Открыть") {} } } } } }
-
-        assertEquals("menu", button("Ещё").element.getAttribute("aria-haspopup"))
     }
 
     @Test
@@ -101,10 +96,39 @@ class MenuTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should navigate to the route of a chosen link`() {
+        buildTestPage { row { block(title = "Тур") { actions { menu { link("Открыть", FirstTestView::class.java) } } } } }
+
+        menuOf(ellipsis())._clickItemWithCaption("Открыть")
+
+        assertEquals("test/first", UI.getCurrent().internals.activeViewLocation.path)
+    }
+
+    @Test
+    fun `should navigate to the route of a chosen link with its parameters`() {
+        buildTestPage {
+            row { block(title = "Тур") { actions { menu { link("Открыть", ItemTestView::class.java, RouteParameters("id", "7")) } } } }
+        }
+
+        menuOf(ellipsis())._clickItemWithCaption("Открыть")
+
+        assertEquals("test/item/7", UI.getCurrent().internals.activeViewLocation.path)
+    }
+
+    @Test
     fun `should show a disabled item`() {
         buildTestPage { row { block(title = "Тур") { actions { menu { item("Открыть", isEnabled = false) {} } } } } }
 
         assertFalse((menuOf(ellipsis()).children.toList().single() as MenuItem).isEnabled)
+    }
+
+    @Test
+    fun `should show a disabled destructive item`() {
+        buildTestPage { row { block(title = "Тур") { actions { menu { destructiveItem("Удалить", isEnabled = false) {} } } } } }
+
+        val item = menuOf(ellipsis()).children.toList().single() as MenuItem
+        assertFalse(item.isEnabled)
+        assertTrue("ts-menu__item--danger" in item.element.classList)
     }
 
     @Test
@@ -129,6 +153,24 @@ class MenuTests : MockVaadinTests() {
                             menu {
                                 destructiveItem("Удалить") {}
                                 item("Открыть") {}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `should reject a link after a destructive one`() {
+        assertThrows<IllegalStateException> {
+            buildTestPage {
+                row {
+                    block {
+                        actions {
+                            menu {
+                                destructiveItem("Удалить") {}
+                                link("Открыть", FirstTestView::class.java)
                             }
                         }
                     }

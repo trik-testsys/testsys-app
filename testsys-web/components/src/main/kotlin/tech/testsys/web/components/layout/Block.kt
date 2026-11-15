@@ -36,13 +36,13 @@ internal fun buildBlock(
     val editState = BlockEditState(block.element)
     val scope = BlockScope(body, columns, texts, editState, heading.title).apply(content).apply { finish() }
     val guideControl = scope.guide?.let { guideButton(texts.messages.uiPage.guideBlock(), isPage = false) }
+    val head = blockHead(heading, actions = scope.actionsBar, tabs = scope.tabsBar, guideControl = guideControl)
     with(block) {
         addClassNames(CssClass.Block, CssClass.BlockGrid)
         if (scope.filtersBar != null) addClassName(CssClass.BlockFilters)
         if (highlight) addClassName(CssClass.BlockDark)
         style.setGridColumnSpan(span)
-        blockHead(heading = heading, actions = scope.actionsBar, tabs = scope.tabsBar, guideControl = guideControl)
-            ?.let { head -> add(head) }
+        head?.let { header -> add(header) }
         scope.filtersBar?.let { filters -> add(filters) }
         if (body.children.findAny().isPresent) {
             if (scope.isFlushBody) body.addClassName(CssClass.BlockBodyFlush)
@@ -52,7 +52,8 @@ internal fun buildBlock(
     }
 
     scope.guide?.install(block)
-    scope.start()
+    val hasHeadOwnParts = heading.title != null || heading.subtitle != null || scope.tabsBar != null || guideControl != null
+    scope.start(actionsOnlyHead = head.takeUnless { hasHeadOwnParts })
     return BlockHandle(block, editState, hasEditingSwitch = scope.hasEditingSwitch)
 }
 

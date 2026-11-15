@@ -3,7 +3,6 @@
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.AbstractField
-import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasValidation
 import com.vaadin.flow.component.HasValue
 import com.vaadin.flow.data.binder.HasValidator
@@ -23,8 +22,8 @@ import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.FieldParts
 
 /**
- * Handle of a form field whose visibility covers the label and the control, or of a label-less control; it binds to
- * a Vaadin `Binder` like any field and shows its errors. Opt into [skipWhenHidden] on a binding to exclude hidden
+ * Handle of a form field whose visibility covers the label and the control; it binds to a Vaadin `Binder` like any
+ * field and shows its errors. Opt into [skipWhenHidden] on a binding to exclude hidden
  * fields from general Binder validation and explicit writes; reading and automatic writes keep Vaadin behaviour.
  *
  * @param T the type of the field value.
@@ -36,12 +35,11 @@ import tech.testsys.web.components.layout.FieldParts
  * @since 1.0.0-beta.1
  */
 class ValueInput<T> internal constructor(
-    private val parts: FieldParts?,
+    private val parts: FieldParts,
     component: AbstractField<*, T>,
     private val validation: HasValidation,
     private val validator: HasValidator<T>,
-    valueArea: Component,
-) : FieldHandle(component = parts?.field ?: valueArea, valueArea = valueArea),
+) : FieldHandle(component = parts.field, valueArea = parts.valueCell),
     HasValue<HasValue.ValueChangeEvent<T>, T>,
     HasValidation,
     HasValidator<T> {
@@ -49,7 +47,7 @@ class ValueInput<T> internal constructor(
 
     private val enabled = Bindable(this.component.element, initial = component.isEnabled) { value ->
         fieldComponent.isEnabled = value
-        parts?.field?.setClassName(CssClass.FieldDisabled, !value)
+        parts.field.setClassName(CssClass.FieldDisabled, !value)
     }
 
     private var isBlockEditable = true
@@ -61,7 +59,7 @@ class ValueInput<T> internal constructor(
     private val requiredIndicator =
         Bindable(this.component.element, initial = component.isRequiredIndicatorVisible) { value ->
             fieldComponent.isRequiredIndicatorVisible = value
-            parts?.requiredMark?.isVisible = value
+            parts.requiredMark.isVisible = value
         }
 
     var isEnabled: Boolean

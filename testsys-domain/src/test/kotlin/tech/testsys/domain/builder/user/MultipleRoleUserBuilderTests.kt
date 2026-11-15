@@ -80,6 +80,16 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
         },
         multipleRoleUserData {
             passwordHash = PasswordHash("hash")
+            name = "Grace"
+            email = "grace@example.com"
+            roles {
+                supervisor {
+                    memberOf(listOf(1))
+                }
+            }
+        },
+        multipleRoleUserData {
+            passwordHash = PasswordHash("hash")
             name = "Frank"
             email = "frank@example.com"
             roles {

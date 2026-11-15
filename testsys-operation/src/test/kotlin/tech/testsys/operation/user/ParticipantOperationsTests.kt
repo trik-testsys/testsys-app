@@ -33,8 +33,8 @@ import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.testCompetition
 import tech.testsys.operation.util.testContest
+import tech.testsys.operation.util.testObserver
 import tech.testsys.operation.util.testParticipant
-import tech.testsys.operation.util.testSupervisor
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -57,7 +57,7 @@ class ParticipantOperationsTests {
         contests(listOf(19))
     }
     private val contest = testContest()
-    private val wrongRole = testSupervisor()
+    private val wrongRole = testObserver()
     private fun savedEntry(at: Instant = Instant.ofEpochSecond(100), contestId: Long = contest.id.value) = participantContestEntry {
         id = 71
         createdAt = Instant.EPOCH
@@ -144,7 +144,7 @@ class ParticipantOperationsTests {
         inner class RefusalTests {
 
             @Test
-            fun `should raise MissedParticipantRoleError before reading competitions if user is a Supervisor`() {
+            fun `should raise MissedParticipantRoleError before reading competitions if user is an Observer`() {
                 assertRaises(MissedParticipantRoleError) {
                     operations.viewContests(user = wrongRole)
                 }
@@ -308,7 +308,7 @@ class ParticipantOperationsTests {
         inner class RefusalTests {
 
             @Test
-            fun `should raise MissedParticipantRoleError before reading competitions if user is a Supervisor`() {
+            fun `should raise MissedParticipantRoleError before reading competitions if user is an Observer`() {
                 assertRaises(MissedParticipantRoleError) {
                     operations.enterContest(user = wrongRole, contestId = contest.id)
                 }

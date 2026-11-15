@@ -15,6 +15,7 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
@@ -42,22 +43,24 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
     }
 
     private fun show() {
-        // Also checks the student role before the table loads, so that its absence opens the forbidden screen.
-        val classes = studentService.viewClasses()
+        // Checks the student role before the classes load, so that its absence opens the forbidden screen.
+        studentService.checkStudentRole()
         val localization = currentLocalization()
         val texts = localization.pageStudent
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            head(texts.title())
             guide(texts.guide())
             row {
                 block(size = CLASSES_COLUMNS, title = localization.pageCabinet.sectionClasses()) {
                     guide(texts.classesGuide())
-                    table(key = { studyClass: ClassVo -> studyClass.id }, fetch = { request -> pageOf(classes, request) }) {
-                        textColumn(texts.name(), size = 8) { studyClass -> studyClass.name }
-                        textColumn(texts.description()) { studyClass -> studyClass.description }
-                        empty(texts.classesEmpty(), texts.classesEmptyHint())
-                        onRowClick(isNavigation = true) { studyClass ->
-                            UI.getCurrent().navigate(StudentClassView::class.java, studentClassParameters(studyClass.id))
+                    load({ studentService.viewClasses() }) { classes ->
+                        table(key = { studyClass: ClassVo -> studyClass.id }, fetch = { request -> pageOf(classes, request) }) {
+                            textColumn(texts.name(), size = 8) { studyClass -> studyClass.name }
+                            textColumn(texts.description()) { studyClass -> studyClass.description }
+                            empty(texts.classesEmpty(), texts.classesEmptyHint())
+                            onRowClick(isNavigation = true) { studyClass ->
+                                UI.getCurrent().navigate(StudentClassView::class.java, studentClassParameters(studyClass.id))
+                            }
                         }
                     }
                 }

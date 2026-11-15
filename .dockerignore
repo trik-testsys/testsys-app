@@ -29,6 +29,8 @@ workspace/
 docs/
 scripts/
 **/*.md
+# User changelog texts are application resources
+!testsys-web/app/src/main/resources/changelog/**/*.md
 
 # Container definitions and deployment files mounted by Compose
 Dockerfile

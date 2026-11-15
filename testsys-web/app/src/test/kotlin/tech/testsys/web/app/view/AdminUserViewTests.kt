@@ -12,16 +12,21 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -60,6 +65,7 @@ import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.texts.currentTimeZone
@@ -93,6 +99,12 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var dataSource: DataSource
 
+    @Autowired
+    private lateinit var administratorService: AdministratorService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
     @Test
     fun `should show the common data and the roles of a member in the communities of the administrator`() {
         val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
@@ -114,6 +126,27 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
         assertEquals("Пользователь", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
         assertEquals("Пользователь «Разработчик Иван»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should keep the title and tabs and show a load error in the details and roles if they fail to load`() {
+        val member = developerOf(fixtures.community(owner = signInAdministrator()), name = "Разработчик Иван")
+        val service = mockk<AdministratorService>()
+        every { service.checkUserAccess(member.id) } returns administratorService.checkUserAccess(member.id)
+        every { service.viewUser(member.id) } throws IllegalStateException("User storage unavailable")
+        every { service.checkAdministratorRole() } throws IllegalStateException("Community storage unavailable")
+        val view = AdminUserView(headers, service, communityConfig)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns userParameters(member.id)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(event)
+
+        assertEquals("Пользователь «Разработчик Иван»", view._get<H1>().text)
+        assertEquals(listOf("Сведения", "Разработчик"), tabLabels())
+        assertEquals(2, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
+        assertFalse(view._get<Button> { text = "Включить в Сообщество" }.isEnabled)
     }
 
     @Test
@@ -210,6 +243,19 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         assertEquals(setOf(communityConfig.publicCommunityId, other.id), student.memberOf.ids.toSet())
         assertTrue("Второе сообществоУченик" in rolesText(), rolesText())
         assertEquals("Пользователь включён в Сообщество", lastToastTitle())
+    }
+
+    @Test
+    fun `should show a role granted meanwhile after a refresh of the roles table`() {
+        val administrator = signInAdministrator()
+        val member = developerOf(fixtures.community(owner = administrator))
+        val other = fixtures.community(owner = administrator, name = "Второе сообщество")
+        openUser(member)
+        administratorService.grantRole(member.id, other.id, CommunityRole.Student)
+
+        refreshRoles()
+
+        assertTrue("Второе сообществоУченик" in rolesText(), rolesText())
     }
 
     @Test
@@ -490,6 +536,14 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
     private fun rolesText(): String =
         UI.getCurrent()._find<Table>().first { table -> "Роли" in table.element.textRecursively }.element.textRecursively
+
+    /** Clicks the refresh button of the block with the roles table. */
+    private fun refreshRoles() {
+        val table = UI.getCurrent()._find<Table>().first { candidate -> "Роли" in candidate.element.textRecursively }
+        generateSequence(table.parent.orElse(null)) { component -> component.parent.orElse(null) }
+            .filterIsInstance<Section>().first()
+            ._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+    }
 
     /** Returns the text of the first table with the column [title]. */
     private fun tableText(title: String): String =

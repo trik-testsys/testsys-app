@@ -108,6 +108,20 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should mark the section of a page nested in it as the current location`() {
+        signIn(fixtures.supervisor())
+        val observer = fixtures.observer(fixtures.community(), rawAccessToken = fixtures.unique("observer-code"))
+
+        UI.getCurrent().navigate("supervisor/users/${observer.id.value}")
+
+        val marked = UI.getCurrent()._find<RouterLink> { classes = "ts-mega__link" }
+            .filter { link -> link.element.hasAttribute("highlight") }
+            .associate { link -> link._get<Span>().text to link.element.getAttribute("aria-current") }
+        assertEquals(mapOf("Пользователи" to "location"), marked)
+        assertTrue(currentMenuLinks().isEmpty())
+    }
+
+    @Test
     fun `should mark only the opened section of a role page`() {
         signIn(fixtures.multipleRoleUser { roles { developer { data = developerData {} } } })
 
@@ -138,12 +152,21 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
 
     @Test
     fun `should offer only signing out to a user with a fixed role`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.userOf(UserKind.OBSERVER))
 
-        UI.getCurrent().navigate(SupervisorView::class.java)
+        UI.getCurrent().navigate(ObserverView::class.java)
 
         assertTrue(UI.getCurrent()._find<RouterLink> { text = "Профиль" }.isEmpty())
         assertEquals(1, UI.getCurrent()._find<NativeButton> { text = "Выйти" }.size)
+    }
+
+    @Test
+    fun `should show the column of the supervisor role with its sections in the menu`() {
+        signIn(fixtures.supervisor())
+
+        UI.getCurrent().navigate(MultiMainView::class.java)
+
+        assertEquals(mapOf("Супервайзер" to "supervisor"), menuSections())
     }
 
     @Test
@@ -188,7 +211,7 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
         assertEquals(expectedAsUser, asUserSignIn)
         assertNotEquals(asUser, returned)
         assertNull(store.find(asUser, idleSince = Instant.EPOCH))
-        val expectedOwn = StoredCabinetSignIn.User(userId = supervisorId, kind = CabinetSignInUserKind.SUPERVISOR)
+        val expectedOwn = StoredCabinetSignIn.User(userId = supervisorId, kind = CabinetSignInUserKind.MULTIPLE_ROLE)
         assertEquals(expectedOwn, store.find(returned, idleSince = Instant.EPOCH))
     }
 
@@ -199,7 +222,11 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
 
         UI.getCurrent().navigate(MultiMainView::class.java)
 
-        assertEquals(1, UI.getCurrent()._find<Span> { text = "Анна Петрова$NBSP·${NBSP}вход${NBSP}Супервайзера" }.size)
+        assertEquals(
+            listOf("Вход Супервайзера"),
+            UI.getCurrent()._find<Span> { classes = "ts-header__user-mark" }.map { mark -> mark.text },
+        )
+        assertEquals(1, UI.getCurrent()._find<Span> { text = "Анна Петрова" }.size)
         val menuActions = UI.getCurrent()._find<NativeButton>().map { button -> button.text }
             .filter { label -> label in setOf("Вернуться к Супервайзеру", "Выйти") }
         assertEquals(listOf("Вернуться к Супервайзеру", "Выйти"), menuActions)
@@ -287,8 +314,5 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
             "Наблюдатель",
             "Супервайзер",
         )
-
-        // The supervisor mark is joined to the nickname by no-break spaces, so the avatar takes no initial from it.
-        val NBSP = Char(0x00A0).toString()
     }
 }

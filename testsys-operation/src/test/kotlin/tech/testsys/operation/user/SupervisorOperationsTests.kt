@@ -44,6 +44,7 @@ import tech.testsys.operation.error.CommunityNotExistsError
 import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.ImpersonationDeniedError
 import tech.testsys.operation.error.MissedSupervisorRoleError
+import tech.testsys.operation.error.SupervisorRoleNotGrantableError
 import tech.testsys.operation.error.UserHasFixedRoleError
 import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.getOrThrow
@@ -121,6 +122,22 @@ class SupervisorOperationsTests {
                 assertEquals(1, result.totalElements)
                 assertEquals(member to login, result.content.single())
             }
+
+            @Test
+            fun `should accept a supervisor who also holds other roles`() {
+                val actor = testMultipleRoleUser {
+                    roles {
+                        administrator {}
+                        supervisor { memberOf(listOf(publicId.value)) }
+                    }
+                }
+                every { users.findUsers(pagination, UserFilter()) } returns Page(emptyList(), pagination, 0)
+                every { userRepository.findLastLogins(emptyList()) } returns emptyMap()
+
+                val result = operations.viewUsers(actor, pagination).getOrThrow()
+
+                assertEquals(0, result.totalElements)
+            }
         }
 
         @Nested
@@ -128,6 +145,13 @@ class SupervisorOperationsTests {
             @Test
             fun `should reject an actor without the supervisor role before reading users`() {
                 assertRaises(MissedSupervisorRoleError) { operations.viewUsers(member, pagination) }
+
+                verify { users wasNot Called }
+            }
+
+            @Test
+            fun `should reject a fixed-role actor before reading users`() {
+                assertRaises(MissedSupervisorRoleError) { operations.viewUsers(testParticipant(), pagination) }
 
                 verify { users wasNot Called }
             }
@@ -392,7 +416,68 @@ class SupervisorOperationsTests {
     }
 
     @Nested
-    inner class ViewCommunityTests {
+    inner class CheckSupervisorRoleTests {
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return every community in the port order without counting their users`() {
+                val first = testCommunity(targetId.value)
+                val second = testCommunity(42)
+                every { communities.findAllCommunities() } returns listOf(first, second)
+
+                val result = operations.checkSupervisorRole(supervisor).getOrThrow()
+
+                assertEquals(listOf(first, second), result)
+                verify { users wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should reject a non-supervisor before listing communities`() {
+                assertRaises(MissedSupervisorRoleError) { operations.checkSupervisorRole(member) }
+
+                verify { communities wasNot Called }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckUserAccessTests {
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return a non-supervisor user without reading their last login`() {
+                every { users.findUserById(member.id) } returns member
+
+                val result = operations.checkUserAccess(supervisor, member.id).getOrThrow()
+
+                assertSame(member, result)
+                verify { userRepository wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should reject a non-supervisor before reading the user`() {
+                assertRaises(MissedSupervisorRoleError) { operations.checkUserAccess(member, member.id) }
+
+                verify { users wasNot Called }
+            }
+
+            @Test
+            fun `should reject a user the supervisor port does not find`() {
+                every { users.findUserById(member.id) } returns null
+
+                assertRaises(UserNotExistsError(member.id)) { operations.checkUserAccess(supervisor, member.id) }
+            }
+        }
+    }
+
+    @Nested
+    inner class CheckCommunityAccessTests {
         @Nested
         inner class HappyPathTests {
             @Test
@@ -400,7 +485,7 @@ class SupervisorOperationsTests {
                 val community = testCommunity(targetId.value)
                 every { communityRepository.findById(targetId) } returns community
 
-                val result = operations.viewCommunity(supervisor, targetId).getOrThrow()
+                val result = operations.checkCommunityAccess(supervisor, targetId).getOrThrow()
 
                 assertSame(community, result)
             }
@@ -412,12 +497,12 @@ class SupervisorOperationsTests {
             fun `should reject a missing community`() {
                 every { communityRepository.findById(targetId) } returns null
 
-                assertRaises(CommunityNotExistsError(targetId)) { operations.viewCommunity(supervisor, targetId) }
+                assertRaises(CommunityNotExistsError(targetId)) { operations.checkCommunityAccess(supervisor, targetId) }
             }
 
             @Test
             fun `should reject a non-supervisor before loading a community`() {
-                assertRaises(MissedSupervisorRoleError) { operations.viewCommunity(member, targetId) }
+                assertRaises(MissedSupervisorRoleError) { operations.checkCommunityAccess(member, targetId) }
 
                 verify { communityRepository wasNot Called }
             }
@@ -530,6 +615,19 @@ class SupervisorOperationsTests {
                 }
 
                 verify { multipleRoleUsers wasNot Called }
+            }
+
+            @Test
+            fun `should reject granting the supervisor role before changing membership`() {
+                every { users.findUserById(member.id) } returns member
+                every { communityRepository.findById(publicId) } returns testCommunity(publicId.value)
+
+                assertRaises(SupervisorRoleNotGrantableError(CommunityRole.Supervisor)) {
+                    operations.addToCommunity(supervisor, member.id, publicId, CommunityRole.Supervisor)
+                }
+
+                verify { multipleRoleUsers wasNot Called }
+                verify { administratorOperations wasNot Called }
             }
         }
 
@@ -782,6 +880,19 @@ class SupervisorOperationsTests {
                 }
 
                 verify { multipleRoleUsers wasNot Called }
+            }
+
+            @Test
+            fun `should reject a user with the supervisor role as missing before loading a community`() {
+                val other = testSupervisor { memberOf(listOf(publicId.value)) }
+                every { multipleRoleUsers.findById(other.id) } returns other
+
+                assertRaises(UserNotExistsError(other.id)) {
+                    operations.removeFromCommunity(supervisor, other.id, targetId, CommunityRole.Developer)
+                }
+
+                verify { communityRepository wasNot Called }
+                verify(exactly = 0) { multipleRoleUsers.removeCommunityMembership(any(), any(), any()) }
             }
         }
     }

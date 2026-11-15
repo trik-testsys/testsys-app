@@ -7,18 +7,17 @@ import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.persistence.ObserverContestFilter
-import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.infra.localization.PageObserver
 import tech.testsys.operation.user.ObserverResult
+import tech.testsys.web.app.service.observer.ObserverContestVo
 import tech.testsys.web.app.service.observer.ObserverService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.downloadAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.filters
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.texts.currentLocalization
@@ -37,7 +36,6 @@ class ObserverView(private val headers: CabinetHeaders, private val service: Obs
     override fun getPageTitle(): String = currentLocalization().pageObserver.title()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
-        service.viewContests(Pagination(0, 1))
         var applied = ObserverContestFilter()
         val ui = UI.getCurrent()
         val texts = currentLocalization().pageObserver
@@ -47,8 +45,8 @@ class ObserverView(private val headers: CabinetHeaders, private val service: Obs
             row {
                 block(title = texts.contestsTitle()) {
                     guide(texts.contestsGuide())
-                    val rows = table(
-                        key = { pair: tech.testsys.web.app.service.observer.ObserverContestVo ->
+                    loadTable(
+                        key = { pair: ObserverContestVo ->
                             pair.competition.id to pair.contest.id
                         },
                         fetch = { request ->
@@ -91,7 +89,6 @@ class ObserverView(private val headers: CabinetHeaders, private val service: Obs
                             contestId.value = ""
                             applied = ObserverContestFilter()
                         },
-                        onRefresh = { rows.refresh(toFirstPage = true) },
                     ) {
                         row {
                             competitionName = textInput(texts.competition(), labelSize = 3, size = 9)

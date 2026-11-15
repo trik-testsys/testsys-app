@@ -19,7 +19,6 @@ import tech.testsys.web.app.service.judge.JudgeService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.filters
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.layout.BlockScope
@@ -69,11 +68,11 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
         }
 
         // Checks the judge role before the table loads, so that its absence opens the forbidden screen.
-        judgeService.viewResults(Pagination(page = 0, size = 1))
+        judgeService.checkJudgeRole()
         val localization = currentLocalization()
         val texts = localization.pageJudge
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            head(texts.title())
             guide(texts.guide())
             row {
                 block(title = localization.pageCabinet.sectionSubmissions()) {
@@ -87,7 +86,7 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
     private fun BlockScope.submissionsTable() {
         val texts = currentLocalization().pageJudge
         var applied = VerdictFilter()
-        val rows = table(
+        loadTable(
             key = { result: JudgeResultVo -> result.verdict.id },
             fetch = { request ->
                 val pageNumber = request.offset / request.limit
@@ -119,7 +118,6 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
                 draft.readBean(VerdictFilterDraft())
                 applied = VerdictFilter()
             },
-            onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
                 codeInput(texts.authorId(), labelSize = 3, size = 9) {

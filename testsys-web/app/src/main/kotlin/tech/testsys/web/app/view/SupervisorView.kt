@@ -12,7 +12,6 @@ import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.supervisor.SupervisorService
 import tech.testsys.web.components.TestSysView
-import tech.testsys.web.components.data.table
 import tech.testsys.web.components.texts.currentLocalization
 
 /** Opens the community details of [communityId] in the Supervisor cabinet. */
@@ -26,12 +25,12 @@ internal fun openSupervisorUser(user: AdminUserVo) {
 }
 
 /**
- * Supervisor cabinet with all non-supervisor users and all communities.
+ * Supervisor cabinet with all users without the supervisor role and all communities; the role is checked on entry.
  *
  * @since 1.0.0-beta.1
  */
 @Route("supervisor/:section?(users|communities)")
-@RolesAllowed("SUPERVISOR")
+@RolesAllowed("MULTIPLE_ROLE")
 class SupervisorView(
     private val headers: CabinetHeaders,
     private val service: SupervisorService,
@@ -46,12 +45,12 @@ class SupervisorView(
             event.forwardTo(SupervisorView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "users"))
             return
         }
-        val communities = service.viewCommunities()
+        // Checks the role before the blocks load and gives the community filter of the users.
+        val communities = service.checkSupervisorRole()
         val localization = currentLocalization()
         val texts = localization.pageSupervisor
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.title()) {
-                crumb(localization.pageCabinet.home(), SupervisorView::class.java)
                 tabs(matchRouteParameters = true) {
                     tab(
                         localization.pageCabinet.sectionUsers(),
@@ -70,14 +69,14 @@ class SupervisorView(
                 row {
                     block(title = localization.pageCabinet.sectionUsers()) {
                         guide(texts.usersGuide())
-                        adminUsersTable(service, communities.map { it.first }, community = null, openUser = ::openSupervisorUser)
+                        adminUsersTable(service, communities, community = null, openUser = ::openSupervisorUser)
                     }
                 }
             } else {
                 row {
                     block(title = localization.pageCabinet.sectionCommunities()) {
                         guide(texts.communitiesGuide())
-                        table(
+                        loadTable(
                             key = { (community, _): Pair<CommunityVo, Long> -> community.id },
                             fetch = { request -> pageOf(service.viewCommunities(), request) },
                         ) {

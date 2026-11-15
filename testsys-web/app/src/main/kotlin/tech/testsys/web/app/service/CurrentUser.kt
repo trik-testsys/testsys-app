@@ -4,7 +4,6 @@ import org.springframework.stereotype.Component
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.SingleRoleUser
@@ -53,7 +52,6 @@ class SecurityCurrentUser(
     private val multipleRoleUsers: MultipleRoleUserRepository,
     private val participants: ParticipantRepository,
     private val observers: ObserverRepository,
-    private val supervisors: SupervisorRepository,
 ) : CurrentUser {
     override fun user(): User<*> {
         val principal = checkNotNull(CabinetSignIn.principal()) { "No signed-in user" }
@@ -61,7 +59,6 @@ class SecurityCurrentUser(
             UserKind.MULTIPLE_ROLE -> multipleRoleUsers.findById(MultipleRoleUserId(principal.userId))
             UserKind.PARTICIPANT -> participants.findById(SingleRoleUserId(principal.userId))
             UserKind.OBSERVER -> observers.findById(SingleRoleUserId(principal.userId))
-            UserKind.SUPERVISOR -> supervisors.findById(SingleRoleUserId(principal.userId))
         }
         return checkNotNull(user) { "Signed-in user id=${principal.userId} of kind ${principal.kind} does not exist" }
     }

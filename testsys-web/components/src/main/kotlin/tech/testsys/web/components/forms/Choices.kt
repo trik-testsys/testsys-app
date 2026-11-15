@@ -3,7 +3,6 @@ package tech.testsys.web.components.forms
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.select.Select
 import tech.testsys.web.components.layout.BlockRowScope
-import tech.testsys.web.components.layout.ContentScope
 
 /**
  * Adds a drop-down to choose one of [items], each shown by [itemLabel].
@@ -21,31 +20,6 @@ fun <T : Any> BlockRowScope.select(
     hint: String? = null,
     configure: ValueInput<T?>.() -> Unit = {},
 ): ValueInput<T?> = addInput(label, labelSize, size, choiceSelect(items, itemLabel), hint, configure)
-
-/**
- * Adds a filter drop-down of [items] shown by [itemLabel], with [label] as its placeholder and accessible name, and a first
- * item [emptyLabel] that resets it to `null` unless that is `null`. It ignores the block edit mode and, small in a block
- * head or a table cell, shows an error as a red border only.
- *
- * @param T the type of the items.
- * @since 1.0.0-beta.1
- */
-fun <T : Any> ContentScope.select(
-    label: String,
-    items: List<T>,
-    itemLabel: (T) -> String,
-    emptyLabel: String? = null,
-    configure: ValueInput<T?>.() -> Unit = {},
-): ValueInput<T?> {
-    val control = choiceSelect(items, itemLabel).apply {
-        placeholder = label
-        emptyLabel?.let { caption ->
-            isEmptySelectionAllowed = true
-            emptySelectionCaption = caption
-        }
-    }
-    return addLabelLessInput(label, control, configure)
-}
 
 /**
  * Adds a checkbox field: the [label] on the left, the box alone in the value cell.

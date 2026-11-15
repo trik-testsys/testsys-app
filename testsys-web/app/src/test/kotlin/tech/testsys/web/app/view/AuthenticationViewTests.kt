@@ -9,12 +9,16 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasAriaLabel
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Anchor
+import com.vaadin.flow.component.html.ListItem
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.server.VaadinSession
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -30,16 +34,31 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.security.core.session.SessionRegistry
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.model.user.SingleRoleUser
+import tech.testsys.infra.database.api.announcement.Announcement
+import tech.testsys.infra.database.api.announcement.AnnouncementId
+import tech.testsys.infra.database.api.announcement.AnnouncementKind
+import tech.testsys.infra.database.api.announcement.Announcements
 import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.web.app.MockSpringVaadinTests
+import tech.testsys.web.app.security.AccessCodeSignIn
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
+import tech.testsys.web.app.security.PasswordSignIn
 import tech.testsys.web.app.security.UserKind
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 
 @SpringBootTest
 class AuthenticationViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var sessionRegistry: SessionRegistry
+
+    @Autowired
+    private lateinit var passwordSignIn: PasswordSignIn
+
+    @Autowired
+    private lateinit var accessCodeSignIn: AccessCodeSignIn
 
     // Failed access codes are counted per client address in a limiter shared by the whole Spring context.
     @BeforeEach
@@ -148,7 +167,7 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should compare the access code exactly`() {
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
 
         signInWith(" $accessToken ")
@@ -158,7 +177,7 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should close signing in by the access code from the client address after five failures even with the right code`() {
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
         repeat(5) { signInWith("unknown access code") }
 
@@ -170,25 +189,25 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should keep signing in by the access code open from another client address when one address is blocked`() {
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
         repeat(5) { signInWith("unknown access code") }
         FakeHttpEnvironment.remoteAddr = fixtures.unique("client")
 
         signInWith(accessToken)
 
-        assertEquals(SupervisorView::class.java, currentView)
+        assertEquals(ObserverView::class.java, currentView)
     }
 
     @Test
     fun `should keep signing in by the access code open when an e-mail address equal to the client address is blocked`() {
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
         repeat(5) { signInByPassword(FakeHttpEnvironment.remoteAddr, "Wrong password") }
 
         signInWith(accessToken)
 
-        assertEquals(SupervisorView::class.java, currentView)
+        assertEquals(ObserverView::class.java, currentView)
     }
 
     @Test
@@ -213,7 +232,7 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     @Test
     fun `should sign in by the access code when it is chosen even with the e-mail and password filled`() {
         val user = fixtures.multipleRoleUser()
-        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        val accessToken = observerAccessToken()
         UI.getCurrent().navigate(AuthenticationView::class.java)
         val email = UI.getCurrent()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == "Почта" }
         email.value = user.data.email
@@ -221,8 +240,19 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
         signInWith(accessToken)
 
-        assertEquals(SupervisorView::class.java, currentView)
+        assertEquals(ObserverView::class.java, currentView)
         assertNotEquals(CabinetPrincipal.of(user), CabinetSignIn.principal())
+    }
+
+    @Test
+    fun `should sign a supervisor in by e-mail and password and open the main page`() {
+        val supervisor = fixtures.supervisor()
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+
+        signInByPassword(supervisor.data.email, fixtures.password)
+
+        assertEquals(MultiMainView::class.java, currentView)
+        assertEquals(CabinetPrincipal.of(supervisor), CabinetSignIn.principal())
     }
 
     @Test
@@ -263,6 +293,56 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
         signInWith(accessToken)
 
         assertNotEquals(guestSessionId, VaadinSession.getCurrent().session.id)
+    }
+
+    @Test
+    fun `should list the announcements active at the current moment under the links with the start date in the user zone`() {
+        val announcements = mockk<Announcements>()
+        every { announcements.findActive(NOW) } returns listOf(
+            announcement(text = "Плановые работы", kind = AnnouncementKind.Warning, shownFrom = Instant.parse("2026-03-09T21:30:00Z")),
+            announcement(text = "Новый сезон", kind = AnnouncementKind.Info, shownFrom = Instant.parse("2026-03-01T09:00:00Z")),
+        )
+
+        val notices = openWith(announcements)._find<ListItem>()
+
+        assertEquals(
+            listOf("10.03.2026Плановые работы", "01.03.2026Новый сезон"),
+            notices.map { notice -> notice.element.textRecursively },
+        )
+        assertEquals(
+            listOf("ts-guest-notice--warning", "ts-guest-notice--info"),
+            notices.map { notice -> notice.classNames.single { name -> name.startsWith("ts-guest-notice--") } },
+        )
+    }
+
+    @Test
+    fun `should make only an announcement with a link open it in a new tab`() {
+        val announcements = mockk<Announcements>()
+        every { announcements.findActive(NOW) } returns listOf(
+            announcement(
+                text = "Плановые работы",
+                kind = AnnouncementKind.Warning,
+                shownFrom = Instant.parse("2026-03-09T21:30:00Z"),
+                link = "https://example.com/works",
+            ),
+            announcement(text = "Новый сезон", kind = AnnouncementKind.Info, shownFrom = Instant.parse("2026-03-01T09:00:00Z")),
+        )
+
+        val notices = openWith(announcements)._find<ListItem>()
+
+        val links = notices.map { notice -> notice._find<Anchor>().map { link -> link.href to link.target.orElse(null) } }
+        assertEquals(listOf(listOf("https://example.com/works" to "_blank"), emptyList()), links)
+    }
+
+    @Test
+    fun `should show no announcements list if no announcement is active`() {
+        val announcements = mockk<Announcements>()
+        every { announcements.findActive(NOW) } returns emptyList()
+
+        val view = openWith(announcements)
+
+        assertEquals(emptyList<ListItem>(), view._find<ListItem>())
+        assertEquals(1, view._find<Button> { text = "Зарегистрироваться" }.size)
     }
 
     @Test
@@ -309,6 +389,8 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
         assertEquals(title, assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
     }
 
+    private fun observerAccessToken(): String = fixtures.accessTokenOf(fixtures.observer(fixtures.community()))
+
     private fun signInWith(accessToken: String) {
         UI.getCurrent()._get<RadioButtonGroup<SignInMethod?>>().value = SignInMethod.AccessCode
         passwordField("Код-доступа").value = accessToken
@@ -330,14 +412,31 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     private fun lastToastTitle(): String = UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.last().text
 
+    /** Opens the sign-in page that reads [announcements] at [NOW]; the guest UI shows dates in Europe/Moscow (UTC+3). */
+    private fun openWith(announcements: Announcements): AuthenticationView {
+        val view = AuthenticationView(passwordSignIn, accessCodeSignIn, announcements, Clock.fixed(NOW, ZoneOffset.UTC))
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+        return view
+    }
+
+    private fun announcement(text: String, kind: AnnouncementKind, shownFrom: Instant, link: String? = null) = Announcement(
+        id = AnnouncementId(1),
+        text = text,
+        kind = kind,
+        shownFrom = shownFrom,
+        shownUntil = NOW.plusSeconds(1),
+        link = link,
+    )
+
     companion object {
         private const val DEFAULT_CLIENT_ADDRESS = "127.0.0.1"
+        private val NOW = Instant.parse("2026-03-12T10:00:00Z")
 
         @JvmStatic
         fun fixedRoleStartPages(): List<Arguments> = listOf(
             Arguments.of(UserKind.PARTICIPANT, ParticipantView::class.java),
             Arguments.of(UserKind.OBSERVER, ObserverView::class.java),
-            Arguments.of(UserKind.SUPERVISOR, SupervisorView::class.java),
         )
 
         @JvmStatic

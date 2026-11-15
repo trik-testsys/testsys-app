@@ -90,6 +90,7 @@ class RememberedSignInsTests {
         val request = MockHttpServletRequest()
         signIns.remember(request, MockHttpServletResponse(), signIn)
         val hash = checkNotNull(signIns.tokenHashOf(request.session))
+        every { store.delete(hash) } returns true
         val response = MockHttpServletResponse()
 
         signIns.forget(request, response)
@@ -97,6 +98,20 @@ class RememberedSignInsTests {
         verify { store.delete(hash) }
         assertEquals(0, response.getCookie(COOKIE)?.maxAge)
         assertNull(signIns.tokenHashOf(request.session))
+    }
+
+    @Test
+    fun `should keep the token digest of a session whose sign-in was deleted elsewhere and clear the cookie`() {
+        val request = MockHttpServletRequest()
+        signIns.remember(request, MockHttpServletResponse(), signIn)
+        val hash = checkNotNull(signIns.tokenHashOf(request.session))
+        every { store.delete(hash) } returns false
+        val response = MockHttpServletResponse()
+
+        signIns.forget(request, response)
+
+        assertEquals(0, response.getCookie(COOKIE)?.maxAge)
+        assertEquals(hash, signIns.tokenHashOf(request.session))
     }
 
     @Nested

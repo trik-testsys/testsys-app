@@ -19,7 +19,6 @@ enum class UserSingleRoleJpaEnum {
 
     PARTICIPANT,
     OBSERVER,
-    SUPERVISOR,
 }
 
 /**

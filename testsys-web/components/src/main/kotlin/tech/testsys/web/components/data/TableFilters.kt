@@ -81,21 +81,16 @@ class TableFiltersHandle internal constructor(
 }
 
 /**
- * Adds a table filter panel separately from the block body.
+ * Adds a table filter panel separately from the block body. After a successful [onApply] and after [onReset] it fetches
+ * the first page of the block table, also one built by a load, or loads the block again while the load holds no table.
  *
  * @param onApply validates the draft and publishes applied values, returning whether it succeeded.
  * @param onReset restores the draft and applied values to the page defaults.
- * @param onRefresh refreshes the first table page after successful application or resetting.
  * @param content declares ordinary fields in rows.
  * @throws IllegalStateException if the block already has filters, or this is the content of a load.
  * @since 1.0.0-beta.1
  */
-fun BlockScope.filters(
-    onApply: () -> Boolean,
-    onReset: () -> Unit,
-    onRefresh: () -> Unit,
-    content: TableFiltersScope.() -> Unit,
-): TableFiltersHandle {
+fun BlockScope.filters(onApply: () -> Boolean, onReset: () -> Unit, content: TableFiltersScope.() -> Unit): TableFiltersHandle {
     val root = Div().apply { addClassName(CssClass.TableFilters) }
     val panelId = "ts-table-filters-${UUID.randomUUID()}"
     val toggle = NativeButton().apply {
@@ -124,10 +119,10 @@ fun BlockScope.filters(
     bar.action(texts.messages.uiData.tableFiltersReset()) {
         onClick {
             onReset()
-            onRefresh()
+            this@filters.refreshTable()
         }
     }.component.addClassName(CssClass.TableFiltersReset)
-    bar.mainAction(texts.messages.uiData.tableFiltersApply()) { onClick { if (onApply()) onRefresh() } }
+    bar.mainAction(texts.messages.uiData.tableFiltersApply()) { onClick { if (onApply()) this@filters.refreshTable() } }
         .component.addClassName(CssClass.TableFiltersApply)
 
     TableFiltersScope(fields, columns, texts, BlockEditState(fields.element)).apply(content)

@@ -11,13 +11,13 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableCell
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
-import com.vaadin.flow.router.RouterLink
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.verify
@@ -59,10 +59,10 @@ class ServiceTrikStudioVersionsViewTests : ServiceMockVaadinTests() {
     }
 
     @Test
-    fun `should open the versions page from the service header`() {
+    fun `should open the versions page from the service menu`() {
         UI.getCurrent().navigate(ServiceHomeView::class.java)
 
-        UI.getCurrent()._get<RouterLink> { text = "Версии TRIK Studio" }._click()
+        clickMenuLink("Версии TRIK Studio")
 
         assertEquals(ServiceTrikStudioVersionsView::class.java, currentView)
     }
@@ -82,6 +82,19 @@ class ServiceTrikStudioVersionsViewTests : ServiceMockVaadinTests() {
         val table = UI.getCurrent()._get<Table>().element.textRecursively
         assertTrue("Версий TRIK Studio нет" in table)
         assertFalse(registered.tag in table)
+    }
+
+    @Test
+    fun `should keep the title and adding and show a load error in the versions if they fail to load`() {
+        every { versions.findAll() } throws IllegalStateException("Version storage unavailable")
+
+        UI.getCurrent().navigate(ServiceHomeView::class.java)
+        UI.getCurrent().navigate(ServiceTrikStudioVersionsView::class.java)
+
+        assertEquals("Версии TRIK Studio", UI.getCurrent()._get<H1>().text)
+        assertTrue(UI.getCurrent()._get<Button> { text = "Добавить" }.isEnabled)
+        val page = UI.getCurrent()._get<ServiceTrikStudioVersionsView>().element.textRecursively
+        assertEquals(1, Regex("Не удалось загрузить").findAll(page).count())
     }
 
     @Test

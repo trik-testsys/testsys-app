@@ -23,7 +23,6 @@ import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInvit
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
-import tech.testsys.web.app.security.UserKind
 
 @SpringBootTest
 class SupervisorCommunityViewTests : MockSpringVaadinTests() {
@@ -35,7 +34,7 @@ class SupervisorCommunityViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should edit a community created by another user`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val community = fixtures.community(name = "Исходное сообщество")
         openSupervisorCommunity(community.id)
 
@@ -50,7 +49,7 @@ class SupervisorCommunityViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should show a not found screen for an unknown community`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
 
         openSupervisorCommunity(CommunityId(Long.MAX_VALUE))
 
@@ -60,7 +59,7 @@ class SupervisorCommunityViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should replace an invite code in a community created by another user`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        signIn(fixtures.supervisor())
         val community = fixtures.community()
         val inviteId = community.data.managerInvite.id
         val before = checkNotNull(managerInvites.findById(inviteId)).data.codeHash

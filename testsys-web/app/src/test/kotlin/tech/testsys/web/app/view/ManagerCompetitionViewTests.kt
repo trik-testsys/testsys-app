@@ -14,12 +14,17 @@ import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.TextArea
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -55,6 +60,9 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var managerService: ManagerService
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
 
     @Test
     fun `should export the created participants with their issued codes and escaped nicknames`() {
@@ -233,6 +241,33 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should disable the batch deletion if the participants fail to load again`() {
+        val competition = fixtures.competition(owner = signInManager())
+        participantOf(competition)
+        val service = mockk<ManagerService>()
+        var isAvailable = true
+        every { service.checkCompetitionAccess(competition.id) } returns managerService.checkCompetitionAccess(competition.id)
+        every { service.viewCompetition(competition.id) } answers {
+            check(isAvailable) { "Competition storage unavailable" }
+            managerService.viewCompetition(competition.id)
+        }
+        val view = ManagerCompetitionView(headers, service)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns competitionParameters(competition.id)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+        view.beforeEnter(event)
+        rowCheckboxes().single()._setValue(true)
+        val block = participantsBlock()
+        isAvailable = false
+
+        block._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+
+        assertFalse(deleteSelectedButton().isEnabled)
+        assertTrue("Не удалось загрузить" in block.element.textRecursively)
+    }
+
+    @Test
     fun `should delete a participant after the confirmation`() {
         val competition = fixtures.competition(owner = signInManager())
         val participant = participantOf(competition)
@@ -294,6 +329,10 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._find<Table>().single { table -> "Последний вход" in table.element.textRecursively }
 
     private fun participantsText(): String = participantsTable().element.textRecursively
+
+    private fun participantsBlock(): Section =
+        generateSequence(participantsTable().parent.orElse(null)) { component -> component.parent.orElse(null) }
+            .filterIsInstance<Section>().first()
 
     private fun pageText(): String = UI.getCurrent().currentView.element.textRecursively
 

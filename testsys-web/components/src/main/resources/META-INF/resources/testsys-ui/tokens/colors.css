@@ -18,12 +18,12 @@
   /* Neutrals (surfaces & lines) */
   --white: #FFFFFF;
   --canvas: #F8F7F4;
-  --canvas-deep: #EAE8E2;
   --sunken: #FAFAF7;
   --muted: #EFEEE9;
   --line: #E3E1DA;
   --line-strong: #D5D3CB;
   --line-subtle: #EFEEE9;
+  --line-inverse: rgba(255, 255, 255, 0.12); /* lines inside dark blocks */
 
   /* Info */
   --info-bg: #E9ECF7;
@@ -35,11 +35,13 @@
   --success-bg: #E6F4EC;
   --success-fg: #17703D;
   --success-border: #BFE3CC;
+  --success-fg-strong: #0F5A2F; /* alert text */
 
   /* Warning */
   --warning: #E0661B;
   --warning-bg: #FDE1CF;
   --warning-fg: #9A3A0A;
+  --warning-fg-strong: #7A2E08; /* alert text */
 
   /* Danger */
   --danger: #C8322B;
@@ -47,6 +49,9 @@
   --danger-bg: #FBE8E6;
   --danger-fg: #A92822;
   --danger-border: #F1C4C0;
+  --danger-bg-hover: #F7D9D6;
+  --danger-fg-strong: #8A1F1A; /* alert text */
+  --danger-ring: rgba(200, 50, 43, 0.18);
 
   /* Semantic aliases */
   --text-primary: var(--ink-900);
@@ -54,6 +59,8 @@
   --text-tertiary: var(--ink-500);
   --text-disabled: var(--ink-400);
   --text-on-accent: var(--white);
+  --text-on-inverse-secondary: #C9CBD1;
+  --text-code: #E8E9EC;
   --text-link: var(--accent);
   --surface-page: var(--canvas);
   --surface-card: var(--white);

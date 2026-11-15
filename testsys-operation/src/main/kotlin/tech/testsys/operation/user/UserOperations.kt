@@ -10,7 +10,6 @@ import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepos
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
-import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.RegistrationRequestId
@@ -60,7 +59,6 @@ class UserOperations(
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val participantRepository: ParticipantRepository,
     private val observerRepository: ObserverRepository,
-    private val supervisorRepository: SupervisorRepository,
     private val userRepository: UserRepository,
     private val registrationRequestRepository: RegistrationRequestRepository,
     private val mailSender: UserMailSender,
@@ -81,7 +79,6 @@ class UserOperations(
     fun authenticate(accessToken: String): OperationResult<User<*>, AuthenticateError> = operation<User<*>, AuthenticateError> {
         val user: User<*>? = participantRepository.findByAccessToken(accessToken)
             ?: observerRepository.findByAccessToken(accessToken)
-            ?: supervisorRepository.findByAccessToken(accessToken)
         ensure(user != null, InvalidAccessTokenError)
 
         userRepository.recordLogin(user.id, clock.instant().truncatedTo(ChronoUnit.MICROS))

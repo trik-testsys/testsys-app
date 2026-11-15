@@ -73,7 +73,7 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 |--------|------|------------|
 | `dev`, `e2e` без узла | — | Ничего |
 | `dev`, `e2e` с `--node` | `<окружение>.local.env` | `TESTSYS_GRADING_NODE_WORKSPACE`, см. [Рабочий каталог узла](#рабочий-каталог-узла) |
-| `prod` | Файл переменных production | `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD` для SMTP-сервера с авторизацией (см. [Почта](#почта)), `TESTSYS_SUPERVISOR_ACCESS_TOKEN` (см. [Супервайзер](#супервайзер)), `TESTSYS_ACCESS_TOKEN_SECRET` (см. [Секрет Кодов-доступа](#секрет-кодов-доступа)), `TESTSYS_SERVICE_SECRET`, `TESTSYS_GRAFANA_URL` и `TESTSYS_GRAFANA_ADMIN_PASSWORD` (см. [Мониторинг в production](#мониторинг-в-production)), `TESTSYS_APP_CONFIG` (см. [Конфигурационный файл на сервере](#конфигурационный-файл-на-сервере)), `TESTSYS_LOG_DIR` (см. [Каталог логов на сервере](#каталог-логов-на-сервере)) |
+| `prod` | Файл переменных production | `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD` для SMTP-сервера с авторизацией (см. [Почта](#почта)), `TESTSYS_ACCESS_TOKEN_SECRET` (см. [Секрет Кодов-доступа](#секрет-кодов-доступа)), `TESTSYS_SERVICE_SECRET`, `TESTSYS_APP_URL` — публичный адрес основного интерфейса, `TESTSYS_GRAFANA_URL` и `TESTSYS_GRAFANA_ADMIN_PASSWORD` (см. [Мониторинг в production](#мониторинг-в-production)), `TESTSYS_APP_CONFIG` (см. [Конфигурационный файл на сервере](#конфигурационный-файл-на-сервере)), `TESTSYS_LOG_DIR` (см. [Каталог логов на сервере](#каталог-логов-на-сервере)) |
 | `prod` с `--node` | Файл переменных production | Те же, а также `TESTSYS_GRADING_NODE_TAG`, `TESTSYS_GRADING_NODE_WORKSPACE`; узел подключают по адресу `grading-node:8080`, см. [Проверяющие узлы в production](#проверяющие-узлы-в-production) |
 | `node` | Файл переменных отдельного узла | `TESTSYS_GRADING_NODE_TAG`, `TESTSYS_GRADING_NODE_WORKSPACE`, `TESTSYS_GRADING_NODE_HOST_IP` (см. [Порт и безопасность](#порт-и-безопасность)) |
 
@@ -81,7 +81,8 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 любую команду окружения, в том числе `down`, с её именем в сообщении.
 
 По необходимости в `<окружение>.local.env` задают и другие значения, их примеры есть в шаблоне: занятые порты,
-адрес Grafana при другом порте Grafana, внешние адреса узлов и скрипт начальных данных dev `TESTSYS_DB_SEED_SCRIPT`, см.
+адрес Grafana при другом порте Grafana, адрес основного интерфейса `TESTSYS_APP_URL` при другом
+`TESTSYS_HTTP_PORT`, внешние адреса узлов и скрипт начальных данных dev `TESTSYS_DB_SEED_SCRIPT`, см.
 [Начальные данные dev](#начальные-данные-dev).
 
 ## Параметры приложения
@@ -97,9 +98,10 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
    окружения: `application-dev.yml` в dev и e2e, вместе с `application-e2e.yml` в e2e, и копия
    `application-prod.example.yml` на сервере в production. Как Compose подключает эти файлы — в разделе
    «Конфигурация приложения» в [deploy/README.md](../../deploy/README.md#конфигурация-приложения).
-3. Переменная окружения — только секрет или значение, которое нужно и Compose, и приложению. Исключение —
+3. Переменная окружения — только секрет или значение, которое нужно и Compose, и приложению. Исключения —
    `TESTSYS_GRADING_NODES` и `TESTSYS_GRADING_IMPORT_NODES`: адреса Проверяющих узлов зависят от машины и запуска
-   с `--node`. `application.yml` внутри jar объявляет каждую переменную плейсхолдером ключа, а Compose передаёт её
+   с `--node`; `TESTSYS_APP_URL`: порт в адресе основного интерфейса совпадает с `TESTSYS_HTTP_PORT` из того же
+   файла переменных. `application.yml` внутри jar объявляет каждую переменную плейсхолдером ключа, а Compose передаёт её
    приложению под тем же именем из файла переменных окружения.
 4. Значение из служебного кабинета — только для ключей каталога `SettingKey`, порядок источников —
    в разделе «Значения и источники» в [settings/README.md](../../testsys-infra/settings/README.md#значения-и-источники).
@@ -109,7 +111,7 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 `TESTSYS_ACCESS_TOKEN_SECRET`, `TESTSYS_GRADING_NODES` и `TESTSYS_GRADING_IMPORT_NODES` совпадают с их ключами
 по правилам relaxed binding Spring Boot, поэтому значение такой переменной важнее любого файла. Compose передаёт
 эти переменные всегда, так что значение их ключа в файле окружения было бы молча перекрыто. `TESTSYS_DB_PASSWORD`,
-`TESTSYS_SUPERVISOR_ACCESS_TOKEN` и `TESTSYS_GRAFANA_URL` доходят до ключа только через плейсхолдер
+`TESTSYS_GRAFANA_URL` и `TESTSYS_APP_URL` доходят до ключа только через плейсхолдер
 `application.yml` внутри jar, и значение их ключа в файле окружения перекрыло бы переменную. Поэтому ключ
 переменной окружения в эти файлы не записывается.
 
@@ -131,6 +133,7 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 | [`testsys.service.secret`](../../testsys-web/app/README.md#конфигурация-запуска) | `TESTSYS_SERVICE_SECRET` | — | `dev.env`, `e2e.env` | Файл переменных | Нет |
 | [`testsys.service.address`, `testsys.service.port`](../../testsys-web/app/README.md#конфигурация-запуска) | — | `127.0.0.1`, `8081`, `web-defaults.properties` | `deploy/config/application.yml`: `0.0.0.0`, `8081` | Как в dev | Нет |
 | [`testsys.service.grafana-url`](../../testsys-web/app/README.md#конфигурация-запуска) | `TESTSYS_GRAFANA_URL` | — | `dev.env`, `e2e.env` | Файл переменных | Нет |
+| [`testsys.service.app-url`](../../testsys-web/app/README.md#конфигурация-запуска) | `TESTSYS_APP_URL` | — | `dev.env`, `e2e.env` | Файл переменных | Нет |
 | [`testsys.metrics.address`](../../testsys-web/app/README.md#сервер-метрик) | — | `0.0.0.0`, `web-defaults.properties` | — | — | Нет |
 | [`testsys.metrics.port`](../../testsys-web/app/README.md#сервер-метрик) | — | `8082`, `web-defaults.properties` | `deploy/config/application.yml`: `8082` | Как в dev | Нет |
 | [`testsys.web.localization.default-region`, `default-time-zone`](../../testsys-web/app/README.md#запуск-и-проверка) | — | `RU`, `Europe/Moscow`, `web-defaults.properties` | — | — | Нет |
@@ -138,8 +141,6 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 | [`testsys.web.rate-limit.enforce`](../../testsys-web/app/README.md#ограничение-частоты-запросов) | — | `true`, `web-defaults.properties` | e2e: `application-e2e.yml`, `false` | — | Нет |
 | [`testsys.web.sign-in-limit.failures`, `duration`](../../testsys-web/app/README.md#вход-в-основной-интерфейс) | — | `5`, `PT5M`, `web-defaults.properties` | — | — | Нет |
 | [`testsys.operation.community.public-community-id`, `public-community-name`](#публичное-сообщество) | — | — | `application-dev.yml` | Конфигурационный файл | Нет |
-| [`testsys.operation.supervisor.name`](#супервайзер) | — | — | `application-dev.yml` | Конфигурационный файл | Нет |
-| [`testsys.operation.supervisor.access-token`](#супервайзер) | `TESTSYS_SUPERVISOR_ACCESS_TOKEN` | — | `dev.env`, `e2e.env`: `Supe-rvis-or00-0001` | Файл переменных | Нет |
 | [`testsys.operation.community-invite.refresh-period`, `class-invite.refresh-period`](../../testsys-web/app/README.md#запуск-и-проверка) | — | — | `application-dev.yml` | Конфигурационный файл | Нет |
 | [`testsys.operation.email-confirmation.*`, `community-invite.ttl`, `class-invite.ttl`, `competition.max-participants`](../../testsys-web/app/README.md#запуск-и-проверка) | — | — | `application-dev.yml` | Конфигурационный файл | Да |
 | [`testsys.mail.host`, `testsys.mail.port`](../../testsys-infra/mail/README.md#настройки) | — | `localhost`, `25`, `mail-defaults.properties` | `application-dev.yml`: `mailpit`, `1025` | Конфигурационный файл | Нет |
@@ -167,12 +168,12 @@ PostgreSQL на хосте доступен пользователю `testsys` �
 Mailpit принимает все письма приложения и показывает их в веб-интерфейсе; внешним адресатам письма
 не пересылаются. Dev и e2e используют один файл параметров `application-dev.yml`; e2e добавляет к нему только
 `application-e2e.yml`. Параметры операций в `application-dev.yml` совпадают со значениями тестов модуля `app`.
-Отличаются только название Публичного Сообщества «Публичное Сообщество» и Псевдоним Супервайзера «Супервайзер».
+Отличается только название Публичного Сообщества «Публичное Сообщество».
 Значения, сохранённые в служебном кабинете, перекрывают пять динамических параметров операций из этого файла;
 порядок источников — в разделе «Значения и источники»
-в [settings/README.md](../../testsys-infra/settings/README.md#значения-и-источники). Пароль базы, Код-доступа
-Супервайзера, код входа в служебный интерфейс и секрет Кодов-доступа dev и e2e лежат в `dev.env` и `e2e.env`
-и не являются секретами.
+в [settings/README.md](../../testsys-infra/settings/README.md#значения-и-источники). Пароль базы, код входа
+в служебный интерфейс и секрет Кодов-доступа dev и e2e лежат в `dev.env` и `e2e.env` и не являются секретами.
+В новой базе Супервайзера нет, пока Роль Супервайзера не выдадут Пользователю, см. [Супервайзер](#супервайзер).
 
 Реестр Проверяющих узлов хранится в базе. При каждом запуске dev и e2e приложение заносит в реестр включёнными
 адреса из `TESTSYS_GRADING_NODES`. По умолчанию это узел `grading-node:8080`, который запускается в проекте
@@ -201,10 +202,8 @@ sh deploy/testsys.sh e2e up --node
 ### Начальные данные dev
 
 В dev можно указать SQL-скрипт начальных данных в `TESTSYS_DB_SEED_SCRIPT` в `dev.local.env`. Укажите абсолютный
-путь на машине, на которой запущен скрипт. Скрипт выполняется после миграций Liquibase, создания Публичного
-Сообщества и проверки Супервайзера, один раз на базу: при следующих `up` он пропускается, а изменённый скрипт
-вызывает предупреждение. Скрипт не должен добавлять второго Супервайзера: если в базе два Супервайзера,
-следующий запуск приложения завершится ошибкой.
+путь на машине, на которой запущен скрипт. Скрипт выполняется после миграций Liquibase и создания Публичного
+Сообщества, один раз на базу: при следующих `up` он пропускается, а изменённый скрипт вызывает предупреждение.
 
 Скрипт выполняется в одной транзакции, поэтому в нём не должно быть `BEGIN`, `COMMIT`, `ROLLBACK` и команд, которые
 нельзя выполнить в транзакции. При ошибке изменения откатываются, `dev up` завершается с ошибкой, и следующий `up`
@@ -242,7 +241,7 @@ Production-окружение запускает приложение, PostgreSQ
 3. Передавайте путь к файлу в каждой команде скрипта, см. [Файлы переменных](#файлы-переменных).
 
 Команда `config` выводит итоговую модель Compose вместе с паролями, включая пароль администратора Grafana,
-Кодом-доступа Супервайзера, секретом Кодов-доступа и кодом входа в служебный интерфейс из этого файла;
+секретом Кодов-доступа и кодом входа в служебный интерфейс из этого файла;
 не сохраняйте и не публикуйте её вывод.
 
 ### Конфигурационный файл на сервере
@@ -509,19 +508,17 @@ sh deploy/testsys.sh node down --env-file <путь>
 
 ## Супервайзер
 
-Псевдоним и Код-доступа единственного Супервайзера обязательны в каждом окружении: без них приложение
-не запускается. Псевдоним задаётся свойством `testsys.operation.supervisor.name` в файле параметров окружения,
-а Код-доступа — переменной `TESTSYS_SUPERVISOR_ACCESS_TOKEN` в файле переменных. В dev и e2e Псевдоним записан
-в `application-dev.yml`, а Код-доступа — в `dev.env` и `e2e.env`: Супервайзер этих окружений входит по Коду-доступа
-`Supe-rvis-or00-0001`.
+Конфигурация развёртывания Супервайзера не задаёт. Чтобы назначить первого Супервайзера, зарегистрируйте
+Пользователя, войдите в [служебный интерфейс](#служебный-интерфейс), откройте карточку этого Пользователя и выдайте ему Роль
+Супервайзера. Супервайзер входит в основной интерфейс по почте и Паролю. Требования — в фиче
+[testsys.dev.service.supervisorRole](../domain/features.md#testsysdevservicesupervisorrole-implemented).
 
-Чтобы сменить Код-доступа Супервайзера, задайте новое значение и перезапустите приложение: прежний Код-доступа
-перестаёт действовать. Как приложение проверяет Супервайзера при запуске — в разделе «Запуск и проверка»
-в [app/README.md](../../testsys-web/app/README.md#запуск-и-проверка).
+При обновлении базы, где был Супервайзер с Фиксированной Ролью, миграция удаляет его вместе с его входами.
+После обновления выдайте Роль Супервайзера нужному Пользователю.
 
 ## Секрет Кодов-доступа
 
-Приложение хранит Коды-доступа Участников, Наблюдателей и Супервайзера как HMAC-SHA-256 с ключом из переменной
+Приложение хранит Коды-доступа Участников и Наблюдателей как HMAC-SHA-256 с ключом из переменной
 `TESTSYS_ACCESS_TOKEN_SECRET`. Без неё или со значением короче 64 символов приложение не запускается. Как ключ
 используется при хешировании — в разделе
 [«Коды-доступа и Пароли Пользователей»](../../testsys-infra/database/README.md#коды-доступа-и-пароли-пользователей)
@@ -529,8 +526,7 @@ database/README.md.
 
 В production задайте случайное значение в файле переменных, например вывод команды `openssl rand -hex 32`,
 и храните его в резервной копии вместе с этим файлом. После смены или потери секрета Коды-доступа всех Участников
-и Наблюдателей перестают действовать. Код-доступа Супервайзера приложение заново хеширует новым секретом при
-следующем запуске.
+и Наблюдателей перестают действовать.
 
 В dev и e2e значение записано в `deploy/env/dev.env` и `deploy/env/e2e.env` и не является секретом.
 
@@ -571,7 +567,7 @@ openssl rand -hex 32
 Чтобы сменить код, задайте новое значение и снова выполните `up`: Compose пересоздаст контейнер приложения,
 и прежний код перестанет действовать.
 
-Кнопка «Grafana» служебного кабинета открывает адрес из `TESTSYS_GRAFANA_URL`. В dev и production это Grafana
+Раздел «Grafana» служебного кабинета открывает адрес из `TESTSYS_GRAFANA_URL`. В dev и production это Grafana
 того же проекта, см. [Prometheus и Grafana](#prometheus-и-grafana). В e2e Grafana не запускается, но приложение
 без адреса не запустится. Поэтому `e2e.env` задаёт адрес Grafana dev `http://localhost:3000/grafana/`: он открывается,
 только если запущен dev, а метрик e2e эта Grafana не показывает.
@@ -596,7 +592,7 @@ Dev и production запускают в своём проекте Prometheus, Gr
 | `prod` | `127.0.0.1:3000` сервера с префиксом `/grafana/`, через SSH-туннель | `127.0.0.1:9090` сервера, через SSH-туннель |
 
 Порты хоста задают `TESTSYS_GRAFANA_PORT` и `TESTSYS_PROMETHEUS_PORT`, в dev их значения — в `dev.env`.
-`TESTSYS_GRAFANA_URL` — адрес этой Grafana в браузере: его открывает кнопка «Grafana» служебного кабинета, и по нему
+`TESTSYS_GRAFANA_URL` — адрес этой Grafana в браузере: его открывает раздел «Grafana» служебного кабинета, и по нему
 Grafana строит свои ссылки. Путь этого адреса — префикс, по которому отвечает Grafana; по умолчанию `/grafana/`.
 Если вы меняете `TESTSYS_GRAFANA_PORT` в `dev.local.env`, задайте там же `TESTSYS_GRAFANA_URL` с тем же портом.
 

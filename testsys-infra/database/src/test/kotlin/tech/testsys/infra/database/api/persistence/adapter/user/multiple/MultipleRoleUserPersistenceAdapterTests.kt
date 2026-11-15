@@ -22,6 +22,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.Student
+import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
@@ -30,6 +31,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.multiple.Adminis
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.DeveloperDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.MultipleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.StudentDataJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.user.multiple.SupervisorDataJpaEntityRepository
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -58,6 +60,9 @@ class MultipleRoleUserPersistenceAdapterTests :
 
     @Autowired
     private lateinit var studentDataJpaEntityRepository: StudentDataJpaEntityRepository
+
+    @Autowired
+    private lateinit var supervisorDataJpaEntityRepository: SupervisorDataJpaEntityRepository
 
     @Autowired
     private lateinit var classes: ClassRepository
@@ -91,6 +96,7 @@ class MultipleRoleUserPersistenceAdapterTests :
                     data = studentData {}
                 }
                 judge { data = judgeData {} }
+                supervisor { memberOf(listOf(communityId)) }
             }
         }
     }
@@ -132,7 +138,7 @@ class MultipleRoleUserPersistenceAdapterTests :
                     assertEquals(role.data.classes.ids.toSet(), actualRole.data.classes.ids.toSet())
                     assertEquals(role.data.competitions.ids.toSet(), actualRole.data.competitions.ids.toSet())
                 }
-                is Administrator -> Unit
+                is Administrator, is Supervisor -> Unit
             }
         }
     }
@@ -162,6 +168,7 @@ class MultipleRoleUserPersistenceAdapterTests :
                     memberOf(listOf(first))
                     data = managerData {}
                 }
+                supervisor { memberOf(listOf(second)) }
             }
         }
 
@@ -170,7 +177,7 @@ class MultipleRoleUserPersistenceAdapterTests :
 
         assertSameRoles(data.roles, saved.data.roles)
         assertSameRoles(data.roles, found.data.roles)
-        assertEquals(5, multipleRoleToUserJpaEntityRepository.findAllByUserId(saved.id.value).size)
+        assertEquals(6, multipleRoleToUserJpaEntityRepository.findAllByUserId(saved.id.value).size)
     }
 
     @Test
@@ -299,14 +306,14 @@ class MultipleRoleUserPersistenceAdapterTests :
 
     @Test
     fun `should not find single-role users`() {
-        val supervisor = fixtures.supervisor()
+        val observer = fixtures.observer()
         val user = repository.save(newData())
-        val foreignId = MultipleRoleUserId(supervisor.id.value)
+        val foreignId = MultipleRoleUserId(observer.id.value)
 
         assertNull(repository.findById(foreignId))
         assertEquals(listOf(user.id), repository.findByIds(listOf(foreignId, user.id)).map { it.id })
         repository.removeById(foreignId)
-        assertTrue(userJpaEntityRepository.findById(supervisor.id.value).isPresent)
+        assertTrue(userJpaEntityRepository.findById(observer.id.value).isPresent)
     }
 
     @Test
@@ -390,20 +397,55 @@ class MultipleRoleUserPersistenceAdapterTests :
 
     @Test
     fun `should reject an update of a user row of another kind`() {
-        val supervisor = fixtures.supervisor()
+        val observer = fixtures.observer()
         val user = fixtures.developer()
         val foreign = multipleRoleUser {
-            id = supervisor.id.value
-            createdAt = supervisor.createdAt
-            version = supervisor.version
+            id = observer.id.value
+            createdAt = observer.createdAt
+            version = observer.version
             data = user.data
         }
 
         assertFailsWith<IllegalArgumentException> { repository.update(foreign) }
 
-        val row = userJpaEntityRepository.findById(supervisor.id.value).orElseThrow()
+        val row = userJpaEntityRepository.findById(observer.id.value).orElseThrow()
         assertEquals(UserTypeJpaEnum.SINGLE_ROLE, row.type)
-        assertEquals(supervisor.data.name, row.name)
+        assertEquals(observer.data.name, row.name)
+    }
+
+    @Test
+    fun `should grant the supervisor role with the community membership on addCommunityMembership`() {
+        val user = fixtures.developer()
+        val community = fixtures.community()
+
+        val updated = repository.addCommunityMembership(user.id, community.id, CommunityRole.Supervisor)
+
+        assertEquals(listOf(community.id), updated.role<Supervisor>().memberOf.ids)
+        assertEquals(1, updated.data.roles.filterIsInstance<Developer>().size)
+        assertEquals(assertNotNull(user.version).value + 1, assertNotNull(updated.version).value)
+        assertNotNull(supervisorDataJpaEntityRepository.findByUserId(user.id.value))
+        assertEquals(listOf(community.id), assertNotNull(repository.findById(user.id)).role<Supervisor>().memberOf.ids)
+    }
+
+    @Test
+    fun `should drop the supervisor role data and memberships on an update without the role`() {
+        val supervisor = fixtures.supervisor()
+
+        val updated = repository.update(supervisor.withData { roles { removeAll { role -> role is Supervisor } } })
+
+        assertEquals(emptyList(), updated.data.roles)
+        assertNull(supervisorDataJpaEntityRepository.findByUserId(supervisor.id.value))
+        assertTrue(multipleRoleToUserJpaEntityRepository.findAllByUserId(supervisor.id.value).isEmpty())
+    }
+
+    @Test
+    fun `should delete the supervisor role data with the user by id`() {
+        val supervisor = fixtures.supervisor()
+
+        repository.removeById(supervisor.id)
+
+        assertNull(supervisorDataJpaEntityRepository.findByUserId(supervisor.id.value))
+        assertTrue(userJpaEntityRepository.findById(supervisor.id.value).isEmpty)
     }
 
     @Test
@@ -585,6 +627,7 @@ class MultipleRoleUserPersistenceAdapterTests :
                         student { data = studentData {} }
                         judge { data = judgeData {} }
                         manager { data = managerData {} }
+                        supervisor { memberOf(listOf(communityId)) }
                     }
                 },
             )
@@ -597,7 +640,7 @@ class MultipleRoleUserPersistenceAdapterTests :
 
         assertEquals(ids.take(1), one.map { user -> user.id })
         assertEquals(ids.toSet(), twenty.map { user -> user.id }.toSet())
-        assertEquals(List(20) { 5 }, twenty.map { user -> user.data.roles.size })
+        assertEquals(List(20) { 6 }, twenty.map { user -> user.data.roles.size })
         assertEquals(ids.zip(taskIds).toMap(), twenty.associate { user -> user.id to user.role<Developer>().data.tasks.ids.single() })
         assertEquals(oneIdStatements, twentyIdsStatements)
     }

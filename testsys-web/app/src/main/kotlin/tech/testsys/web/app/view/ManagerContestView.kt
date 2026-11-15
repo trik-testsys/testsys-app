@@ -22,6 +22,7 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.downloadAction
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.textInput
@@ -60,12 +61,13 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
         val parameters = event.routeParameters
         val contestId = ContestId(parameters.getLong(MANAGER_CONTEST_ID_PARAMETER).orElseThrow())
         val classId = parameters.getLong(CLASS_ID_PARAMETER).map(::ClassId).orElse(null)
+        // Checks access before the blocks load, so that a refusal opens its error screen.
         val group = if (classId != null) {
-            val results = { managerService.viewClassContest(classId, contestId) }
+            val (studyClass, contest) = managerService.checkClassContestAccess(classId, contestId)
             Group(
-                results = results(),
-                fetch = results,
-                name = texts.classTitle(name = managerService.viewClass(classId).studyClass.name),
+                contest = contest,
+                fetch = { managerService.viewClassContest(classId, contestId) },
+                name = texts.classTitle(name = studyClass.name),
                 section = CLASSES_SECTION,
                 parameters = classParameters(classId),
                 target = ManagerClassView::class.java,
@@ -73,82 +75,88 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
             )
         } else {
             val competitionId = CompetitionId(parameters.getLong(COMPETITION_ID_PARAMETER).orElseThrow())
-            val results = { managerService.viewCompetitionContest(competitionId, contestId) }
+            val (competition, contest) = managerService.checkCompetitionContestAccess(competitionId, contestId)
             Group(
-                results = results(),
-                fetch = results,
-                name = texts.competitionTitle(name = managerService.viewCompetition(competitionId).competition.name),
+                contest = contest,
+                fetch = { managerService.viewCompetitionContest(competitionId, contestId) },
+                name = texts.competitionTitle(name = competition.name),
                 section = COMPETITIONS_SECTION,
                 parameters = competitionParameters(competitionId),
                 target = ManagerCompetitionView::class.java,
                 filename = "contest-${contestId.value}-competition-${competitionId.value}.csv",
             )
         }
+        val loaded = SharedFetch(group.fetch)
 
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(texts.contestTitle(name = group.results.contest.name)) {
+            head(texts.contestTitle(name = group.contest.name)) {
                 managerCrumbs(group.section)
                 crumb(group.name, group.target, group.parameters)
             }
             guide(texts.contestGuide())
-            detailsBlock(group.results.contest)
-            resultsBlock(group)
+            detailsBlock(loaded)
+            resultsBlock(group, loaded)
         }
     }
 
-    private fun PageScope.detailsBlock(contest: ContestVo) {
+    private fun PageScope.detailsBlock(loaded: SharedFetch<ContestResultsVo>) {
         val texts = currentLocalization().pageManager
         row {
             block(title = texts.detailsTitle()) {
                 guide(texts.contestDetailsGuide())
-                row {
-                    codeInput(texts.id(), labelSize = 3, size = 9) { value = contest.id.value.toString() }
-                    textInput(texts.name(), labelSize = 3, size = 9) { value = contest.name }
-                }
-                row {
-                    dateTimeInput(texts.startsAt(), labelSize = 3, size = 9) { value = contest.startsAt?.toUserDateTime() }
-                    dateTimeInput(texts.endsAt(), labelSize = 3, size = 9) { value = contest.endsAt?.toUserDateTime() }
-                }
-                row {
-                    codeInput(texts.attemptDuration(), labelSize = 3, size = 9) {
-                        value = formatDuration(contest.attemptDuration).orEmpty()
+                load(loaded.forLoad { results -> results.contest }) { contest ->
+                    row {
+                        codeInput(texts.id(), labelSize = 3, size = 9) { value = contest.id.value.toString() }
+                        textInput(texts.name(), labelSize = 3, size = 9) { value = contest.name }
+                    }
+                    row {
+                        dateTimeInput(texts.startsAt(), labelSize = 3, size = 9) { value = contest.startsAt?.toUserDateTime() }
+                        dateTimeInput(texts.endsAt(), labelSize = 3, size = 9) { value = contest.endsAt?.toUserDateTime() }
+                    }
+                    row {
+                        codeInput(texts.attemptDuration(), labelSize = 3, size = 9) {
+                            value = formatDuration(contest.attemptDuration).orEmpty()
+                        }
                     }
                 }
             }.isEditable = false
         }
     }
 
-    private fun PageScope.resultsBlock(group: Group) {
+    private fun PageScope.resultsBlock(group: Group, loaded: SharedFetch<ContestResultsVo>) {
         val texts = currentLocalization().pageManager
         val ui = UI.getCurrent()
-        val results = group.results
-        val byMemberAndTask = results.results.associateBy { result -> result.authorId to result.taskId }
-        val taskColumns = TASK_COLUMNS * results.tasks.size
-        // With few tasks the nickname takes the rest, so the table fills the block.
-        val nicknameColumns = maxOf(MEMBER_COLUMNS - ID_COLUMNS, MIN_RESULT_COLUMNS - ID_COLUMNS - taskColumns)
         row {
             block(title = texts.contestResultsTitle()) {
                 guide(texts.contestResultsGuide())
-                table(
-                    key = { (memberId, _): Pair<UserId, String> -> memberId },
-                    gridColumns = maxOf(MIN_RESULT_COLUMNS, MEMBER_COLUMNS + taskColumns),
-                    fetch = { request -> pageOf(results.members, request) },
-                ) {
-                    codeColumn(texts.id(), size = ID_COLUMNS) { (memberId, _) -> memberId.value.toString() }
-                    textColumn(texts.nickname(), size = nicknameColumns) { (_, name) -> name }
-                    results.tasks.forEach { task ->
-                        codeColumn(texts.contestResultsTask(name = task.name, id = task.id.value), size = TASK_COLUMNS) { (memberId, _) ->
-                            val result = byMemberAndTask[memberId to task.id]
-                            val count = result?.submissionCount ?: 0
-                            val score = result?.bestScore?.value
-                            if (score == null) {
-                                texts.contestResultsCellEmpty(count = count)
-                            } else {
-                                texts.contestResultsCell(score = score, count = count)
+                load(loaded.forLoad()) { results ->
+                    val byMemberAndTask = results.results.associateBy { result -> result.authorId to result.taskId }
+                    val taskColumns = TASK_COLUMNS * results.tasks.size
+                    // With few tasks the nickname takes the rest, so the table fills the block.
+                    val nicknameColumns =
+                        maxOf(MEMBER_COLUMNS - ID_COLUMNS, MIN_RESULT_COLUMNS - ID_COLUMNS - taskColumns)
+                    table(
+                        key = { (memberId, _): Pair<UserId, String> -> memberId },
+                        gridColumns = maxOf(MIN_RESULT_COLUMNS, MEMBER_COLUMNS + taskColumns),
+                        fetch = { request -> pageOf(results.members, request) },
+                    ) {
+                        codeColumn(texts.id(), size = ID_COLUMNS) { (memberId, _) -> memberId.value.toString() }
+                        textColumn(texts.nickname(), size = nicknameColumns) { (_, name) -> name }
+                        results.tasks.forEach { task ->
+                            val header = texts.contestResultsTask(name = task.name, id = task.id.value)
+                            codeColumn(header, size = TASK_COLUMNS) { (memberId, _) ->
+                                val result = byMemberAndTask[memberId to task.id]
+                                val count = result?.submissionCount ?: 0
+                                val score = result?.bestScore?.value
+                                if (score == null) {
+                                    texts.contestResultsCellEmpty(count = count)
+                                } else {
+                                    texts.contestResultsCell(score = score, count = count)
+                                }
                             }
                         }
+                        empty(texts.contestResultsEmpty(), texts.contestResultsEmptyHint())
                     }
-                    empty(texts.contestResultsEmpty(), texts.contestResultsEmptyHint())
                 }
                 actions {
                     downloadAction(texts.downloadCsv(), produce = { context ->
@@ -166,11 +174,11 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
     }
 
     /**
-     * Class or competition of the shown contest: its current [results], their [fetch] for the download, the crumb [name] and
-     * the page [target] with its [parameters], the [section] of the Cabinet and the CSV [filename].
+     * Class or competition of the shown [contest]: the [fetch] of its results for the blocks and the download, the crumb
+     * [name] and the page [target] with its [parameters], the [section] of the Cabinet and the CSV [filename].
      */
     private class Group(
-        val results: ContestResultsVo,
+        val contest: ContestVo,
         val fetch: () -> ContestResultsVo,
         val name: String,
         val section: String,

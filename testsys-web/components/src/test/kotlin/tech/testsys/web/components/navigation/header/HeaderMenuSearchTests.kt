@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.FirstTestView
 import tech.testsys.web.components.ItemTestView
 import tech.testsys.web.components.MockVaadinTests
+import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.testTexts
@@ -90,9 +91,9 @@ class HeaderMenuSearchTests : MockVaadinTests() {
 
     @Test
     fun `should place menu search beside navigation`() {
-        val item = MegaMenuItem(key = "menu", label = "Меню", menu = HeaderMegaMenu(columns))
+        val item = MegaMenuItem(key = "menu", label = "Меню", menu = HeaderMegaMenu(columns), isSearchable = true)
 
-        val header = buildHeader(CabinetHeader(items = listOf(item), menuSearchKey = "menu"), testTexts)
+        val header = buildHeader(CabinetHeader(items = listOf(item)), testTexts)
 
         assertEquals(listOf("ts-nav", "ts-header__search", "ts-header__spacer"), barParts(header))
     }
@@ -114,6 +115,23 @@ class HeaderMenuSearchTests : MockVaadinTests() {
 
         assertEquals(listOf("page", null), links.map { link -> link.element.getAttribute("aria-current") })
         assertEquals(listOf(true, false), links.map { link -> link.element.hasAttribute("highlight") })
+    }
+
+    @OptIn(InternalComponentsApi::class)
+    @ParameterizedTest
+    @CsvSource(
+        "role/tasks, role/tasks, page",
+        "role/tasks/7, role/tasks, location",
+        "role/tasks/7, role,",
+        "role/other, role, location",
+        "role/tasksX, role/tasks,",
+        "role, role, page",
+        "home, role,",
+    )
+    fun `should mark the closest menu route of the opened location`(path: String, href: String, expected: String?) {
+        val mark = nearestRouteMark(path, href, hrefs = setOf("role", "role/tasks"))
+
+        assertEquals(expected, mark?.attribute)
     }
 
     @Test
@@ -208,8 +226,12 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should reject a missing menu search key`() {
-        assertThrows(IllegalArgumentException::class.java) { buildHeader(CabinetHeader(menuSearchKey = "missing"), testTexts) }
+    fun `should reject more than one searchable mega-menu`() {
+        val items = listOf("first", "second").map { key ->
+            MegaMenuItem(key = key, label = key, menu = HeaderMegaMenu(columns), isSearchable = true)
+        }
+
+        assertThrows(IllegalArgumentException::class.java) { buildHeader(CabinetHeader(items = items), testTexts) }
     }
 
     @Test

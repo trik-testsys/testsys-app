@@ -24,8 +24,6 @@ import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.RegistrationRequestData
 import tech.testsys.domain.model.user.RegistrationRequestId
 import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.domain.model.user.Supervisor
-import tech.testsys.domain.model.user.SupervisorData
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 import java.time.Instant
@@ -86,7 +84,7 @@ interface UserRepository {
     fun findLastLogins(userIds: List<UserId>): Map<UserId, Instant>
 
     /**
-     * Synchronously checks whether a user of any kind, including participants and supervisors, has [userId],
+     * Synchronously checks whether a user of any kind, including participants and observers, has [userId],
      * without changing stored state. Storage exceptions propagate to the caller.
      *
      * @param userId the id of the user to check.
@@ -205,26 +203,6 @@ interface ParticipantRepository :
         accessTokenHashes: List<AccessTokenHash>,
         nameOf: (SingleRoleUserId) -> String,
     ): List<Participant>
-}
-
-/**
- * Persistence port for [Supervisor] entities; the System has a single supervisor.
- *
- * @since 1.0.0-beta.1
- */
-interface SupervisorRepository :
-    EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>,
-    UserAccessTokenFinder<SingleRoleUserId, Supervisor> {
-
-    /**
-     * Synchronously finds the single supervisor of the System, without changing stored state.
-     * Storage exceptions propagate to the caller.
-     *
-     * @return the supervisor, or `null` if no supervisor is stored.
-     * @throws IllegalStateException if more than one supervisor is stored.
-     * @since 1.0.0-beta.1
-     */
-    fun findSingle(): Supervisor?
 }
 
 /**

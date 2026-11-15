@@ -176,6 +176,15 @@ class LookupTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should not add a refresh button to the lookup table`() {
+        buildLookup()
+
+        lookupButton(testTexts.messages.uiForm.lookupOpen())._click()
+
+        assertTrue(openDialogs().single().findAll("ts-block__refresh").isEmpty())
+    }
+
+    @Test
     fun `should keep lookup search and pagination outside the table viewport`() {
         buildLookup()
 

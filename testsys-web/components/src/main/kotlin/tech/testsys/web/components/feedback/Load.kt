@@ -56,6 +56,9 @@ class LoadHandle internal constructor(private val loader: BlockLoader<*>) : Elem
  * @param T the type of the fetched value.
  * @param fetch fetches the value off the UI thread; an exception from it, or from [content], shows the load failure
  * with a retry.
+ * @param onReset runs in the UI thread when the body stops showing loaded content: at the start of every reload,
+ * before [fetch], and on every load failure; the start of the first load does not run it. It disables head actions
+ * that [content] enabled.
  * @param content builds the body from the fetched value in the UI thread, again on every load; content that adds
  * nothing hides the body, as a block without rows has none.
  * @throws IllegalArgumentException if [skeletonRows] is below one.
@@ -63,13 +66,14 @@ class LoadHandle internal constructor(private val loader: BlockLoader<*>) : Elem
  * the content of a load, or if no UI builds the block.
  * @since 1.0.0-beta.1
  */
-fun <T> BlockScope.load(fetch: () -> T, skeletonRows: Int = 3, content: BlockScope.(T) -> Unit): LoadHandle {
+fun <T> BlockScope.load(fetch: () -> T, skeletonRows: Int = 3, onReset: () -> Unit = {}, content: BlockScope.(T) -> Unit): LoadHandle {
     require(skeletonRows >= 1) { "Load must show at least 1 skeleton row, got $skeletonRows" }
 
     val ui = checkNotNull(UI.getCurrent()) { "Block with a load must be built in a UI thread" }
     val slot = placeLoad(LOAD_OWNER)
-    val loader = BlockLoader(slot, texts, ui, skeletonRows, fetch, content)
+    val loader = BlockLoader(slot, texts, ui, skeletonRows, fetch, onReset, content)
     slot.onStart = loader::fetchNow
+    slot.onReload = loader::reload
     return LoadHandle(loader)
 }
 
@@ -86,6 +90,7 @@ internal class BlockLoader<T>(
     ui: UI,
     private val skeletonRows: Int,
     private val fetch: () -> T,
+    private val onReset: () -> Unit,
     private val content: BlockScope.(T) -> Unit,
 ) {
     private val generation = AtomicLong()
@@ -133,6 +138,7 @@ internal class BlockLoader<T>(
     private fun reloadNow() {
         isMissed = false
         showSkeleton()
+        onReset()
         fetchNow()
     }
 
@@ -178,6 +184,7 @@ internal class BlockLoader<T>(
 
         slot.showWhole(buildEmptyState(failure, texts, isError = true), isFlush = false)
         slot.isBusy = false
+        onReset()
     }
 
     /** What a fetch ended with: the [Loaded.value] or a failure. */

@@ -4,7 +4,10 @@ import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -13,12 +16,20 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.StudyFixtures
+import tech.testsys.web.app.service.participant.ParticipantService
+import java.time.Clock
 import java.time.Duration
 
 @SpringBootTest
 class ParticipantViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var study: StudyFixtures
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
+    @Autowired
+    private lateinit var clock: Clock
 
     @Test
     fun `should title the browser tab of the participant cabinet`() {
@@ -28,6 +39,21 @@ class ParticipantViewTests : MockSpringVaadinTests() {
 
         assertEquals("Кабинет Участника", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
         assertEquals("Кабинет Участника", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should keep the title and show a load error in the contests if they fail to load`() {
+        signIn(study.participant(listOf(study.runningContest())))
+        val service = mockk<ParticipantService>()
+        every { service.viewContests() } throws IllegalStateException("Contest storage unavailable")
+        val view = ParticipantView(headers, service, clock)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+
+        view.beforeEnter(mockk<BeforeEnterEvent>())
+
+        assertEquals("Кабинет Участника", view._get<H1>().text)
+        assertEquals(1, Regex("Не удалось загрузить").findAll(view.element.textRecursively).count())
     }
 
     @Test

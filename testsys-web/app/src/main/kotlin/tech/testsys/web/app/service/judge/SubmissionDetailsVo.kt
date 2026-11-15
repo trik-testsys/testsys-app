@@ -6,7 +6,6 @@ import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.user.SubmissionDetails
@@ -70,7 +69,6 @@ internal fun User<*>.toNamedVo(): NamedUserVo {
         is MultipleRoleUser -> data.name
         is Participant -> data.name
         is Observer -> data.name
-        is Supervisor -> data.name
     }
     return NamedUserVo(id = id, name = name)
 }

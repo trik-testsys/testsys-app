@@ -9,6 +9,7 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.H3
 import com.vaadin.flow.component.html.NativeButton
@@ -18,7 +19,10 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -30,6 +34,7 @@ import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
+import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.developer.DeveloperService
 import java.time.Instant
 import java.time.LocalDateTime
@@ -45,6 +50,12 @@ class DeveloperViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var dataSource: DataSource
+
+    @Autowired
+    private lateinit var headers: CabinetHeaders
+
+    @Autowired
+    private lateinit var currentUser: CurrentUser
 
     private val developers by lazy { DeveloperFixtures(fixtures, developerService, tasks, dataSource) }
 
@@ -265,6 +276,34 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         assertEquals(1, rows.size)
         assertTrue("Своя " in rows.single().element.textRecursively)
         assertEquals(sharedBefore, tableText("Сообщества"))
+    }
+
+    @Test
+    fun `should load the tasks again on a task creation after a failed refresh of their table`() {
+        developers.signInDeveloper()
+        var isFailing = false
+        val service = mockk<DeveloperService>()
+        every { service.checkDeveloperRole() } returns developerService.checkDeveloperRole()
+        every { service.viewTasks(any(), any()) } answers {
+            check(!isFailing) { "Task storage unavailable" }
+            developerService.viewTasks(firstArg(), secondArg())
+        }
+        every { service.createTask(any(), any()) } answers { developerService.createTask(firstArg(), secondArg()) }
+        val view = DeveloperView(headers, service, currentUser)
+        val event = mockk<BeforeEnterEvent>()
+        every { event.routeParameters } returns developerSectionParameters(TASKS_SECTION)
+        UI.getCurrent().removeAll()
+        UI.getCurrent().add(view)
+        view.beforeEnter(event)
+        isFailing = true
+        ownTasksBlock()._get<Div> { classes = "ts-block__refresh" }._get<Button>()._click()
+        isFailing = false
+
+        clickButton("Создать Задачу")
+        textField("Название")._value = "Движение по линии"
+        clickButton("Создать")
+
+        assertTrue("Движение по линии" in tableText("Состояние"))
     }
 
     private fun ownTasksBlock(): Section = UI.getCurrent()._find<Section>().single { block ->

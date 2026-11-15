@@ -8,7 +8,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.api.participant
-import tech.testsys.domain.builder.api.supervisor
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.user.AccessTokenHash
@@ -18,12 +17,11 @@ import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.domain.model.user.SingleRoleUserData
-import tech.testsys.domain.model.user.Supervisor
 import java.time.Instant
 
 class UserDataBuilderTests {
 
-    enum class UserKind { PARTICIPANT, OBSERVER, SUPERVISOR }
+    enum class UserKind { PARTICIPANT, OBSERVER }
 
     private val hasher = mockk<AccessTokenHasher>()
 
@@ -114,7 +112,6 @@ class UserDataBuilderTests {
             community(20)
             name = "User"
         }
-        UserKind.SUPERVISOR -> SupervisorDataBuilder().apply { name = "User" }
     }
 
     private fun storedUser(kind: UserKind): SingleRoleUser = when (kind) {
@@ -138,32 +135,20 @@ class UserDataBuilderTests {
                 storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.HmacSha256))
             }.build()
         }
-        UserKind.SUPERVISOR -> supervisor {
-            id = 1
-            createdAt = Instant.ofEpochSecond(1)
-            version = EntityVersion(7)
-            data = SupervisorDataBuilder().apply {
-                name = "User"
-                storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.HmacSha256))
-            }.build()
-        }
     }
 
     private fun userData(user: SingleRoleUser): SingleRoleUserData = when (user) {
         is Participant -> user.data
         is Observer -> user.data
-        is Supervisor -> user.data
     }
 
     private fun changeName(user: SingleRoleUser): SingleRoleUser = when (user) {
         is Participant -> user.withData { name = "Updated" }
         is Observer -> user.withData { name = "Updated" }
-        is Supervisor -> user.withData { name = "Updated" }
     }
 
     private fun replaceToken(user: SingleRoleUser): SingleRoleUser = when (user) {
         is Participant -> user.withData { accessToken("new-token", hasher) }
         is Observer -> user.withData { accessToken("new-token", hasher) }
-        is Supervisor -> user.withData { accessToken("new-token", hasher) }
     }
 }

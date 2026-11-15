@@ -79,7 +79,7 @@ object CabinetSignIn {
         val principal = principal() ?: return null
         val supervisorId = principal.impersonatedBy ?: return null
 
-        signIn(CabinetPrincipal(userId = supervisorId, kind = UserKind.SUPERVISOR))
+        signIn(CabinetPrincipal(userId = supervisorId, kind = UserKind.MULTIPLE_ROLE))
         logger.info("Supervisor {} returned from user {}", supervisorId, principal.userId)
         return principal.userId
     }
@@ -93,7 +93,6 @@ object CabinetSignIn {
             UserKind.MULTIPLE_ROLE -> CabinetSignInUserKind.MULTIPLE_ROLE
             UserKind.PARTICIPANT -> CabinetSignInUserKind.PARTICIPANT
             UserKind.OBSERVER -> CabinetSignInUserKind.OBSERVER
-            UserKind.SUPERVISOR -> CabinetSignInUserKind.SUPERVISOR
         }
         return StoredCabinetSignIn.User(
             userId = CabinetSignInUserId(principal.userId),

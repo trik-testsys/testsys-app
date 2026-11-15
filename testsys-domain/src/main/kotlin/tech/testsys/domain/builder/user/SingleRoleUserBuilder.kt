@@ -13,8 +13,6 @@ import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.domain.model.user.Supervisor
-import tech.testsys.domain.model.user.SupervisorData
 import java.time.Instant
 
 /**
@@ -150,45 +148,6 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDa
         val data = requireField(data) { ::data }
 
         return Observer(
-            id = SingleRoleUserId(id),
-            createdAt = createdAt,
-            data = data,
-        ).applyVersion(version)
-    }
-}
-
-/**
- * Builder of [SupervisorData]. Required: [accessToken] or [storedAccessToken], [name].
- *
- * @property name the name of the supervisor, or `null` if not set yet.
- * @since 1.0.0-beta.1
- */
-class SupervisorDataBuilder : UserDataBuilder<SupervisorData>() {
-
-    var name: String? = null
-
-    override fun build() = SupervisorData(
-        accessTokenHash = requireAccessTokenHash(),
-        name = requireField(name) { ::name },
-    )
-}
-
-/**
- * Builder of [Supervisor] entities. Required: [id], [createdAt], [data].
- *
- * @since 1.0.0-beta.1
- */
-class SupervisorBuilder : SingleRoleUserBuilder<Supervisor, SupervisorData, SupervisorDataBuilder>() {
-
-    override var data: SupervisorData? = null
-    override fun dataBuilder() = SupervisorDataBuilder()
-
-    override fun build(): Supervisor {
-        val id = requireField(id) { ::id }
-        val createdAt = requireField(createdAt) { ::createdAt }
-        val data = requireField(data) { ::data }
-
-        return Supervisor(
             id = SingleRoleUserId(id),
             createdAt = createdAt,
             data = data,

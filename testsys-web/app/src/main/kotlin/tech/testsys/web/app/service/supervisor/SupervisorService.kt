@@ -18,6 +18,7 @@ import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.SupervisorOperations
 import tech.testsys.web.app.security.CabinetPrincipal
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityManagementService
 import tech.testsys.web.app.service.CommunityVo
@@ -66,17 +67,20 @@ class SupervisorService(private val operations: SupervisorOperations, private va
         .getOrThrow().let { (user, login) -> user.toSupervisorVo() to login }
 
     /**
-     * Resolves a route id to either a multiple-role or a fixed-role user.
+     * Runs [SupervisorOperations.checkUserAccess] for a route id, first as a multiple-role user and then as a fixed-role
+     * one.
      *
-     * @since 1.0.0-beta.1
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
-    fun viewUserByIdValue(id: Long): Pair<AdminUserVo, Instant?> {
-        val multiple = operations.viewUser(currentUser.user(), MultipleRoleUserId(id))
-        return when (multiple) {
-            is OperationResult.Success -> multiple.value.let { (user, login) -> user.toSupervisorVo() to login }
-            is OperationResult.Error -> viewUser(SingleRoleUserId(id))
+    fun checkUserAccessByIdValue(id: Long): AdminUserVo {
+        val supervisor = currentUser.user()
+        val multiple = operations.checkUserAccess(supervisor, MultipleRoleUserId(id))
+        val user = when (multiple) {
+            is OperationResult.Success -> multiple.value
+            is OperationResult.Error -> operations.checkUserAccess(supervisor, SingleRoleUserId(id)).getOrThrow()
         }
+        return user.toSupervisorVo()
     }
 
     @Transactional(readOnly = true)
@@ -120,15 +124,18 @@ class SupervisorService(private val operations: SupervisorOperations, private va
         }
     }
 
+    @Transactional(readOnly = true)
+    override fun checkCommunityAccess(communityId: CommunityId): CommunityVo =
+        operations.checkCommunityAccess(currentUser.user(), communityId).getOrThrow().toVo()
+
     /**
-     * Reads one community.
+     * Runs [SupervisorOperations.checkSupervisorRole].
      *
-     * @since 1.0.0-beta.1
+     * @since 1.0.0-beta.2
      */
     @Transactional(readOnly = true)
-    fun viewCommunity(communityId: CommunityId): CommunityVo {
-        return operations.viewCommunity(currentUser.user(), communityId).getOrThrow().toVo()
-    }
+    fun checkSupervisorRole(): List<CommunityVo> =
+        operations.checkSupervisorRole(currentUser.user()).getOrThrow().map { community -> community.toVo() }
 
     /**
      * Adds a non-fixed-role user to any community.
@@ -148,12 +155,14 @@ class SupervisorService(private val operations: SupervisorOperations, private va
 
     /**
      * Runs [SupervisorOperations.impersonate] and returns the principal of the found user marked with the current
-     * supervisor instead of the user data.
+     * supervisor instead of the user data; throws `IllegalStateException` while a supervisor is signed in as some user.
      *
      * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
     fun impersonate(userId: UserId): CabinetPrincipal {
+        val impersonatedBy = CabinetSignIn.principal()?.impersonatedBy
+        check(impersonatedBy == null) { "Supervisor $impersonatedBy signed in as a user cannot sign in as another user" }
         val supervisor = currentUser.user()
         val user = operations.impersonate(supervisor, userId).getOrThrow()
         return CabinetPrincipal.of(user).copy(impersonatedBy = supervisor.id.value)

@@ -6,9 +6,11 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.router.HighlightAction
+import com.vaadin.flow.router.HighlightCondition
 import com.vaadin.flow.router.HighlightConditions
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
+import tech.testsys.web.components.core.AriaCurrent
 import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.InternalComponentsApi
@@ -65,4 +67,31 @@ internal fun configureExactRoute(link: RouterLink, mark: (RouterLink, Boolean) -
     link.highlightAction = HighlightAction<RouterLink> { target, isCurrent -> mark(target, isCurrent) }
     mark(link, UI.getCurrent()?.internals?.activeViewLocation?.path == link.href)
     link.addAttachListener { event -> mark(link, event.ui.internals.activeViewLocation.path == link.href) }
+}
+
+/**
+ * Marks [link] if its route is the closest menu route to the opened location: the location itself is the page, and a
+ * location nested in the route is its section. The longest of [hrefs] wins, so a section takes the mark from its role page.
+ */
+internal fun configureNearestRoute(link: RouterLink, hrefs: Set<String>, mark: (RouterLink, AriaCurrent?) -> Unit) {
+    var current: AriaCurrent? = null
+    fun resolve(path: String): Boolean {
+        current = nearestRouteMark(path, link.href, hrefs)
+        return current != null
+    }
+    link.highlightCondition = HighlightCondition<RouterLink> { _, event -> resolve(event.location.path) }
+    link.highlightAction = HighlightAction<RouterLink> { target, isCurrent -> mark(target, current.takeIf { isCurrent }) }
+    UI.getCurrent()?.internals?.activeViewLocation?.let { location -> mark(link, current.takeIf { resolve(location.path) }) }
+    link.addAttachListener { event -> mark(link, current.takeIf { resolve(event.ui.internals.activeViewLocation.path) }) }
+}
+
+/** Returns how [href] relates to the opened [path] among the menu [hrefs], or `null` if another route or none is closer. */
+internal fun nearestRouteMark(path: String, href: String, hrefs: Set<String>): AriaCurrent? {
+    val nearest = hrefs.filter { candidate -> path == candidate || path.startsWith("$candidate/") }
+        .maxByOrNull { candidate -> candidate.length }
+    return when {
+        nearest != href -> null
+        path == href -> AriaCurrent.Page
+        else -> AriaCurrent.Location
+    }
 }

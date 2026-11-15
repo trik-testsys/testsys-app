@@ -14,9 +14,6 @@ testsys:
       # ID of the existing Public Community, or the ID to create in an empty database.
       public-community-id: <id>
       public-community-name: <name>
-    supervisor:
-      # The Supervisor access code is TESTSYS_SUPERVISOR_ACCESS_TOKEN of the production variable file.
-      name: <name>
     email-confirmation:
       confirmation-code-lifetime: <ISO-8601 duration, for example PT15M>
       max-confirmation-attempts: <number>

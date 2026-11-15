@@ -4,9 +4,11 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.PasswordHash
+import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.testAccessTokenHasher
 import java.time.Instant
 
@@ -116,6 +118,9 @@ class UserApiTests {
                         }
                     }
                     administrator {}
+                    supervisor {
+                        memberOf(listOf(1))
+                    }
                 }
             }
         }
@@ -134,44 +139,18 @@ class UserApiTests {
         }
 
         @Test
+        fun `should keep the supervisor role and its membership if withData changes another field`() {
+            val copy = origin.withData { name = "Bob" }
+
+            val supervisor = copy.data.roles.filterIsInstance<Supervisor>().single()
+            Assertions.assertEquals(listOf(CommunityId(1)), supervisor.memberOf.ids)
+        }
+
+        @Test
         fun `should change passwordHash if withData sets passwordHash`() {
             val copy = origin.withData { passwordHash = PasswordHash("new-hash") }
 
             Assertions.assertEquals(PasswordHash("new-hash"), copy.data.passwordHash)
-        }
-    }
-
-    @Nested
-    inner class SupervisorTests {
-
-        private val origin = supervisor {
-            id = 1
-            createdAt = Instant.ofEpochSecond(1)
-            version = EntityVersion(7)
-            data = supervisorData {
-                accessToken("supervisor-token", testAccessTokenHasher)
-                name = "Supervisor"
-            }
-        }
-
-        @Test
-        fun `should keep all fields if withData changes nothing`() {
-            val copy = origin.withData { }
-
-            Assertions.assertEquals(origin.id, copy.id)
-            Assertions.assertEquals(origin.createdAt, copy.createdAt)
-            Assertions.assertEquals(origin.version, copy.version)
-            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
-            Assertions.assertEquals(origin.data.name, copy.data.name)
-        }
-
-        @Test
-        fun `should change accessToken if withData sets accessToken`() {
-            val copy = origin.withData { accessToken("new-token", testAccessTokenHasher) }
-
-            Assertions.assertEquals(testAccessTokenHasher.hash("new-token").value, copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.HmacSha256, copy.data.accessTokenHash.algorithm)
         }
     }
 

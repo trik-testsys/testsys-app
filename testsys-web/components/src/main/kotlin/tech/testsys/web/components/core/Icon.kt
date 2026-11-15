@@ -3,7 +3,6 @@
 package tech.testsys.web.components.core
 
 import com.vaadin.flow.component.Svg
-import com.vaadin.flow.component.html.NativeButton
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -17,7 +16,7 @@ internal const val ICON_SIZE: Int = 16
 /** Icon size of alerts and the header. */
 internal const val ICON_SIZE_LARGE: Int = 18
 
-/** Icon size of the check mark of a filter chip. */
+/** Icon size of the remove cross of a chip. */
 internal const val ICON_SIZE_TINY: Int = 12
 
 /** Default stroke width of an icon on its 24×24 grid. */
@@ -29,14 +28,6 @@ internal fun svgIcon(name: IconName, size: Int = ICON_SIZE, strokeWidth: Int = I
         """stroke="currentColor" stroke-width="$strokeWidth" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">""" +
         """<use href="testsys-ui/icons.svg#${name.key}"/></svg>""",
 ).apply { element.classList.add(CssClass.Icon) }
-
-/** Builds an arrow button of a pager: a `.ts-pager__btn` with the small icon [name] and the accessible name [label]. */
-internal fun pagerArrow(name: IconName, label: String): NativeButton = NativeButton().apply {
-    addClassName(CssClass.PagerBtn)
-    element.setAttribute(HtmlAttribute.AriaLabel, label)
-    element.setType(ElementType.Button)
-    add(svgIcon(name, ICON_SIZE_SMALL))
-}
 
 /**
  * Adds an icon of the standard size next to a text; an icon never replaces a label.

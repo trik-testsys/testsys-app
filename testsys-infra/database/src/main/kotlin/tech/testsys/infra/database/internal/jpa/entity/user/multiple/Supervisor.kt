@@ -1,11 +1,11 @@
-package tech.testsys.infra.database.internal.jpa.entity.user.single
+package tech.testsys.infra.database.internal.jpa.entity.user.multiple
 
 import jakarta.persistence.Entity
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 /**
- * JPA entity of [tech.testsys.domain.model.user.SupervisorData].
+ * JPA entity of the supervisor role data.
  *
  * @property userId id of the user holding the role.
  * @since 1.0.0-beta.1
@@ -14,5 +14,4 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 @InternalDatabaseApi
 class SupervisorDataJpaEntity(
     val userId: Long,
-    id: Long? = null,
-) : SnowflakeJpaEntity(id)
+) : SnowflakeJpaEntity()

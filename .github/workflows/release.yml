@@ -58,6 +58,15 @@ jobs:
           git grep -lz '%CURRENT_VERSION%' -- '*.kt' | xargs -0 -r sed -i "s/%CURRENT_VERSION%/$VERSION/g"
           # Only the heading of the unreleased section changes: the format description names the placeholder too.
           sed -i "s/^## %CURRENT_VERSION%$/## $VERSION — $(date -u +%F)/" CHANGELOG.md
+          # The directories of the unreleased user changes take the name of the version.
+          for dir in testsys-web/app/src/main/resources/changelog/*/%CURRENT_VERSION%; do
+            [ -d "$dir" ] || continue
+            if [ -e "${dir%/*}/$VERSION" ]; then
+              echo "::error::User changelog directory ${dir%/*}/$VERSION already exists"
+              exit 1
+            fi
+            git mv "$dir" "${dir%/*}/$VERSION"
+          done
           git add -A
           git commit -m "Release $VERSION"
           git push --force origin "HEAD:refs/heads/release/$VERSION"

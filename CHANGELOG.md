@@ -66,7 +66,7 @@
   ([#40](https://github.com/trik-testsys/testsys-app/pull/40)).
 - Изменения для Пользователей, которые ещё не вошли в релиз, лежат в папке `%CURRENT_VERSION%` истории изменений
   страницы; релиз переименовывает её в номер версии. PR в `dev` обязан её пополнять, если нет метки
-  `skip-user-changelog` (%PR_LINK%).
+  `skip-user-changelog` ([#41](https://github.com/trik-testsys/testsys-app/pull/41)).
 
 ## 1.0.0-beta.1 — 2026-10-29
 

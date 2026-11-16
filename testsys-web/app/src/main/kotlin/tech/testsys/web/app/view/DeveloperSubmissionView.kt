@@ -40,7 +40,7 @@ private const val FILE_CONTENT_TYPE = "application/octet-stream"
  * Submission of a testing request owned by the Developer (testsys.web.page.developer.submission): its details with the
  * reason of a failed grading and the scores of its successful verdict per polygon with the logs and recordings.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.3
  */
 @Route("developer/tasks/:taskId([0-9]+)/testing/:testingId([0-9]+)/submissions/:submissionId([0-9]+)")
 @RolesAllowed("MULTIPLE_ROLE")

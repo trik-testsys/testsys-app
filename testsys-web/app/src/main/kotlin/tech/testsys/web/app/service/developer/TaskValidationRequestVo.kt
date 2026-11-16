@@ -168,7 +168,7 @@ sealed interface TaskValidationExecutionVo {
  * @property request the testing request of the submission.
  * @property submission the submission of a developer solution in a TRIK Studio version.
  * @property verdict the current successful verdict of the submission, or `null` if grading has not succeeded.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.3
  */
 data class TaskValidationSubmissionVo(
     val task: TaskVo,

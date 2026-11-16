@@ -74,7 +74,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.checkTaskValidationSubmissionAccess].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.3
      */
     @Transactional(readOnly = true)
     fun checkTaskValidationSubmissionAccess(
@@ -99,7 +99,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.downloadTaskValidationLogs].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.3
      */
     @Transactional(readOnly = true)
     fun downloadTaskValidationLogs(
@@ -113,7 +113,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.downloadTaskValidationRecording].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.3
      */
     @Transactional(readOnly = true)
     fun downloadTaskValidationRecording(

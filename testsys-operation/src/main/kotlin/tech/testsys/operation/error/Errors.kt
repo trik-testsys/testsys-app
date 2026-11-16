@@ -1648,21 +1648,21 @@ sealed interface CheckContestAccessError : OperationError
 /**
  * Failure of checking access to a submission of a testing request of an owned task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.3
  */
 sealed interface CheckTaskValidationSubmissionAccessError : OperationError
 
 /**
  * Failure of downloading the grading logs of a test of a submission of a testing request of an owned task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.3
  */
 sealed interface DownloadTaskValidationLogsError : OperationError
 
 /**
  * Failure of downloading the recording of a test of a submission of a testing request of an owned task.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.3
  */
 sealed interface DownloadTaskValidationRecordingError : OperationError
 // endregion

@@ -290,7 +290,7 @@ class DeveloperOperations(
      * Returns the submission [submissionId] of the testing request [requestId] of [taskId] owned by [user] with its
      * current successful verdict, so that a page checks access before it loads its blocks.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.3
      */
     @Feature("testsys.user.multi.developer.task.testTask")
     fun checkTaskValidationSubmissionAccess(
@@ -318,7 +318,7 @@ class DeveloperOperations(
      * Returns the grading logs of the run on [testId] from the successful verdict of the submission [submissionId] of the
      * testing request [requestId] of [taskId] owned by [user].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.3
      */
     @Feature("testsys.user.multi.developer.task.testTask")
     fun downloadTaskValidationLogs(
@@ -348,7 +348,7 @@ class DeveloperOperations(
      * Returns the recording of the run on [testId] from the successful verdict of the submission [submissionId] of the
      * testing request [requestId] of [taskId] owned by [user].
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.3
      */
     @Feature("testsys.user.multi.developer.task.testTask")
     fun downloadTaskValidationRecording(
@@ -1839,7 +1839,7 @@ class DeveloperOperations(
      * @property request the testing request of the submission.
      * @property submission the submission of a developer solution in a TRIK Studio version.
      * @property verdict the current successful verdict of the submission, or `null` if grading has not succeeded.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.3
      */
     data class TaskValidationSubmission(
         val task: Task,

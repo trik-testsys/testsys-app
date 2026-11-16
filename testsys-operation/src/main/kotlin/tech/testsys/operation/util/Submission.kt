@@ -11,7 +11,7 @@ import tech.testsys.operation.annotation.InternalOperationsApi
 /**
  * Returns the reference to the current successful verdict of this submission, or `null` if grading has not succeeded.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.3
  */
 @InternalOperationsApi
 fun Submission.successfulVerdict(): LazyEntity<VerdictId, Verdict>? {

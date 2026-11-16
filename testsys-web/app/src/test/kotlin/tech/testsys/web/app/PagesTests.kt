@@ -46,6 +46,7 @@ import tech.testsys.web.app.view.CONTESTS_SECTION
 import tech.testsys.web.app.view.DeveloperContestView
 import tech.testsys.web.app.view.DeveloperFixtures
 import tech.testsys.web.app.view.DeveloperResourceView
+import tech.testsys.web.app.view.DeveloperSubmissionView
 import tech.testsys.web.app.view.DeveloperTaskView
 import tech.testsys.web.app.view.DeveloperTestingView
 import tech.testsys.web.app.view.DeveloperView
@@ -84,6 +85,7 @@ import tech.testsys.web.app.view.managerSection
 import tech.testsys.web.app.view.resourceParameters
 import tech.testsys.web.app.view.studentClassParameters
 import tech.testsys.web.app.view.studentContestParameters
+import tech.testsys.web.app.view.submissionParameters
 import tech.testsys.web.app.view.taskParameters
 import tech.testsys.web.app.view.testingParameters
 import tech.testsys.web.app.view.userParameters
@@ -279,6 +281,13 @@ class PagesTests : MockSpringVaadinTests() {
                 "testing" to developerParameters { developers ->
                     val task = developers.task()
                     testingParameters(task.id, developers.testing(task).id)
+                },
+            ),
+            DeveloperSubmissionView::class.java to mapOf(
+                "submission" to developerParameters { developers ->
+                    val task = developers.task()
+                    val (request, submission) = developers.testedSubmission(task)
+                    submissionParameters(task.id, request.id, submission)
                 },
             ),
             DeveloperResourceView::class.java to mapOf(

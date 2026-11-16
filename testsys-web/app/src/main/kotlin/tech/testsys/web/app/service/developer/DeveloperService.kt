@@ -14,6 +14,7 @@ import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TestId
@@ -26,7 +27,9 @@ import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.TaskVo
+import tech.testsys.web.app.service.judge.toVo
 import tech.testsys.web.app.service.map
+import tech.testsys.web.app.service.study.toVo
 import tech.testsys.web.app.service.toVo
 import java.time.Duration
 import java.time.Instant
@@ -67,6 +70,59 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
         val (task, request) = operations.checkTaskValidationRequestAccess(currentUser.multipleRoleUser(), taskId, requestId).getOrThrow()
         return task.toVo() to request.toVo()
     }
+
+    /**
+     * Runs [DeveloperOperations.checkTaskValidationSubmissionAccess].
+     *
+     * @since 1.0.0-beta.3
+     */
+    @Transactional(readOnly = true)
+    fun checkTaskValidationSubmissionAccess(
+        taskId: TaskId,
+        requestId: TaskValidationRequestId,
+        submissionId: SubmissionId,
+    ): TaskValidationSubmissionVo {
+        val (task, request, submission, verdict) = operations.checkTaskValidationSubmissionAccess(
+            currentUser.multipleRoleUser(),
+            taskId,
+            requestId,
+            submissionId,
+        ).getOrThrow()
+        return TaskValidationSubmissionVo(
+            task = task.toVo(),
+            request = request.toVo(),
+            submission = submission.toVo(),
+            verdict = verdict?.toVo(),
+        )
+    }
+
+    /**
+     * Runs [DeveloperOperations.downloadTaskValidationLogs].
+     *
+     * @since 1.0.0-beta.3
+     */
+    @Transactional(readOnly = true)
+    fun downloadTaskValidationLogs(
+        taskId: TaskId,
+        requestId: TaskValidationRequestId,
+        submissionId: SubmissionId,
+        testId: TestId,
+    ): FileData = operations.downloadTaskValidationLogs(currentUser.multipleRoleUser(), taskId, requestId, submissionId, testId)
+        .getOrThrow()
+
+    /**
+     * Runs [DeveloperOperations.downloadTaskValidationRecording].
+     *
+     * @since 1.0.0-beta.3
+     */
+    @Transactional(readOnly = true)
+    fun downloadTaskValidationRecording(
+        taskId: TaskId,
+        requestId: TaskValidationRequestId,
+        submissionId: SubmissionId,
+        testId: TestId,
+    ): FileData = operations.downloadTaskValidationRecording(currentUser.multipleRoleUser(), taskId, requestId, submissionId, testId)
+        .getOrThrow()
 
     /**
      * Runs [DeveloperOperations.commitTask].

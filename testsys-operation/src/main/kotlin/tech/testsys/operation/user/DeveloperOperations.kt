@@ -9,6 +9,7 @@ import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.contract.Grader
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
@@ -18,6 +19,8 @@ import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
+import tech.testsys.domain.contract.persistence.repository.LogsRepository
+import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
@@ -25,6 +28,7 @@ import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
+import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.TextLimits
@@ -42,6 +46,8 @@ import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.Submission
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
@@ -52,6 +58,7 @@ import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.Developer
@@ -74,6 +81,7 @@ import tech.testsys.operation.error.CheckDeveloperRoleError
 import tech.testsys.operation.error.CheckResourceAccessError
 import tech.testsys.operation.error.CheckTaskAccessError
 import tech.testsys.operation.error.CheckTaskValidationRequestAccessError
+import tech.testsys.operation.error.CheckTaskValidationSubmissionAccessError
 import tech.testsys.operation.error.CommitTaskError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
@@ -96,6 +104,8 @@ import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
 import tech.testsys.operation.error.DownloadResourceVersionError
+import tech.testsys.operation.error.DownloadTaskValidationLogsError
+import tech.testsys.operation.error.DownloadTaskValidationRecordingError
 import tech.testsys.operation.error.EditContestError
 import tech.testsys.operation.error.EditTaskInfoError
 import tech.testsys.operation.error.ExerciseLanguageAlreadyAttachedError
@@ -105,6 +115,7 @@ import tech.testsys.operation.error.ExerciseVersionNotLatestError
 import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.NonPositiveAttemptDurationError
 import tech.testsys.operation.error.OperationResult
+import tech.testsys.operation.error.RecordingNotExistsError
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
 import tech.testsys.operation.error.ResourceNameTooLongError
 import tech.testsys.operation.error.ResourceNotExistsError
@@ -117,6 +128,8 @@ import tech.testsys.operation.error.ShareTaskError
 import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
+import tech.testsys.operation.error.SubmissionNotExistsError
+import tech.testsys.operation.error.SubmissionNotSuccessfullyGradedError
 import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
@@ -134,6 +147,7 @@ import tech.testsys.operation.error.TaskTestingNoTrikStudioVersionsError
 import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TaskValidationRequestNotExistsError
 import tech.testsys.operation.error.TestNotExistsError
+import tech.testsys.operation.error.TestNotInVerdictError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
@@ -160,6 +174,7 @@ import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.getEditableContent
 import tech.testsys.operation.util.hasRole
 import tech.testsys.operation.util.loadByIdsAsMap
+import tech.testsys.operation.util.successfulVerdict
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -184,6 +199,9 @@ class DeveloperOperations(
     private val submissionRepository: SubmissionRepository,
     private val regradeRepository: RegradeRepository,
     private val grader: Grader,
+    private val verdictRepository: VerdictRepository,
+    private val logsRepository: LogsRepository,
+    private val recordingRepository: RecordingRepository,
 ) {
 
     /**
@@ -267,6 +285,96 @@ class DeveloperOperations(
             ensure(request != null && request.data.task.id == taskId) { TaskValidationRequestNotExistsError(requestId) }
             return (task to request).asSuccess()
         }
+
+    /**
+     * Returns the submission [submissionId] of the testing request [requestId] of [taskId] owned by [user] with its
+     * current successful verdict, so that a page checks access before it loads its blocks.
+     *
+     * @since 1.0.0-beta.3
+     */
+    @Feature("testsys.user.multi.developer.task.testTask")
+    fun checkTaskValidationSubmissionAccess(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        requestId: TaskValidationRequestId,
+        submissionId: SubmissionId,
+    ): OperationResult<TaskValidationSubmission, CheckTaskValidationSubmissionAccessError> =
+        operation<TaskValidationSubmission, CheckTaskValidationSubmissionAccessError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            val request = taskValidationRequestRepository.findById(requestId)
+            ensure(request != null && request.data.task.id == taskId) { TaskValidationRequestNotExistsError(requestId) }
+            val execution = request.data.execution as? TaskValidationExecution.WithSubmissions
+            ensure(execution != null && submissionId in execution.submissions.ids) { SubmissionNotExistsError(submissionId) }
+
+            val submission = submissionRepository.load(submissionId.lazify())
+            val verdict = submission.successfulVerdict()?.let { reference -> verdictRepository.load(reference) }
+            return TaskValidationSubmission(task = task, request = request, submission = submission, verdict = verdict).asSuccess()
+        }
+
+    /**
+     * Returns the grading logs of the run on [testId] from the successful verdict of the submission [submissionId] of the
+     * testing request [requestId] of [taskId] owned by [user].
+     *
+     * @since 1.0.0-beta.3
+     */
+    @Feature("testsys.user.multi.developer.task.testTask")
+    fun downloadTaskValidationLogs(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        requestId: TaskValidationRequestId,
+        submissionId: SubmissionId,
+        testId: TestId,
+    ): OperationResult<FileData, DownloadTaskValidationLogsError> = operation<FileData, DownloadTaskValidationLogsError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        val request = taskValidationRequestRepository.findById(requestId)
+        ensure(request != null && request.data.task.id == taskId) { TaskValidationRequestNotExistsError(requestId) }
+        val execution = request.data.execution as? TaskValidationExecution.WithSubmissions
+        ensure(execution != null && submissionId in execution.submissions.ids) { SubmissionNotExistsError(submissionId) }
+        val verdict = submissionRepository.load(submissionId.lazify()).successfulVerdict()
+        ensure(verdict != null) { SubmissionNotSuccessfullyGradedError(submissionId) }
+        val outcome = verdictRepository.load(verdict).data.testVerdicts.firstOrNull { candidate -> candidate.test.id == testId }
+        ensure(outcome != null) { TestNotInVerdictError(submissionId, testId) }
+
+        return logsRepository.load(outcome.logs).data.file.asSuccess()
+    }
+
+    /**
+     * Returns the recording of the run on [testId] from the successful verdict of the submission [submissionId] of the
+     * testing request [requestId] of [taskId] owned by [user].
+     *
+     * @since 1.0.0-beta.3
+     */
+    @Feature("testsys.user.multi.developer.task.testTask")
+    fun downloadTaskValidationRecording(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        requestId: TaskValidationRequestId,
+        submissionId: SubmissionId,
+        testId: TestId,
+    ): OperationResult<FileData, DownloadTaskValidationRecordingError> = operation<FileData, DownloadTaskValidationRecordingError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        val request = taskValidationRequestRepository.findById(requestId)
+        ensure(request != null && request.data.task.id == taskId) { TaskValidationRequestNotExistsError(requestId) }
+        val execution = request.data.execution as? TaskValidationExecution.WithSubmissions
+        ensure(execution != null && submissionId in execution.submissions.ids) { SubmissionNotExistsError(submissionId) }
+        val verdict = submissionRepository.load(submissionId.lazify()).successfulVerdict()
+        ensure(verdict != null) { SubmissionNotSuccessfullyGradedError(submissionId) }
+        val outcome = verdictRepository.load(verdict).data.testVerdicts.firstOrNull { candidate -> candidate.test.id == testId }
+        ensure(outcome != null) { TestNotInVerdictError(submissionId, testId) }
+        val recording = outcome.recording
+        ensure(recording != null) { RecordingNotExistsError(submissionId, testId) }
+
+        return recordingRepository.load(recording).data.file.asSuccess()
+    }
 
     /**
      * Commits the working revision of [taskId] owned by [user] if a successful validation request has a matching
@@ -1723,6 +1831,22 @@ class DeveloperOperations(
             throw IllegalArgumentException("Contest $field=$this exceeds the Long millisecond range", exception)
         }
     }
+
+    /**
+     * Submission of a testing request of an owned task with the task and the request it belongs to.
+     *
+     * @property task the task of the request.
+     * @property request the testing request of the submission.
+     * @property submission the submission of a developer solution in a TRIK Studio version.
+     * @property verdict the current successful verdict of the submission, or `null` if grading has not succeeded.
+     * @since 1.0.0-beta.3
+     */
+    data class TaskValidationSubmission(
+        val task: Task,
+        val request: TaskValidationRequest,
+        val submission: Submission,
+        val verdict: Verdict?,
+    )
 
     private companion object {
         const val NANOS_PER_MILLISECOND = 1_000_000

@@ -15,6 +15,7 @@ import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap
 import com.vaadin.flow.server.VaadinService
 import tech.testsys.domain.builder.api.developerData
+import tech.testsys.domain.builder.api.developerSolutionValidationInput
 import tech.testsys.domain.builder.api.taskValidationRequestData
 import tech.testsys.domain.builder.api.taskValidationSnapshot
 import tech.testsys.domain.builder.api.withData
@@ -22,6 +23,9 @@ import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
@@ -143,10 +147,51 @@ class DeveloperFixtures(
         ).toVo()
     }
 
+    /**
+     * Stores a completed request of the signed-in developer's [task] with one developer solution in one TRIK Studio
+     * version and its successfully graded submission; returns the request and the submission.
+     */
+    fun testedSubmission(task: TaskVo): Pair<TaskValidationRequestVo, SubmissionId> {
+        val submission = fixtures.developerSolutionTestSubmission(fixtures.multipleRoleUser())
+        val authored = developerService.addDeveloperSolution(
+            taskId = task.id,
+            resourceName = "Эталонное решение",
+            file = FileData(uploadedFilename = "solution.py", content = "print(1)".toByteArray()),
+            language = TrikSupportedLanguage.Python,
+            expectedScore = Score(DEFAULT_EXPECTED_SCORE),
+        )
+        val version = checkNotNull(submission.data.kind as? SubmissionKind.DeveloperSolutionTest).trikStudioVersion
+        val requests = VaadinService.getCurrent().instantiator.getOrCreate(TaskValidationRequestRepository::class.java)
+        val request = requests.save(
+            taskValidationRequestData {
+                this.task = task.id
+                requestedBy = task.owner
+                snapshot = taskValidationSnapshot {
+                    developerSolutions = mutableListOf(
+                        developerSolutionValidationInput {
+                            developerSolution = authored.id
+                            solution = submission.data.solution.id
+                            expectedScore = authored.expectedScore
+                        },
+                    )
+                    supportedTrikStudioVersions = mutableListOf(version)
+                }
+                execution.completed {
+                    submissions = mutableListOf(submission.id)
+                    completedAt = Instant.EPOCH
+                }
+            },
+        )
+        return request.toVo() to submission.id
+    }
+
     /** Creates a new contest of the signed-in developer in [version]. */
     fun contest(version: TrikStudioVersion, name: String = fixtures.unique("Contest")): ContestVo =
         developerService.createContest(contestName = name, trikStudioVersion = version)
 }
+
+/** Expected score of the developer solution of [DeveloperFixtures.testedSubmission]. */
+private const val DEFAULT_EXPECTED_SCORE = 100
 
 /** Returns the open dialog. */
 internal fun openDialog(): Dialog = UI.getCurrent()._find<Dialog>().single { dialog -> dialog.isOpened }

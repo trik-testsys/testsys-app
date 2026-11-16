@@ -259,6 +259,7 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 | `DeveloperView` | `developer`, `developer/tasks`, `developer/contests` | `MULTIPLE_ROLE` с Ролью Разработчика |
 | `DeveloperTaskView` | `developer/tasks/:taskId` | `MULTIPLE_ROLE`, владелец Задачи |
 | `DeveloperTestingView` | `developer/tasks/:taskId/testing/:testingId` | `MULTIPLE_ROLE`, владелец Задачи; запрос принадлежит Задаче |
+| `DeveloperSubmissionView` | `developer/tasks/:taskId/testing/:testingId/submissions/:submissionId` | `MULTIPLE_ROLE`, владелец Задачи; запрос принадлежит Задаче, Посылка — запросу |
 | `DeveloperResourceView` | `developer/tasks/:taskId/resources/:resourceId` | `MULTIPLE_ROLE`, владелец Задачи |
 | `DeveloperContestView` | `developer/contests/:contestId` | `MULTIPLE_ROLE`, владелец Тура или Разработчик Сообщества с доступом к нему |
 | `ManagerView` | `manager`, `manager/classes`, `manager/competitions` | `MULTIPLE_ROLE` с Ролью Организатора |
@@ -284,6 +285,8 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 История тестирований в `DeveloperTaskView` открывает выбранный запрос в `DeveloperTestingView`.
 Страница получает запрос через `DeveloperService.checkTaskValidationRequestAccess` и показывает названия версий
 Ресурсов из снимка запроса. Ссылка в хлебных крошках возвращает к исходной Задаче.
+Строка таблицы Посылок открывает `DeveloperSubmissionView`; эта страница проверяет доступ и получает данные блоков
+через `DeveloperService.checkTaskValidationSubmissionAccess`.
 
 Страницы Кабинетов вызывают в `beforeEnter` только проверку `check*` прокси-сервиса, до построения блоков.
 Она проверяет доступ и возвращает данные заголовка страницы и то, от чего зависит её структура: состав блоков,
@@ -385,7 +388,7 @@ Cookie имеет `HttpOnly`, `SameSite=Lax`, путь context path и флаг 
 | `page_home` | `MultiMainView` |
 | `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню»; общие для Кабинетов статус проверки Задачи, ограничение длины названия и запись длительности |
 | `page_administrator` | `AdminView`, `AdminCommunityView`, `AdminUserView` |
-| `page_developer` | `DeveloperView`, `DeveloperContestView`, `DeveloperTaskView`, `DeveloperResourceView`, `DeveloperTestingView` |
+| `page_developer` | `DeveloperView`, `DeveloperContestView`, `DeveloperTaskView`, `DeveloperResourceView`, `DeveloperTestingView`, `DeveloperSubmissionView` |
 | `page_manager` | `ManagerView`, `ManagerClassView`, `ManagerCompetitionView`, `ManagerContestView` и заголовки их CSV |
 | `page_judge` | `JudgeView`, `JudgeSolutionView` |
 | `page_student` | `StudentView`, `StudentClassView`, `StudentContestView`, `StudentTaskView` |

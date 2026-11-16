@@ -15,7 +15,6 @@ import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
-import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.JudgmentOrder
@@ -26,7 +25,6 @@ import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.Verdict
-import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.user.Judge
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -59,6 +57,7 @@ import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.hasRole
 import tech.testsys.operation.util.loadByIdsAsMap
+import tech.testsys.operation.util.successfulVerdict
 
 /**
  * Operations performed by users holding the judge role.
@@ -213,7 +212,7 @@ class JudgeOperations(
                 is SubmissionKind.Grading -> contestRepository.load(kind.contest)
                 is SubmissionKind.DeveloperSolutionTest -> error("Submission ${submissionId.value} available to judges is not graded")
             }
-            val verdict = successfulVerdictOf(submission)?.let { reference -> verdictRepository.load(reference) }
+            val verdict = submission.successfulVerdict()?.let { reference -> verdictRepository.load(reference) }
             val testIds = verdict?.data?.testVerdicts?.map { outcome -> outcome.test.id }.orEmpty()
             val testsById = testRepository.loadByIdsAsMap(testIds)
             val tests = testIds.map(testsById::getValue)
@@ -272,7 +271,7 @@ class JudgeOperations(
             val submission = submissionRepository.findById(submissionId)
             ensure(submission != null) { SubmissionNotExistsError(submissionId) }
             ensure(availableAuthorOf(submission) != null) { SubmissionAccessDeniedError(submissionId) }
-            val verdict = successfulVerdictOf(submission)
+            val verdict = submission.successfulVerdict()
             ensure(verdict != null) { SubmissionNotSuccessfullyGradedError(submissionId) }
             val outcome = verdictRepository.load(verdict).data.testVerdicts.firstOrNull { candidate -> candidate.test.id == testId }
             ensure(outcome != null) { TestNotInVerdictError(submissionId, testId) }
@@ -296,7 +295,7 @@ class JudgeOperations(
         val submission = submissionRepository.findById(submissionId)
         ensure(submission != null) { SubmissionNotExistsError(submissionId) }
         ensure(availableAuthorOf(submission) != null) { SubmissionAccessDeniedError(submissionId) }
-        val verdict = successfulVerdictOf(submission)
+        val verdict = submission.successfulVerdict()
         ensure(verdict != null) { SubmissionNotSuccessfullyGradedError(submissionId) }
         val outcome = verdictRepository.load(verdict).data.testVerdicts.firstOrNull { candidate -> candidate.test.id == testId }
         ensure(outcome != null) { TestNotInVerdictError(submissionId, testId) }
@@ -318,12 +317,6 @@ class JudgeOperations(
             is SingleRoleUserId -> participantRepository.findById(authorId)
             else -> null
         }
-    }
-
-    /** Returns the reference to the current successful verdict of [submission], or `null` if grading has not succeeded. */
-    private fun successfulVerdictOf(submission: Submission): LazyEntity<VerdictId, Verdict>? {
-        val status = submission.data.status as? SubmissionStatus.Graded
-        return (status?.grade as? GradingResult.Success)?.verdict
     }
 
     /**

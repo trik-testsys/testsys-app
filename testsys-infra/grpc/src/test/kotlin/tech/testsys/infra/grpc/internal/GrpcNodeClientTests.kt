@@ -85,7 +85,7 @@ class GrpcNodeClientTests {
 
             assertEquals(GradingAdmission.Accepted, admission)
             assertEquals(2_147_483_648L, received.get().id)
-            assertEquals("4", received.get().task.fieldsList.single().name)
+            assertEquals("4.xml", received.get().task.fieldsList.single().name)
             assertEquals("trik-studio:2025.1", received.get().options.dockerImage)
             assertEquals(listOf(2_147_483_648L), callbacks)
             val saved = repository.savedVerdicts.single()

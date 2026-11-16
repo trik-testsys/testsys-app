@@ -69,7 +69,7 @@ class GradingPersistenceServiceTests {
             val prepared = repository.persistence.prepare(submitted, shouldRecordVideo = true)
 
             assertEquals(listOf(TestId(4)), prepared.testIds)
-            assertEquals("4", prepared.message.task.fieldsList.single().name)
+            assertEquals("4.xml", prepared.message.task.fieldsList.single().name)
             assertEquals("world", prepared.message.task.fieldsList.single().content.toStringUtf8())
             assertEquals("trik-studio:2025.1", prepared.message.options.dockerImage)
             verify(exactly = 0) { repository.tasks.load(submitted.data.task) }
@@ -109,7 +109,7 @@ class GradingPersistenceServiceTests {
             val prepared = repository.persistence.prepare(submitted, shouldRecordVideo = true)
 
             assertEquals(listOf(TestId(4)), prepared.testIds)
-            assertEquals("4", prepared.message.task.fieldsList.single().name)
+            assertEquals("4.xml", prepared.message.task.fieldsList.single().name)
             assertEquals("trik-studio:contest-version", prepared.message.options.dockerImage)
         }
 

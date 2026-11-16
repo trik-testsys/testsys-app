@@ -700,6 +700,75 @@ Notes collected while localizing the Developer Cabinet pages (stage 2f, 2026-10-
   finite double». The message reproduces the former hardcoded text; a fully Russian line needs a separate
   decision, e.g. a selector over the expected kinds.
 
+### «Логи» in «Скачать логи Полигона «{name}»»
+
+- Викисловарь has three homonyms: «лог I» (редк. a wide ravine; строит. the long face of a brick; plural «логи» /
+  «лога»), «лог II» (неол., комп. «автоматически создаваемый хронологический протокол работы программы или
+  устройства», plural «логи») and «лог III» (an ancient Hebrew liquid measure). No vulgar or derogatory sense.
+- Applicability: in `page_judge.solution.verdict.download_logs` the verb «Скачать», the Полигон object and the
+  Вердикт definition («логи проверки по каждому Полигону», definitions.md item 19) select «лог II»; the «неол.»
+  label marks a newer word, not a register problem for a technical cabinet.
+- The `name` argument may be the fallback «#12» for an unknown Полигон; inside guillemets after the generic word it
+  stays undeclined, so «Скачать логи Полигона «#12»» needs no special form.
+- Bare column header «Логи» (`page_developer.submission.verdict.logs`, 2026-11-16; it replaced the Developer copy
+  `page_developer.submission.verdict.download_logs` and the «Файлы» column): Им. мн. «логи» is the only plural of
+  «лог II» («лог I» has «логи» / «лога»). Without a verb the header relies on the page for the computing sense
+  (inference): the Вердикт block guide «можно скачать логи и видеозапись прохождения», the neighbouring
+  «Видеозапись» column and the «Скачать» buttons in the cells; the ravine and brick senses are rare or
+  construction-only and do not fit a table of Полигоны. The plural matches definitions.md item 19.
+  Independent reviewer check (2026-11-16, same source): confirmed; Zaliznyak «лог I» 3a // 3c①, «лог II» 3a,
+  «лог III» has no paradigm table; no sense is labelled вульг., жарг. or разг.
+- Source: https://ru.wiktionary.org/wiki/лог (read 2026-11-16; independently re-read by the reviewer the same day,
+  no change; re-read for the column header the same day through a fetch summary). «Логи» is an inanimate plural,
+  so В. мн. = Им. мн.
+
+### «Видеозапись» in «Скачать видеозапись Полигона «{name}»»
+
+- Викисловарь: «видеоза́пись» — inanimate feminine, 3rd declension (Zaliznyak 8a), written as one word; Им. ед. =
+  В. ед., so «Скачать видеозапись» uses the accusative correctly. Senses: 1. the process of recording image (and
+  usually sound) signals; 2. the result of that process, its carrier or the recorded data. No stylistic labels and
+  no undesirable meanings.
+- Applicability (reviewer's reading, not stated by the source): with «Скачать», sense 2 is meant; it matches
+  «видеозапись прохождения» in definitions.md item 19. «Видеозапись Полигона» is a short form of «видеозапись
+  прохождения Полигона», clear next to the Полигон name in a «Файлы» column. Applies to
+  `page_judge.solution.verdict.download_recording`.
+- Bare column header «Видеозапись» (`page_developer.submission.verdict.recording`, 2026-11-16; it replaced the
+  Developer copy `page_developer.submission.verdict.download_recording`): Им. ед., sense 2. The singular fits one
+  optional recording per Полигон row (definitions.md item 19: «опционально — видеозапись прохождения»), next to the
+  plural «Логи». The source lists «видео» only among related words, not as a synonym; the header keeps the word of
+  definitions.md and of the block guide instead of the shorter «Видео» (project reading).
+  Independent reviewer check (2026-11-16, same source): confirmed; Zaliznyak 8a, listed synonyms «видеосъёмка;
+  видеоматериал, видеоинформация, видеоданные, видеофильм».
+- Source: https://ru.wiktionary.org/wiki/видеозапись (read 2026-11-16; re-read for the column header the same day
+  through a fetch summary).
+
+### Developer Submission page (`page_developer.submission.*`, 2026-11-16)
+
+- «Подробности» in `page_developer.testing.submissions.guide` («Откройте Посылку, чтобы увидеть подробности
+  проверки.»): Викисловарь «подробность» has two unlabeled senses, 1. the property of being detailed, 2. «частность,
+  мелкое обстоятельство какого-либо дела, объекта»; the plural «подробности проверки» takes sense 2. No undesirable
+  meaning. Source: https://ru.wiktionary.org/wiki/подробность (read 2026-11-16, fetch summary).
+- «Отведённое время» in `page_developer.submission.timeout` («Проверка не завершилась за отведённое время.»):
+  Викисловарь «отвести» sense 4 «специально выделить, предназначить, зарезервировать», example «Отвести время на
+  отдых», no label. The other senses (escort, move aside, colloquial «отвести занятия») need a person or object and do
+  not arise with «время» (inference). Source: https://ru.wiktionary.org/wiki/отвести (read 2026-11-16, fetch
+  summary). The Judge status «Превышено время проверки» names the same state as a badge; the Developer reason field
+  holds a sentence because it sits where the grader's error description otherwise appears.
+- «Причина» as the label of the reason field: sense 1 of the «Причина» note in the Service cabinet section applies
+  (the cause of a grading error or timeout).
+- Empty Вердикт hint uses the present «появляется только после успешной проверки Посылки» instead of the Judge's
+  future «появятся после успешной проверки»: a Developer Посылка whose grading failed or timed out never gets a
+  Вердикт, so a future-tense promise would be false for it (project reading, no language source).
+- Singular noun after two coordinated adjectives, «фактический и ожидаемый балл» in
+  `page_developer.submission.details_guide` (reviewer research): a retelling of Розенталь («Справочник по правописанию
+  и стилистике», 1997) says the plural stresses separate objects («золотая и серебряная медали»), the singular is used
+  for closely linked items seen as a whole; both forms are acceptable, the singular fits a pair of compared scores and
+  matches features.md. Source: https://mel.fm/gramotnost/kak-govorit/3569180-ucheniki-pervogo-i-vtorogo-klassa-ili-klassov-kak-govorit-pravilno
+  (secondary source, read 2026-11-16 through a fetch summary); the primary Розенталь text (§ 194) was not read.
+- Applicability (project observation): the domain records both `GradingResult.GradingError` and
+  `GradingResult.Timeout` as `AuthorSubmissionFailure.GradingFailed`, so a timed-out Посылка shows the status «Ошибка
+  проверки» with the reason «Проверка не завершилась за отведённое время.».
+
 ## Observer and Supervisor Cabinets (`page_observer`, `page_supervisor`)
 
 Notes collected while moving the Observer and Supervisor pages onto localization (2026-10-12).

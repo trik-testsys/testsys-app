@@ -4,13 +4,16 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.RouteParameters
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.DiagnosticData
 import tech.testsys.domain.model.task.DiagnosticReport
 import tech.testsys.domain.model.task.DiagnosticSeverity
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequestId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.localization.PageDeveloper.DiagnosticLineAtSeverity
@@ -18,6 +21,7 @@ import tech.testsys.infra.localization.PageDeveloper.DiagnosticLineSeverity
 import tech.testsys.infra.localization.PageDeveloper.LanguageNameLanguage
 import tech.testsys.infra.localization.PageDeveloper.RefusalNoExerciseLanguage
 import tech.testsys.infra.localization.PageDeveloper.TaskStateState
+import tech.testsys.infra.localization.PageDeveloper.TestingSubmissionsStatusStatus
 import tech.testsys.operation.error.OperationError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskNotTestedError
@@ -29,11 +33,14 @@ import tech.testsys.operation.error.TaskTestingNoTrikStudioVersionsError
 import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.web.app.service.TaskRevisionVo
 import tech.testsys.web.app.service.TaskVo
+import tech.testsys.web.app.service.developer.DeveloperService
+import tech.testsys.web.app.service.developer.DeveloperSolutionInputVo
 import tech.testsys.web.app.service.developer.DeveloperSolutionVo
 import tech.testsys.web.app.service.developer.ExerciseVo
 import tech.testsys.web.app.service.developer.ResourceVo
 import tech.testsys.web.app.service.developer.StatementVo
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
+import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.forms.UploadedFile
@@ -240,6 +247,81 @@ internal fun testingParameters(taskId: TaskId, requestId: TaskValidationRequestI
 /** Opens the results of [requestId] of [taskId]. */
 internal fun openDeveloperTesting(taskId: TaskId, requestId: TaskValidationRequestId) {
     UI.getCurrent().navigate(DeveloperTestingView::class.java, testingParameters(taskId, requestId))
+}
+
+/** Returns the parameters of the submission [submissionId] of the testing request [requestId] of [taskId]. */
+internal fun submissionParameters(taskId: TaskId, requestId: TaskValidationRequestId, submissionId: SubmissionId): RouteParameters =
+    RouteParameters(
+        mapOf(
+            TASK_ID_PARAMETER to taskId.value.toString(),
+            TESTING_ID_PARAMETER to requestId.value.toString(),
+            SUBMISSION_ID_PARAMETER to submissionId.value.toString(),
+        ),
+    )
+
+/** Opens the submission [submissionId] of the testing request [requestId] of [taskId]. */
+internal fun openDeveloperSubmission(taskId: TaskId, requestId: TaskValidationRequestId, submissionId: SubmissionId) {
+    UI.getCurrent().navigate(DeveloperSubmissionView::class.java, submissionParameters(taskId, requestId, submissionId))
+}
+
+/** Resolves the versions recorded in [request] of [task], including versions absent from the current task revisions. */
+internal fun resourceNames(developerService: DeveloperService, task: TaskVo, request: TaskValidationRequestVo): Map<DomainId, String> {
+    val ids = request.snapshot.tests + request.snapshot.developerSolutions.map { input -> input.developerSolution }
+    val latest = developerService.viewResources().filter { resource -> resource.versionBucket in task.uploadedResources }
+    val names = latest.associate { resource -> resource.id to resource.name }.toMutableMap()
+    if (ids.any { id -> id !in names }) {
+        latest.forEach { resource ->
+            developerService.viewResource(task.id, resource.versionBucket).forEach { (version, _) ->
+                names[version.id] = version.name
+            }
+        }
+    }
+
+    return names
+}
+
+/**
+ * Returns each submission of [request] with the run of a developer solution in a TRIK Studio version it checks, in the
+ * order they were created; none before submissions are created.
+ */
+internal fun submissionRunsOf(
+    request: TaskValidationRequestVo,
+): List<Pair<Pair<DeveloperSolutionInputVo, TrikStudioVersion>, SubmissionId>> {
+    val submissions = when (val execution = request.execution) {
+        is TaskValidationExecutionVo.SubmissionsCreated -> execution.submissions
+        is TaskValidationExecutionVo.Completed -> execution.submissions
+        is TaskValidationExecutionVo.CreatedSubmissions -> execution.submissions
+        TaskValidationExecutionVo.PendingDiagnostics,
+        is TaskValidationExecutionVo.AwaitingSubmissions,
+        is TaskValidationExecutionVo.StoppedByDiagnostics,
+        is TaskValidationExecutionVo.IncompleteDiagnostics,
+        is TaskValidationExecutionVo.CompletedDiagnostics,
+        -> emptyList()
+    }
+    // The same order as TaskValidationSnapshot.authorRuns: by developer solution, then by Docker image tag.
+    val versions = request.snapshot.supportedTrikStudioVersions.sortedBy { version -> version.tag }
+    val runs = request.snapshot.developerSolutions.sortedBy { input -> input.developerSolution.value }
+        .flatMap { input -> versions.map { version -> input to version } }
+    return runs.zip(submissions)
+}
+
+/** Returns the failure of [submission] in [execution], or `null` if it has not failed or the request has not completed. */
+internal fun failureOf(execution: TaskValidationExecutionVo, submission: SubmissionId): AuthorSubmissionFailure? =
+    (execution as? TaskValidationExecutionVo.Completed)?.failures?.firstOrNull { failed -> failed.submission == submission }
+
+/** Returns the message variant and tone of the status of [submission] in [execution]. */
+internal fun submissionStatusOf(
+    execution: TaskValidationExecutionVo,
+    submission: SubmissionId,
+): Pair<TestingSubmissionsStatusStatus, Tone> {
+    val failure = failureOf(execution, submission)
+    return when {
+        execution is TaskValidationExecutionVo.CreatedSubmissions -> TestingSubmissionsStatusStatus.NO_RESULT to Tone.Neutral
+        execution is TaskValidationExecutionVo.SubmissionsCreated -> TestingSubmissionsStatusStatus.CHECKING to Tone.Info
+        failure is AuthorSubmissionFailure.ScoreMismatch -> TestingSubmissionsStatusStatus.SCORE_MISMATCH to Tone.Danger
+        failure is AuthorSubmissionFailure.GradingFailed -> TestingSubmissionsStatusStatus.GRADING_FAILED to Tone.Danger
+        else -> TestingSubmissionsStatusStatus.EXPECTED_SCORE to Tone.Success
+    }
 }
 
 /** Returns a short result of [execution]. */

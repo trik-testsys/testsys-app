@@ -13,15 +13,12 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.domain.model.task.TrikStudioVersion
-import tech.testsys.infra.localization.PageDeveloper.TestingSubmissionsStatusStatus
-import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.developer.DeveloperSolutionInputVo
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.data.table
-import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.field
 import tech.testsys.web.components.display.text
@@ -55,7 +52,7 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
         val (task, request) = developerService.checkTaskValidationRequestAccess(taskId, requestId)
         val loaded = SharedFetch {
             val current = developerService.checkTaskValidationRequestAccess(taskId, requestId).second
-            current to resourceNames(task, current)
+            current to resourceNames(developerService, task, current)
         }
         val localization = currentLocalization()
         val texts = localization.pageDeveloper
@@ -73,13 +70,11 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
                 }
             }
             row {
-                block(title = texts.testingDiagnosticsTitle()) {
+                block(title = texts.testingDiagnosticsTitle(), size = 12) {
                     guide(texts.testingDiagnosticsGuide())
                     load(loaded.forLoad()) { (current, known) -> diagnosticsTable(current, known) }
                 }
-            }
-            row {
-                block(title = localization.pageCabinet.sectionSubmissions()) {
+                block(title = localization.pageCabinet.sectionSubmissions(), size = 12) {
                     guide(texts.testingSubmissionsGuide())
                     load(loaded.forLoad()) { (current, known) -> submissionRows(current, known) }
                 }
@@ -94,10 +89,8 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
                 value = texts.testingStartedAtValue(startedAt = request.createdAt)
                 isEditable = false
             }
-        }
-        row {
             val (label, tone) = validationStatusOf(request.execution)
-            field(texts.state(), labelSize = 2, size = 22) { badge(label, tone) }
+            field(texts.state(), labelSize = 2, size = 4) { badge(label, tone) }
         }
         row {
             textInput(texts.summary(), labelSize = 2, size = 22) {
@@ -126,42 +119,11 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
         }
     }
 
-    /** Resolves the versions recorded in the request, including versions absent from the current task revisions. */
-    private fun resourceNames(task: TaskVo, request: TaskValidationRequestVo): Map<DomainId, String> {
-        val ids = request.snapshot.tests + request.snapshot.developerSolutions.map { input -> input.developerSolution }
-        val latest = developerService.viewResources().filter { resource -> resource.versionBucket in task.uploadedResources }
-        val names = latest.associate { resource -> resource.id to resource.name }.toMutableMap()
-        if (ids.any { id -> id !in names }) {
-            latest.forEach { resource ->
-                developerService.viewResource(task.id, resource.versionBucket).forEach { (version, _) ->
-                    names[version.id] = version.name
-                }
-            }
-        }
-
-        return names
-    }
-
     /** Adds a row for each submission of a developer solution in a TRIK Studio version, in the order they were created. */
     private fun BlockScope.submissionRows(request: TaskValidationRequestVo, names: Map<DomainId, String>) {
         val texts = currentLocalization().pageDeveloper
         val execution = request.execution
-        val (submissions, failures) = when (execution) {
-            is TaskValidationExecutionVo.SubmissionsCreated -> execution.submissions to null
-            is TaskValidationExecutionVo.Completed -> execution.submissions to execution.failures
-            is TaskValidationExecutionVo.CreatedSubmissions -> execution.submissions to null
-            TaskValidationExecutionVo.PendingDiagnostics,
-            is TaskValidationExecutionVo.AwaitingSubmissions,
-            is TaskValidationExecutionVo.StoppedByDiagnostics,
-            is TaskValidationExecutionVo.IncompleteDiagnostics,
-            is TaskValidationExecutionVo.CompletedDiagnostics,
-            -> emptyList<SubmissionId>() to null
-        }
-        // The same order as TaskValidationSnapshot.authorRuns: by developer solution, then by Docker image tag.
-        val versions = request.snapshot.supportedTrikStudioVersions.sortedBy { version -> version.tag }
-        val runs = request.snapshot.developerSolutions.sortedBy { input -> input.developerSolution.value }
-            .flatMap { input -> versions.map { version -> input to version } }
-        val rows = runs.zip(submissions)
+        val rows = submissionRunsOf(request)
         table(
             key = { row: Pair<Pair<DeveloperSolutionInputVo, TrikStudioVersion>, SubmissionId> -> row.second },
             fetch = { query -> pageOf(rows, query) },
@@ -171,19 +133,12 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
             }
             codeColumn(texts.trikStudioVersion(), size = 5) { (run, _) -> run.second.version }
             column(texts.status(), size = 7) { (_, submission) ->
-                val failure = failures?.firstOrNull { failed -> failed.submission == submission }
-                val (status, tone) = when {
-                    execution is TaskValidationExecutionVo.CreatedSubmissions -> TestingSubmissionsStatusStatus.NO_RESULT to Tone.Neutral
-                    execution is TaskValidationExecutionVo.SubmissionsCreated -> TestingSubmissionsStatusStatus.CHECKING to Tone.Info
-                    failure is AuthorSubmissionFailure.ScoreMismatch -> TestingSubmissionsStatusStatus.SCORE_MISMATCH to Tone.Danger
-                    failure is AuthorSubmissionFailure.GradingFailed -> TestingSubmissionsStatusStatus.GRADING_FAILED to Tone.Danger
-                    else -> TestingSubmissionsStatusStatus.EXPECTED_SCORE to Tone.Success
-                }
+                val (status, tone) = submissionStatusOf(execution, submission)
                 badge(texts.testingSubmissionsStatus(status = status), tone)
             }
             codeColumn(texts.score()) { (run, submission) ->
                 val expected = run.first.expectedScore.value
-                when (val failure = failures?.firstOrNull { failed -> failed.submission == submission }) {
+                when (val failure = failureOf(execution, submission)) {
                     is AuthorSubmissionFailure.ScoreMismatch ->
                         texts.testingSubmissionsScore(actual = failure.actualScore, expected = expected)
                     is AuthorSubmissionFailure.GradingFailed -> texts.testingSubmissionsScorePending(expected = expected)
@@ -194,6 +149,7 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
                     }
                 }
             }
+            onRowClick(isNavigation = true) { (_, submission) -> openDeveloperSubmission(request.task, request.id, submission) }
         }
     }
 }

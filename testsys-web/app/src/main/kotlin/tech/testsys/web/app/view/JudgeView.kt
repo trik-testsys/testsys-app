@@ -28,7 +28,7 @@ import tech.testsys.domain.contract.persistence.Sort as DomainSort
 /** Route parameter of [JudgeView] with the open section. */
 internal const val JUDGE_SECTION_PARAMETER = "section"
 
-/** Route parameter of [JudgeSolutionView] with the submission id. */
+/** Route parameter of [JudgeSolutionView] and [DeveloperSubmissionView] with the submission id. */
 internal const val SUBMISSION_ID_PARAMETER = "submissionId"
 
 private const val SUBMISSIONS_SECTION = "submissions"

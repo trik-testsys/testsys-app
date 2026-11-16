@@ -1126,7 +1126,7 @@ data object MissedJudgeRoleError :
     MissedRequiredRoleError
 
 /**
- * The submission does not exist.
+ * The submission does not exist or is not part of the requested testing request.
  *
  * @property submissionId the id of the missing submission.
  * @since 1.0.0-beta.1
@@ -1140,6 +1140,9 @@ data class SubmissionNotExistsError(val submissionId: SubmissionId) :
     DownloadLogsError,
     DownloadRecordingError,
     CheckSubmissionAccessError,
+    CheckTaskValidationSubmissionAccessError,
+    DownloadTaskValidationLogsError,
+    DownloadTaskValidationRecordingError,
     EntityNotExistsError
 
 /**
@@ -1176,7 +1179,9 @@ data class SubmissionIsDeveloperSolutionTestError(val submissionId: SubmissionId
 data class SubmissionNotSuccessfullyGradedError(val submissionId: SubmissionId) :
     ChangeVerdictError,
     DownloadLogsError,
-    DownloadRecordingError
+    DownloadRecordingError,
+    DownloadTaskValidationLogsError,
+    DownloadTaskValidationRecordingError
 
 /**
  * The requested judgment score is negative.
@@ -1200,7 +1205,11 @@ data object BlankJudgmentReasonError : ChangeVerdictError
  * @property testId the id of the test.
  * @since 1.0.0-beta.1
  */
-data class TestNotInVerdictError(val submissionId: SubmissionId, val testId: TestId) : DownloadLogsError, DownloadRecordingError
+data class TestNotInVerdictError(val submissionId: SubmissionId, val testId: TestId) :
+    DownloadLogsError,
+    DownloadRecordingError,
+    DownloadTaskValidationLogsError,
+    DownloadTaskValidationRecordingError
 
 /**
  * The run of the submission on the test produced no recording.
@@ -1211,6 +1220,7 @@ data class TestNotInVerdictError(val submissionId: SubmissionId, val testId: Tes
  */
 data class RecordingNotExistsError(val submissionId: SubmissionId, val testId: TestId) :
     DownloadRecordingError,
+    DownloadTaskValidationRecordingError,
     EntityNotExistsError
 
 // endregion
@@ -1634,6 +1644,27 @@ sealed interface CheckTaskValidationRequestAccessError : OperationError
  * @since 1.0.0-beta.2
  */
 sealed interface CheckContestAccessError : OperationError
+
+/**
+ * Failure of checking access to a submission of a testing request of an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CheckTaskValidationSubmissionAccessError : OperationError
+
+/**
+ * Failure of downloading the grading logs of a test of a submission of a testing request of an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadTaskValidationLogsError : OperationError
+
+/**
+ * Failure of downloading the recording of a test of a submission of a testing request of an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadTaskValidationRecordingError : OperationError
 // endregion
 
 // region Errors
@@ -1688,7 +1719,10 @@ data object MissedDeveloperRoleError :
     CheckTaskAccessError,
     CheckResourceAccessError,
     CheckTaskValidationRequestAccessError,
-    CheckContestAccessError
+    CheckContestAccessError,
+    CheckTaskValidationSubmissionAccessError,
+    DownloadTaskValidationLogsError,
+    DownloadTaskValidationRecordingError
 
 /**
  * The contest end is specified without its start.
@@ -1862,7 +1896,10 @@ data class TaskNotExistsError(val taskId: TaskId) :
     CheckResourceAccessError,
     CheckTaskValidationRequestAccessError,
     CheckParticipantTaskAccessError,
-    CheckStudentTaskAccessError
+    CheckStudentTaskAccessError,
+    CheckTaskValidationSubmissionAccessError,
+    DownloadTaskValidationLogsError,
+    DownloadTaskValidationRecordingError
 
 /**
  * The testing request does not exist or belongs to another task.
@@ -1872,7 +1909,10 @@ data class TaskNotExistsError(val taskId: TaskId) :
  */
 data class TaskValidationRequestNotExistsError(val requestId: TaskValidationRequestId) :
     EntityNotExistsError,
-    CheckTaskValidationRequestAccessError
+    CheckTaskValidationRequestAccessError,
+    CheckTaskValidationSubmissionAccessError,
+    DownloadTaskValidationLogsError,
+    DownloadTaskValidationRecordingError
 
 /**
  * The statement does not exist.
@@ -1985,7 +2025,10 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     CheckResourceAccessError,
     CheckTaskValidationRequestAccessError,
     CheckParticipantTaskAccessError,
-    CheckStudentTaskAccessError
+    CheckStudentTaskAccessError,
+    CheckTaskValidationSubmissionAccessError,
+    DownloadTaskValidationLogsError,
+    DownloadTaskValidationRecordingError
 
 /**
  * The user is not a member of the community, or it belongs to another user.

@@ -19,6 +19,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
+import tech.testsys.domain.builder.task.SubmissionDataBuilder
 import tech.testsys.domain.builder.task.TaskContentBuilder
 import tech.testsys.domain.builder.task.WipTaskContentBuilder
 import tech.testsys.domain.builder.util.chooser.TaskValidationExecutionChooser
@@ -34,6 +35,8 @@ import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
+import tech.testsys.domain.contract.persistence.repository.LogsRepository
+import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
@@ -41,6 +44,7 @@ import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
+import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
@@ -62,6 +66,10 @@ import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.FileStorageKind
+import tech.testsys.domain.model.task.Logs
+import tech.testsys.domain.model.task.LogsId
+import tech.testsys.domain.model.task.Recording
+import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.domain.model.task.Regrade
 import tech.testsys.domain.model.task.RegradeData
 import tech.testsys.domain.model.task.RegradeId
@@ -85,6 +93,8 @@ import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.task.Verdict
+import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -109,6 +119,7 @@ import tech.testsys.operation.error.ExerciseNotUploadedToTaskError
 import tech.testsys.operation.error.ExerciseVersionNotLatestError
 import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.NonPositiveAttemptDurationError
+import tech.testsys.operation.error.RecordingNotExistsError
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
 import tech.testsys.operation.error.ResourceNameTooLongError
 import tech.testsys.operation.error.ResourceNotExistsError
@@ -118,6 +129,8 @@ import tech.testsys.operation.error.ResourceVersionNotExistsError
 import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
+import tech.testsys.operation.error.SubmissionNotExistsError
+import tech.testsys.operation.error.SubmissionNotSuccessfullyGradedError
 import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
@@ -135,6 +148,7 @@ import tech.testsys.operation.error.TaskTestingNoTrikStudioVersionsError
 import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TaskValidationRequestNotExistsError
 import tech.testsys.operation.error.TestNotExistsError
+import tech.testsys.operation.error.TestNotInVerdictError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
 import tech.testsys.operation.error.TrikStudioVersionNotRegisteredError
@@ -178,6 +192,9 @@ class DeveloperOperationsTests {
     private val submissionRepository = mockk<SubmissionRepository>()
     private val regradeRepository = mockk<RegradeRepository>()
     private val grader = mockk<Grader>()
+    private val verdictRepository = mockk<VerdictRepository>()
+    private val logsRepository = mockk<LogsRepository>()
+    private val recordingRepository = mockk<RecordingRepository>()
     private val developerOperations = DeveloperOperations(
         taskRepository,
         statementRepository,
@@ -192,6 +209,9 @@ class DeveloperOperationsTests {
         submissionRepository,
         regradeRepository,
         grader,
+        verdictRepository,
+        logsRepository,
+        recordingRepository,
     )
 
     private lateinit var developer: MultipleRoleUser
@@ -202,6 +222,9 @@ class DeveloperOperationsTests {
     private val uploadUuid = UUID(0, 10)
     private val uploadBucket = VersionBucket(uploadUuid)
     private val uploadScore = Score(42)
+
+    private val validationTaskId = TaskId(0)
+    private val validationRequestId = TaskValidationRequestId(11)
 
     @Nested
     inner class TestTaskTests {
@@ -5767,6 +5790,371 @@ class DeveloperOperationsTests {
     }
 
     @Nested
+    inner class CheckTaskValidationSubmissionAccessTests {
+
+        private fun check(user: MultipleRoleUser = developer) =
+            developerOperations.checkTaskValidationSubmissionAccess(user, validationTaskId, validationRequestId, SubmissionId(2))
+
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return the task, the request, the submission and its successful verdict`() {
+                arrangeValidationSubmission()
+
+                val result = check().getOrThrow()
+
+                Assertions.assertEquals(validationTaskId, result.task.id)
+                Assertions.assertEquals(validationRequestId, result.request.id)
+                Assertions.assertEquals(SubmissionId(2), result.submission.id)
+                Assertions.assertEquals(VerdictId(4), result.verdict?.id)
+            }
+
+            @Test
+            fun `should return the submission of a request that is still being checked`() {
+                arrangeValidationSubmission(request = checkingValidationRequest(2))
+
+                val result = check().getOrThrow()
+
+                Assertions.assertEquals(SubmissionId(2), result.submission.id)
+                Assertions.assertEquals(VerdictId(4), result.verdict?.id)
+            }
+
+            @Test
+            fun `should return the submission of a request stopped by a technical failure`() {
+                val stopped = testTaskValidationRequest {
+                    execution.createdSubmissionsFailure {
+                        submissions(listOf(2))
+                        failure = taskValidationTechnicalFailure {
+                            description = "Grader unavailable"
+                            occurredAt = Instant.EPOCH
+                        }
+                    }
+                }
+                arrangeValidationSubmission(request = stopped)
+
+                val result = check().getOrThrow()
+
+                Assertions.assertEquals(SubmissionId(2), result.submission.id)
+                Assertions.assertEquals(VerdictId(4), result.verdict?.id)
+            }
+
+            @Test
+            fun `should return no verdict without loading one if grading failed`() {
+                val failed = authorSubmission(2) { status.graded { status.error { description = "grader crashed" } } }
+                arrangeValidationSubmission(failed)
+
+                val result = check().getOrThrow()
+
+                Assertions.assertNull(result.verdict)
+                Assertions.assertEquals(failed.data.status, result.submission.data.status)
+                verify { verdictRepository wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+                assertRaises(MissedDeveloperRoleError) { check(testAdministrator {}) }
+
+                verify { taskRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise TaskNotExistsError if task does not exist`() {
+                every { taskRepository.findById(validationTaskId) } returns null
+
+                assertRaises(TaskNotExistsError(validationTaskId)) { check() }
+            }
+
+            @Test
+            fun `should raise TaskAccessDeniedError if task belongs to another user`() {
+                every { taskRepository.findById(validationTaskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+
+                assertRaises(TaskAccessDeniedError(validationTaskId)) { check() }
+            }
+
+            @Test
+            fun `should raise TaskValidationRequestNotExistsError if request does not exist`() {
+                arrangeValidationRequest(null)
+
+                assertRaises(TaskValidationRequestNotExistsError(validationRequestId)) { check() }
+            }
+
+            @Test
+            fun `should raise TaskValidationRequestNotExistsError if request belongs to another task`() {
+                arrangeValidationRequest(testTaskValidationRequest { task(7) })
+
+                assertRaises(TaskValidationRequestNotExistsError(validationRequestId)) { check() }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if submission is not part of the request`() {
+                arrangeValidationRequest(completedValidationRequest(3))
+
+                assertRaises(SubmissionNotExistsError(SubmissionId(2))) { check() }
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if the request has no submissions`() {
+                arrangeValidationRequest(testTaskValidationRequest())
+
+                assertRaises(SubmissionNotExistsError(SubmissionId(2))) { check() }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @Test
+            fun `should not change the request, its submissions and verdicts`() {
+                arrangeValidationSubmission()
+
+                check().getOrThrow()
+
+                verifyNoValidationChanges()
+            }
+        }
+    }
+
+    @Nested
+    inner class DownloadTaskValidationLogsTests {
+
+        private fun download(user: MultipleRoleUser = developer, testId: TestId = TestId(10)) =
+            developerOperations.downloadTaskValidationLogs(user, validationTaskId, validationRequestId, SubmissionId(2), testId)
+
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return the logs of the run on the polygon`() {
+                arrangeValidationSubmission()
+                val logs = validationLogs(30)
+                every { logsRepository.load(match<LazyEntity<LogsId, Logs>> { reference -> reference.id == LogsId(30) }) } returns logs
+
+                val result = download().getOrThrow()
+
+                Assertions.assertSame(logs.data.file, result)
+            }
+
+            @Test
+            fun `should return the logs of the run on the polygon of a request that is still being checked`() {
+                arrangeValidationSubmission(request = checkingValidationRequest(2))
+                val logs = validationLogs(30)
+                every { logsRepository.load(match<LazyEntity<LogsId, Logs>> { reference -> reference.id == LogsId(30) }) } returns logs
+
+                val result = download().getOrThrow()
+
+                Assertions.assertSame(logs.data.file, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+                assertRaises(MissedDeveloperRoleError) { download(user = testAdministrator {}) }
+
+                verify { taskRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise TaskNotExistsError if task does not exist`() {
+                every { taskRepository.findById(validationTaskId) } returns null
+
+                assertRaises(TaskNotExistsError(validationTaskId)) { download() }
+            }
+
+            @Test
+            fun `should raise TaskAccessDeniedError if task belongs to another user`() {
+                every { taskRepository.findById(validationTaskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+
+                assertRaises(TaskAccessDeniedError(validationTaskId)) { download() }
+            }
+
+            @Test
+            fun `should raise TaskValidationRequestNotExistsError if request does not exist`() {
+                arrangeValidationRequest(null)
+
+                assertRaises(TaskValidationRequestNotExistsError(validationRequestId)) { download() }
+            }
+
+            @Test
+            fun `should raise TaskValidationRequestNotExistsError if request belongs to another task`() {
+                arrangeValidationRequest(testTaskValidationRequest { task(7) })
+
+                assertRaises(TaskValidationRequestNotExistsError(validationRequestId)) { download() }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if submission is not part of the request`() {
+                arrangeValidationRequest(completedValidationRequest(3))
+
+                assertRaises(SubmissionNotExistsError(SubmissionId(2))) { download() }
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if the request has no submissions`() {
+                arrangeValidationRequest(testTaskValidationRequest())
+
+                assertRaises(SubmissionNotExistsError(SubmissionId(2))) { download() }
+            }
+
+            @Test
+            fun `should raise SubmissionNotSuccessfullyGradedError if submission has no successful verdict`() {
+                arrangeValidationSubmission(authorSubmission(2) { status.inProgress() })
+
+                assertRaises(SubmissionNotSuccessfullyGradedError(SubmissionId(2))) { download() }
+            }
+
+            @Test
+            fun `should raise TestNotInVerdictError if polygon is not part of the verdict`() {
+                arrangeValidationSubmission()
+
+                assertRaises(TestNotInVerdictError(SubmissionId(2), TestId(12))) { download(testId = TestId(12)) }
+                verify { logsRepository wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @Test
+            fun `should not change the request, its submissions and verdicts`() {
+                arrangeValidationSubmission()
+                every { logsRepository.load(any<LazyEntity<LogsId, Logs>>()) } returns validationLogs(30)
+
+                download().getOrThrow()
+
+                verifyNoValidationChanges()
+            }
+        }
+    }
+
+    @Nested
+    inner class DownloadTaskValidationRecordingTests {
+
+        private fun download(user: MultipleRoleUser = developer, testId: TestId = TestId(10)) =
+            developerOperations.downloadTaskValidationRecording(user, validationTaskId, validationRequestId, SubmissionId(2), testId)
+
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should return the recording of the run on the polygon`() {
+                arrangeValidationSubmission()
+                val recording = validationRecording(40)
+                every {
+                    recordingRepository.load(match<LazyEntity<RecordingId, Recording>> { reference -> reference.id == RecordingId(40) })
+                } returns recording
+
+                val result = download().getOrThrow()
+
+                Assertions.assertSame(recording.data.file, result)
+            }
+
+            @Test
+            fun `should return the recording of the run on the polygon of a request that is still being checked`() {
+                arrangeValidationSubmission(request = checkingValidationRequest(2))
+                val recording = validationRecording(40)
+                every {
+                    recordingRepository.load(match<LazyEntity<RecordingId, Recording>> { reference -> reference.id == RecordingId(40) })
+                } returns recording
+
+                val result = download().getOrThrow()
+
+                Assertions.assertSame(recording.data.file, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+                assertRaises(MissedDeveloperRoleError) { download(user = testAdministrator {}) }
+
+                verify { taskRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise TaskNotExistsError if task does not exist`() {
+                every { taskRepository.findById(validationTaskId) } returns null
+
+                assertRaises(TaskNotExistsError(validationTaskId)) { download() }
+            }
+
+            @Test
+            fun `should raise TaskAccessDeniedError if task belongs to another user`() {
+                every { taskRepository.findById(validationTaskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+
+                assertRaises(TaskAccessDeniedError(validationTaskId)) { download() }
+            }
+
+            @Test
+            fun `should raise TaskValidationRequestNotExistsError if request does not exist`() {
+                arrangeValidationRequest(null)
+
+                assertRaises(TaskValidationRequestNotExistsError(validationRequestId)) { download() }
+            }
+
+            @Test
+            fun `should raise TaskValidationRequestNotExistsError if request belongs to another task`() {
+                arrangeValidationRequest(testTaskValidationRequest { task(7) })
+
+                assertRaises(TaskValidationRequestNotExistsError(validationRequestId)) { download() }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if submission is not part of the request`() {
+                arrangeValidationRequest(completedValidationRequest(3))
+
+                assertRaises(SubmissionNotExistsError(SubmissionId(2))) { download() }
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if the request has no submissions`() {
+                arrangeValidationRequest(testTaskValidationRequest())
+
+                assertRaises(SubmissionNotExistsError(SubmissionId(2))) { download() }
+            }
+
+            @Test
+            fun `should raise SubmissionNotSuccessfullyGradedError if submission grading timed out`() {
+                arrangeValidationSubmission(authorSubmission(2) { status.graded { status.timeout() } })
+
+                assertRaises(SubmissionNotSuccessfullyGradedError(SubmissionId(2))) { download() }
+            }
+
+            @Test
+            fun `should raise TestNotInVerdictError if polygon is not part of the verdict`() {
+                arrangeValidationSubmission()
+
+                assertRaises(TestNotInVerdictError(SubmissionId(2), TestId(12))) { download(testId = TestId(12)) }
+            }
+
+            @Test
+            fun `should raise RecordingNotExistsError if the run on the polygon has no recording`() {
+                arrangeValidationSubmission()
+
+                assertRaises(RecordingNotExistsError(SubmissionId(2), TestId(11))) { download(testId = TestId(11)) }
+                verify { recordingRepository wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @Test
+            fun `should not change the request, its submissions and verdicts`() {
+                arrangeValidationSubmission()
+                every { recordingRepository.load(any<LazyEntity<RecordingId, Recording>>()) } returns validationRecording(40)
+
+                download().getOrThrow()
+
+                verifyNoValidationChanges()
+            }
+        }
+    }
+
+    @Nested
     inner class CheckContestAccessTests {
 
         private val contestId = ContestId(19)
@@ -10923,6 +11311,93 @@ class DeveloperOperationsTests {
     private fun stubStoredCommunities(vararg stored: Community) {
         every { communityRepository.findByIds(any()) } answers {
             firstArg<List<CommunityId>>().reversed().mapNotNull { id -> stored.find { community -> community.id == id } }
+        }
+    }
+
+    /** Stores the owned task 0 and [request] as its testing request 11. */
+    private fun arrangeValidationRequest(request: TaskValidationRequest?) {
+        every { taskRepository.findById(validationTaskId) } returns testNewTask()
+        every { taskValidationRequestRepository.findById(validationRequestId) } returns request
+    }
+
+    /** Stores the owned task 0 with [request] of [submission], completed by default, and verdict 4 from [validationVerdict]. */
+    private fun arrangeValidationSubmission(
+        submission: Submission = authorSubmission(2, verdictId = 4),
+        request: TaskValidationRequest = completedValidationRequest(submission.id.value),
+    ) {
+        arrangeValidationRequest(request)
+        every { submissionRepository.load(any<LazyEntity<SubmissionId, Submission>>()) } returns submission
+        every { verdictRepository.load(any<LazyEntity<VerdictId, Verdict>>()) } returns validationVerdict(4)
+    }
+
+    private fun completedValidationRequest(vararg submissionIds: Long): TaskValidationRequest = testTaskValidationRequest {
+        execution.completed {
+            submissions(submissionIds.toList())
+            completedAt = Instant.EPOCH
+        }
+    }
+
+    /** Returns a testing request whose [submissionIds] are created and still being checked. */
+    private fun checkingValidationRequest(vararg submissionIds: Long): TaskValidationRequest = testTaskValidationRequest {
+        execution.submissionsCreated { submissions(submissionIds.toList()) }
+    }
+
+    /** Returns author submission [submissionId] of task 0, successfully graded with [verdictId] unless [builder] changes it. */
+    private fun authorSubmission(
+        submissionId: Long,
+        verdictId: Long = submissionId,
+        builder: SubmissionDataBuilder.() -> Unit = {},
+    ): Submission = submission {
+        id = submissionId
+        createdAt = Instant.EPOCH
+        data = submissionData {
+            author(0)
+            solution(5)
+            task(0)
+            status.graded { status.success { verdict(verdictId) } }
+            kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion() }
+            builder()
+        }
+    }
+
+    /** Returns verdict [verdictId]: polygon 10 with logs 30 and recording 40, polygon 11 with logs 31 and no recording. */
+    private fun validationVerdict(verdictId: Long): Verdict = verdict {
+        id = verdictId
+        createdAt = Instant.EPOCH
+        data = verdictData {
+            task(0)
+            submission(2)
+            testVerdict {
+                score = 75
+                test(10)
+                logs(30)
+                recording(40)
+            }
+            testVerdict {
+                score = 0
+                test(11)
+                logs(31)
+            }
+        }
+    }
+
+    private fun validationLogs(logsId: Long): Logs = logs {
+        id = logsId
+        createdAt = Instant.EPOCH
+        data = logsData { file("logs-$logsId.txt", "logs".toByteArray()) }
+    }
+
+    private fun validationRecording(recordingId: Long): Recording = recording {
+        id = recordingId
+        createdAt = Instant.EPOCH
+        data = recordingData { file("recording-$recordingId.mp4", "video".toByteArray()) }
+    }
+
+    private fun verifyNoValidationChanges() {
+        verify(exactly = 0) {
+            taskValidationRequestRepository.update(any<TaskValidationRequest>())
+            submissionRepository.update(any<Submission>())
+            verdictRepository.update(any<Verdict>())
         }
     }
 }

@@ -642,6 +642,10 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
   или `null`, если повторная проверка неприменима. `viewRegrades` возвращает Перепроверки в порядке создания парами
   `Pair<Regrade, Int>`: второй элемент — прогресс. Прогресс всех Перепроверок считается одним вызовом
   `RegradeRepository.countGraded`.
+- `downloadTaskValidationLogs` и `downloadTaskValidationRecording` возвращают `FileData` с логами и видеозаписью
+  прохождения Полигона из успешного Вердикта Посылки запроса. Посылку вне запроса они отклоняют ошибкой
+  `SubmissionNotExistsError`. Полигон вне Вердикта и Полигон без видеозаписи отклоняются, как у Судьи, ошибками
+  `TestNotInVerdictError` и `RecordingNotExistsError`.
 - Операции `check*` проверяют доступ до загрузки блоков страницы и возвращают данные, перечисленные в своём разделе.
   Отказы у каждой те же, что у просмотра, кодификатором которого она помечена.
 
@@ -651,6 +655,7 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 | `checkTaskAccess` | `viewTask` | Задача |
 | `checkResourceAccess` | `viewResource` | Задача и последняя версия цепочки Ресурса |
 | `checkTaskValidationRequestAccess` | `testTask` | Задача и её запрос тестирования; запрос другой Задачи отклоняется ошибкой `TaskValidationRequestNotExistsError` |
+| `checkTaskValidationSubmissionAccess` | `testTask` | `TaskValidationSubmission`: Задача, её запрос тестирования, Посылка запроса и её текущий успешный Вердикт или `null`; Посылка вне запроса отклоняется ошибкой `SubmissionNotExistsError` |
 | `checkContestAccess` | `viewContest` | Тур |
 
 ## Динамическая конфигурация

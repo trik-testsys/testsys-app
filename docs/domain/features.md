@@ -1500,7 +1500,7 @@ Page: **testsys.web.page.developer.task**
 
 ### testsys.user.multi.developer.task.testTask (Implemented)
 
-Page: **testsys.web.page.developer.task**, **testsys.web.page.developer.testing**
+Page: **testsys.web.page.developer.task**, **testsys.web.page.developer.testing**, **testsys.web.page.developer.submission**
 
 *Описание*:\
 Разработчик может протестировать рабочую версию созданной им Задачи.
@@ -1557,6 +1557,14 @@ Page: **testsys.web.page.developer.task**, **testsys.web.page.developer.testing*
 Отказы просмотра — отсутствие Роли Разработчика, отсутствие Задачи и Задача другого Пользователя;
 при просмотре одного запроса также отсутствие запроса у этой Задачи.
 
+Разработчик может просмотреть отдельную Посылку запроса: статус её проверки с описанием ошибки грейдинга,
+если она произошла, и текущий успешный Вердикт с баллом по каждому Полигону, если он есть.
+Из успешного Вердикта Разработчик может скачать логи и видеозапись прохождения каждого Полигона,
+если видеозапись есть.
+Отказы просмотра Посылки — отказы просмотра одного запроса, а также Посылка не входит в этот запрос.
+Отказы скачивания — отказы просмотра Посылки, а также: у Посылки нет успешного Вердикта, Полигон не входит
+в этот Вердикт или у Полигона нет видеозаписи.
+
 Успех разрешает фиксацию проверенной версии Задачи.
 
 *Инварианты*:
@@ -1566,6 +1574,7 @@ Page: **testsys.web.page.developer.task**, **testsys.web.page.developer.testing*
 - Повторная обработка не создаёт дубликаты Посылок для пары Авторского Решения и версии TRIK Studio.
 - Завершённый запрос остаётся завершённым, его итог не меняется.
 - Условие и нужные Упражнения проверяются перед созданием запроса.
+- Просмотр запросов и Посылок и скачивание файлов проверки не изменяют запросы, Посылки и Вердикты.
 
 ### testsys.user.multi.developer.task.runDiagnostics (Implemented)
 
@@ -3889,6 +3898,7 @@ flowchart TD;
     DeveloperContest[developer.contest];
     DeveloperTask[developer.task];
     DeveloperTesting[developer.testing];
+    DeveloperSubmission[developer.submission];
     DeveloperResource[developer.resource];
 
     Manager[manager];
@@ -3932,6 +3942,7 @@ flowchart TD;
         Developer<-->DeveloperContest;
         DeveloperTask<-->DeveloperResource;
         DeveloperTask<-->DeveloperTesting;
+        DeveloperTesting<-->DeveloperSubmission;
     end
 
     subgraph manager
@@ -4473,11 +4484,37 @@ flowchart TD;
 - Сведения — **testsys.user.multi.developer.task.testTask**: время запуска, состояние и итог.
 - Диагностики по Полигонам — **testsys.user.multi.developer.task.runDiagnostics**:
   для каждого Полигона показываются замечания Warning и Error либо отсутствие таких замечаний; Info не показывается.
-- Посылки Авторских Решений по версиям TRIK Studio: состояние, фактический и ожидаемый балл.
+- Посылки Авторских Решений по версиям TRIK Studio — **testsys.user.multi.developer.task.testTask**:
+  состояние, фактический и ожидаемый балл. Выбор Посылки открывает **testsys.web.page.developer.submission**.
 
 *Переходы*:
 
 - **testsys.web.page.developer.task** — Задача выбранного запроса.
+- **testsys.web.page.developer.submission** — для выбранной Посылки запроса.
+
+### testsys.web.page.developer.submission (Implemented)
+
+*Назначение*:\
+Подробный просмотр одной Посылки запроса тестирования Задачи и скачивание файлов её проверки.
+
+*Доступ*:\
+Разработчик — владелец Задачи. Страница получает идентификаторы Задачи, запроса тестирования и Посылки.
+Запрос должен принадлежать этой Задаче, а Посылка — этому запросу.
+
+*Содержимое*:
+
+- Сведения — **testsys.user.multi.developer.task.testTask**: Авторское Решение, версия TRIK Studio, статус,
+  фактический и ожидаемый балл. Если проверка Посылки завершилась ошибкой грейдинга или таймаутом, показывается
+  причина: описание ошибки от грейдера или сообщение о таймауте.
+- Вердикт — **testsys.user.multi.developer.task.testTask**: балл по каждому Полигону, скачивание логов
+  и видеозаписи прохождения, если она есть. Без успешного Вердикта блок сообщает, что Вердикта нет.
+
+Заголовок и последняя хлебная крошка содержат идентификатор Посылки: «Посылка №…».
+
+*Переходы*:
+
+- **testsys.web.page.developer.testing** — запрос тестирования Посылки.
+- **testsys.web.page.developer.task** — Задача запроса.
 
 ### testsys.web.page.developer.resource (Partially implemented)
 

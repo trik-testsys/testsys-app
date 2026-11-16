@@ -401,6 +401,9 @@ class OperationsConfiguration {
         submissions: SubmissionRepository,
         regrades: RegradeRepository,
         grader: AfterCommitGrader,
+        verdicts: VerdictRepository,
+        logs: LogsRepository,
+        recordings: RecordingRepository,
     ): DeveloperOperations = DeveloperOperations(
         tasks,
         statements,
@@ -415,6 +418,9 @@ class OperationsConfiguration {
         submissions,
         regrades,
         grader,
+        verdicts,
+        logs,
+        recordings,
     )
 
     /**

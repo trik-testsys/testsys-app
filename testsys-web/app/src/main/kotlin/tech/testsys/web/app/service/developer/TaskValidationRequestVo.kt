@@ -16,6 +16,9 @@ import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.web.app.service.TaskVo
+import tech.testsys.web.app.service.judge.VerdictVo
+import tech.testsys.web.app.service.study.SubmissionVo
 import java.time.Instant
 
 /**
@@ -157,6 +160,22 @@ sealed interface TaskValidationExecutionVo {
         val failure: TaskValidationTechnicalFailure,
     ) : TaskValidationExecutionVo
 }
+
+/**
+ * Submission of a testing request of an owned task for its page, with the task and the request it belongs to.
+ *
+ * @property task the task of the request.
+ * @property request the testing request of the submission.
+ * @property submission the submission of a developer solution in a TRIK Studio version.
+ * @property verdict the current successful verdict of the submission, or `null` if grading has not succeeded.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskValidationSubmissionVo(
+    val task: TaskVo,
+    val request: TaskValidationRequestVo,
+    val submission: SubmissionVo,
+    val verdict: VerdictVo?,
+)
 
 internal fun TaskValidationRequest.toVo(): TaskValidationRequestVo = TaskValidationRequestVo(
     id = id,

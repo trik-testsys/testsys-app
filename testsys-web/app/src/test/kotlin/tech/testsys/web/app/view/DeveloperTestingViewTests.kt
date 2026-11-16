@@ -1,12 +1,15 @@
 package tech.testsys.web.app.view
 
 import com.github.mvysny.kaributesting.v10._find
+import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Table
+import com.vaadin.flow.component.html.TableBody
+import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
@@ -256,6 +259,20 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
         assertTrue(score in submissions.element.textRecursively)
         assertTrue("2026.1" in submissions.element.textRecursively)
         assertFalse("trikset/trik-studio:image" in submissions.element.textRecursively)
+    }
+
+    @Test
+    fun `should open the page of the submission chosen in the submissions table`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val (request, submission) = developers.testedSubmission(task)
+        UI.getCurrent().navigate(DeveloperTestingView::class.java, testingParameters(task.id, request.id))
+        val row = UI.getCurrent()._find<TableBody>().flatMap { body -> body._find<TableRow>() }
+            .single { candidate -> "Эталонное решение" in candidate.element.textRecursively }
+
+        row._fireDomEvent("click", acceptedClick(row))
+
+        assertEquals("developer/tasks/${task.id.value}/testing/${request.id.value}/submissions/${submission.value}", currentPath())
     }
 
     private fun testingRequest(task: TaskVo): TaskValidationRequestVo = TaskValidationRequestVo(

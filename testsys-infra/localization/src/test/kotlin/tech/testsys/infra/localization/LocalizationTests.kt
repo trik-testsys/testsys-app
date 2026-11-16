@@ -5542,8 +5542,11 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should use the plural submission term in testing submissions guide`() {
-            assertEquals("Посылки и результаты их проверки.", l.pageDeveloper.testingSubmissionsGuide())
+        fun `should decline the submission term in testing submissions guide`() {
+            assertEquals(
+                "Посылки и результаты их проверки. Откройте Посылку, чтобы увидеть подробности проверки.",
+                l.pageDeveloper.testingSubmissionsGuide(),
+            )
         }
 
         @Test
@@ -5580,6 +5583,90 @@ class LocalizationTests {
         @Test
         fun `should show a dash for the actual score in testing submissions score pending`() {
             assertEquals("— / 1412", l.pageDeveloper.testingSubmissionsScorePending(expected = 1412))
+        }
+
+        @Test
+        fun `should use the submission term in submission tab title`() {
+            assertEquals("Посылка", l.pageDeveloper.submissionTabTitle())
+        }
+
+        @Test
+        fun `should number the submission in submission title`() {
+            assertEquals("Посылка №42", l.pageDeveloper.submissionTitle(id = 42L))
+        }
+
+        @Test
+        fun `should keep the largest id exact and ungrouped in submission title`() {
+            assertEquals("Посылка №9223372036854775807", l.pageDeveloper.submissionTitle(id = Long.MAX_VALUE))
+        }
+
+        @Test
+        fun `should decline the submission developer solution and polygon terms in submission guide`() {
+            assertEquals(
+                "Просмотрите сведения о Посылке Авторского Решения из запроса тестирования и результаты её проверки " +
+                    "по Полигонам.",
+                l.pageDeveloper.submissionGuide(),
+            )
+        }
+
+        @Test
+        fun `should list the fields and the reason in submission details guide`() {
+            assertEquals(
+                "Авторское Решение и версия TRIK Studio, статус проверки, фактический и ожидаемый балл. Если при " +
+                    "проверке произошла ошибка или превышено время, показывается причина.",
+                l.pageDeveloper.submissionDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the reason in submission reason`() {
+            assertEquals("Причина", l.pageDeveloper.submissionReason())
+        }
+
+        @Test
+        fun `should state the exceeded grading time in submission timeout`() {
+            assertEquals("Проверка не завершилась за отведённое время.", l.pageDeveloper.submissionTimeout())
+        }
+
+        @Test
+        fun `should use the verdict term in submission verdict title`() {
+            assertEquals("Вердикт", l.pageDeveloper.submissionVerdictTitle())
+        }
+
+        @Test
+        fun `should decline the polygon term in submission verdict guide`() {
+            assertEquals(
+                "Баллы по Полигонам. Для каждого Полигона можно скачать логи и видеозапись прохождения, если она есть.",
+                l.pageDeveloper.submissionVerdictGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive verdict term in submission verdict empty`() {
+            assertEquals("Вердикта нет", l.pageDeveloper.submissionVerdictEmpty())
+        }
+
+        @Test
+        fun `should decline the verdict and submission terms in submission verdict empty hint`() {
+            assertEquals(
+                "Вердикт появляется только после успешной проверки Посылки.",
+                l.pageDeveloper.submissionVerdictEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the polygon term in submission verdict polygon`() {
+            assertEquals("Полигон", l.pageDeveloper.submissionVerdictPolygon())
+        }
+
+        @Test
+        fun `should name the logs in submission verdict logs`() {
+            assertEquals("Логи", l.pageDeveloper.submissionVerdictLogs())
+        }
+
+        @Test
+        fun `should name the recording in submission verdict recording`() {
+            assertEquals("Видеозапись", l.pageDeveloper.submissionVerdictRecording())
         }
     }
 

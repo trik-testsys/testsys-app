@@ -112,6 +112,16 @@ class GradingFunctionsTests {
             }
         }.build()
 
+        @ParameterizedTest
+        @CsvSource("4", "4.xml")
+        fun `should match a polygon name with or without the extension`(name: String) {
+            val checked =
+                checkResult(result(fields = listOf(field(name))), SubmissionId(42), listOf(TestId(4)), JsonLogParser())
+
+            val success = assertInstanceOf(CheckedResult.Success::class.java, checked)
+            assertEquals(TestId(4), success.tests.single().testId)
+        }
+
         @Test
         fun `should reject duplicate or missing polygons`() {
             val result = checkResult(

@@ -44,7 +44,7 @@ internal fun encodeSubmission(
         .setTask(
             Proto.Task.newBuilder().addAllFields(
                 tests.map { test ->
-                    Proto.File.newBuilder().setName(test.id.value.toString())
+                    Proto.File.newBuilder().setName(test.id.value.toString() + FIELD_EXTENSION)
                         .setContent(ByteString.copyFrom(fileContentReader.read(test.data.file))).build()
                 },
             ),
@@ -93,7 +93,7 @@ internal fun checkResult(result: Proto.Result, expectedId: SubmissionId, expecte
 }
 
 private fun checkFields(fields: List<Proto.FieldResult>, expectedTests: List<TestId>, parser: LogParser): CheckedResult {
-    val names = fields.map { field -> field.name }
+    val names = fields.map { field -> field.name.removeSuffix(FIELD_EXTENSION) }
     val expectedNames = expectedTests.map { id -> id.value.toString() }
     if (expectedNames.isEmpty() || names.size != expectedNames.size || names.toSet() != expectedNames.toSet()) {
         return CheckedResult.Failure("Unexpected polygon results: $names, expected $expectedNames")
@@ -110,7 +110,7 @@ private fun checkFields(fields: List<Proto.FieldResult>, expectedTests: List<Tes
         val score = parser.parse(field.verdict.content.toByteArray())
             ?: return CheckedResult.Failure("Invalid logs for polygon ${field.name}")
         CheckedTest(
-            testId = TestId(field.name.toLong()),
+            testId = TestId(field.name.removeSuffix(FIELD_EXTENSION).toLong()),
             score = score,
             logs = field.verdict,
             recording = if (field.hasVideo()) field.video else null,
@@ -163,3 +163,6 @@ internal class JsonLogParser : LogParser {
 }
 
 private const val NODE_TIMEOUT_KIND = 4
+
+/** The TRIK Studio grading script looks a polygon up as `<name>.xml`; the node strips the extension in results. */
+private const val FIELD_EXTENSION = ".xml"

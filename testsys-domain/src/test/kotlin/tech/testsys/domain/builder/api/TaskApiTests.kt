@@ -619,6 +619,7 @@ class TaskApiTests {
                 task = LazyEntity(TaskId(10)),
                 tests = LazyEntityList(listOf(TestId(20), TestId(21))),
                 submissions = LazyEntityList(listOf(SubmissionId(30))),
+                stoppedAt = Instant.ofEpochSecond(2),
             )
         }
 
@@ -632,6 +633,16 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
             Assertions.assertEquals(origin.data.tests.ids, copy.data.tests.ids)
             Assertions.assertEquals(origin.data.submissions.ids, copy.data.submissions.ids)
+            Assertions.assertEquals(origin.data.stoppedAt, copy.data.stoppedAt)
+        }
+
+        @Test
+        fun `should change the stop moment if withData sets it`() {
+            val copy = origin.withData { stoppedAt = Instant.ofEpochSecond(3) }
+
+            Assertions.assertEquals(Instant.ofEpochSecond(3), copy.data.stoppedAt)
+            Assertions.assertEquals(origin.data.submissions.ids, copy.data.submissions.ids)
+            Assertions.assertEquals(origin.version, copy.version)
         }
 
         @Test

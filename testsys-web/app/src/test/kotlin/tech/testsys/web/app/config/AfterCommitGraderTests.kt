@@ -65,6 +65,39 @@ class AfterCommitGraderTests {
     }
 
     @Test
+    fun `should restart grading at once outside a transaction`() {
+        every { delegate.restartGrading(submission) } returns Unit
+
+        grader.restartGrading(submission)
+
+        verify(exactly = 1) { delegate.restartGrading(submission) }
+    }
+
+    @Test
+    fun `should restart grading only after the transaction commits`() {
+        every { delegate.restartGrading(submission) } returns Unit
+        TransactionSynchronizationManager.initSynchronization()
+        grader.restartGrading(submission)
+
+        TransactionSynchronizationManager.getSynchronizations().forEach { synchronization -> synchronization.afterCommit() }
+
+        verify(exactly = 1) { delegate.restartGrading(submission) }
+        verify(exactly = 0) { delegate.sendToGrade(any()) }
+    }
+
+    @Test
+    fun `should not restart grading when the transaction rolls back`() {
+        TransactionSynchronizationManager.initSynchronization()
+        grader.restartGrading(submission)
+
+        TransactionSynchronizationManager.getSynchronizations().forEach { synchronization ->
+            synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK)
+        }
+
+        verify(exactly = 0) { delegate.restartGrading(any()) }
+    }
+
+    @Test
     fun `should not send the submission when the transaction rolls back`() {
         TransactionSynchronizationManager.initSynchronization()
         grader.sendToGrade(submission)

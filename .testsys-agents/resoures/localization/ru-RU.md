@@ -1239,6 +1239,41 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
   take «новый» as the latest set; «по набору Полигонов, с которым запущена Перепроверка» is a longer alternative.
   Kept: the natural reading refers back to the first sentence. Inference from the table context, no language source.
 
+### Manual regrade (`page_developer.task.regrades.run*`, `…confirm_*`, `…started`, `…nothing*`, `…stopped`, 2026-11-20)
+
+- `glossary.regrade` gained `acc sg` «Перепроверку» for «Не удалось запустить Перепроверку» (type 3*a, see the
+  Викисловарь note above; not re-read on 2026-11-20). `glossary.submission` gained `nom one/few/many`
+  («Посылка» / «Посылки» / «Посылок») for the counted subject of the success toast.
+- Success toast «1 Посылка отправлена / 2 Посылки отправлены / 5 Посылок отправлено на повторную проверку»: `one`
+  takes the singular feminine, `few` the plural, `many` the neuter singular, which is the usual choice for
+  inanimate counted subjects with numerals of five and above. Unlike the animate batch toast («5 Участников удалены»,
+  see «Predicate agreement in the batch toast») the subject is inanimate. General grammar knowledge; a search on
+  2026-11-20 found only secondary papers saying that with numerals from five the singular predominates (citing
+  Розенталь), and https://pravopisanie_i_stilistika.academic.ru/185/ again returned HTTP 502, so the rule stays
+  unverified in a primary handbook. «Отправлено на повторную проверку Посылок: N» is a fallback without agreement.
+- The confirmation text uses the indefinite-personal «снова проверят» (as «отправят» in the commit dialog) to avoid
+  a passive with an agreement choice; «снова … начнутся заново» avoids repeating «заново».
+- The guide and the empty hint name the manual start «действием этого блока» instead of quoting the button label,
+  following `page_developer.task.access_guide` («действиями этого блока»), so a label change cannot desynchronize
+  them (project wording choice).
+- «На её Полигонах» in the rewritten guide: «её» follows the genitive «Перепроверки» directly, so the nearest
+  feminine antecedent is the Regrade, not «фиксация» (inference). «По новому набору Полигонов» was dropped because a
+  manual Regrade uses the unchanged set.
+- Badge «Остановлена» agrees with the implied feminine «Перепроверка» of the row; no undesirable second meaning found
+  (inference, no dictionary check).
+- Independent review (2026-11-20): «перепроверить» is a perfective transitive verb (Zaliznyak 4a) with one sense,
+  «повторно проверить что-либо», without stylistic labels; it supports the labels «Перепроверить Посылки» and
+  «Перепроверить». Source: https://ru.wiktionary.org/wiki/перепроверить (read 2026-11-20). «Перепроверка» re-read
+  the same day: inanimate feminine, type 3*a, В. ед. «перепроверку», one sense «повторная проверка с целью выявления
+  ошибок, погрешностей, недочётов»; this confirms `glossary.regrade` `acc sg`. Source:
+  https://ru.wiktionary.org/wiki/перепроверка (read 2026-11-20).
+- Predicate number with numerals of five and above stays unverified in a primary handbook: the Розенталь page
+  returned HTTP 502 again and a studfile copy was behind a captcha (2026-11-20). Unopened search snippets (Kuvshinskaya,
+  HSE; mel.fm) report both a mostly singular norm and a trend towards the plural, so both «5 Посылок отправлено» and
+  «отправлены» stay acceptable.
+- Open case label: in «Все Посылки … снова проверят» the term is the direct object of an indefinite-personal verb, so
+  `case=acc` is the exact label; the message uses `case=nom`, which renders the same «Посылки» for this inanimate plural.
+
 ## «Обновить» as the icon-only refresh button of a table (`ui_data.table.refresh`)
 
 - «Обновить» is a perfective transitive verb. Викисловарь lists the senses "restore, repair", "revive" (перен.),

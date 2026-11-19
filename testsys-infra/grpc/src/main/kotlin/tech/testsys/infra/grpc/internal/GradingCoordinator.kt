@@ -75,15 +75,24 @@ internal class GradingCoordinator(
         val newRun = Pending.Preparing(context)
         val existing = pending.putIfAbsent(submission.id, newRun)
         if (existing == null) {
-            dispatch {
-                context.deadline.set(
-                    executor.schedule({ expire(context) }, remaining(context).coerceAtLeast(Duration.ZERO).toNanos(), TimeUnit.NANOSECONDS),
-                )
-                prepare(newRun)
-            }
+            dispatch { begin(newRun) }
             GradingAdmission.Accepted
         } else {
             GradingAdmission.AlreadyPending
+        }
+    }
+
+    /**
+     * Replaces the unfinished run of [submission] with a new one on the work thread, so the replacement is ordered
+     * with every other phase change; a save already running there completes before it.
+     */
+    fun restart(submission: Submission) = synchronized(isClosed) {
+        check(!isClosed.get()) { "Grader is closed" }
+        val newRun = Pending.Preparing(RunContext(submission = submission, acceptedAt = clock.instant(), settings = settings.current()))
+        dispatch {
+            pending.put(submission.id, newRun)?.let(::stop)
+            senderWakeup.release()
+            begin(newRun)
         }
     }
 
@@ -145,14 +154,7 @@ internal class GradingCoordinator(
 
     override fun close() = synchronized(isClosed) {
         if (isClosed.compareAndSet(false, true)) {
-            pending.values.forEach { run ->
-                run.context.deadline.get()?.cancel(false)
-                when (run) {
-                    is Pending.InFlight -> run.attempt.cancel.get()?.close()
-                    is Pending.Saving -> run.saveRetry.get()?.cancel(false)
-                    is Pending.Preparing, is Pending.Queued -> Unit
-                }
-            }
+            pending.values.forEach(::stop)
             pollingRegistration?.close()
             senderExecutor.shutdownNow()
             executor.shutdownNow()
@@ -212,6 +214,28 @@ internal class GradingCoordinator(
                 is Pending.Saving -> Unit
             }
         }
+    }
+
+    /** Cancels the deadline, the RPC and the save retry of [run]; its late callbacks are then ignored as not current. */
+    private fun stop(run: Pending) {
+        run.context.deadline.get()?.cancel(false)
+        when (run) {
+            is Pending.InFlight -> run.attempt.cancel.get()?.close()
+            is Pending.Saving -> run.saveRetry.get()?.cancel(false)
+            is Pending.Preparing, is Pending.Queued -> Unit
+        }
+    }
+
+    /** Starts the deadline and preparation of [run] unless a restart has already replaced it. */
+    private fun begin(run: Pending.Preparing) {
+        if (!isCurrent(run)) {
+            return
+        }
+        val context = run.context
+        context.deadline.set(
+            executor.schedule({ expire(context) }, remaining(context).coerceAtLeast(Duration.ZERO).toNanos(), TimeUnit.NANOSECONDS),
+        )
+        prepare(run)
     }
 
     private fun prepare(run: Pending.Preparing) {

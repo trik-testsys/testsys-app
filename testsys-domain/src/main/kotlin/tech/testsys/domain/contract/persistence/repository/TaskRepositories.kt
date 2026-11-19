@@ -255,7 +255,8 @@ interface LogsRepository : EntityRepository<LogsData, LogsId, Logs>
 interface RecordingRepository : EntityRepository<RecordingData, RecordingId, Recording>
 
 /**
- * Persistence port for [Regrade] entities. A regrade is fixed on creation, so `update` is not supported.
+ * Persistence port for [Regrade] entities. The task, tests and submissions of a regrade are fixed on creation and only
+ * [stopPrevious] changes its stop moment, so `update` is not supported.
  *
  * @since 1.0.0-beta.1
  */
@@ -272,8 +273,8 @@ interface RegradeRepository : EntityRepository<RegradeData, RegradeId, Regrade> 
 
     /**
      * Synchronously counts, for each of [regradeIds], its submissions that have a verdict created not earlier than the
-     * regrade with test verdicts exactly on the regrade's tests, on each of them and on no other; a submission with
-     * several such verdicts counts once. Storage exceptions propagate.
+     * regrade and earlier than the next regrade of the same task, with test verdicts exactly on the regrade's tests, on
+     * each of them and on no other; a submission with several such verdicts counts once. Storage exceptions propagate.
      *
      * @param regradeIds the regrades to count; an empty set returns an empty map without querying storage.
      * @return the count of graded submissions by regrade; a regrade without graded submissions maps to `0`, a missing
@@ -281,6 +282,16 @@ interface RegradeRepository : EntityRepository<RegradeData, RegradeId, Regrade> 
      * @since 1.0.0-beta.1
      */
     fun countGraded(regradeIds: Set<RegradeId>): Map<RegradeId, Int>
+
+    /**
+     * Synchronously stops the regrade of the task right before [regrade] by creation time and id at the moment [regrade]
+     * was created, incrementing its version, if it is not stopped and has a submission queued, in progress or unchanged
+     * since it was created; earlier regrades are not changed, storage exceptions propagate.
+     *
+     * @param regrade the saved new regrade.
+     * @since %CURRENT_VERSION%
+     */
+    fun stopPrevious(regrade: Regrade)
 }
 
 /**

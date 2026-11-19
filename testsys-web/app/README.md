@@ -491,8 +491,8 @@ Boot заполняет его из `Implementation-Version` манифеста 
   с содержимым.
 
 `StudyService.sendSolution` передаёт сохранённую Посылку в `AfterCommitGrader`. `AfterCommitGrader` отдаёт
-Посылку `BalancingGrader` только после фиксации транзакции, а при откате не отдаёт. `DeveloperOperations`
-получает тот же `AfterCommitGrader`.
+Посылку `BalancingGrader` только после фиксации транзакции, а при откате не отдаёт. Так же он передаёт
+перезапуск проверки `restartGrading`. `DeveloperOperations` получает тот же `AfterCommitGrader`.
 
 Диспетчер получает однопоточный исполнитель, обёрнутый в `AfterTransactionExecutor`. Запрос валидации,
 поставленный в очередь внутри транзакции, передаётся исполнителю после её завершения с любым исходом. После отката

@@ -11,6 +11,7 @@ import tech.testsys.domain.model.task.RegradeId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
+import java.time.Instant
 
 /**
  * Builder of [RegradeData]. Required: [task].
@@ -18,6 +19,7 @@ import tech.testsys.domain.model.task.TestId
  * @property task the id of the regraded task, or `null` if not set yet.
  * @property tests the ids of the polygons of the committed revision.
  * @property submissions the ids of the submissions sent to grading again.
+ * @property stoppedAt the moment the regrade was stopped, or `null` if not set yet.
  * @since 1.0.0-beta.1
  */
 class RegradeDataBuilder : Builder<RegradeData> {
@@ -27,6 +29,8 @@ class RegradeDataBuilder : Builder<RegradeData> {
     var tests = mutableListOf<TestId>()
 
     var submissions = mutableListOf<SubmissionId>()
+
+    var stoppedAt: Instant? = null
 
     /**
      * Sets [task] from a raw id.
@@ -62,6 +66,7 @@ class RegradeDataBuilder : Builder<RegradeData> {
             task = task.lazify(),
             tests = tests.lazify(),
             submissions = submissions.lazify(),
+            stoppedAt = stoppedAt,
         )
     }
 }

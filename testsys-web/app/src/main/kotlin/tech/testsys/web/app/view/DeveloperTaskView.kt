@@ -116,9 +116,9 @@ internal enum class ResourceUsage(val usage: TaskResourcesUsageValueUsage) {
 }
 
 /**
- * Task of a Developer (testsys.web.page.developer.task): its details with their editing, its resources with uploading,
- * attaching and detaching, its testing with committing and reverting, its regrades with their progress, and its access
- * of communities. Before an action that changes the state of the task, the page asks to confirm the new state.
+ * Task of a Developer (testsys.web.page.developer.task): its details, resources, testing with committing and reverting,
+ * regrades with progress, start and stopped mark, and access of communities. Before an action that changes the state
+ * of the task, the page asks to confirm the new state.
  *
  * @since 1.0.0-beta.1
  */
@@ -213,7 +213,7 @@ class DeveloperTaskView(
             }
             resourcesBlock(task, chains)
             testingBlock(taskId, requests)
-            regradesBlock(taskId)
+            regradesBlock(task)
         }
     }
 
@@ -604,11 +604,18 @@ class DeveloperTaskView(
         }
     }
 
-    private fun PageScope.regradesBlock(taskId: TaskId) {
+    private fun PageScope.regradesBlock(task: TaskVo) {
+        val taskId = task.id
         val texts = currentLocalization().pageDeveloper
         row {
             block(title = texts.taskRegradesTitle()) {
                 guide(texts.taskRegradesGuide())
+                actions {
+                    action(texts.taskRegradesRun()) {
+                        isEnabled = task.lastCommitted != null
+                        onClick { regrade(taskId) }
+                    }
+                }
                 load({ developerService.viewRegrades(taskId).reversed() }) { regrades ->
                     table(key = { (regrade, _): Pair<RegradeVo, Int> -> regrade.id }, fetch = { request -> pageOf(regrades, request) }) {
                         dateTimeColumn(texts.startedAt(), size = 6) { (regrade, _) -> regrade.createdAt.toUserDateTime() }
@@ -620,11 +627,33 @@ class DeveloperTaskView(
                             val percent = graded * PERCENT / total.coerceAtLeast(1)
                             progressBar(label = progress, value = ProgressValue.Determinate(percent.coerceIn(0.0, PERCENT)))
                             text(progress)
+                            if (regrade.stoppedAt != null) badge(texts.taskRegradesStopped(), tone = Tone.Warning)
                         }
                         empty(texts.taskRegradesEmpty(), texts.taskRegradesEmptyHint())
                     }
                 }
             }
+        }
+    }
+
+    /** Confirms and starts a regrade of every contest submission of [taskId], then shows the task again. */
+    private fun regrade(taskId: TaskId) {
+        val texts = currentLocalization().pageDeveloper
+        confirm(
+            title = texts.taskRegradesConfirmTitle(),
+            text = texts.taskRegradesConfirmText(),
+            action = texts.taskRegradesConfirmAction(),
+        ) {
+            val current = currentLocalization().pageDeveloper
+            refusable(current.taskRegradesRunFailed()) {
+                val regrade = developerService.regradeTask(taskId)
+                if (regrade == null) {
+                    toast(FeedbackKind.Info, current.taskRegradesNothing(), current.taskRegradesNothingHint())
+                } else {
+                    toast(FeedbackKind.Success, current.taskRegradesStarted(count = regrade.submissions.size))
+                }
+            }
+            show(taskId)
         }
     }
 

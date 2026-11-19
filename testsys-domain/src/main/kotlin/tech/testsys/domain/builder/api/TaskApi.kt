@@ -654,6 +654,7 @@ private fun RegradeData.toBuilder(): RegradeDataBuilder {
         task = thisData.task.id
         tests = thisData.tests.ids.toMutableList()
         submissions = thisData.submissions.ids.toMutableList()
+        stoppedAt = thisData.stoppedAt
     }
 }
 

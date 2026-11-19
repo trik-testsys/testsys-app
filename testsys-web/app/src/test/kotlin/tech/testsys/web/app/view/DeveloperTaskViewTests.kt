@@ -288,7 +288,8 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
 
         assertCommitDialog(
             regradeOffered = true,
-            hint = "Набор Полигонов изменился. Если выбрать повторную проверку, на неё отправят 5 Посылок по этой Задаче в Турах.",
+            hint = "Набор Полигонов изменился. Если выбрать повторную проверку, на неё отправят 5 Посылок по этой Задаче в Турах, " +
+                "а незавершённая Перепроверка будет остановлена.",
         )
     }
 
@@ -354,6 +355,85 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         val block = UI.getCurrent().element.textRecursively
 
         assertTrue("Перепроверок пока нет" in block)
+    }
+
+    @Test
+    fun `should mark a regrade as stopped by its stored stop moment`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val stopped = regrade(task, id = 1, day = 14, submissions = 10, graded = 10, stoppedAt = regradeStart(15))
+        val unfinished = regrade(task, id = 2, day = 15, submissions = 4, graded = 1)
+        val newest = regrade(task, id = 3, day = 16, submissions = 4, graded = 0)
+        testingPage(task, emptyList(), regrades = listOf(stopped, unfinished, newest))
+
+        val marks = regradeCells().map { cells -> "Остановлена" in cells.last() }
+
+        assertEquals(listOf(false, false, true), marks)
+    }
+
+    @Test
+    fun `should disable regrading of a task without a committed revision`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        testingPage(task, emptyList())
+
+        val button = pageButton("Перепроверить Посылки")
+
+        assertFalse(button.isEnabled)
+    }
+
+    @Test
+    fun `should announce the number of submissions sent to grading after confirming a regrade`() {
+        developers.signInDeveloper()
+        val task = developers.task().let { task -> task.copy(lastCommitted = task.wip) }
+        val service = testingPage(task, emptyList())
+        every { service.regradeTask(task.id) } returns regrade(task, id = 1, day = 14, submissions = 3, graded = 0).first
+        clickButton("Перепроверить Посылки")
+
+        clickButton("Перепроверить")
+
+        verify(exactly = 1) { service.regradeTask(task.id) }
+        assertEquals("3 Посылки отправлены на повторную проверку", lastToastTitle())
+    }
+
+    @Test
+    fun `should report that there is nothing to regrade without contest submissions`() {
+        developers.signInDeveloper()
+        val task = developers.task().let { task -> task.copy(lastCommitted = task.wip) }
+        val service = testingPage(task, emptyList())
+        every { service.regradeTask(task.id) } returns null
+        clickButton("Перепроверить Посылки")
+
+        clickButton("Перепроверить")
+
+        assertEquals("Перепроверять нечего", lastToastTitle())
+        assertEquals("Посылок по этой Задаче в Турах нет.", lastToastDescription())
+    }
+
+    @Test
+    fun `should not regrade when the confirmation is cancelled`() {
+        developers.signInDeveloper()
+        val task = developers.task().let { task -> task.copy(lastCommitted = task.wip) }
+        val service = testingPage(task, emptyList())
+        clickButton("Перепроверить Посылки")
+
+        clickButton("Отменить")
+
+        verify(exactly = 0) { service.regradeTask(any()) }
+    }
+
+    @Test
+    fun `should report a regrade refused for a task without a committed revision`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val service = testingPage(task.copy(lastCommitted = task.wip), emptyList())
+        every { service.regradeTask(task.id) } answers { developerService.regradeTask(task.id) }
+        clickButton("Перепроверить Посылки")
+
+        clickButton("Перепроверить")
+
+        assertEquals("Не удалось запустить Перепроверку", lastToastTitle())
+        assertEquals("У Задачи нет зафиксированной версии. Сначала протестируйте и зафиксируйте Задачу.", lastToastDescription())
     }
 
     @Test
@@ -911,13 +991,24 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
     /** Start of a regrade on [day] of March 2026 at 09:30 in the user's time zone. */
     private fun regradeStart(day: Int): Instant = LocalDateTime.of(2026, 3, day, 9, 30).atZone(currentTimeZone()).toInstant()
 
-    /** Regrade [id] of [task] started on [day] of March 2026 with [submissions] submissions, [graded] of them graded. */
-    private fun regrade(task: TaskVo, id: Long, day: Int, submissions: Int, graded: Int): Pair<RegradeVo, Int> = RegradeVo(
+    /**
+     * Regrade [id] of [task] started on [day] of March 2026 with [submissions] submissions, [graded] of them graded,
+     * stopped at [stoppedAt].
+     */
+    private fun regrade(
+        task: TaskVo,
+        id: Long,
+        day: Int,
+        submissions: Int,
+        graded: Int,
+        stoppedAt: Instant? = null,
+    ): Pair<RegradeVo, Int> = RegradeVo(
         id = RegradeId(id),
         createdAt = regradeStart(day),
         task = task.id,
         tests = emptyList(),
         submissions = List(submissions) { index -> SubmissionId(index + 1L) },
+        stoppedAt = stoppedAt,
     ) to graded
 
     private fun regradesTable(): Table = UI.getCurrent()._find<Table>()

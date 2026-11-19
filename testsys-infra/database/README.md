@@ -79,7 +79,7 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 
 | Корень | Части и что защищает версия |
 |--------|-----------------------------|
-| Задача, `ts_task` | `ts_task_content` и связи ревизий с Упражнениями, Полигонами, Авторскими Решениями и версиями TRIK Studio, `ts_community_to_task`, `ts_version_bucket_to_task`. Версия защищает состав ревизий, доступ, последнюю версию Ресурса в прикреплённой цепочке и предотвращает параллельное создание одинаковых активных снимков через `findOrCreateActive` |
+| Задача, `ts_task` | `ts_task_content` и связи ревизий с Упражнениями, Полигонами, Авторскими Решениями и версиями TRIK Studio, `ts_community_to_task`, `ts_version_bucket_to_task`. Версия защищает состав ревизий, доступ, последнюю версию Ресурса в прикреплённой цепочке и предотвращает параллельное создание одинаковых активных снимков через `findOrCreateActive`. Версия также не даёт параллельно созданным Перепроверкам пропустить остановку предыдущей |
 | Тур, `ts_contest` | `ts_task_to_contest`, `ts_community_to_contest` |
 | Класс, `ts_class` | `ts_student_to_class`, `ts_contest_to_class` |
 | Соревнование, `ts_competition` | `ts_contest_to_competition`. Версия защищает лимит Участников |
@@ -96,6 +96,7 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 |--------|-------------------|
 | Создание, изменение и удаление версии Условия, Упражнения, Полигона и Авторского Решения | Задача, к которой прикреплена цепочка (`findTaskIdByVersionBucket`) |
 | Создание запроса проверки (`findOrCreateActive`, `save`) и его удаление | Задача запроса |
+| Создание и удаление Перепроверки | Задача Перепроверки |
 | Создание Участника (`save`, `saveToCompetition`) и его удаление | Соревнование |
 | Удаление Пользователя с несколькими Ролями | Классы Ученика по возрастанию идентификатора |
 | Удаление Класса и Сообщества | Их Коды-приглашения |
@@ -267,9 +268,23 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 определено в
 [testsys.user.multi.developer.task.commitTask](../../docs/domain/features.md#testsysusermultidevelopertaskcommittask-partially-implemented).
 Полигоны результатов берутся из `ts_test_verdict.test_id`, Полигоны Перепроверки — из `ts_test_to_regrade`.
+Следующая Перепроверка той же Задачи определяется по времени создания, при равенстве времени — по идентификатору.
 Подсчёт выполняет один агрегирующий запрос `RegradeJpaEntityRepository.countGraded` с `count(distinct ...)` и
 подзапросами `not exists`; адаптер не загружает сами Посылки и Вердикты.
 Для пустого набора адаптер возвращает пустой результат и не обращается к БД.
+
+## Остановка Перепроверок
+
+`RegradePersistenceAdapter.stopPrevious` получает сохранённую новую Перепроверку. Запрос
+`RegradeJpaEntityRepository.findPreviousUnfinished` находит непосредственно предыдущую Перепроверку той же Задачи
+в том же порядке, что и подсчёт прогресса. Запрос возвращает её, только если она ещё не остановлена и хотя бы одна
+её Посылка находится в статусе `QUEUED` или `IN_PROGRESS` либо не изменялась после создания этой Перепроверки
+(по `ts_submission.updated_at`). Когда Перепроверка останавливается, определено в
+[testsys.user.multi.developer.task.commitTask](../../docs/domain/features.md#testsysusermultidevelopertaskcommittask-partially-implemented).
+Адаптер записывает найденной Перепроверке `stopped_at` — время создания новой — через `touchRoot`, поэтому её
+версия растёт на единицу. Более ранние Перепроверки не меняются.
+`save` Перепроверки повышает версию Задачи, поэтому из двух параллельных Перепроверок вторая при повторе транзакции
+видит первую.
 
 ## Соревнования Туров
 
@@ -580,6 +595,8 @@ Changeset `changelog.24-supervisor-role.xml` переносит Роль Суп�
 Changeset `changelog.26-invalid-submission.xml` добавляет результат проверки `INVALID_SUBMISSION` с обязательным
 описанием и без Вердикта в ограничение `ck_ts_submission_status_result` и в индекс очереди судьи. Откат переводит
 такие Посылки в `GRADING_ERROR` с тем же описанием.
+Changeset `changelog.27-regrade-stopped.xml` добавляет в `ts_regrade` nullable-колонку `stopped_at`; у прежних
+Перепроверок она пуста. Откат удаляет колонку.
 
 `FileDataStorage.store` проверяет имя файла через `TextLimits` до чтения и записи блоба.
 Превышение предела из [testsys.entity.textLimits](../../docs/domain/features.md#testsysentitytextlimits-implemented)

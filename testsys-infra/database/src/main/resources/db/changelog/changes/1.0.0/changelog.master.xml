@@ -30,4 +30,5 @@
     <include file="db/changelog/changes/1.0.0/changelog.24-supervisor-role.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.25-init-announcement.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.26-invalid-submission.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.27-regrade-stopped.xml"/>
 </databaseChangeLog>

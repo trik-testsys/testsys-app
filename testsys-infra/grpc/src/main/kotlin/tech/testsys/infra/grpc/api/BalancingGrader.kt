@@ -19,6 +19,7 @@ import tech.testsys.infra.grpc.internal.InternalGrpcApi
 @Component
 class BalancingGrader internal constructor(private val coordinator: GradingCoordinator) : Grader {
     override fun sendToGrade(submission: Submission): GradingAdmission = coordinator.submit(submission)
+    override fun restartGrading(submission: Submission) = coordinator.restart(submission)
     override fun subscribeOnGraded(onGraded: (SubmissionId) -> Unit) = coordinator.subscribe(onGraded)
     override fun addNode(address: GradingNodeAddress) = coordinator.addNode(address)
     override fun removeNode(address: GradingNodeAddress) = coordinator.removeNode(address)

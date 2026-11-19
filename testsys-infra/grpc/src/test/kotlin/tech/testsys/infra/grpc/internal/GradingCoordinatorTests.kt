@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
@@ -720,6 +721,111 @@ internal class GradingCoordinatorTests {
         now.set(Instant.EPOCH.plusSeconds(3_600))
         assertDoesNotThrow { queue.scheduled[1].fire() }
         assertEquals(listOf(42L, 42L), completions)
+    }
+
+    @Nested
+    inner class RestartTests {
+        @Test
+        fun `should start grading a submission without an unfinished run`() {
+            coordinator.start()
+            grader.addNode(address)
+            polling.tick()
+
+            grader.restartGrading(repository.initial)
+            queue.await { node.messages.size == 1 }
+
+            assertEquals(1, queue.scheduled.size)
+            assertEquals(GradingAdmission.AlreadyPending, grader.sendToGrade(repository.initial))
+        }
+
+        @Test
+        fun `should send only the new run when a prepared run waits for a node`() {
+            coordinator.start()
+            grader.sendToGrade(repository.initial)
+            queue.drain()
+
+            grader.restartGrading(repository.initial)
+            queue.drain()
+            grader.addNode(address)
+            polling.tick()
+            queue.await { node.messages.size == 1 }
+            node.results.single()(result())
+            queue.drain()
+
+            assertTrue(queue.scheduled[0].isCancelled.get())
+            verify(exactly = 2) { repository.solutions.load(any<LazyEntity<SolutionId, Solution>>()) }
+            assertEquals(1, node.messages.size)
+            assertEquals(1, repository.savedVerdicts.size)
+            assertEquals(GradingQueueSnapshot(preparing = 0, waiting = 0, grading = 0, saving = 0), coordinator.queue())
+        }
+
+        @Test
+        fun `should cancel the RPC of a run on a node and save only the new result`() {
+            startRun()
+            val completions = mutableListOf<Long>()
+            grader.subscribeOnGraded { id -> completions.add(id.value) }
+
+            grader.restartGrading(repository.initial)
+            queue.await { node.messages.size == 2 }
+            node.results[0](result())
+            node.errors[0](Status.CANCELLED.asRuntimeException())
+            queue.drain()
+
+            assertEquals(1, node.cancellations.get())
+            assertTrue(queue.scheduled[0].isCancelled.get())
+            assertInstanceOf(SubmissionStatus.InProgress::class.java, repository.current.get().data.status)
+            assertEquals(emptyList<Long>(), completions)
+            node.results[1](result())
+            queue.drain()
+            assertEquals(listOf(42L), completions)
+            assertEquals(1, repository.savedVerdicts.size)
+            assertEquals(1.0, meters.find(TestSysMetrics.GRADING_CHECKS).counters().sumOf { counter -> counter.count() })
+        }
+
+        @Test
+        fun `should not let a replaced run start its preparation`() {
+            coordinator.start()
+            grader.addNode(address)
+            polling.tick()
+
+            grader.restartGrading(repository.initial)
+            val admission = grader.sendToGrade(repository.initial)
+            queue.drain()
+            queue.await { node.messages.size == 1 }
+
+            assertEquals(GradingAdmission.Accepted, admission)
+            assertEquals(1, queue.scheduled.size)
+            verify(exactly = 1) { repository.solutions.load(any<LazyEntity<SolutionId, Solution>>()) }
+            assertEquals(GradingQueueSnapshot(preparing = 0, waiting = 0, grading = 1, saving = 0), coordinator.queue())
+        }
+
+        @Test
+        fun `should cancel the save retry of a stopped run`() {
+            startRun()
+            every { repository.submissions.update(any<Submission>()) } throws IllegalStateException("Storage unavailable")
+            val completions = mutableListOf<Long>()
+            grader.subscribeOnGraded { id -> completions.add(id.value) }
+            node.errors[0](Status.INTERNAL.asRuntimeException())
+            queue.drain()
+            val saveRetry = queue.scheduled[1]
+            every { repository.submissions.update(any<Submission>()) } answers { firstArg<Submission>().also(repository.current::set) }
+
+            grader.restartGrading(repository.initial)
+            queue.await { node.messages.size == 2 }
+            saveRetry.fire()
+            queue.drain()
+
+            assertTrue(saveRetry.isCancelled.get())
+            assertInstanceOf(SubmissionStatus.InProgress::class.java, repository.current.get().data.status)
+            assertEquals(emptyList<Long>(), completions)
+        }
+
+        @Test
+        fun `should reject a restart after shutdown`() {
+            coordinator.close()
+
+            assertThrows(IllegalStateException::class.java) { grader.restartGrading(repository.initial) }
+        }
     }
 
     @Nested

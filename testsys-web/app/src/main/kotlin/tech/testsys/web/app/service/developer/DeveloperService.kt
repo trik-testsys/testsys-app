@@ -151,6 +151,13 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
         operations.viewRegrades(currentUser.multipleRoleUser(), taskId).getOrThrow().map { (regrade, graded) -> regrade.toVo() to graded }
 
     /**
+     * Runs [DeveloperOperations.regradeTask]; returns `null` if the task has no contest submissions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun regradeTask(taskId: TaskId): RegradeVo? = operations.regradeTask(currentUser.multipleRoleUser(), taskId).getOrThrow()?.toVo()
+
+    /**
      * Runs [DeveloperOperations.viewContests].
      *
      * @since 1.0.0-beta.1

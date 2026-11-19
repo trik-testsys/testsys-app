@@ -1325,6 +1325,13 @@ sealed interface CountRegradeSubmissionsError : OperationError
 sealed interface ViewRegradesError : OperationError
 
 /**
+ * Expected failure of sending the contest submissions of an owned task to grading again.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RegradeTaskError : OperationError
+
+/**
  * The working revision has no successfully completed validation request with a matching snapshot.
  *
  * @property taskId the identifier of the task being committed.
@@ -1680,6 +1687,7 @@ data object MissedDeveloperRoleError :
     ViewTaskValidationRequestsError,
     CountRegradeSubmissionsError,
     ViewRegradesError,
+    RegradeTaskError,
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
@@ -1859,6 +1867,7 @@ data class TaskNotExistsError(val taskId: TaskId) :
     ViewTaskValidationRequestsError,
     CountRegradeSubmissionsError,
     ViewRegradesError,
+    RegradeTaskError,
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
@@ -1989,6 +1998,7 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     ViewTaskValidationRequestsError,
     CountRegradeSubmissionsError,
     ViewRegradesError,
+    RegradeTaskError,
     CommitTaskError,
     AttachTaskError,
     RevertTaskError,
@@ -2058,7 +2068,7 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) :
  * @property taskId the id of the task.
  * @since 1.0.0-beta.1
  */
-data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError, RevertTaskError
+data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError, RevertTaskError, RegradeTaskError
 
 /**
  * The checked revision of the task does not support the contest's TRIK Studio version: the last committed revision

@@ -143,6 +143,7 @@ class TaskValidationOperations(
             }
             is GradingResult.GradingError,
             GradingResult.Timeout,
+            is GradingResult.InvalidSubmission,
             -> AuthorSubmissionFailure.GradingFailed(submission.id)
         }
     }

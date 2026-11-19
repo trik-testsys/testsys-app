@@ -1614,3 +1614,38 @@ paraphrased.
   - «2048» without a digit-group space: a Habr article on spaces says groups are separated for more than four digits
     (https://habr.com/en/articles/136348/), no handbook cited; project precedent writes «1024 байта». Not verified
     against a primary typography handbook.
+
+## Grading outcome «Решение не запускается» (`invalid_submission`, 2026-11-19)
+
+- Викисловарь «запускаться» (imperfective, intransitive, reflexive, 1a) has two homonyms. «Запускаться I», sense 2,
+  is the passive of «привести в действие, заставить работать», with the example «мотор не запускался» (failure to
+  start). «Запускаться II» means "to be left without care" and does not arise with «Решение» or «в TRIK Studio». In
+  a status badge next to «Проверяется» a reader could briefly take «не запускается» as "is not being run by
+  TestSys"; the Judge hint adds «в TRIK Studio», the badges stay short like the outcome name in features.md
+  (inference, no usage source). Sense 2 also covers the agentive passive («Секундомер … запускается в момент…»), so
+  the failure reading comes from context (final outcome, danger tone, neighbouring error statuses), not from the
+  dictionary. Source: https://ru.wiktionary.org/wiki/запускаться (read 2026-11-19 twice, fetch summaries).
+- The badges in `page_student.submission_status`, `page_participant.submission_status`, `page_judge.solution.status`
+  and `page_developer.testing.submissions.status` reference `glossary.solution` (`nom sg`) instead of a literal
+  «Решение», following project decision D2 (repeated domain terms become glossary terms). Unlike «Проверено» /
+  «Проверена» the badge carries its own subject, so it does not depend on agreement with an implied noun. On the
+  Developer page the sent Решение is an Авторское Решение; the shorter generic term is kept for one wording across
+  the four bundles (project choice).
+- «Итоговый балл — 0» in `page_judge.solution.verdict.invalid_submission_hint`: a dash stands before a numeral
+  predicate without a copula («Мой рост — сто семьдесят сантиметров»). Source:
+  https://www.kp.ru/edu/shkola/tire-mezhdu-podlezhashhim-i-skazuemym/ (school guide, cites no handbook, read
+  2026-11-19, fetch summary). Правила 1956, § 164
+  (https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/42, read 2026-11-19) covers
+  only noun predicates; the numeral case was not verified in a primary handbook.
+- «пока не выставлен Судейский вердикт» is impersonal on purpose: the hint is read by a Judge, and «пока Судья не
+  выставит…» would refer to the reader in the third person (project wording choice).
+- `page_judge.submissions.empty_hint` was reworded on request to «Здесь появятся Посылки Учеников и Участников,
+  получившие Вердикт или статус «Решение не запускается».». «Посылки» is the subject of «появятся», so the reference
+  now uses `case=nom` (rendered text equals the former `acc pl`, see «Subject of «показаны» takes the nominative»).
+  The nominative participle «получившие» agrees only with «Посылки», not with the genitive «Учеников и Участников»
+  («получивших» would). «Получившие Вердикт» replaces «успешно проверенные» because a Вердикт exists only after a
+  successful check; quoting the status by its badge text ties the hint to the «Статус проверки» field of the
+  Submission page — the Judge table has no status column (inference, no language source).
+- The review noted that the Verdict-block hint «Итоговый балл — 0, пока не выставлен Судейский вердикт.» stays
+  visible after a Судейский вердикт is issued; «пока не» keeps it literally true. An always-true alternative is
+  «Без Судейского вердикта итоговый балл — 0.» (optional, not applied).

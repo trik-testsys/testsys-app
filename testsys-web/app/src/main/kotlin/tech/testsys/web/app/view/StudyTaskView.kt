@@ -15,9 +15,11 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.app.service.student.StudentService
+import tech.testsys.web.app.service.study.GradingResultVo
 import tech.testsys.web.app.service.study.StudyService
 import tech.testsys.web.app.service.study.StudySubmissionVo
 import tech.testsys.web.app.service.study.StudyTaskVo
+import tech.testsys.web.app.service.study.SubmissionStatusVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.downloadAction
@@ -278,10 +280,11 @@ abstract class StudyTaskView(
         }
     }
 
-    /** Adds the final score of [submission], or its grading status without one. */
+    /** Adds the final score of [submission], or its grading status without one or for a solution that does not start. */
     private fun ContentScope.result(submission: StudySubmissionVo) {
         val score = submission.score
-        if (score != null) {
+        val isInvalid = (submission.submission.status as? SubmissionStatusVo.Graded)?.grade is GradingResultVo.InvalidSubmission
+        if (score != null && !isInvalid) {
             verdict(score.toDouble())
             return
         }

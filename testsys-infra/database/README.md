@@ -215,20 +215,18 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 связей. Он применяет фильтры и сортировку к парам до выбора страницы и возвращает их точное общее число.
 Один Тур может входить в несколько Соревнований и занимать несколько строк.
 
-## Постраничный поиск Вердиктов
+## Постраничный поиск Посылок для Судьи
 
 Метод `findAvailableToJudge` в
-[VerdictPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/VerdictPersistenceAdapter.kt)
-строит `Specification` по `VerdictFilter` и передаёт её с `Pageable` в `JpaSpecificationExecutor`.
+[SubmissionPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/SubmissionPersistenceAdapter.kt)
+строит `Specification` по `JudgeSubmissionFilter` с корнем — Посылкой и передаёт её с `Pageable`
+в `JpaSpecificationExecutor`. Выбираются проверенные Посылки Туров с результатом `SUCCESS` или `INVALID_SUBMISSION`.
 Условия автора, Посылки, Класса и Соревнования добавляются только для заданных в фильтре значений.
-Посылка Вердикта, членство автора и принадлежность Тура проверяются через `EXISTS`;
+Членство автора и принадлежность Тура проверяются через `EXISTS`;
 правила фильтрации определены в [features.md](../../docs/domain/features.md).
-БД фильтрует и сортирует Вердикты, затем выбирает страницу. Подсчёт общего числа использует ту же спецификацию.
-Адаптер одним запросом загружает результаты Полигонов для всех Вердиктов выбранной страницы,
-группирует их по идентификатору Вердикта и собирает страницу через `VerdictMapping`.
-Для пустой страницы запрос результатов Полигонов не выполняется.
-Результат содержит переданные параметры пагинации; связи с логами и видеозаписями остаются lazy.
-Чтение выполняется в транзакции с `readOnly = true`.
+БД фильтрует и сортирует Посылки, затем выбирает страницу. Подсчёт общего числа использует ту же спецификацию.
+Адаптер собирает страницу через `assembleAll` и не загружает Вердикты; ссылки на них остаются lazy.
+Результат содержит переданные параметры пагинации. Чтение выполняется в транзакции с `readOnly = true`.
 
 ## Результаты Тура
 
@@ -240,7 +238,7 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 Иначе адаптер читает из БД не больше трёх наборов строк, каждый одним запросом:
 
 1. Посылки Тура с видом `GRADING`, авторы и Задачи которых входят в переданные наборы.
-2. Судейские вердикты успешно проверенных Посылок.
+2. Судейские вердикты Посылок с результатом `SUCCESS` или `INVALID_SUBMISSION`.
 3. Результаты Полигонов для Вердиктов успешно проверенных Посылок без Судейских вердиктов.
 
 Второй и третий запросы не выполняются, если для них нет Посылок. Адаптер группирует Посылки по автору и Задаче,
@@ -579,6 +577,9 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 Changeset `changelog.24-supervisor-role.xml` переносит Роль Супервайзера в перечисление Нефиксированных Ролей
 `ts_multiple_role_to_user` и удаляет Супервайзеров с Фиксированной Ролью: у них нет почты и Пароля, поэтому
 перенести их нельзя.
+Changeset `changelog.26-invalid-submission.xml` добавляет результат проверки `INVALID_SUBMISSION` с обязательным
+описанием и без Вердикта в ограничение `ck_ts_submission_status_result` и в индекс очереди судьи. Откат переводит
+такие Посылки в `GRADING_ERROR` с тем же описанием.
 
 `FileDataStorage.store` проверяет имя файла через `TextLimits` до чтения и записи блоба.
 Превышение предела из [testsys.entity.textLimits](../../docs/domain/features.md#testsysentitytextlimits-implemented)
@@ -589,8 +590,8 @@ Changeset `changelog.24-supervisor-role.xml` переносит Роль Суп�
 - Диалект SQL не задаётся: Hibernate определяет его по соединению.
 - Имена таблиц и колонок вычисляет `TestsysPhysicalNamingStrategy`.
 - `SchemaValidationTests` применяет changelog'и к PostgreSQL и выполняет ту же валидацию. Тест также проверяет
-  частичный индекс очереди судьи `ix_ts_submission_judge_queue`: его changeset выполняется только на PostgreSQL
-  (`dbms="postgresql"`).
+  частичный индекс очереди судьи `ix_ts_submission_judge_queue` по Посылкам с результатом `SUCCESS`
+  или `INVALID_SUBMISSION`: его changeset'ы выполняются только на PostgreSQL (`dbms="postgresql"`).
 
 Правила написания changeset — в шаге 7 [implement-entity.md](../../docs/guides/implement-entity.md).
 

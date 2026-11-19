@@ -13,7 +13,7 @@ internal interface StudyTexts {
     enum class ContestState { NOT_STARTED, RUNNING, FINISHED }
 
     /** Grading status of a submission. */
-    enum class SubmissionStatus { QUEUED, IN_PROGRESS, SUCCESS, GRADING_ERROR, TIMEOUT }
+    enum class SubmissionStatus { QUEUED, IN_PROGRESS, SUCCESS, GRADING_ERROR, TIMEOUT, INVALID_SUBMISSION }
 
     /** Language of a solution. */
     enum class Language { PYTHON, JAVASCRIPT, VISUAL_LANGUAGE }

@@ -1054,7 +1054,7 @@ sealed interface ViewProfileError : OperationError
 // region JudgeOperations
 
 /**
- * Failure of listing verdicts available to the judge.
+ * Failure of listing graded submissions available to the judge.
  *
  * @since 1.0.0-beta.1
  */
@@ -1171,7 +1171,8 @@ data class SubmissionAccessDeniedError(val submissionId: SubmissionId) :
 data class SubmissionIsDeveloperSolutionTestError(val submissionId: SubmissionId) : ChangeVerdictError
 
 /**
- * The submission has no successful automatic grading result.
+ * The submission has no grading result the operation needs: a successful verdict, or for a judgment order also an
+ * invalid submission.
  *
  * @property submissionId the id of the submission.
  * @since 1.0.0-beta.1

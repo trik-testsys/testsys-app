@@ -3,12 +3,12 @@ package tech.testsys.domain.contract.persistence.repository
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.ContestTaskResult
+import tech.testsys.domain.contract.persistence.JudgeSubmissionFilter
 import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.TaskFilter
-import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.Contest
@@ -388,10 +388,22 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @param authorIds the authors to include; an empty set yields an empty list.
      * @param taskIds the tasks to include; an empty set yields an empty list.
      * @return results of author and task pairs having submissions, ordered by author id and then task id; a submission
-     * result is the score of its latest judgment order, otherwise the total of its verdict.
+     * result is the score of its latest judgment order, otherwise the total of its verdict or 0 for an invalid submission.
      * @since 1.0.0-beta.1
      */
     fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult>
+
+    /**
+     * Synchronously finds grading submissions graded successfully or as invalid whose authors currently hold a student
+     * or participant role. Repeated calls reflect current data without changing it or loading file contents;
+     * technical exceptions propagate.
+     *
+     * @param pagination the requested page and ordering.
+     * @param filter conjunctive author, submission and current group conditions applied before paging and counting.
+     * @return submissions with lazy references, requested pagination and exact total; unmatched filters or pages are empty.
+     * @since %CURRENT_VERSION%
+     */
+    fun findAvailableToJudge(pagination: Pagination, filter: JudgeSubmissionFilter = JudgeSubmissionFilter()): Page<Submission>
 
     /**
      * Synchronously counts grading submissions of [contestId] per task in any grading state, excluding author solution
@@ -431,19 +443,7 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
  *
  * @since 1.0.0-beta.1
  */
-interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict> {
-
-    /**
-     * Synchronously finds current successful grading verdicts whose authors currently hold a student or participant role.
-     * Repeated calls reflect current data without changing it or loading file contents; technical exceptions propagate.
-     *
-     * @param pagination the requested page and ordering.
-     * @param filter conjunctive author, submission and current group conditions applied before paging and counting.
-     * @return verdicts with lazy references, requested pagination and exact total; unmatched filters or pages are empty.
-     * @since 1.0.0-beta.1
-     */
-    fun findAvailableToJudge(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<Verdict>
-}
+interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict>
 
 /**
  * Persistence port for [Task] entities.

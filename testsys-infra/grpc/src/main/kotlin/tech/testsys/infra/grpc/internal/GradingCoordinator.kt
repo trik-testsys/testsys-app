@@ -364,6 +364,7 @@ internal class GradingCoordinator(
         is CheckedResult.Success -> "verdict"
         is CheckedResult.Failure -> "failure"
         CheckedResult.Timeout -> "timeout"
+        is CheckedResult.InvalidSubmission -> "invalid_submission"
     }
 
     private fun isCurrent(run: Pending): Boolean = !isClosed.get() && pending[run.context.submission.id] === run

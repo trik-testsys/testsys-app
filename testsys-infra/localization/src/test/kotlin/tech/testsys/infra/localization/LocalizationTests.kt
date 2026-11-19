@@ -1684,9 +1684,9 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should use the accusative plural submission term in submissions empty hint`() {
+        fun `should name both listed outcomes in submissions empty hint`() {
             assertEquals(
-                "Здесь появятся успешно проверенные Посылки Учеников и Участников.",
+                "Здесь появятся Посылки Учеников и Участников, получившие Вердикт или статус «Решение не запускается».",
                 l.pageJudge.submissionsEmptyHint(),
             )
         }
@@ -1728,6 +1728,7 @@ class LocalizationTests {
             "SUCCESS,       Проверена",
             "GRADING_ERROR, Ошибка проверки",
             "TIMEOUT,       Превышено время проверки",
+            "INVALID_SUBMISSION, Решение не запускается",
             "OTHER,         Неизвестный статус",
         )
         fun `should name the grading status in solution status`(status: SolutionStatusStatus, expected: String) {
@@ -1832,6 +1833,15 @@ class LocalizationTests {
         @Test
         fun `should use the dative plural polygon term in solution verdict empty hint`() {
             assertEquals("Баллы по Полигонам появятся после успешной проверки.", l.pageJudge.solutionVerdictEmptyHint())
+        }
+
+        @Test
+        fun `should explain the zero final score in solution verdict invalid submission hint`() {
+            assertEquals(
+                "Решение не запускается в TRIK Studio, поэтому баллов по Полигонам нет. " +
+                    "Итоговый балл — 0, пока не выставлен Судейский вердикт.",
+                l.pageJudge.solutionVerdictInvalidSubmissionHint(),
+            )
         }
 
         @Test
@@ -2107,6 +2117,7 @@ class LocalizationTests {
             "SUCCESS,       Проверено",
             "GRADING_ERROR, Ошибка проверки",
             "TIMEOUT,       Превышено время проверки",
+            "INVALID_SUBMISSION, Решение не запускается",
             "OTHER,         Неизвестный статус",
         )
         fun `should name the grading status in submission status`(status: PageStudent.SubmissionStatusStatus, expected: String) {
@@ -2503,6 +2514,7 @@ class LocalizationTests {
             "SUCCESS,       Проверено",
             "GRADING_ERROR, Ошибка проверки",
             "TIMEOUT,       Превышено время проверки",
+            "INVALID_SUBMISSION, Решение не запускается",
             "OTHER,         Неизвестный статус",
         )
         fun `should name the grading status in submission status`(status: PageParticipant.SubmissionStatusStatus, expected: String) {
@@ -5561,6 +5573,7 @@ class LocalizationTests {
             "SCORE_MISMATCH, Другой балл",
             "GRADING_FAILED, Ошибка проверки",
             "EXPECTED_SCORE, Ожидаемый балл",
+            "INVALID_SUBMISSION, Решение не запускается",
             "OTHER,          Неизвестный статус",
         )
         fun `should name the submission status in testing submissions status`(status: TestingSubmissionsStatusStatus, expected: String) {

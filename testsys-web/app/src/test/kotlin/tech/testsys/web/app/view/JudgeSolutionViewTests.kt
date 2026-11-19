@@ -203,6 +203,35 @@ class JudgeSolutionViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show the status, the invalid submission hint and issuing for a solution that does not start`() {
+        signIn(fixtures.judge())
+        val submission = fixtures.invalidSubmission(student())
+
+        open(submission)
+
+        val hints = UI.getCurrent()._find<Span> { classes = "ts-empty__desc" }.map { hint -> hint.text }
+        assertTrue("Решение не запускается" in headText(), headText())
+        assertTrue(hints.any { hint -> hint.startsWith("Решение не запускается в TRIK Studio") }, hints.toString())
+        assertEquals("0", textField("Итоговый балл").value)
+        assertEquals(1, UI.getCurrent()._find<Button> { text = "Выставить вердикт" }.size)
+    }
+
+    @Test
+    fun `should issue a judgment order for a solution that does not start and show the new final score`() {
+        signIn(fixtures.judge())
+        val submission = fixtures.invalidSubmission(student())
+        open(submission)
+
+        UI.getCurrent()._get<Button> { text = "Выставить вердикт" }._click()
+        openDialog()._get<IntegerField>()._value = 15
+        openDialog()._get<TextArea>()._value = "Запускается после правки"
+        openDialog()._get<Button> { text = "Выставить" }._click()
+
+        assertEquals("15", textField("Итоговый балл").value)
+        assertEquals(1, judgmentOrdersOf(submission))
+    }
+
+    @Test
     fun `should show an empty verdict and no issuing for a submission without a successful verdict`() {
         signIn(fixtures.judge())
 

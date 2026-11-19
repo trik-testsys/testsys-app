@@ -2476,6 +2476,17 @@ class AdministratorOperationsTests {
                 assertEquals(listOf(Triple(first, solutionId, null)), actual)
                 verify { verdicts wasNot Called }
             }
+
+            @Test
+            fun `should take 0 as the previous result of the first judgment order of an invalid submission`() {
+                val first = order(orderId = 61)
+                prepareJudge(first, judged(orders = listOf(first.id)) { graded { status.invalidSubmission { description = "No main" } } })
+
+                val actual = operations.viewUserJudgments(user = administrator, userId = viewedId).getOrThrow()
+
+                assertEquals(listOf(Triple(first, solutionId, 0L)), actual)
+                verify { verdicts wasNot Called }
+            }
         }
 
         private fun prepareJudge(order: JudgmentOrder, submission: Submission) {

@@ -273,6 +273,18 @@ class GradingPersistenceServiceTests {
             assertEquals(0, repository.savedLogs.size)
             verify(exactly = 1) { repository.submissions.update(any<Submission>()) }
         }
+
+        @Test
+        fun `should save an invalid submission with the node description and without artifacts`() {
+            val repository = RepositoryFixture()
+
+            repository.persistence.saveResult(repository.initial, CheckedResult.InvalidSubmission("No main"))
+
+            val status = assertInstanceOf(SubmissionStatus.Graded::class.java, repository.current.get().data.status)
+            assertEquals(GradingResult.InvalidSubmission("No main"), status.grade)
+            assertEquals(0, repository.savedVerdicts.size)
+            assertEquals(0, repository.savedLogs.size)
+        }
     }
 
     private fun editedTask() = task {

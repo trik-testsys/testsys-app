@@ -904,6 +904,17 @@ internal class GradingCoordinatorTests {
         }
 
         @Test
+        fun `should count an invalid submission without technical failures`() {
+            startRun()
+
+            node.results[0](errorResult(kind = 6))
+            queue.drain()
+
+            assertEquals(1.0, checks("invalid_submission"))
+            assertEquals(0.0, allFailures())
+        }
+
+        @Test
         fun `should count every failed save attempt`() {
             startRun()
             every { repository.submissions.update(any<Submission>()) } answers { throw IllegalStateException("Storage unavailable") }

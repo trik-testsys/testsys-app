@@ -66,6 +66,7 @@ enum class GradingResultJpaEnum {
     SUCCESS,
     GRADING_ERROR,
     TIMEOUT,
+    INVALID_SUBMISSION,
 }
 
 /**
@@ -107,8 +108,8 @@ class LogsJpaEntity(
 
 /**
  * JPA entity of [tech.testsys.domain.model.task.Submission] with status, grading result and kind flattened onto it.
- * Nullability encodes the active variant: [gradingResult] is set iff [status] is `GRADED`, [gradingVerdictId] iff the
- * result is `SUCCESS`, [gradingErrorDescription] iff it is `GRADING_ERROR`, [gradingContestId] iff [kind] is `GRADING`.
+ * Nullability encodes the active variant: [gradingResult] iff `GRADED`, [gradingVerdictId] iff `SUCCESS`,
+ * [gradingErrorDescription] iff `GRADING_ERROR` or `INVALID_SUBMISSION`, [gradingContestId] iff [kind] is `GRADING`.
  *
  * @property authorId id of the user who submitted the solution.
  * @property solutionId id of the submitted solution.
@@ -118,7 +119,7 @@ class LogsJpaEntity(
  * @property status lifecycle state of the submission.
  * @property gradingResult outcome of grading, or `null` while not graded.
  * @property gradingVerdictId id of the verdict of a successful grading, or `null` otherwise.
- * @property gradingErrorDescription description of a grading error, or `null` otherwise.
+ * @property gradingErrorDescription description of a grading error or of an invalid submission, or `null` otherwise.
  * @property kind purpose of the submission.
  * @property gradingContestId id of the contest a grading submission belongs to, or `null` otherwise.
  * @since 1.0.0-beta.1

@@ -5,17 +5,17 @@ import tech.testsys.web.app.service.study.SubmissionVo
 import tech.testsys.web.app.service.study.toVo
 
 /**
- * Successful submission and its current results for the judge's table.
+ * Graded submission and its current results for the judge's table.
  *
- * @property verdict the automatic verdict.
+ * @property verdict the automatic verdict, or `null` if the solution does not start in TRIK Studio.
  * @property author the submission author.
  * @property submission the submission data.
  * @property lastJudgment the latest judgment, or `null` without judgments.
- * @property finalScore the latest judgment score or the automatic total.
+ * @property finalScore the latest judgment score, otherwise the automatic total or 0 without a verdict.
  * @since 1.0.0-beta.1
  */
 data class JudgeResultVo(
-    val verdict: VerdictVo,
+    val verdict: VerdictVo?,
     val author: NamedUserVo,
     val submission: SubmissionVo,
     val lastJudgment: JudgmentOrderVo?,
@@ -23,7 +23,7 @@ data class JudgeResultVo(
 )
 
 internal fun JudgeOperations.JudgeResult.toVo(): JudgeResultVo = JudgeResultVo(
-    verdict = verdict.toVo(),
+    verdict = verdict?.toVo(),
     author = author.toNamedVo(),
     submission = submission.toVo(),
     lastJudgment = lastJudgment?.toVo(),

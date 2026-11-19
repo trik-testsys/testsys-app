@@ -35,10 +35,10 @@ import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.task.SubmissionDataBuilder
+import tech.testsys.domain.contract.persistence.JudgeSubmissionFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
-import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
@@ -136,11 +136,6 @@ class JudgeOperationsTests {
         recordingRepository = recordingRepository,
     )
     private val judge = testJudge { data = judgeData {} }
-    private val studentAuthor = testMultipleRoleUser {
-        name = "Student"
-        roles { student { data = studentData {} } }
-    }
-    private val participantAuthor = testParticipant { name = "Participant" }
 
     /** Verdict 4 of submission 2: test 11 scored 75 with logs 31 and recording 41, then test 10 scored 25 with logs 30. */
     private val gradedVerdict = verdict {
@@ -186,9 +181,9 @@ class JudgeOperationsTests {
                 val earlier = testOrder(20, judge.id.value, Instant.EPOCH, 90)
                 val latest = testOrder(21, judge.id.value, Instant.EPOCH, 95)
                 arrangeAuthor(studentAuthor)
-                every { submissionRepository.load(any<LazyEntityList<SubmissionId, Submission>>()) } returns listOf(submission)
-                every { repository.findAvailableToJudge(pagination, VerdictFilter()) } returns
-                    Page(content = listOf(gradedVerdict), pagination = pagination, totalElements = 1)
+                arrangeVerdicts(gradedVerdict)
+                every { submissionRepository.findAvailableToJudge(pagination, JudgeSubmissionFilter()) } returns
+                    Page(content = listOf(submission), pagination = pagination, totalElements = 1)
                 every { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) } returns
                     listOf(latest, earlier)
 
@@ -196,51 +191,84 @@ class JudgeOperationsTests {
 
                 assertSame(latest, result.lastJudgment)
                 assertSame(submission, result.submission)
+                assertSame(gradedVerdict, result.verdict)
                 assertEquals(95L, result.finalScore)
                 verify(exactly = 1) { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) }
             }
 
             @Test
-            fun `should forward all supplied verdict filters unchanged`() {
+            fun `should return an invalid submission without a verdict and with the final score 0`() {
+                val pagination = Pagination(page = 0, size = 10)
+                val submission = invalidSubmission(studentAuthor.id)
+                arrangeAuthor(studentAuthor)
+                every { submissionRepository.findAvailableToJudge(pagination, JudgeSubmissionFilter()) } returns
+                    Page(content = listOf(submission), pagination = pagination, totalElements = 1)
+
+                val result = operations.viewResults(judge, pagination).getOrThrow().content.single()
+
+                assertEquals(
+                    JudgeOperations.JudgeResult(
+                        verdict = null,
+                        author = studentAuthor,
+                        submission = submission,
+                        lastJudgment = null,
+                        finalScore = 0,
+                    ),
+                    result,
+                )
+                verify { repository wasNot Called }
+            }
+
+            @Test
+            fun `should take the last judgment score as the final score of an invalid submission`() {
+                val pagination = Pagination(page = 0, size = 10)
+                val submission = invalidSubmission(participantAuthor.id) { judgmentOrders(listOf(20)) }
+                val order = testOrder(20, judge.id.value, Instant.EPOCH, 40)
+                arrangeAuthor(participantAuthor)
+                every { submissionRepository.findAvailableToJudge(pagination, JudgeSubmissionFilter()) } returns
+                    Page(content = listOf(submission), pagination = pagination, totalElements = 1)
+                every { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) } returns listOf(order)
+
+                val result = operations.viewResults(judge, pagination).getOrThrow().content.single()
+
+                assertSame(order, result.lastJudgment)
+                assertEquals(null, result.verdict)
+                assertEquals(40L, result.finalScore)
+            }
+
+            @Test
+            fun `should forward all supplied submission filters unchanged`() {
                 val pagination = Pagination(page = 1, size = 2)
-                val filter = VerdictFilter(
+                val filter = JudgeSubmissionFilter(
                     authorId = MultipleRoleUserId(5),
                     submissionId = SubmissionId(6),
                     classId = ClassId(7),
                     competitionId = CompetitionId(8),
                 )
-                val page = Page<Verdict>(content = emptyList(), pagination = pagination, totalElements = 0)
-                every { repository.findAvailableToJudge(refEq(pagination), refEq(filter)) } returns page
+                val page = Page<Submission>(content = emptyList(), pagination = pagination, totalElements = 0)
+                every { submissionRepository.findAvailableToJudge(refEq(pagination), refEq(filter)) } returns page
 
                 val result = operations.viewResults(user = judge, pagination = pagination, filter = filter).getOrThrow()
 
-                assertEquals(
-                    Page<JudgeOperations.JudgeResult>(
-                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
-                        pagination = page.pagination,
-                        totalElements = page.totalElements,
-                    ),
-                    result,
-                )
+                assertEquals(Page<JudgeOperations.JudgeResult>(emptyList(), page.pagination, page.totalElements), result)
             }
 
             @Test
             fun `should query with an empty filter and return the found page if no filters are given`() {
                 val pagination = Pagination(page = 1, size = 2)
                 val responsePagination = pagination.copy(sort = Sort(listOf(Sort.Order("storageOrder"))))
-                val page = Page(
-                    content = listOf(testVerdict(10), testVerdict(20)),
-                    pagination = responsePagination,
-                    totalElements = 5,
-                )
+                val verdicts = listOf(testVerdict(10), testVerdict(20))
+                val submissions = verdicts.map { graded -> submissionWithVerdict(graded) }
+                val page = Page(content = submissions, pagination = responsePagination, totalElements = 5)
                 arrangeAuthor(studentAuthor)
-                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns page
+                arrangeVerdicts(*verdicts.toTypedArray())
+                every { submissionRepository.findAvailableToJudge(refEq(pagination), JudgeSubmissionFilter()) } returns page
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
                 assertEquals(
-                    Page<JudgeOperations.JudgeResult>(
-                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
+                    Page(
+                        content = submissions.zip(verdicts) { submission, verdict -> expectedResult(submission, verdict, studentAuthor) },
                         pagination = page.pagination,
                         totalElements = page.totalElements,
                     ),
@@ -252,130 +280,74 @@ class JudgeOperationsTests {
             @MethodSource("tech.testsys.operation.user.JudgeOperationsTests#authorIds")
             fun `should forward the author filter of a student or a participant unchanged`(authorId: UserId) {
                 val pagination = Pagination(page = 3, size = 4)
-                val page = Page<Verdict>(content = emptyList(), pagination = pagination, totalElements = 2)
-                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter(authorId = authorId)) } returns page
+                val page = Page<Submission>(content = emptyList(), pagination = pagination, totalElements = 2)
+                every {
+                    submissionRepository.findAvailableToJudge(refEq(pagination), JudgeSubmissionFilter(authorId = authorId))
+                } returns page
 
                 val result = operations.viewResults(
                     user = judge,
                     pagination = pagination,
-                    filter = VerdictFilter(authorId = authorId),
+                    filter = JudgeSubmissionFilter(authorId = authorId),
                 ).getOrThrow()
 
-                assertEquals(
-                    Page<JudgeOperations.JudgeResult>(
-                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
-                        pagination = page.pagination,
-                        totalElements = page.totalElements,
-                    ),
-                    result,
-                )
+                assertEquals(Page<JudgeOperations.JudgeResult>(emptyList(), page.pagination, page.totalElements), result)
             }
 
             @Test
             fun `should forward the requested sorting to the repository unchanged`() {
                 val pagination =
                     Pagination(page = 0, size = 10, sort = Sort(listOf(Sort.Order("storageField", Sort.Direction.DESC))))
-                val page = Page<Verdict>(content = emptyList(), pagination = pagination, totalElements = 0)
-                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns page
+                val page = Page<Submission>(content = emptyList(), pagination = pagination, totalElements = 0)
+                every { submissionRepository.findAvailableToJudge(refEq(pagination), JudgeSubmissionFilter()) } returns page
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
-                assertEquals(
-                    Page<JudgeOperations.JudgeResult>(
-                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
-                        pagination = page.pagination,
-                        totalElements = page.totalElements,
-                    ),
-                    result,
-                )
+                assertEquals(Page<JudgeOperations.JudgeResult>(emptyList(), page.pagination, page.totalElements), result)
+                verify { repository wasNot Called }
             }
 
-            @Test
-            fun `should return an empty page without a domain error if no verdicts match`() {
+            @ParameterizedTest
+            @MethodSource("tech.testsys.operation.user.JudgeOperationsTests#authors")
+            fun `should return the student or participant author of each submission`(author: User<*>) {
                 val pagination = Pagination(page = 0, size = 10)
-                val page = Page<Verdict>(content = emptyList(), pagination = pagination, totalElements = 0)
-                every { repository.findAvailableToJudge(page.pagination, VerdictFilter()) } returns page
+                every { submissionRepository.findAvailableToJudge(refEq(pagination), JudgeSubmissionFilter()) } returns
+                    Page(content = listOf(gradedSubmission(author.id)), pagination = pagination, totalElements = 1)
+                arrangeAuthor(author)
+                arrangeVerdicts(gradedVerdict)
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
-                assertEquals(
-                    Page<JudgeOperations.JudgeResult>(
-                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
-                        pagination = page.pagination,
-                        totalElements = page.totalElements,
-                    ),
-                    result,
-                )
+                assertSame(author, result.content.single().author)
             }
 
             @Test
-            fun `should return the student author of the submission of each verdict`() {
-                val pagination = Pagination(page = 0, size = 10)
-                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns
-                    Page(content = listOf(testVerdict(10)), pagination = pagination, totalElements = 1)
-                arrangeAuthor(studentAuthor)
-
-                val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
-
-                assertSame(studentAuthor, result.content.single().author)
-            }
-
-            @Test
-            fun `should return the participant author of the submission of each verdict`() {
-                val pagination = Pagination(page = 0, size = 10)
-                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns
-                    Page(content = listOf(testVerdict(10)), pagination = pagination, totalElements = 1)
-                arrangeAuthor(participantAuthor)
-
-                val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
-
-                assertSame(participantAuthor, result.content.single().author)
-            }
-
-            @Test
-            fun `should return the page with scores and lazy references unchanged`() {
+            fun `should load the verdicts of the page in one call and keep scores and lazy references unchanged`() {
                 val pagination = Pagination(page = 1, size = 2)
                 val responsePagination = pagination.copy(sort = Sort(listOf(Sort.Order("storageOrder"))))
                 val first = testVerdict(10)
                 val second = testVerdict(20)
-                val page = Page(content = listOf(first, second), pagination = responsePagination, totalElements = 5)
-                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns page
+                val submissions = listOf(first, second).map { graded -> submissionWithVerdict(graded) } +
+                    invalidSubmission(studentAuthor.id)
+                val page = Page(content = submissions, pagination = responsePagination, totalElements = 5)
+                every { submissionRepository.findAvailableToJudge(refEq(pagination), JudgeSubmissionFilter()) } returns page
                 arrangeAuthor(studentAuthor)
+                arrangeVerdicts(first, second)
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
-                assertEquals(listOf(first, second), result.content.map { (verdict, _) -> verdict })
-                assertSame(first, result.content[0].verdict)
-                assertEquals(listOf(75, 0), result.content[0].verdict.data.testVerdicts.map { it.score.value })
-                assertEquals(listOf(30L, 31L), result.content[0].verdict.data.testVerdicts.map { it.logs.id.value })
-                assertEquals(40L, result.content[0].verdict.data.testVerdicts[0].recording?.id?.value)
-                assertEquals(null, result.content[0].verdict.data.testVerdicts[1].recording)
+                assertEquals(listOf(first, second, null), result.content.map { row -> row.verdict })
+                val verdict = requireNotNull(result.content[0].verdict)
+                assertEquals(listOf(75, 0), verdict.data.testVerdicts.map { it.score.value })
+                assertEquals(listOf(30L, 31L), verdict.data.testVerdicts.map { it.logs.id.value })
+                assertEquals(40L, verdict.data.testVerdicts[0].recording?.id?.value)
+                assertEquals(null, verdict.data.testVerdicts[1].recording)
+                assertEquals(listOf(75L, 75L, 0L), result.content.map { row -> row.finalScore })
                 assertEquals(responsePagination, result.pagination)
                 assertEquals(3, result.totalPages)
                 assertEquals(true, result.hasNext)
-                verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) }
-            }
-
-            @Test
-            fun `should pass a participant user id and preserve the requested pagination`() {
-                val authorId = SingleRoleUserId(9)
-                val pagination = Pagination(page = 0, size = 1)
-                val verdict = testVerdict(1)
-                val page = Page(content = listOf(verdict), pagination = pagination, totalElements = 1)
-                every { repository.findAvailableToJudge(pagination, VerdictFilter(authorId = authorId)) } returns page
-                arrangeAuthor(participantAuthor)
-
-                val result = operations.viewResults(
-                    user = judge,
-                    pagination = pagination,
-                    filter = VerdictFilter(authorId = authorId),
-                ).getOrThrow()
-
-                assertEquals(
-                    Page(content = listOf(expectedResult(verdict, participantAuthor)), pagination = pagination, totalElements = 1),
-                    result,
-                )
-                verify(exactly = 1) { repository.findAvailableToJudge(pagination, VerdictFilter(authorId = authorId)) }
+                verify(exactly = 1) { submissionRepository.findAvailableToJudge(refEq(pagination), JudgeSubmissionFilter()) }
+                verify(exactly = 1) { repository.load(any<LazyEntityList<VerdictId, Verdict>>()) }
             }
         }
 
@@ -388,7 +360,7 @@ class JudgeOperationsTests {
 
                 assertRaises(MissedJudgeRoleError) { operations.viewResults(user = user, pagination = Pagination(page = 0, size = 10)) }
 
-                verify { repository wasNot Called }
+                verify { allRepositories() wasNot Called }
             }
 
             @Test
@@ -407,10 +379,10 @@ class JudgeOperationsTests {
             @Test
             fun `should change no data when viewing results`() {
                 val pagination = Pagination(page = 0, size = 10)
-                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns
-                    Page(content = listOf(testVerdict(10)), pagination = pagination, totalElements = 1)
-
+                every { submissionRepository.findAvailableToJudge(refEq(pagination), JudgeSubmissionFilter()) } returns
+                    Page(content = listOf(gradedSubmission(studentAuthor.id)), pagination = pagination, totalElements = 1)
                 arrangeAuthor(studentAuthor)
+                arrangeVerdicts(gradedVerdict)
 
                 operations.viewResults(user = judge, pagination = pagination)
 
@@ -433,7 +405,7 @@ class JudgeOperationsTests {
             fun `should propagate the original technical exception`() {
                 val pagination = Pagination(page = 0, size = 10)
                 val failure = IllegalStateException("Storage unavailable")
-                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } throws failure
+                every { submissionRepository.findAvailableToJudge(refEq(pagination), JudgeSubmissionFilter()) } throws failure
 
                 val thrown = assertThrows(IllegalStateException::class.java) {
                     operations.viewResults(user = judge, pagination = pagination)
@@ -443,18 +415,26 @@ class JudgeOperationsTests {
             }
         }
 
-        private fun expectedResult(verdict: Verdict, author: User<*>) = JudgeOperations.JudgeResult(
+        private fun expectedResult(submission: Submission, verdict: Verdict, author: User<*>) = JudgeOperations.JudgeResult(
             verdict = verdict,
             author = author,
-            submission = gradedSubmission(author.id),
+            submission = submission,
             lastJudgment = null,
             finalScore = verdict.data.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() },
         )
 
         private fun arrangeAuthor(author: User<*>) {
-            every { submissionRepository.load(any<LazyEntityList<SubmissionId, Submission>>()) } returns listOf(gradedSubmission(author.id))
             every { userRepository.findByIds(any()) } returns listOfNotNull(author as? MultipleRoleUser)
             every { participantRepository.findByIds(any()) } returns listOfNotNull(author as? Participant)
+        }
+
+        private fun submissionWithVerdict(graded: Verdict): Submission {
+            val verdictId = graded.id.value
+            return gradedSubmission(studentAuthor.id) { status.graded { status.success { verdict(verdictId) } } }
+        }
+
+        private fun arrangeVerdicts(vararg verdicts: Verdict) {
+            every { repository.load(any<LazyEntityList<VerdictId, Verdict>>()) } returns verdicts.toList()
         }
     }
 
@@ -597,6 +577,18 @@ class JudgeOperationsTests {
                 assertEquals(submissionId, savedData.captured.submission.id)
                 assertEquals(Score(125), savedData.captured.score)
                 assertEquals("  Corrected after manual review\n", savedData.captured.reason)
+            }
+
+            @Test
+            fun `should save a judgment order for an invalid submission`() {
+                arrangeStudentSubmission(testSubmission { status.graded { status.invalidSubmission { description = "No main" } } })
+                val persisted = testJudgmentOrder()
+                every { judgmentOrderRepository.save(any<JudgmentOrderData>()) } returns persisted
+
+                val result = operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+                    .getOrThrow()
+
+                assertSame(persisted, result)
             }
 
             @Test
@@ -991,6 +983,28 @@ class JudgeOperationsTests {
             }
 
             @Test
+            fun `should return no verdict and the final score 0 for an invalid submission without judgment orders`() {
+                arrangeDetails(invalidSubmission(studentAuthor.id))
+
+                val result = operations.viewSolution(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertEquals(null, result.verdict)
+                assertEquals(emptyList<Polygon>(), result.tests)
+                assertEquals(0L, result.finalScore)
+            }
+
+            @Test
+            fun `should take the final score of an invalid submission from the last judgment order`() {
+                arrangeJudgmentOrders()
+                arrangeSubmission(invalidSubmission(studentAuthor.id) { judgmentOrders(listOf(7, 6, 8)) })
+
+                val result = operations.viewSolution(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertEquals(null, result.verdict)
+                assertEquals(90L, result.finalScore)
+            }
+
+            @Test
             fun `should return judgment orders in the order of issue with their judges`() {
                 val (firstJudge, secondJudge) = arrangeJudgmentOrders()
 
@@ -1311,6 +1325,12 @@ class JudgeOperationsTests {
         }
     }
 
+    private fun invalidSubmission(authorId: UserId, builder: SubmissionDataBuilder.() -> Unit = {}): Submission =
+        gradedSubmission(authorId) {
+            status.graded { status.invalidSubmission { description = "No main" } }
+            builder()
+        }
+
     private fun testSolution(): Solution = solution {
         id = 3
         createdAt = Instant.MIN
@@ -1387,6 +1407,14 @@ class JudgeOperationsTests {
 
     companion object {
         private val SUBMISSION_ID = SubmissionId(2)
+        private val studentAuthor = testMultipleRoleUser {
+            name = "Student"
+            roles { student { data = studentData {} } }
+        }
+        private val participantAuthor = testParticipant { name = "Participant" }
+
+        @JvmStatic
+        fun authors(): List<User<*>> = listOf(studentAuthor, participantAuthor)
 
         @JvmStatic
         fun authorIds(): List<UserId> = listOf(MultipleRoleUserId(7), SingleRoleUserId(9))

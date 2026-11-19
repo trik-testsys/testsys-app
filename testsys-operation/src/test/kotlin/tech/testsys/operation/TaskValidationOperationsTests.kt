@@ -630,6 +630,7 @@ class TaskValidationOperationsTests {
         fun failedRuns(): List<Submission> = listOf(
             run(101, "v1") { status.graded { status.error { description = "Grading failure" } } },
             run(101, "v1") { status.graded { status.timeout() } },
+            run(101, "v1") { status.graded { status.invalidSubmission { description = "Does not start" } } },
         )
 
         @JvmStatic

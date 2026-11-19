@@ -61,7 +61,7 @@ Prometheus получает имена с подчёркиваниями вме�
 | `testsys.technical.failures` | Счётчик | `source`, `stage` — из таблицы выше; `exception` — простое имя класса или `none` |
 | `testsys.operation.errors` | Счётчик | `operation` — `<Сервис>.<метод>` прокси-сервиса; `kind` — `not_found`, `access_denied`, `missing_role`, `resource_access` или `other`; `error` — простое имя класса ошибки операции |
 | `testsys.transaction.retries` | Счётчик | Без меток |
-| `testsys.grading.checks` | Счётчик | `result` — `verdict`, `failure` или `timeout` |
+| `testsys.grading.checks` | Счётчик | `result` — `verdict`, `failure`, `timeout` или `invalid_submission` |
 | `testsys.grading.queue` | Значение | `state` — `preparing`, `waiting`, `grading` или `saving` |
 | `testsys.grading.nodes` | Значение | `participation` — `active` или `inactive`; `status` — `unknown`, `available` или `unavailable` |
 | `testsys.grading.nodes.queued` | Значение | Без меток |

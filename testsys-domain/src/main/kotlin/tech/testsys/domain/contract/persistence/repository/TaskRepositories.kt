@@ -3,12 +3,12 @@ package tech.testsys.domain.contract.persistence.repository
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.ContestTaskResult
+import tech.testsys.domain.contract.persistence.JudgeSubmissionFilter
 import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.TaskFilter
-import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.Contest
@@ -255,7 +255,8 @@ interface LogsRepository : EntityRepository<LogsData, LogsId, Logs>
 interface RecordingRepository : EntityRepository<RecordingData, RecordingId, Recording>
 
 /**
- * Persistence port for [Regrade] entities. A regrade is fixed on creation, so `update` is not supported.
+ * Persistence port for [Regrade] entities. The task, tests and submissions of a regrade are fixed on creation and only
+ * [stopPrevious] changes its stop moment, so `update` is not supported.
  *
  * @since 1.0.0-beta.1
  */
@@ -272,8 +273,8 @@ interface RegradeRepository : EntityRepository<RegradeData, RegradeId, Regrade> 
 
     /**
      * Synchronously counts, for each of [regradeIds], its submissions that have a verdict created not earlier than the
-     * regrade with test verdicts exactly on the regrade's tests, on each of them and on no other; a submission with
-     * several such verdicts counts once. Storage exceptions propagate.
+     * regrade and earlier than the next regrade of the same task, with test verdicts exactly on the regrade's tests, on
+     * each of them and on no other; a submission with several such verdicts counts once. Storage exceptions propagate.
      *
      * @param regradeIds the regrades to count; an empty set returns an empty map without querying storage.
      * @return the count of graded submissions by regrade; a regrade without graded submissions maps to `0`, a missing
@@ -281,6 +282,16 @@ interface RegradeRepository : EntityRepository<RegradeData, RegradeId, Regrade> 
      * @since 1.0.0-beta.1
      */
     fun countGraded(regradeIds: Set<RegradeId>): Map<RegradeId, Int>
+
+    /**
+     * Synchronously stops the regrade of the task right before [regrade] by creation time and id at the moment [regrade]
+     * was created, incrementing its version, if it is not stopped and has a submission queued, in progress or unchanged
+     * since it was created; earlier regrades are not changed, storage exceptions propagate.
+     *
+     * @param regrade the saved new regrade.
+     * @since 1.0.0-beta.5
+     */
+    fun stopPrevious(regrade: Regrade)
 }
 
 /**
@@ -388,10 +399,22 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @param authorIds the authors to include; an empty set yields an empty list.
      * @param taskIds the tasks to include; an empty set yields an empty list.
      * @return results of author and task pairs having submissions, ordered by author id and then task id; a submission
-     * result is the score of its latest judgment order, otherwise the total of its verdict.
+     * result is the score of its latest judgment order, otherwise the total of its verdict or 0 for an invalid submission.
      * @since 1.0.0-beta.1
      */
     fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult>
+
+    /**
+     * Synchronously finds grading submissions graded successfully or as invalid whose authors currently hold a student
+     * or participant role. Repeated calls reflect current data without changing it or loading file contents;
+     * technical exceptions propagate.
+     *
+     * @param pagination the requested page and ordering.
+     * @param filter conjunctive author, submission and current group conditions applied before paging and counting.
+     * @return submissions with lazy references, requested pagination and exact total; unmatched filters or pages are empty.
+     * @since 1.0.0-beta.5
+     */
+    fun findAvailableToJudge(pagination: Pagination, filter: JudgeSubmissionFilter = JudgeSubmissionFilter()): Page<Submission>
 
     /**
      * Synchronously counts grading submissions of [contestId] per task in any grading state, excluding author solution
@@ -431,19 +454,7 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
  *
  * @since 1.0.0-beta.1
  */
-interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict> {
-
-    /**
-     * Synchronously finds current successful grading verdicts whose authors currently hold a student or participant role.
-     * Repeated calls reflect current data without changing it or loading file contents; technical exceptions propagate.
-     *
-     * @param pagination the requested page and ordering.
-     * @param filter conjunctive author, submission and current group conditions applied before paging and counting.
-     * @return verdicts with lazy references, requested pagination and exact total; unmatched filters or pages are empty.
-     * @since 1.0.0-beta.1
-     */
-    fun findAvailableToJudge(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<Verdict>
-}
+interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict>
 
 /**
  * Persistence port for [Task] entities.

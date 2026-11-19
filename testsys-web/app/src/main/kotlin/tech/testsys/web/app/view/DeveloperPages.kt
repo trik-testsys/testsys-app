@@ -24,6 +24,7 @@ import tech.testsys.infra.localization.PageDeveloper.TaskStateState
 import tech.testsys.infra.localization.PageDeveloper.TestingSubmissionsStatusStatus
 import tech.testsys.operation.error.OperationError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
+import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotTestedError
 import tech.testsys.operation.error.TaskTestingNoDeveloperSolutionsError
 import tech.testsys.operation.error.TaskTestingNoExerciseForLanguageError
@@ -214,7 +215,7 @@ internal fun diagnosticText(report: DiagnosticReport): String {
     }
 }
 
-/** Returns why testing or committing a task was refused, or `null` for a refusal the common handler shows. */
+/** Returns why testing, committing or regrading a task was refused, or `null` for a refusal the common handler shows. */
 internal fun testingRefusalOf(error: OperationError): String? {
     val texts = currentLocalization().pageDeveloper
     return when (error) {
@@ -232,6 +233,7 @@ internal fun testingRefusalOf(error: OperationError): String? {
         )
         is TaskTrikStudioVersionNotSupportedError -> texts.refusalVersionNotSupported(version = error.trikStudioVersion.version)
         is TaskNotTestedError -> texts.refusalNotTested()
+        is TaskNotCommittedError -> texts.refusalNotCommitted()
         else -> null
     }
 }

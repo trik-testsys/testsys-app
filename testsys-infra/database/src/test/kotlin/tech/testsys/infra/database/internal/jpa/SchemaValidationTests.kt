@@ -40,5 +40,6 @@ class SchemaValidationTests : DatabaseIntegrationTests() {
         val definition = definitions.single().orEmpty()
         assertTrue(definition.contains("(author_id, grading_contest_id)"), definition)
         assertTrue(definition.contains("WHERE"), definition)
+        assertTrue(definition.contains("'INVALID_SUBMISSION'"), definition)
     }
 }

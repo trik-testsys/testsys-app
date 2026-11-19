@@ -128,6 +128,9 @@ internal class GradingPersistenceService(
                 }
                 is CheckedResult.Failure -> current.withData { status.graded { status.error { description = result.description } } }
                 CheckedResult.Timeout -> current.withData { status.graded { status.timeout() } }
+                is CheckedResult.InvalidSubmission -> current.withData {
+                    status.graded { status.invalidSubmission { description = result.description } }
+                }
             }
             submissions.update(updated)
         }

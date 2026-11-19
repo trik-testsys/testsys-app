@@ -7,24 +7,32 @@ import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.model.task.Submission
 
 /**
- * [Grader] passing a submission to [delegate] only after the current transaction commits, so the grader never sees
- * a submission that is not saved; inside a transaction [sendToGrade] answers [GradingAdmission.Accepted] without
- * waiting for the delegate. Outside a transaction and for other methods it calls [delegate] at once.
+ * [Grader] passing a submission to [delegate] by [sendToGrade] or [restartGrading] only after the current transaction
+ * commits; inside a transaction [sendToGrade] answers [GradingAdmission.Accepted] at once. Otherwise it calls [delegate].
  *
  * @since 1.0.0-beta.1
  */
 class AfterCommitGrader(private val delegate: Grader) : Grader by delegate {
     override fun sendToGrade(submission: Submission): GradingAdmission {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) return delegate.sendToGrade(submission)
+        if (!afterCommit { delegate.sendToGrade(submission) }) return delegate.sendToGrade(submission)
+
+        return GradingAdmission.Accepted
+    }
+
+    override fun restartGrading(submission: Submission) {
+        if (!afterCommit { delegate.restartGrading(submission) }) delegate.restartGrading(submission)
+    }
+
+    /** Registers [action] to run after the current transaction commits; returns `false` outside a transaction. */
+    private fun afterCommit(action: () -> Unit): Boolean {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) return false
 
         TransactionSynchronizationManager.registerSynchronization(
             object : TransactionSynchronization {
-                override fun afterCommit() {
-                    delegate.sendToGrade(submission)
-                }
+                override fun afterCommit() = action()
             },
         )
 
-        return GradingAdmission.Accepted
+        return true
     }
 }

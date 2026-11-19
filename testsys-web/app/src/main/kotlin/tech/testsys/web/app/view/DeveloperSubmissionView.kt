@@ -102,6 +102,7 @@ class DeveloperSubmissionView(
                     val reason = when (val grade = (submission.status as? SubmissionStatusVo.Graded)?.grade) {
                         is GradingResultVo.GradingError -> grade.description
                         GradingResultVo.Timeout -> texts.submissionTimeout()
+                        is GradingResultVo.InvalidSubmission -> grade.description
                         is GradingResultVo.Success, null -> null
                     }
 
@@ -179,6 +180,7 @@ private fun ownStatusOf(current: TaskValidationSubmissionVo, isExpectedScore: Bo
                 TestingSubmissionsStatusStatus.SCORE_MISMATCH to Tone.Danger
             }
             is GradingResultVo.GradingError, GradingResultVo.Timeout -> TestingSubmissionsStatusStatus.GRADING_FAILED to Tone.Danger
+            is GradingResultVo.InvalidSubmission -> TestingSubmissionsStatusStatus.INVALID_SUBMISSION to Tone.Danger
         }
         // A request stopped by a technical failure no longer waits for its ungraded submissions.
         SubmissionStatusVo.Queued, SubmissionStatusVo.InProgress ->

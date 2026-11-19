@@ -1684,9 +1684,9 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should use the accusative plural submission term in submissions empty hint`() {
+        fun `should name both listed outcomes in submissions empty hint`() {
             assertEquals(
-                "Здесь появятся успешно проверенные Посылки Учеников и Участников.",
+                "Здесь появятся Посылки Учеников и Участников, получившие Вердикт или статус «Решение не запускается».",
                 l.pageJudge.submissionsEmptyHint(),
             )
         }
@@ -1728,6 +1728,7 @@ class LocalizationTests {
             "SUCCESS,       Проверена",
             "GRADING_ERROR, Ошибка проверки",
             "TIMEOUT,       Превышено время проверки",
+            "INVALID_SUBMISSION, Решение не запускается",
             "OTHER,         Неизвестный статус",
         )
         fun `should name the grading status in solution status`(status: SolutionStatusStatus, expected: String) {
@@ -1832,6 +1833,15 @@ class LocalizationTests {
         @Test
         fun `should use the dative plural polygon term in solution verdict empty hint`() {
             assertEquals("Баллы по Полигонам появятся после успешной проверки.", l.pageJudge.solutionVerdictEmptyHint())
+        }
+
+        @Test
+        fun `should explain the zero final score in solution verdict invalid submission hint`() {
+            assertEquals(
+                "Решение не запускается в TRIK Studio, поэтому баллов по Полигонам нет. " +
+                    "Итоговый балл — 0, пока не выставлен Судейский вердикт.",
+                l.pageJudge.solutionVerdictInvalidSubmissionHint(),
+            )
         }
 
         @Test
@@ -2107,6 +2117,7 @@ class LocalizationTests {
             "SUCCESS,       Проверено",
             "GRADING_ERROR, Ошибка проверки",
             "TIMEOUT,       Превышено время проверки",
+            "INVALID_SUBMISSION, Решение не запускается",
             "OTHER,         Неизвестный статус",
         )
         fun `should name the grading status in submission status`(status: PageStudent.SubmissionStatusStatus, expected: String) {
@@ -2503,6 +2514,7 @@ class LocalizationTests {
             "SUCCESS,       Проверено",
             "GRADING_ERROR, Ошибка проверки",
             "TIMEOUT,       Превышено время проверки",
+            "INVALID_SUBMISSION, Решение не запускается",
             "OTHER,         Неизвестный статус",
         )
         fun `should name the grading status in submission status`(status: PageParticipant.SubmissionStatusStatus, expected: String) {
@@ -4413,6 +4425,14 @@ class LocalizationTests {
             assertEquals("Рабочая версия Задачи не прошла тестирование.", l.pageDeveloper.refusalNotTested())
         }
 
+        @Test
+        fun `should decline the task term in refusal not committed`() {
+            assertEquals(
+                "У Задачи нет зафиксированной версии. Сначала протестируйте и зафиксируйте Задачу.",
+                l.pageDeveloper.refusalNotCommitted(),
+            )
+        }
+
         @ParameterizedTest
         @CsvSource(
             "INFO,    Сведения · нет атрибута «id»",
@@ -5057,11 +5077,12 @@ class LocalizationTests {
         @Test
         fun `should decline the regrade submission polygon and verdict terms in task regrades guide`() {
             assertEquals(
-                "Перепроверка запускается, если при фиксации выбрана повторная проверка Посылок и набор Полигонов " +
-                    "изменился. Прогресс показывает, сколько Посылок Перепроверки получило Вердикт по новому набору " +
-                    "Полигонов после запуска, не считая проверок с ошибкой или тайм-аутом. Посылка, которая в момент " +
-                    "фиксации уже проверялась, повторно не отправляется, поэтому прогресс может не дойти до конца. " +
-                    "Чтобы обновить его, откройте страницу заново.",
+                "Перепроверка запускается вручную действием этого блока или при фиксации, если выбрана повторная " +
+                    "проверка Посылок и набор Полигонов изменился. Прогресс показывает, сколько Посылок Перепроверки " +
+                    "получило Вердикт на её Полигонах после запуска, не считая проверок с ошибкой, тайм-аутом или " +
+                    "статусом «Решение не запускается». " +
+                    "Новая Перепроверка останавливает незавершённую, и та отмечается как остановленная. Чтобы " +
+                    "обновить прогресс, откройте страницу заново.",
                 l.pageDeveloper.taskRegradesGuide(),
             )
         }
@@ -5094,10 +5115,77 @@ class LocalizationTests {
         @Test
         fun `should decline the regrade submission and polygon terms in task regrades empty hint`() {
             assertEquals(
-                "Перепроверка появится после фиксации, при которой выбрана повторная проверка Посылок и изменился " +
-                    "набор Полигонов.",
+                "Перепроверка появится после запуска действием этого блока или после фиксации, при которой выбрана " +
+                    "повторная проверка Посылок и изменился набор Полигонов.",
                 l.pageDeveloper.taskRegradesEmptyHint(),
             )
+        }
+
+        @Test
+        fun `should agree with the feminine regrade term in task regrades stopped`() {
+            assertEquals("Остановлена", l.pageDeveloper.taskRegradesStopped())
+        }
+
+        @Test
+        fun `should use the accusative plural submission term in task regrades run`() {
+            assertEquals("Перепроверить Посылки", l.pageDeveloper.taskRegradesRun())
+        }
+
+        @Test
+        fun `should use the accusative plural submission term in task regrades confirm title`() {
+            assertEquals("Перепроверить все Посылки?", l.pageDeveloper.taskRegradesConfirmTitle())
+        }
+
+        @Test
+        fun `should decline the submission task contest polygon and regrade terms in task regrades confirm text`() {
+            assertEquals(
+                "Все Посылки по этой Задаче в Турах снова проверят на Полигонах последней зафиксированной версии. " +
+                    "Рабочая версия не используется. Незавершённая Перепроверка будет остановлена, а уже идущие " +
+                    "проверки начнутся заново.",
+                l.pageDeveloper.taskRegradesConfirmText(),
+            )
+        }
+
+        @Test
+        fun `should name the confirm action in task regrades confirm action`() {
+            assertEquals("Перепроверить", l.pageDeveloper.taskRegradesConfirmAction())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1,          'Посылка отправлена'",
+            "2,          'Посылки отправлены'",
+            "5,          'Посылок отправлено'",
+            "11,         'Посылок отправлено'",
+            "21,         'Посылка отправлена'",
+            "22,         'Посылки отправлены'",
+            "1412,       'Посылок отправлено'",
+            "1422,       'Посылки отправлены'",
+            "2147483647, 'Посылок отправлено'",
+        )
+        fun `should agree the submission count and predicate and keep the count ungrouped in task regrades started`(
+            count: Int,
+            agreed: String,
+        ) {
+            assertEquals(
+                "$count $agreed на повторную проверку",
+                l.pageDeveloper.taskRegradesStarted(count = count),
+            )
+        }
+
+        @Test
+        fun `should state that there is nothing to regrade in task regrades nothing`() {
+            assertEquals("Перепроверять нечего", l.pageDeveloper.taskRegradesNothing())
+        }
+
+        @Test
+        fun `should decline the submission task and contest terms in task regrades nothing hint`() {
+            assertEquals("Посылок по этой Задаче в Турах нет.", l.pageDeveloper.taskRegradesNothingHint())
+        }
+
+        @Test
+        fun `should use the accusative regrade term in task regrades run failed`() {
+            assertEquals("Не удалось запустить Перепроверку", l.pageDeveloper.taskRegradesRunFailed())
         }
 
         @Test
@@ -5141,7 +5229,7 @@ class LocalizationTests {
         ) {
             assertEquals(
                 "Набор Полигонов изменился. Если выбрать повторную проверку, на неё отправят $count $submissions " +
-                    "по этой Задаче в Турах.",
+                    "по этой Задаче в Турах, а незавершённая Перепроверка будет остановлена.",
                 l.pageDeveloper.taskCommitRegradeCount(count = count),
             )
         }
@@ -5561,6 +5649,7 @@ class LocalizationTests {
             "SCORE_MISMATCH, Другой балл",
             "GRADING_FAILED, Ошибка проверки",
             "EXPECTED_SCORE, Ожидаемый балл",
+            "INVALID_SUBMISSION, Решение не запускается",
             "OTHER,          Неизвестный статус",
         )
         fun `should name the submission status in testing submissions status`(status: TestingSubmissionsStatusStatus, expected: String) {

@@ -9,7 +9,8 @@ import tech.testsys.domain.model.user.UserId
  *
  * @property authorId the author of the submissions.
  * @property taskId the task the submissions were made for.
- * @property bestScore the highest result among submissions with a successful verdict, or `null` if there are none.
+ * @property bestScore the highest result among submissions with a successful verdict or an invalid submission result, or
+ * `null` if there are none.
  * @property submissionCount the number of submissions in any grading state.
  * @throws IllegalArgumentException if [submissionCount] is not positive.
  * @since 1.0.0-beta.1

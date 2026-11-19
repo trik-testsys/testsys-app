@@ -33,6 +33,7 @@ object RegradeMapping : EntityMapping<Regrade, RegradeJpaEntity> {
 
             tests = testIds.toMutableList()
             submissions = submissionIds.toMutableList()
+            stoppedAt = jpaEntity.stoppedAt
         }
     }
 
@@ -43,6 +44,7 @@ object RegradeMapping : EntityMapping<Regrade, RegradeJpaEntity> {
      */
     fun toJpaEntity(data: RegradeData) = RegradeJpaEntity(
         taskId = data.task.id.value,
+        stoppedAt = data.stoppedAt,
     )
 
     /**

@@ -1054,7 +1054,7 @@ sealed interface ViewProfileError : OperationError
 // region JudgeOperations
 
 /**
- * Failure of listing verdicts available to the judge.
+ * Failure of listing graded submissions available to the judge.
  *
  * @since 1.0.0-beta.1
  */
@@ -1171,7 +1171,8 @@ data class SubmissionAccessDeniedError(val submissionId: SubmissionId) :
 data class SubmissionIsDeveloperSolutionTestError(val submissionId: SubmissionId) : ChangeVerdictError
 
 /**
- * The submission has no successful automatic grading result.
+ * The submission has no grading result the operation needs: a successful verdict, or for a judgment order also an
+ * invalid submission.
  *
  * @property submissionId the id of the submission.
  * @since 1.0.0-beta.1
@@ -1322,6 +1323,13 @@ sealed interface CountRegradeSubmissionsError : OperationError
  * @since 1.0.0-beta.1
  */
 sealed interface ViewRegradesError : OperationError
+
+/**
+ * Expected failure of sending the contest submissions of an owned task to grading again.
+ *
+ * @since 1.0.0-beta.5
+ */
+sealed interface RegradeTaskError : OperationError
 
 /**
  * The working revision has no successfully completed validation request with a matching snapshot.
@@ -1679,6 +1687,7 @@ data object MissedDeveloperRoleError :
     ViewTaskValidationRequestsError,
     CountRegradeSubmissionsError,
     ViewRegradesError,
+    RegradeTaskError,
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
@@ -1858,6 +1867,7 @@ data class TaskNotExistsError(val taskId: TaskId) :
     ViewTaskValidationRequestsError,
     CountRegradeSubmissionsError,
     ViewRegradesError,
+    RegradeTaskError,
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
@@ -1988,6 +1998,7 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     ViewTaskValidationRequestsError,
     CountRegradeSubmissionsError,
     ViewRegradesError,
+    RegradeTaskError,
     CommitTaskError,
     AttachTaskError,
     RevertTaskError,
@@ -2057,7 +2068,7 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) :
  * @property taskId the id of the task.
  * @since 1.0.0-beta.1
  */
-data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError, RevertTaskError
+data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError, RevertTaskError, RegradeTaskError
 
 /**
  * The checked revision of the task does not support the contest's TRIK Studio version: the last committed revision

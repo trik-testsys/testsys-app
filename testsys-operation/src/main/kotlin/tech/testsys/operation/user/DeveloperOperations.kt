@@ -116,6 +116,7 @@ import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.NonPositiveAttemptDurationError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.RecordingNotExistsError
+import tech.testsys.operation.error.RegradeTaskError
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
 import tech.testsys.operation.error.ResourceNameTooLongError
 import tech.testsys.operation.error.ResourceNotExistsError
@@ -379,7 +380,7 @@ class DeveloperOperations(
     /**
      * Commits the working revision of [taskId] owned by [user] if a successful validation request has a matching
      * snapshot and its statement, exercises and attached contests still fit; returns the saved Committed task.
-     * With [regradeSubmissions], a changed polygon set resends contest submissions to grading as a saved regrade.
+     * With [regradeSubmissions], a changed polygon set restarts contest submissions as a regrade stopping the previous.
      *
      * @since 1.0.0-beta.1
      */
@@ -427,17 +428,53 @@ class DeveloperOperations(
             if (regradeSubmissions && previous.changesPolygonSet()) {
                 val submissions = submissionRepository.findGradingByTaskId(taskId)
                 if (submissions.isNotEmpty()) {
-                    regradeRepository.save(
+                    val regrade = regradeRepository.save(
                         regradeData {
                             this.task = taskId
                             tests = wip.tests.ids.toMutableList()
                             this.submissions = submissions.map { submission -> submission.id }.toMutableList()
                         },
                     )
+                    regradeRepository.stopPrevious(regrade)
                 }
-                submissions.forEach { submission -> grader.sendToGrade(submission) }
+                submissions.forEach { submission -> grader.restartGrading(submission) }
             }
             return savedTask.asSuccess()
+        }
+
+    /**
+     * Restarts grading of every contest submission of [taskId] owned by [user] on the polygons of its last committed
+     * revision, stopping unfinished runs and the previous unfinished regrade; returns the saved regrade, or `null`
+     * without saving if there are no submissions. The task is not changed; storage exceptions propagate.
+     *
+     * @since 1.0.0-beta.5
+     */
+    @Feature("testsys.user.multi.developer.task.regradeTask")
+    fun regradeTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<Regrade?, RegradeTaskError> =
+        operation<Regrade?, RegradeTaskError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            val lastCommitted = when (val content = task.data.content) {
+                is TaskContent.New -> null
+                is TaskContent.Uncommitted -> content.lastCommitted
+                is TaskContent.Committed -> content.lastCommitted
+            }
+            ensure(lastCommitted != null) { TaskNotCommittedError(taskId) }
+
+            val submissions = submissionRepository.findGradingByTaskId(taskId)
+            if (submissions.isEmpty()) return null.asSuccess()
+            val regrade = regradeRepository.save(
+                regradeData {
+                    this.task = taskId
+                    tests = lastCommitted.tests.ids.toMutableList()
+                    this.submissions = submissions.map { submission -> submission.id }.toMutableList()
+                },
+            )
+            regradeRepository.stopPrevious(regrade)
+            submissions.forEach { submission -> grader.restartGrading(submission) }
+            return regrade.asSuccess()
         }
 
     /**

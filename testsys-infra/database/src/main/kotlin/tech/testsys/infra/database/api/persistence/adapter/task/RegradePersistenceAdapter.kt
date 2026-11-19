@@ -16,6 +16,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.RegradeJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.task.RegradeJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionToRegradeJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.TaskJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TestToRegradeJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.RegradeMapping
 import tech.testsys.infra.database.internal.utils.findAllInChunks
@@ -23,9 +24,9 @@ import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 
 /**
- * Persistence adapter of [Regrade] entities backed by [RegradeJpaEntity].
- * Tests and submissions are stored in join tables on save and dropped on remove after the regrade version is
- * incremented; a regrade is fixed on creation, so [update] always fails.
+ * Persistence adapter of [Regrade] entities backed by [RegradeJpaEntity] with tests and submissions in join tables;
+ * saving and removing a regrade guard-write its task, so concurrent regrades of one task conflict. [stopPrevious]
+ * writes the stop moment through `touchRoot`, and [update] always fails.
  *
  * @since 1.0.0-beta.1
  */
@@ -35,6 +36,7 @@ class RegradePersistenceAdapter(
     jpaEntityRepository: RegradeJpaEntityRepository,
     private val testToRegradeJpaEntityRepository: TestToRegradeJpaEntityRepository,
     private val submissionToRegradeJpaEntityRepository: SubmissionToRegradeJpaEntityRepository,
+    private val tasks: TaskJpaEntityRepository,
 ) : AbstractPersistenceAdapter<RegradeData, RegradeId, Regrade, RegradeJpaEntity>(jpaEntityRepository),
     RegradeRepository {
 
@@ -53,6 +55,7 @@ class RegradePersistenceAdapter(
 
     @Transactional
     override fun save(data: RegradeData): Regrade {
+        touchRoot(tasks, data.task.id.value)
         val savedJpaEntity = jpaEntityRepository.save(RegradeMapping.toJpaEntity(data))
         val regradeId = savedJpaEntity.requireId()
 
@@ -62,12 +65,27 @@ class RegradePersistenceAdapter(
         return RegradeMapping.toDomain(savedJpaEntity, data.tests.ids, data.submissions.ids)
     }
 
+    @Transactional
+    override fun stopPrevious(regrade: Regrade) {
+        val previousId = regradeJpaEntityRepository.findPreviousUnfinished(
+            taskId = regrade.data.task.id.value,
+            createdAt = regrade.createdAt,
+            id = regrade.id.value,
+        ) ?: return
+        touchRoot(jpaEntityRepository, previousId, changesRootData = true) { row ->
+            row.stoppedAt = regrade.createdAt
+            jpaEntityRepository.saveAndFlush(row)
+        }
+    }
+
     override fun update(entity: Regrade): Regrade = throw UnsupportedOperationException(
-        "regrade ${entity.id.value} cannot be updated: every field of a regrade is fixed on creation",
+        "regrade ${entity.id.value} cannot be updated: its fields are fixed on creation and only stopPrevious stops it",
     )
 
     override fun removeRoot(id: RegradeId, expectedVersion: Long?) {
-        jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val current = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        // Removing a regrade changes the regrades of its task, as creating one does.
+        touchRoot(tasks, current.taskId)
         val jpaEntity = touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         val regradeId = jpaEntity.requireId()
         testToRegradeJpaEntityRepository.deleteAll(testToRegradeJpaEntityRepository.findAllByRegradeId(regradeId))

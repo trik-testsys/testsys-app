@@ -17,7 +17,6 @@ import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.TextLimits
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
@@ -39,8 +38,6 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
-import tech.testsys.domain.model.task.Verdict
-import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUser
@@ -654,37 +651,46 @@ class StudyOperations(
         )
 
     /**
-     * Pairs each of [submissions] with a successful verdict with its score of the last judgment order, otherwise its
-     * verdict total. Loads all judgment orders and the verdicts of submissions without orders through the ports, one call
-     * each, so that the lazy references of the returned submissions stay unresolved.
+     * Pairs each of [submissions] with a successful verdict or an invalid submission result with its score of the last
+     * judgment order, otherwise its verdict total or 0 for an invalid submission. Loads all judgment orders and the
+     * verdicts of submissions without orders through the ports, one call each, so that the lazy references of the
+     * returned submissions stay unresolved.
      */
     private fun finalScores(submissions: List<Submission>): List<Pair<Submission, Int>> {
-        val graded = submissions.mapNotNull { submission -> successfulVerdictOf(submission)?.let { verdict -> submission to verdict } }
+        val graded = submissions.mapNotNull { submission -> scoredGradeOf(submission)?.let { grade -> submission to grade } }
         val ordersById = judgmentOrderRepository.loadByIdsAsMap(graded.flatMap { (submission, _) -> submission.data.judgmentOrders.ids })
         val verdictsById = verdictRepository.loadByIdsAsMap(
-            graded.filter { (submission, _) -> submission.data.judgmentOrders.ids.isEmpty() }.map { (_, verdict) -> verdict.id },
+            graded.filter { (submission, _) -> submission.data.judgmentOrders.ids.isEmpty() }
+                .mapNotNull { (_, grade) -> (grade as? GradingResult.Success)?.verdict?.id },
         )
 
-        return graded.map { (submission, verdict) ->
+        return graded.map { (submission, grade) ->
             val orderIds = submission.data.judgmentOrders.ids
             val score = if (orderIds.isNotEmpty()) {
                 orderIds.map(ordersById::getValue)
                     .maxWith(compareBy<JudgmentOrder> { order -> order.createdAt }.thenBy { order -> order.id.value })
                     .data.score.value
             } else {
-                verdictsById.getValue(verdict.id).data.testVerdicts.sumOf { testVerdict -> testVerdict.score.value }
+                when (grade) {
+                    is GradingResult.Success -> verdictsById.getValue(grade.verdict.id).data.testVerdicts
+                        .sumOf { testVerdict -> testVerdict.score.value }
+                    is GradingResult.InvalidSubmission -> 0
+                    is GradingResult.GradingError, GradingResult.Timeout ->
+                        error("Submission id=${submission.id.value} has no final score")
+                }
             }
             submission to score
         }
     }
 
     /**
-     * Returns the verdict of [submission] if it was graded successfully, otherwise `null`.
+     * Returns the grading result of [submission] if it has a final score: a successful verdict or an invalid submission;
+     * otherwise `null`.
      */
-    private fun successfulVerdictOf(submission: Submission): LazyEntity<VerdictId, Verdict>? = when (val status = submission.data.status) {
+    private fun scoredGradeOf(submission: Submission): GradingResult? = when (val status = submission.data.status) {
         SubmissionStatus.Queued, SubmissionStatus.InProgress -> null
         is SubmissionStatus.Graded -> when (val grade = status.grade) {
-            is GradingResult.Success -> grade.verdict
+            is GradingResult.Success, is GradingResult.InvalidSubmission -> grade
             is GradingResult.GradingError, GradingResult.Timeout -> null
         }
     }
@@ -778,7 +784,7 @@ class StudyOperations(
      * Task available after entering a started contest, with the user's results in that contest.
      *
      * @property task the original task.
-     * @property bestScore the highest final score, or `null` without successful grading.
+     * @property bestScore the highest final score, or `null` if no submission has one.
      * @property lastSubmission the latest submission by creation time and identifier, or `null` if none exists.
      * @since 1.0.0-beta.1
      */
@@ -820,7 +826,7 @@ class StudyOperations(
      * @property exercises the exercises of the last committed revision, empty if the task has no committed revision.
      * @property languages the distinct languages of the developer solutions of the last committed revision, in their order.
      * @property submissions the grading submissions of the user in repository order.
-     * @property best the submission with the highest final score, or `null` if none has a successful verdict.
+     * @property best the submission with the highest final score, or `null` if none has a final score.
      * @since 1.0.0-beta.1
      */
     data class StudyTask(
@@ -837,7 +843,8 @@ class StudyOperations(
      *
      * @property submission the original submission with unresolved references.
      * @property filename the uploaded file name of the solution.
-     * @property score the score of the last judgment order, otherwise the verdict total, or `null` without a successful verdict.
+     * @property score the score of the last judgment order, otherwise the verdict total or 0 for an invalid submission,
+     * or `null` without a successful verdict or an invalid submission result.
      * @since 1.0.0-beta.1
      */
     data class StudySubmission(

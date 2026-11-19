@@ -326,6 +326,9 @@ private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
                         is GradingResult.GradingError -> status.error { description = originGrade.description }
                         is GradingResult.Success -> status.success { verdict = originGrade.verdict.id }
                         GradingResult.Timeout -> status.timeout()
+                        is GradingResult.InvalidSubmission -> status.invalidSubmission {
+                            description = originGrade.description
+                        }
                     }
                 }
             }
@@ -651,6 +654,7 @@ private fun RegradeData.toBuilder(): RegradeDataBuilder {
         task = thisData.task.id
         tests = thisData.tests.ids.toMutableList()
         submissions = thisData.submissions.ids.toMutableList()
+        stoppedAt = thisData.stoppedAt
     }
 }
 

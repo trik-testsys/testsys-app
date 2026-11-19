@@ -83,6 +83,23 @@ class JudgeViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show a solution that does not start without an automatic score and open it from its row`() {
+        signIn(fixtures.judge())
+        val submission = fixtures.invalidSubmission(student("Ученик Пётр"))
+        openSubmissions()
+        field("ID Посылки")._value = submission.id.value.toString()
+        UI.getCurrent()._get<Button> { text = "Применить" }._click()
+        val text = tableText()
+        val row = UI.getCurrent()._get<Table>()._get<TableBody>()._find<TableRow>().single()
+
+        row._fireDomEvent("click", acceptedClick(row))
+
+        assertTrue("${submission.id.value}Ученик Пётр" in text, text)
+        assertTrue("——0" in text, text)
+        assertEquals("judge/submissions/${submission.id.value}", UI.getCurrent().internals.activeViewLocation.path)
+    }
+
+    @Test
     fun `should hide developer solution tests and submissions without a successful verdict`() {
         signIn(fixtures.judge())
         val author = student()

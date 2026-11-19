@@ -140,6 +140,38 @@ class GradingFunctionsTests {
 
             assertInstanceOf(CheckedResult.Failure::class.java, result)
         }
+
+        @Test
+        fun `should treat a node error of kind 6 as an invalid submission with the node description`() {
+            val result = checkResult(
+                result = errorResult(kind = 6, description = "No main"),
+                expectedId = SubmissionId(42),
+                expectedTests = listOf(TestId(4)),
+                parser = JsonLogParser(),
+            )
+
+            assertEquals(CheckedResult.InvalidSubmission("No main"), result)
+        }
+
+        @Test
+        fun `should reject an invalid submission report for a foreign submission id`() {
+            val result = checkResult(
+                result = errorResult(kind = 6, id = 43),
+                expectedId = SubmissionId(42),
+                expectedTests = listOf(TestId(4)),
+                parser = JsonLogParser(),
+            )
+
+            assertInstanceOf(CheckedResult.Failure::class.java, result)
+        }
+
+        @ParameterizedTest
+        @CsvSource("4,Timeout", "5,Failure", "7,Failure")
+        fun `should keep other node error kinds as timeout or failure`(kind: Int, expected: String) {
+            val result = checkResult(errorResult(kind = kind), SubmissionId(42), listOf(TestId(4)), JsonLogParser())
+
+            assertEquals(expected, result::class.simpleName)
+        }
     }
 
     @Nested

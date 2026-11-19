@@ -2,9 +2,9 @@ package tech.testsys.web.app.service.judge
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import tech.testsys.domain.contract.persistence.JudgeSubmissionFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
-import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SubmissionId
@@ -31,7 +31,7 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
      * @since 1.0.0-beta.1
      */
     @Transactional(readOnly = true)
-    fun viewResults(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<JudgeResultVo> =
+    fun viewResults(pagination: Pagination, filter: JudgeSubmissionFilter = JudgeSubmissionFilter()): Page<JudgeResultVo> =
         operations.viewResults(currentUser.multipleRoleUser(), pagination, filter)
             .getOrThrow().map { result -> result.toVo() }
 

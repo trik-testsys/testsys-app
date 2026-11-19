@@ -74,7 +74,8 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
                 val actualGrade = assertIs<SubmissionStatus.Graded>(actual).grade
                 when (val grade = expected.grade) {
                     is GradingResult.Success -> assertEquals(grade.verdict.id, assertIs<GradingResult.Success>(actualGrade).verdict.id)
-                    is GradingResult.GradingError, GradingResult.Timeout -> assertEquals(grade, actualGrade)
+                    is GradingResult.GradingError, GradingResult.Timeout, is GradingResult.InvalidSubmission ->
+                        assertEquals(grade, actualGrade)
                 }
             }
         }
@@ -144,6 +145,17 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val found = assertNotNull(repository.findById(saved.id))
         assertSameEntity(timedOut, found)
         assertEquals(GradingResult.Timeout, assertIs<SubmissionStatus.Graded>(found.data.status).grade)
+    }
+
+    @Test
+    fun `should keep an invalid submission with its description through a round trip`() {
+        val saved = repository.save(gradingSubmissionData(fixtures.contest().id.value))
+
+        val invalid = repository.update(saved.withData { status.graded { status.invalidSubmission { description = "Does not start" } } })
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertSameEntity(invalid, found)
+        assertEquals(GradingResult.InvalidSubmission("Does not start"), assertIs<SubmissionStatus.Graded>(found.data.status).grade)
     }
 
     @Test

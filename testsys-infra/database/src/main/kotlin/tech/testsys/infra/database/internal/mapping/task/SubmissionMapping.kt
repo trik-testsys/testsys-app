@@ -160,6 +160,17 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
 
                 status.timeout()
             }
+            GradingResultJpaEnum.INVALID_SUBMISSION -> {
+                val description = jpaEntity.gradingErrorDescription
+                    ?: error("Submission ${jpaEntity.id} has gradingResult=INVALID_SUBMISSION but gradingErrorDescription is null")
+                require(jpaEntity.gradingVerdictId == null) {
+                    "Submission ${jpaEntity.id} has gradingResult=INVALID_SUBMISSION but gradingVerdictId is set"
+                }
+
+                status.invalidSubmission {
+                    this.description = description
+                }
+            }
         }
     }
 
@@ -231,6 +242,12 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
                 gradingResult = GradingResultJpaEnum.TIMEOUT,
                 gradingVerdictId = null,
                 gradingErrorDescription = null,
+            )
+            is GradingResult.InvalidSubmission -> StatusFlat(
+                status = SubmissionStatusJpaEnum.GRADED,
+                gradingResult = GradingResultJpaEnum.INVALID_SUBMISSION,
+                gradingVerdictId = null,
+                gradingErrorDescription = grade.description,
             )
         }
     }

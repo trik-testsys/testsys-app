@@ -137,7 +137,13 @@ class JudgeSolutionView(
                 load(loaded.forLoad()) { details ->
                     val verdict = details.verdict
                     if (verdict == null) {
-                        emptyState(texts.solutionVerdictEmpty(), texts.solutionVerdictEmptyHint())
+                        val grade = (details.submission.status as? SubmissionStatusVo.Graded)?.grade
+                        val hint = if (grade is GradingResultVo.InvalidSubmission) {
+                            texts.solutionVerdictInvalidSubmissionHint()
+                        } else {
+                            texts.solutionVerdictEmptyHint()
+                        }
+                        emptyState(texts.solutionVerdictEmpty(), hint)
                     } else {
                         val outcomes = verdict.testVerdicts.zip(details.tests)
                         table(
@@ -183,9 +189,9 @@ class JudgeSolutionView(
                         empty(texts.solutionJudgmentsEmpty())
                     }
                 }
-                // A successful grading is exactly what gives the submission a verdict to judge.
-                val status = submission.status
-                if (status is SubmissionStatusVo.Graded && status.grade is GradingResultVo.Success) {
+                // A successful verdict or a solution that does not start gives the submission a final score to judge.
+                val grade = (submission.status as? SubmissionStatusVo.Graded)?.grade
+                if (grade is GradingResultVo.Success || grade is GradingResultVo.InvalidSubmission) {
                     val issuing = judgmentDialog(submission.id)
                     actions { action(texts.solutionJudgmentsIssue()) { onClick { issuing() } } }
                 }
@@ -255,6 +261,7 @@ private fun statusOf(status: SubmissionStatusVo): Pair<SolutionStatusStatus, Ton
         is GradingResultVo.Success -> SolutionStatusStatus.SUCCESS to Tone.Success
         is GradingResultVo.GradingError -> SolutionStatusStatus.GRADING_ERROR to Tone.Danger
         GradingResultVo.Timeout -> SolutionStatusStatus.TIMEOUT to Tone.Warning
+        is GradingResultVo.InvalidSubmission -> SolutionStatusStatus.INVALID_SUBMISSION to Tone.Danger
     }
 }
 

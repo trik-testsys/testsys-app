@@ -93,6 +93,17 @@ class GradingResultStatusChooser : Chooser<GradingResult>() {
         val currentBuilder = choice as? ErrorGradingResultBuilder ?: ErrorGradingResultBuilder()
         makeChoice(currentBuilder.apply(builder))
     }
+
+    /**
+     * Selects [GradingResult.InvalidSubmission] configured by [builder]; repeated calls accumulate configuration.
+     *
+     * @since 1.0.0-beta.5
+     */
+    fun invalidSubmission(builder: InvalidSubmissionGradingResultBuilder.() -> Unit) {
+        val currentBuilder = choice as? InvalidSubmissionGradingResultBuilder
+            ?: InvalidSubmissionGradingResultBuilder()
+        makeChoice(currentBuilder.apply(builder))
+    }
 }
 
 /**
@@ -133,5 +144,21 @@ class ErrorGradingResultBuilder : Builder<GradingResult> {
     override fun build(): GradingResult {
         val description = requireField(description) { ::description }
         return GradingResult.GradingError(description)
+    }
+}
+
+/**
+ * Builder of [GradingResult.InvalidSubmission]. Required: [description].
+ *
+ * @property description the description reported by the grading node, or `null` if not set yet.
+ * @since 1.0.0-beta.5
+ */
+class InvalidSubmissionGradingResultBuilder : Builder<GradingResult> {
+
+    var description: String? = null
+
+    override fun build(): GradingResult {
+        val description = requireField(description) { ::description }
+        return GradingResult.InvalidSubmission(description)
     }
 }

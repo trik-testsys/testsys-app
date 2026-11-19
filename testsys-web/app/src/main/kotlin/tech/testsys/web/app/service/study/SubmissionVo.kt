@@ -95,6 +95,14 @@ sealed interface GradingResultVo {
      * @since 1.0.0-beta.1
      */
     data object Timeout : GradingResultVo
+
+    /**
+     * The solution does not start in TRIK Studio; there is no verdict.
+     *
+     * @property description the description reported by the grading node.
+     * @since 1.0.0-beta.5
+     */
+    data class InvalidSubmission(val description: String) : GradingResultVo
 }
 
 /**
@@ -141,6 +149,7 @@ private fun GradingResult.toVo(): GradingResultVo = when (this) {
     is GradingResult.Success -> GradingResultVo.Success(verdict.id)
     is GradingResult.GradingError -> GradingResultVo.GradingError(description)
     GradingResult.Timeout -> GradingResultVo.Timeout
+    is GradingResult.InvalidSubmission -> GradingResultVo.InvalidSubmission(description)
 }
 
 private fun SubmissionKind.toVo(): SubmissionKindVo = when (this) {

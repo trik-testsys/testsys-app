@@ -1,9 +1,9 @@
 package tech.testsys.operation.user
 
 import tech.testsys.domain.builder.api.judgmentOrderData
+import tech.testsys.domain.contract.persistence.JudgeSubmissionFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
-import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
@@ -80,8 +80,8 @@ class JudgeOperations(
 ) {
 
     /**
-     * Returns a page of current successful verdicts available to [user], optionally filtered by [filter], each with the
-     * author of its submission; test outcomes keep lazy file references.
+     * Returns a page of submissions available to [user] graded with a successful verdict or as invalid, optionally
+     * filtered by [filter], each with its author and current verdict, if any; test outcomes keep lazy file references.
      *
      * @since 1.0.0-beta.1
      */
@@ -89,18 +89,18 @@ class JudgeOperations(
     fun viewResults(
         user: MultipleRoleUser,
         pagination: Pagination,
-        filter: VerdictFilter = VerdictFilter(),
+        filter: JudgeSubmissionFilter = JudgeSubmissionFilter(),
     ): OperationResult<Page<JudgeResult>, ViewResultsError> = operation<Page<JudgeResult>, ViewResultsError> {
         ensure(user.hasRole<Judge>(), MissedJudgeRoleError)
-        val page = verdictRepository.findAvailableToJudge(pagination = pagination, filter = filter)
+        val page = submissionRepository.findAvailableToJudge(pagination = pagination, filter = filter)
 
-        val submissions = submissionRepository.loadByIdsAsMap(page.content.map { verdict -> verdict.data.submission.id })
-        val authorIds = submissions.values.map { submission -> submission.data.author.id }
+        val verdicts = verdictRepository.loadByIdsAsMap(page.content.mapNotNull { submission -> submission.successfulVerdict()?.id })
+        val authorIds = page.content.map { submission -> submission.data.author.id }
         val students = multipleRoleUserRepository.findByIdsAsMap(authorIds.filterIsInstance<MultipleRoleUserId>())
         val participants = participantRepository.findByIdsAsMap(authorIds.filterIsInstance<SingleRoleUserId>())
-        val orders = judgmentOrderRepository.loadByIdsAsMap(submissions.values.flatMap { submission -> submission.data.judgmentOrders.ids })
-        val content = page.content.map { verdict ->
-            val submission = submissions.getValue(verdict.data.submission.id)
+        val orders = judgmentOrderRepository.loadByIdsAsMap(page.content.flatMap { submission -> submission.data.judgmentOrders.ids })
+        val content = page.content.map { submission ->
+            val verdict = submission.successfulVerdict()?.let { reference -> verdicts.getValue(reference.id) }
             val author = when (val id = submission.data.author.id) {
                 is MultipleRoleUserId -> students[id]?.takeIf { student -> student.hasRole<Student>() }
                 is SingleRoleUserId -> participants[id]
@@ -110,13 +110,12 @@ class JudgeOperations(
                 .maxWithOrNull(compareBy<JudgmentOrder> { order -> order.createdAt }.thenBy { order -> order.id.value })
             JudgeResult(
                 verdict = verdict,
-                author = checkNotNull(author) {
-                    "Author of submission ${submission.id.value} with verdict ${verdict.id.value} is not available to judges"
-                },
+                author = checkNotNull(author) { "Author of submission ${submission.id.value} is not available to judges" },
                 submission = submission,
                 lastJudgment = lastOrder,
                 finalScore = lastOrder?.data?.score?.value?.toLong()
-                    ?: verdict.data.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() },
+                    ?: verdict?.data?.testVerdicts?.sumOf { outcome -> outcome.score.value.toLong() }
+                    ?: 0L,
             )
         }
         return Page(content = content, pagination = page.pagination, totalElements = page.totalElements).asSuccess()
@@ -154,8 +153,8 @@ class JudgeOperations(
 
     /**
      * Creates a judgment order for [submissionId] on behalf of [user], awarding [score] with [reason].
-     * Requires a current student or participant author, a grading submission rather than a developer solution test,
-     * successful automatic grading, a nonnegative score and a nonblank reason.
+     * Requires a current student or participant author, a contest submission with a successful verdict or an invalid
+     * submission result, a nonnegative score and a nonblank reason.
      *
      * @since 1.0.0-beta.1
      */
@@ -177,7 +176,10 @@ class JudgeOperations(
         ensure(hasAccessibleAuthor) { SubmissionAccessDeniedError(submissionId) }
         ensure(submission.data.kind is SubmissionKind.Grading) { SubmissionIsDeveloperSolutionTestError(submissionId) }
         val status = submission.data.status
-        ensure(status is SubmissionStatus.Graded && status.grade is GradingResult.Success) {
+        ensure(
+            status is SubmissionStatus.Graded &&
+                (status.grade is GradingResult.Success || status.grade is GradingResult.InvalidSubmission),
+        ) {
             SubmissionNotSuccessfullyGradedError(submissionId)
         }
         ensure(score.value >= 0) { NegativeJudgmentScoreError(score) }
@@ -220,10 +222,10 @@ class JudgeOperations(
                 .sortedWith(compareBy<JudgmentOrder> { order -> order.createdAt }.thenBy { order -> order.id.value })
             val judges = multipleRoleUserRepository.findByIds(orders.map { order -> order.data.judge.id }.distinct())
                 .associateBy { judge -> judge.id }
-            val finalScore = verdict?.let { graded ->
-                val lastOrder = orders.lastOrNull()
-                lastOrder?.data?.score?.value?.toLong() ?: graded.data.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() }
-            }
+            val isInvalid = (submission.data.status as? SubmissionStatus.Graded)?.grade is GradingResult.InvalidSubmission
+            val automaticScore = verdict?.data?.testVerdicts?.sumOf { outcome -> outcome.score.value.toLong() }
+                ?: 0L.takeIf { isInvalid }
+            val finalScore = automaticScore?.let { automatic -> orders.lastOrNull()?.data?.score?.value?.toLong() ?: automatic }
 
             return SubmissionDetails(
                 submission = submission,
@@ -320,17 +322,17 @@ class JudgeOperations(
     }
 
     /**
-     * Current successful verdict with its submission, author and final result.
+     * Graded submission with its current verdict, author and final result.
      *
-     * @property verdict the automatic verdict.
+     * @property verdict the current successful verdict, or `null` for an invalid submission.
      * @property author the author available to the judge.
      * @property submission the graded submission.
      * @property lastJudgment the latest judgment by creation time and identifier, or `null` if absent.
-     * @property finalScore the latest judgment score or the automatic total.
+     * @property finalScore the latest judgment score, otherwise the automatic total or 0 for an invalid submission.
      * @since 1.0.0-beta.1
      */
     data class JudgeResult(
-        val verdict: Verdict,
+        val verdict: Verdict?,
         val author: User<*>,
         val submission: Submission,
         val lastJudgment: JudgmentOrder?,

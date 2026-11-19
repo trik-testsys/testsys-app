@@ -97,7 +97,7 @@ class GradingResultStatusChooser : Chooser<GradingResult>() {
     /**
      * Selects [GradingResult.InvalidSubmission] configured by [builder]; repeated calls accumulate configuration.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.5
      */
     fun invalidSubmission(builder: InvalidSubmissionGradingResultBuilder.() -> Unit) {
         val currentBuilder = choice as? InvalidSubmissionGradingResultBuilder
@@ -151,7 +151,7 @@ class ErrorGradingResultBuilder : Builder<GradingResult> {
  * Builder of [GradingResult.InvalidSubmission]. Required: [description].
  *
  * @property description the description reported by the grading node, or `null` if not set yet.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.5
  */
 class InvalidSubmissionGradingResultBuilder : Builder<GradingResult> {
 

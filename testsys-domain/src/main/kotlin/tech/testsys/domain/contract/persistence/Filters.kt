@@ -76,7 +76,7 @@ data class ObserverContestFilter(
  * @property submissionId the only submission to select, or null for any submission.
  * @property classId the class containing both the current student author and the contest, or null for any class.
  * @property competitionId the competition containing both the current participant author and the contest, or null for any competition.
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.5
  */
 data class JudgeSubmissionFilter(
     val authorId: UserId? = null,

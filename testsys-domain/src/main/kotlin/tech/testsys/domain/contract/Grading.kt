@@ -27,7 +27,7 @@ interface Grader {
      * moment of the restart completes and a scheduled save retry is cancelled. Calling it again restarts the run again.
      *
      * @param submission the submission to grade from the beginning.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.5
      */
     fun restartGrading(submission: Submission)
 

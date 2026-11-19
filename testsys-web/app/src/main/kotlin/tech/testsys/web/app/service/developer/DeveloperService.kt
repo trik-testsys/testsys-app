@@ -153,7 +153,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
     /**
      * Runs [DeveloperOperations.regradeTask]; returns `null` if the task has no contest submissions.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.5
      */
     fun regradeTask(taskId: TaskId): RegradeVo? = operations.regradeTask(currentUser.multipleRoleUser(), taskId).getOrThrow()?.toVo()
 

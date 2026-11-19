@@ -100,7 +100,7 @@ sealed interface GradingResultVo {
      * The solution does not start in TRIK Studio; there is no verdict.
      *
      * @property description the description reported by the grading node.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.5
      */
     data class InvalidSubmission(val description: String) : GradingResultVo
 }

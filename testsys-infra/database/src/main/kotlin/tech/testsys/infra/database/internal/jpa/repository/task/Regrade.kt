@@ -126,7 +126,7 @@ interface RegradeJpaEntityRepository : SnowflakeJpaEntityRepository<RegradeJpaEn
      * ordered by creation time and then by id, if it is not stopped and one of its submissions is queued, in progress or
      * not updated since that regrade was created.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.5
      */
     @Query(
         """

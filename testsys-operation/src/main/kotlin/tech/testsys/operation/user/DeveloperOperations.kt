@@ -447,7 +447,7 @@ class DeveloperOperations(
      * revision, stopping unfinished runs and the previous unfinished regrade; returns the saved regrade, or `null`
      * without saving if there are no submissions. The task is not changed; storage exceptions propagate.
      *
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.5
      */
     @Feature("testsys.user.multi.developer.task.regradeTask")
     fun regradeTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<Regrade?, RegradeTaskError> =

@@ -289,7 +289,7 @@ interface RegradeRepository : EntityRepository<RegradeData, RegradeId, Regrade> 
      * since it was created; earlier regrades are not changed, storage exceptions propagate.
      *
      * @param regrade the saved new regrade.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.5
      */
     fun stopPrevious(regrade: Regrade)
 }
@@ -412,7 +412,7 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @param pagination the requested page and ordering.
      * @param filter conjunctive author, submission and current group conditions applied before paging and counting.
      * @return submissions with lazy references, requested pagination and exact total; unmatched filters or pages are empty.
-     * @since %CURRENT_VERSION%
+     * @since 1.0.0-beta.5
      */
     fun findAvailableToJudge(pagination: Pagination, filter: JudgeSubmissionFilter = JudgeSubmissionFilter()): Page<Submission>
 

@@ -1327,7 +1327,7 @@ sealed interface ViewRegradesError : OperationError
 /**
  * Expected failure of sending the contest submissions of an owned task to grading again.
  *
- * @since %CURRENT_VERSION%
+ * @since 1.0.0-beta.5
  */
 sealed interface RegradeTaskError : OperationError
 

@@ -169,6 +169,14 @@ sealed interface GradingResult {
      * @since 1.0.0-beta.1
      */
     object Timeout : GradingResult
+
+    /**
+     * The solution does not start in TRIK Studio; no verdict was produced; without judgment orders the final score is 0.
+     *
+     * @property description the description reported by the grading node.
+     * @since %CURRENT_VERSION%
+     */
+    data class InvalidSubmission(val description: String) : GradingResult
 }
 
 /**

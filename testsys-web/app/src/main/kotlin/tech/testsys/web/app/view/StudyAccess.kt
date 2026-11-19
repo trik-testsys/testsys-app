@@ -279,6 +279,7 @@ internal fun ContentScope.submissionStatus(status: SubmissionStatusVo?, texts: S
             is GradingResultVo.Success -> StudyTexts.SubmissionStatus.SUCCESS to Tone.Success
             is GradingResultVo.GradingError -> StudyTexts.SubmissionStatus.GRADING_ERROR to Tone.Danger
             GradingResultVo.Timeout -> StudyTexts.SubmissionStatus.TIMEOUT to Tone.Warning
+            is GradingResultVo.InvalidSubmission -> StudyTexts.SubmissionStatus.INVALID_SUBMISSION to Tone.Danger
         }
     }
     badge(texts.submissionStatus(variant), tone)

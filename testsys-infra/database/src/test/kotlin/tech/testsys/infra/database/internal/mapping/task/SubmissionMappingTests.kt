@@ -6,10 +6,13 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.submissionData
+import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.SubmissionKind
+import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.GradingResultJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionStatusJpaEnum
@@ -125,6 +128,61 @@ class SubmissionMappingTests : EntityMappingTests<SubmissionMapping>() {
         assertEquals(4L, row.gradingContestId)
         assertNull(row.trikStudioVersionId)
     }
+
+    @Test
+    fun `should round trip invalid submission with its description and no verdict`() {
+        val data = submissionData {
+            author(1)
+            solution(2)
+            task(3)
+            status.graded { status.invalidSubmission { description = "does not start" } }
+            kind.grading { contest(4) }
+        }
+
+        val encoded = mapping.toJpaEntity(data, trikStudioVersionId = null)
+        val restored = mapping.toDomain(graded(encoded), MultipleRoleUserId(1), null, emptyList())
+
+        assertEquals(GradingResultJpaEnum.INVALID_SUBMISSION, encoded.gradingResult)
+        assertEquals("does not start", encoded.gradingErrorDescription)
+        assertNull(encoded.gradingVerdictId)
+        assertEquals(SubmissionStatus.Graded(GradingResult.InvalidSubmission("does not start")), restored.data.status)
+    }
+
+    @Test
+    fun `should reject invalid submission if description is missing`() {
+        val row = graded(row(SubmissionKindJpaEnum.GRADING, contestId = 4), description = null)
+
+        assertFailsWith<IllegalStateException> {
+            mapping.toDomain(row, MultipleRoleUserId(1), null, emptyList())
+        }
+    }
+
+    @Test
+    fun `should reject invalid submission if verdict is set`() {
+        val row = graded(row(SubmissionKindJpaEnum.GRADING, contestId = 4), verdictId = 5)
+
+        assertFailsWith<IllegalArgumentException> {
+            mapping.toDomain(row, MultipleRoleUserId(1), null, emptyList())
+        }
+    }
+
+    private fun graded(
+        source: SubmissionJpaEntity,
+        description: String? = source.gradingErrorDescription ?: "does not start",
+        verdictId: Long? = null,
+    ) = SubmissionJpaEntity(
+        id = 10,
+        authorId = source.authorId,
+        solutionId = source.solutionId,
+        taskId = source.taskId,
+        trikStudioVersionId = null,
+        status = SubmissionStatusJpaEnum.GRADED,
+        gradingResult = GradingResultJpaEnum.INVALID_SUBMISSION,
+        gradingVerdictId = verdictId,
+        gradingErrorDescription = description,
+        kind = source.kind,
+        gradingContestId = source.gradingContestId,
+    )
 
     private fun row(kind: SubmissionKindJpaEnum, versionId: Long? = null, contestId: Long? = null) = SubmissionJpaEntity(
         id = 10,

@@ -319,6 +319,13 @@ class AppFixtures(
         return if (isGraded) graded(submission, score) else submission
     }
 
+    /** Stores a contest submission of [author] whose solution does not start in TRIK Studio. */
+    fun invalidSubmission(author: User<*>): Submission = submissions.update(
+        gradingSubmission(author, isGraded = false).withData {
+            status.graded { status.invalidSubmission { description = "Solution does not start" } }
+        },
+    )
+
     /** Stores a successfully graded test run of a developer solution made by [author]. */
     fun developerSolutionTestSubmission(author: MultipleRoleUser): Submission {
         val version = trikStudioVersion()

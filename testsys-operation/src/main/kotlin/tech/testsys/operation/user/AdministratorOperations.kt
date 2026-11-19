@@ -847,10 +847,6 @@ class AdministratorOperations(
         (viewed as? MultipleRoleUser)?.data?.roles?.filterIsInstance<R>()?.singleOrNull()
     }
 
-    /**
-     * Returns the score of the judgment order of the same submission issued just before [order], otherwise the verdict
-     * total of the submission, or `null` without a successful verdict.
-     */
     private fun submissionOf(order: JudgmentOrder): Submission {
         val submissionId = order.data.submission.id
         return checkNotNull(submissionRepository.findById(submissionId)) {
@@ -858,6 +854,10 @@ class AdministratorOperations(
         }
     }
 
+    /**
+     * Returns the score of the judgment order of [submission] issued just before [order], otherwise the verdict total
+     * of [submission] or 0 for an invalid submission, or `null` for any other status.
+     */
     private fun previousScore(order: JudgmentOrder, submission: Submission): Long? {
         val issueOrder = compareBy<JudgmentOrder> { other -> other.createdAt }.thenBy { other -> other.id.value }
         val previous = judgmentOrderRepository.findByIds(submission.data.judgmentOrders.ids)
@@ -870,6 +870,7 @@ class AdministratorOperations(
             is SubmissionStatus.Graded -> when (val grade = status.grade) {
                 is GradingResult.Success -> grade.verdict
                 is GradingResult.GradingError, GradingResult.Timeout -> return null
+                is GradingResult.InvalidSubmission -> return 0L
             }
         }
         val testVerdicts = checkNotNull(verdictRepository.findById(verdict.id)) {

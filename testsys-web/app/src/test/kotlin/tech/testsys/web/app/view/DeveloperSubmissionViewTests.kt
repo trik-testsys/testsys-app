@@ -141,6 +141,18 @@ class DeveloperSubmissionViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show the status of a solution that does not start with the node description as the reason`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val invalid = SubmissionStatusVo.Graded(GradingResultVo.InvalidSubmission("Нет функции main"))
+
+        open(submissionOf(task, invalid, verdict = null, failures = listOf(AuthorSubmissionFailure.GradingFailed(submissionId))))
+
+        assertEquals("Решение не запускается", status())
+        assertEquals("Нет функции main", reason())
+    }
+
+    @Test
     fun `should show no reason for a score mismatch`() {
         developers.signInDeveloper()
         val task = developers.task()

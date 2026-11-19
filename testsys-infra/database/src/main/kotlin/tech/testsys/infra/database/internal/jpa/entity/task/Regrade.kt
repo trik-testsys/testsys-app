@@ -7,6 +7,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.CompositeId
 import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
+import java.time.Instant
 
 /**
  * Composite key of [TestToRegradeJpaEntity].
@@ -60,11 +61,13 @@ class SubmissionToRegradeJpaEntity(id: SubmissionToRegradeId) : CompositeJpaEnti
  * JPA entity of [tech.testsys.domain.model.task.Regrade].
  *
  * @property taskId id of the regraded task.
+ * @property stoppedAt moment the next regrade of the task stopped this one, or `null` if it was not stopped.
  * @since 1.0.0-beta.1
  */
 @Entity
 @InternalDatabaseApi
 class RegradeJpaEntity(
     val taskId: Long,
+    var stoppedAt: Instant? = null,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)

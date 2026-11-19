@@ -46,7 +46,7 @@
 | `Grader`                               | `contract/Grading.kt`                | Реализован в [grpc/README.md](../../testsys-infra/grpc/README.md)          |
 | `UserMailSender`                       | `contract/Mail.kt`                   | Реализован в [mail/README.md](../../testsys-infra/mail/README.md)          |
 | `PasswordHasher`                       | `contract/Password.kt`               | Реализован в [crypto/README.md](../../testsys-infra/crypto/README.md)      |
-| `Pagination` / `Sort` / `Page`         | `contract/persistence/Pagination.kt` | Используются в портах и адаптерах `Task`, `Contest`, `Verdict`, `Class`, `Competition` и `User` |
+| `Pagination` / `Sort` / `Page`         | `contract/persistence/Pagination.kt` | Используются в портах и адаптерах `Task`, `Contest`, `Submission`, `Class`, `Competition` и `User` |
 
 Порт без реализации — нормальное состояние: интерфейс фиксирует потребность домена раньше, чем появляется
 адаптер. Но собранное приложение поднимется только тогда, когда для каждого востребованного порта есть бин.

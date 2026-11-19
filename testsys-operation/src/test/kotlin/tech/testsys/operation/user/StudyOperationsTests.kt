@@ -196,6 +196,24 @@ class StudyOperationsTests {
                 }
 
                 @Test
+                fun `should return the best final score 0 if only an invalid submission was graded`() {
+                    val current = taskContest.withData {
+                        startsAt = Instant.EPOCH
+                        contestDuration = Duration.ofHours(1)
+                    }
+                    prepareParticipantView(current = current, enteredAt = firstEntry)
+                    val invalid = testSubmission(51) { graded { status.invalidSubmission { description = "No main" } } }
+                    val timedOut = testSubmission(52, chooseStatus = { graded { status.timeout() } })
+                    every { submissionRepository.findGradingByContest(any(), current.id, setOf(task.id)) } returns
+                        listOf(invalid, timedOut)
+
+                    val result = operations.viewContest(user = participant, contestId = current.id).getOrThrow().third.single()
+
+                    assertEquals(0, result.bestScore)
+                    verify(exactly = 0) { verdictRepository.load(any<LazyEntityList<VerdictId, Verdict>>()) }
+                }
+
+                @Test
                 fun `should return the original contest without an entry time if participant has not entered it`() {
                     prepareParticipantView()
 
@@ -736,6 +754,44 @@ class StudyOperationsTests {
                     val best = view().getOrThrow().best?.submission
 
                     assertSame(smaller, best)
+                }
+
+                @Test
+                fun `should give an invalid submission the final score 0 and prefer it over a later 0 by creation time`() {
+                    val invalid = testSubmission(submissionId = 51, at = Instant.parse("2026-01-01T00:00:00Z")) {
+                        graded { status.invalidSubmission { description = "No main" } }
+                    }
+                    val zero = testSubmission(submissionId = 52, at = Instant.parse("2026-01-02T00:00:00Z"))
+                    prepareParticipantTask()
+                    stubTaskResources()
+                    stubSubmissions(zero, invalid)
+                    stubVerdict(verdictId = 52, scores = listOf(0))
+
+                    val result = view().getOrThrow()
+
+                    assertEquals(listOf(0, 0), result.submissions.map { submission -> submission.score })
+                    assertSame(invalid, result.best?.submission)
+                    verify(exactly = 1) {
+                        verdictRepository.load(match<LazyEntityList<VerdictId, Verdict>> { list -> list.ids == listOf(VerdictId(52)) })
+                    }
+                }
+
+                @Test
+                fun `should take the last judgment order as the final score of an invalid submission`() {
+                    val invalid = testSubmission(submissionId = 51, orders = listOf(61)) {
+                        graded { status.invalidSubmission { description = "No main" } }
+                    }
+                    val graded = testSubmission(submissionId = 52)
+                    prepareParticipantTask()
+                    stubTaskResources()
+                    stubSubmissions(graded, invalid)
+                    stubVerdict(verdictId = 52, scores = listOf(50))
+                    stubJudgmentOrders(testJudgmentOrder(orderId = 61, score = 70))
+
+                    val best = view().getOrThrow().best
+
+                    assertSame(invalid, best?.submission)
+                    assertEquals(70, best?.score)
                 }
 
                 @Test

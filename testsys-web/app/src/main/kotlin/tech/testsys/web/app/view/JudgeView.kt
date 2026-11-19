@@ -8,8 +8,8 @@ import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
+import tech.testsys.domain.contract.persistence.JudgeSubmissionFilter
 import tech.testsys.domain.contract.persistence.Pagination
-import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.SubmissionId
@@ -33,7 +33,7 @@ internal const val SUBMISSION_ID_PARAMETER = "submissionId"
 
 private const val SUBMISSIONS_SECTION = "submissions"
 
-/** Verdicts of the table, the latest first. */
+/** Submissions of the table, the latest first. */
 private val LATEST_FIRST = DomainSort(
     listOf(DomainSort.Order("createdAt", DomainSort.Direction.DESC), DomainSort.Order("id", DomainSort.Direction.DESC)),
 )
@@ -47,7 +47,7 @@ internal fun openJudgeSolution(submissionId: SubmissionId) {
 }
 
 /**
- * Cabinet of a Judge (testsys.web.page.judge): the verdicts of the submissions of students and participants, paged
+ * Cabinet of a Judge (testsys.web.page.judge): the graded submissions of students and participants, paged
  * and filtered by author, submission, class and competition; a row opens the submission. Without a section the page
  * opens «Посылки».
  *
@@ -85,9 +85,9 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
 
     private fun BlockScope.submissionsTable() {
         val texts = currentLocalization().pageJudge
-        var applied = VerdictFilter()
+        var applied = JudgeSubmissionFilter()
         loadTable(
-            key = { result: JudgeResultVo -> result.verdict.id },
+            key = { result: JudgeResultVo -> result.submission.id },
             fetch = { request ->
                 val pageNumber = request.offset / request.limit
                 val results = judgeService.viewResults(Pagination(page = pageNumber, size = request.limit, sort = LATEST_FIRST), applied)
@@ -98,7 +98,7 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
             textColumn(texts.author(), size = 5) { result -> result.author.name }
             dateTimeColumn(texts.submissionsSent(), size = 4) { result -> result.submission.createdAt.toUserDateTime() }
             numberColumn(texts.submissionsAutoScore(), size = 4) { result ->
-                result.verdict.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() }
+                result.verdict?.testVerdicts?.sumOf { outcome -> outcome.score.value.toLong() }
             }
             numberColumn(texts.submissionsJudgeScore(), size = 3) { result -> result.lastJudgment?.score?.value }
             numberColumn(texts.finalScore()) { result -> result.finalScore }
@@ -106,17 +106,17 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
             onRowClick(isNavigation = true) { result -> openJudgeSolution(result.submission.id) }
         }
 
-        val draft = Binder<VerdictFilterDraft>()
+        val draft = Binder<JudgeSubmissionFilterDraft>()
         filters(
             onApply = {
-                val values = VerdictFilterDraft()
+                val values = JudgeSubmissionFilterDraft()
                 val isValid = draft.writeBeanIfValid(values)
                 if (isValid) applied = values.toFilter()
                 isValid
             },
             onReset = {
-                draft.readBean(VerdictFilterDraft())
-                applied = VerdictFilter()
+                draft.readBean(JudgeSubmissionFilterDraft())
+                applied = JudgeSubmissionFilter()
             },
         ) {
             row {
@@ -136,28 +136,28 @@ class JudgeView(private val headers: CabinetHeaders, private val judgeService: J
                 }
             }
         }
-        draft.readBean(VerdictFilterDraft())
+        draft.readBean(JudgeSubmissionFilterDraft())
     }
 
     /** Binds this identifier field to [draft], accepting an empty value or a positive integer. */
     private fun ValueInput<String>.bindId(
-        draft: Binder<VerdictFilterDraft>,
-        getter: (VerdictFilterDraft) -> String,
-        setter: (VerdictFilterDraft, String) -> Unit,
+        draft: Binder<JudgeSubmissionFilterDraft>,
+        getter: (JudgeSubmissionFilterDraft) -> String,
+        setter: (JudgeSubmissionFilterDraft, String) -> Unit,
     ) {
         draft.forField(this)
             .withValidator({ value -> value.isBlank() || idOf(value) != null }, currentLocalization().pageJudge.filterIdInvalid())
             .bind(getter, setter)
     }
 
-    /** Values of the filter form of the verdicts table. */
-    private class VerdictFilterDraft(
+    /** Values of the filter form of the submissions table. */
+    private class JudgeSubmissionFilterDraft(
         var author: String = "",
         var submission: String = "",
         var group: String = "",
         var competition: String = "",
     ) {
-        fun toFilter(): VerdictFilter = VerdictFilter(
+        fun toFilter(): JudgeSubmissionFilter = JudgeSubmissionFilter(
             // Users of every kind share one id sequence and the filter compares raw values, so the kind of the id is irrelevant.
             authorId = idOf(author)?.let(::MultipleRoleUserId),
             submissionId = idOf(submission)?.let(::SubmissionId),

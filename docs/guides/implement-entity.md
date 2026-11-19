@@ -146,7 +146,7 @@
 Выборку с необязательными фильтрами стройте через `Specification` и добавляйте условие только для заданного
 параметра. JPQL вида `(:p is null or e.field = :p)` не пишите: в общем плане подготовленного запроса PostgreSQL
 не может использовать для такого условия индекс. Образец — `availableToJudge` в
-[VerdictPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/VerdictPersistenceAdapter.kt).
+[SubmissionPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/SubmissionPersistenceAdapter.kt).
 
 ## 7. Liquibase changeset
 

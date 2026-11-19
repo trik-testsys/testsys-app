@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.group.Class
@@ -221,6 +222,20 @@ class StudyTaskViewTests : MockSpringVaadinTests() {
         val rows = StudyPages.rowTexts("Результат")
         assertEquals(listOf("third.pyВ очереди", "second.py70Лучшее", "first.py30"), rows.map { row -> row.substringAfter(":").drop(2) })
         assertTrue(Regex("Лучший результат\\W*70").containsMatchIn(StudyPages.pageText()), StudyPages.pageText())
+    }
+
+    @Test
+    fun `should show the status of a solution that does not start instead of its score and without the node description`() {
+        val (student, studyClass, contest, task) = entered()
+        val broken = study.submission(student.id, task, contest, filename = "broken.py")
+        submissions.update(broken.withData { status.graded { status.invalidSubmission { description = "Node details" } } })
+        signIn(student)
+
+        open(studyClass, contest, task)
+
+        val row = StudyPages.rowTexts("Результат").single().substringAfter(":").drop(2)
+        assertEquals("broken.pyРешение не запускаетсяЛучшее", row)
+        assertFalse("Node details" in StudyPages.pageText(), StudyPages.pageText())
     }
 
     @Test

@@ -22,6 +22,16 @@ interface Grader {
     fun sendToGrade(submission: Submission): GradingAdmission
 
     /**
+     * Hands a submission over like [sendToGrade], first stopping an unfinished run with the same submission id; the new
+     * run gets new deadlines and attempts, while late replies of the stopped run are ignored, a save running at the
+     * moment of the restart completes and a scheduled save retry is cancelled. Calling it again restarts the run again.
+     *
+     * @param submission the submission to grade from the beginning.
+     * @since %CURRENT_VERSION%
+     */
+    fun restartGrading(submission: Submission)
+
+    /**
      * Registers a callback invoked whenever grading of a submission has finished.
      *
      * @param onGraded the callback receiving the id of the graded submission.

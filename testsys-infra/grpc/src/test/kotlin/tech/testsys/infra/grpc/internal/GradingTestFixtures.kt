@@ -137,6 +137,9 @@ internal fun field(name: String = "4", content: String = """[{"level":"info","me
 internal fun result(id: Long = 42, fields: List<Proto.FieldResult> = listOf(field())): Proto.Result =
     Proto.Result.newBuilder().setId(id).setOk(Proto.OkResult.newBuilder().addAllResults(fields)).build()
 
+internal fun errorResult(kind: Int, description: String = "Solution does not start", id: Long = 42): Proto.Result =
+    Proto.Result.newBuilder().setId(id).setError(Proto.ErrorResult.newBuilder().setKind(kind).setDescription(description)).build()
+
 internal class RepositoryFixture(val initial: Submission = testSubmission()) {
     val submissions = mockk<SubmissionRepository>()
     val solutions = mockk<SolutionRepository>()

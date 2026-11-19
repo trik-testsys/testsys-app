@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        A submission whose solution does not start in TRIK Studio is graded as INVALID_SUBMISSION: no verdict,
+        the description from the grading node is kept. Rollback turns such submissions into grading errors.
+    -->
+    <changeSet id="1.0.0-26-invalid-submission-checks" author="testsys">
+        <sql>
+            ALTER TABLE ts_submission DROP CONSTRAINT ck_ts_submission_status_result;
+            ALTER TABLE ts_submission ADD CONSTRAINT ck_ts_submission_status_result CHECK (
+                (status IN ('QUEUED', 'IN_PROGRESS') AND grading_result IS NULL
+                    AND grading_verdict_id IS NULL AND grading_error_description IS NULL)
+                OR (status = 'GRADED' AND grading_result IS NOT NULL AND (
+                    (grading_result = 'SUCCESS' AND grading_verdict_id IS NOT NULL AND grading_error_description IS NULL)
+                    OR (grading_result = 'GRADING_ERROR' AND grading_verdict_id IS NULL AND grading_error_description IS NOT NULL)
+                    OR (grading_result = 'TIMEOUT' AND grading_verdict_id IS NULL AND grading_error_description IS NULL)
+                    OR (grading_result = 'INVALID_SUBMISSION' AND grading_verdict_id IS NULL
+                        AND grading_error_description IS NOT NULL)))
+            );
+        </sql>
+        <rollback>
+            <sql>
+                UPDATE ts_submission SET grading_result = 'GRADING_ERROR' WHERE grading_result = 'INVALID_SUBMISSION';
+                ALTER TABLE ts_submission DROP CONSTRAINT ck_ts_submission_status_result;
+                ALTER TABLE ts_submission ADD CONSTRAINT ck_ts_submission_status_result CHECK (
+                    (status IN ('QUEUED', 'IN_PROGRESS') AND grading_result IS NULL
+                        AND grading_verdict_id IS NULL AND grading_error_description IS NULL)
+                    OR (status = 'GRADED' AND grading_result IS NOT NULL AND (
+                        (grading_result = 'SUCCESS' AND grading_verdict_id IS NOT NULL AND grading_error_description IS NULL)
+                        OR (grading_result = 'GRADING_ERROR' AND grading_verdict_id IS NULL AND grading_error_description IS NOT NULL)
+                        OR (grading_result = 'TIMEOUT' AND grading_verdict_id IS NULL AND grading_error_description IS NULL)))
+                );
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <!-- The judge queue also holds invalid submissions; H2 does not support partial indexes. -->
+    <changeSet id="1.0.0-26-2" author="testsys" dbms="postgresql">
+        <sql>
+            DROP INDEX ix_ts_submission_judge_queue;
+            CREATE INDEX ix_ts_submission_judge_queue ON ts_submission (author_id, grading_contest_id)
+            WHERE kind = 'GRADING' AND status = 'GRADED' AND grading_result IN ('SUCCESS', 'INVALID_SUBMISSION')
+        </sql>
+        <rollback>
+            <sql>
+                DROP INDEX ix_ts_submission_judge_queue;
+                CREATE INDEX ix_ts_submission_judge_queue ON ts_submission (author_id, grading_contest_id)
+                WHERE kind = 'GRADING' AND status = 'GRADED' AND grading_result = 'SUCCESS'
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

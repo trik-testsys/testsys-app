@@ -20,8 +20,8 @@ import tech.testsys.domain.model.user.User
  * @property solution the submitted solution with its file.
  * @property verdict the current successful verdict, or `null` if the submission has none.
  * @property tests the tests of [verdict] in the order of its test outcomes; empty without a verdict.
- * @property finalScore the score of the last judgment order, or the total score of [verdict] without orders; `null`
- *   without a verdict.
+ * @property finalScore the score of the last judgment order, or without orders the total score of [verdict] or 0 for an
+ *   invalid submission; `null` without a verdict or an invalid submission result.
  * @property judgmentOrders the judgment orders of the submission in the order they were issued, each with its judge.
  * @since 1.0.0-beta.1
  */

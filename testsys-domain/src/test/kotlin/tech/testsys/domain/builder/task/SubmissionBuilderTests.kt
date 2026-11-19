@@ -6,12 +6,14 @@ import tech.testsys.domain.builder.DomainEntityBuilderTests
 import tech.testsys.domain.builder.api.submissionData
 import tech.testsys.domain.builder.api.testVerdict
 import tech.testsys.domain.builder.api.verdictData
+import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.LogsId
 import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionKind
+import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.Verdict
@@ -64,6 +66,35 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
         )
     }
 
+    @Test
+    fun `should build invalid submission grading result with description`() {
+        val data = submissionData {
+            author(42)
+            solution(1)
+            task(1)
+            status.graded { status.invalidSubmission { description = "does not start" } }
+            kind.grading { contest(10) }
+        }
+
+        Assertions.assertEquals(
+            SubmissionStatus.Graded(GradingResult.InvalidSubmission("does not start")),
+            data.status,
+        )
+    }
+
+    @Test
+    fun `should throw IllegalArgumentException if invalid submission description is missing`() {
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
+            submissionData {
+                author(42)
+                solution(1)
+                task(1)
+                status.graded { status.invalidSubmission { } }
+                kind.grading { contest(10) }
+            }
+        }
+    }
+
     override fun buildDataWithAllFields() = listOf(
         submissionData {
             author(42)
@@ -99,6 +130,13 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             solution(1)
             task(1)
             status.graded { status.timeout() }
+            kind.grading { contest(10) }
+        },
+        submissionData {
+            author(42)
+            solution(1)
+            task(1)
+            status.graded { status.invalidSubmission { description = "does not start" } }
             kind.grading { contest(10) }
         },
     )

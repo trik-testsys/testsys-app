@@ -19,12 +19,12 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
+import tech.testsys.domain.builder.task.CommittedTaskContentBuilder
 import tech.testsys.domain.builder.task.SubmissionDataBuilder
 import tech.testsys.domain.builder.task.TaskContentBuilder
 import tech.testsys.domain.builder.task.WipTaskContentBuilder
 import tech.testsys.domain.builder.util.chooser.TaskValidationExecutionChooser
 import tech.testsys.domain.contract.Grader
-import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
@@ -627,7 +627,7 @@ class DeveloperOperationsTests {
             every { contestRepository.findByTaskId(taskId) } returns emptyList()
             every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest())
             every { submissionRepository.findGradingByTaskId(taskId) } returns listOf(contestSubmission(31), contestSubmission(32))
-            every { grader.sendToGrade(any()) } returns GradingAdmission.Accepted
+            every { grader.restartGrading(any()) } returns Unit
             every { regradeRepository.save(any<RegradeData>()) } answers {
                 regrade {
                     id = 50
@@ -635,6 +635,7 @@ class DeveloperOperationsTests {
                     data = firstArg()
                 }
             }
+            every { regradeRepository.stopPrevious(any()) } returns Unit
         }
 
         @Nested
@@ -704,7 +705,7 @@ class DeveloperOperationsTests {
             fun `should send every contest submission to grading if requested and a polygon was added`() {
                 val sent = mutableListOf<Submission>()
                 every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
-                every { grader.sendToGrade(capture(sent)) } returns GradingAdmission.Accepted
+                every { grader.restartGrading(capture(sent)) } returns Unit
 
                 developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
 
@@ -721,7 +722,7 @@ class DeveloperOperationsTests {
                     tests = mutableListOf(TestId(3), newVersion.id)
                 }.withData { uploadedResources = mutableSetOf(uploadedBucket, polygonChain) }
                 every { taskRepository.findById(taskId) } returns task
-                every { grader.sendToGrade(capture(sent)) } returns GradingAdmission.Accepted
+                every { grader.restartGrading(capture(sent)) } returns Unit
 
                 developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
 
@@ -748,25 +749,27 @@ class DeveloperOperationsTests {
             }
 
             @Test
-            fun `should save the regrade before sending submissions to grading`() {
+            fun `should save the regrade and stop the previous one before sending submissions to grading`() {
                 every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
 
                 developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
 
                 verifyOrder {
                     regradeRepository.save(any<RegradeData>())
-                    grader.sendToGrade(any())
+                    regradeRepository.stopPrevious(match { regrade -> regrade.id == RegradeId(50) })
+                    grader.restartGrading(any())
                 }
             }
 
             @Test
-            fun `should not save a regrade if the task has no contest submissions`() {
+            fun `should not save a regrade or stop the previous one if the task has no contest submissions`() {
                 every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
                 every { submissionRepository.findGradingByTaskId(taskId) } returns emptyList()
 
                 developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
 
                 verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
+                verify(exactly = 0) { regradeRepository.stopPrevious(any()) }
             }
 
             @Test
@@ -776,7 +779,7 @@ class DeveloperOperationsTests {
                 developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
 
                 verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
-                verify(exactly = 0) { grader.sendToGrade(any()) }
+                verify(exactly = 0) { grader.restartGrading(any()) }
                 verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
             }
 
@@ -787,7 +790,7 @@ class DeveloperOperationsTests {
                 developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
 
                 verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
-                verify(exactly = 0) { grader.sendToGrade(any()) }
+                verify(exactly = 0) { grader.restartGrading(any()) }
                 verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
             }
 
@@ -798,7 +801,7 @@ class DeveloperOperationsTests {
                 developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
 
                 verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
-                verify(exactly = 0) { grader.sendToGrade(any()) }
+                verify(exactly = 0) { grader.restartGrading(any()) }
                 verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
             }
         }
@@ -1006,7 +1009,7 @@ class DeveloperOperationsTests {
                 }
 
                 Assertions.assertSame(failure, actual)
-                verify(exactly = 0) { grader.sendToGrade(any()) }
+                verify(exactly = 0) { grader.restartGrading(any()) }
             }
 
             @Test
@@ -1146,8 +1149,9 @@ class DeveloperOperationsTests {
             verify(exactly = 0) {
                 taskRepository.update(any<Task>())
                 submissionRepository.findGradingByTaskId(any())
-                grader.sendToGrade(any())
+                grader.restartGrading(any())
                 regradeRepository.save(any<RegradeData>())
+                regradeRepository.stopPrevious(any())
             }
         }
     }
@@ -1382,6 +1386,155 @@ class DeveloperOperationsTests {
                 tests(listOf(3))
                 submissions(listOf(31, 32))
             }
+        }
+    }
+
+    @Nested
+    inner class RegradeTaskTests {
+
+        private val taskId = TaskId(0)
+        private val saved = slot<RegradeData>()
+        private val restarted = mutableListOf<Submission>()
+
+        @BeforeEach
+        fun prepareRegrade() {
+            every { submissionRepository.findGradingByTaskId(taskId) } returns listOf(contestSubmission(31), contestSubmission(32))
+            every { grader.restartGrading(capture(restarted)) } returns Unit
+            every { regradeRepository.save(capture(saved)) } answers {
+                regrade {
+                    id = 50
+                    createdAt = Instant.EPOCH
+                    data = firstArg()
+                }
+            }
+            every { regradeRepository.stopPrevious(any()) } returns Unit
+        }
+
+        @Nested
+        inner class HappyPathTests {
+            @ParameterizedTest
+            @ValueSource(strings = ["Uncommitted", "Committed"])
+            fun `should save a regrade on the last committed polygons and restart grading of every contest submission`(state: String) {
+                every { taskRepository.findById(taskId) } returns regradableTask(state)
+
+                val regrade = developerOperations.regradeTask(developer, taskId).getOrThrow()
+
+                Assertions.assertEquals(RegradeId(50), regrade?.id)
+                Assertions.assertEquals(taskId, saved.captured.task.id)
+                Assertions.assertEquals(listOf(TestId(3), TestId(7)), saved.captured.tests.ids)
+                Assertions.assertEquals(listOf(SubmissionId(31), SubmissionId(32)), saved.captured.submissions.ids)
+                Assertions.assertEquals(listOf(SubmissionId(31), SubmissionId(32)), restarted.map { submission -> submission.id })
+                verify(exactly = 0) { grader.sendToGrade(any()) }
+            }
+
+            @Test
+            fun `should save the regrade and stop the previous one before restarting grading`() {
+                every { taskRepository.findById(taskId) } returns regradableTask("Uncommitted")
+
+                developerOperations.regradeTask(developer, taskId).getOrThrow()
+
+                verifyOrder {
+                    regradeRepository.save(any<RegradeData>())
+                    regradeRepository.stopPrevious(match { regrade -> regrade.id == RegradeId(50) })
+                    grader.restartGrading(any())
+                }
+            }
+
+            @Test
+            fun `should return no regrade without saving or grading if the task has no contest submissions`() {
+                every { taskRepository.findById(taskId) } returns regradableTask("Committed")
+                every { submissionRepository.findGradingByTaskId(taskId) } returns emptyList()
+
+                val regrade = developerOperations.regradeTask(developer, taskId).getOrThrow()
+
+                Assertions.assertNull(regrade)
+                verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
+                verify(exactly = 0) { regradeRepository.stopPrevious(any()) }
+                verify(exactly = 0) { grader.restartGrading(any()) }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should reject a user without the Developer role`() {
+                assertRaises(MissedDeveloperRoleError) { developerOperations.regradeTask(testAdministrator {}, taskId) }
+
+                verifyNoRegrade()
+            }
+
+            @Test
+            fun `should reject a missing task`() {
+                every { taskRepository.findById(taskId) } returns null
+
+                assertRaises(TaskNotExistsError(taskId)) { developerOperations.regradeTask(developer, taskId) }
+
+                verifyNoRegrade()
+            }
+
+            @Test
+            fun `should reject a task owned by another developer`() {
+                every { taskRepository.findById(taskId) } returns regradableTask("Committed").withData { owner(99) }
+
+                assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.regradeTask(developer, taskId) }
+
+                verifyNoRegrade()
+            }
+
+            @Test
+            fun `should reject a New task without a committed revision`() {
+                every { taskRepository.findById(taskId) } returns testNewTask().withData { content.new { tests(listOf(3)) } }
+
+                assertRaises(TaskNotCommittedError(taskId)) { developerOperations.regradeTask(developer, taskId) }
+
+                verifyNoRegrade()
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @ParameterizedTest
+            @ValueSource(strings = ["Uncommitted", "Committed"])
+            fun `should not change a task in any regradable state`(state: String) {
+                every { taskRepository.findById(taskId) } returns regradableTask(state)
+
+                developerOperations.regradeTask(developer, taskId).getOrThrow()
+
+                verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            }
+        }
+
+        private fun regradableTask(state: String): Task = when (state) {
+            "Uncommitted" -> testUncommittedTask().withData {
+                content.uncommitted(wipBuilder = { tests(listOf(3, 6)) }, lastCommittedBuilder = { committedResources() })
+            }
+            "Committed" -> testCommitedTask().withData { content.committed { committedResources() } }
+            else -> error("Unsupported test state: $state")
+        }
+
+        private fun CommittedTaskContentBuilder.committedResources() {
+            statement(1)
+            exercises(listOf(1))
+            tests(listOf(3, 7))
+        }
+
+        private fun contestSubmission(submissionId: Long): Submission = submission {
+            id = submissionId
+            createdAt = Instant.ofEpochSecond(submissionId)
+            data = submissionData {
+                author(20)
+                solution(5)
+                task(0)
+                status.queued()
+                kind.grading { contest(19) }
+            }
+        }
+
+        private fun verifyNoRegrade() {
+            verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            verify(exactly = 0) { regradeRepository.save(any<RegradeData>()) }
+            verify(exactly = 0) { regradeRepository.stopPrevious(any()) }
+            verify(exactly = 0) { grader.restartGrading(any()) }
         }
     }
 

@@ -27,6 +27,7 @@ internal sealed interface CheckedResult {
     data class Success(val tests: List<CheckedTest>) : CheckedResult
     data class Failure(val description: String) : CheckedResult
     data object Timeout : CheckedResult
+    data class InvalidSubmission(val description: String) : CheckedResult
 }
 
 @InternalGrpcApi
@@ -82,10 +83,10 @@ internal fun checkResult(result: Proto.Result, expectedId: SubmissionId, expecte
         return CheckedResult.Failure("Unexpected submission id ${result.id}, expected ${expectedId.value}")
     }
     return when (result.resultCase) {
-        Proto.Result.ResultCase.ERROR -> if (result.error.kind == NODE_TIMEOUT_KIND) {
-            CheckedResult.Timeout
-        } else {
-            CheckedResult.Failure("Node error ${result.error.kind}: ${result.error.description}")
+        Proto.Result.ResultCase.ERROR -> when (result.error.kind) {
+            NODE_TIMEOUT_KIND -> CheckedResult.Timeout
+            NODE_INVALID_SUBMISSION_KIND -> CheckedResult.InvalidSubmission(result.error.description)
+            else -> CheckedResult.Failure("Node error ${result.error.kind}: ${result.error.description}")
         }
         Proto.Result.ResultCase.OK -> checkFields(result.ok.resultsList, expectedTests, parser)
         Proto.Result.ResultCase.RESULT_NOT_SET, null -> CheckedResult.Failure("Node returned no result for ${result.id}")
@@ -163,6 +164,9 @@ internal class JsonLogParser : LogParser {
 }
 
 private const val NODE_TIMEOUT_KIND = 4
+
+/** The node reports that the solution does not start in TRIK Studio. */
+private const val NODE_INVALID_SUBMISSION_KIND = 6
 
 /** The TRIK Studio grading script looks a polygon up as `<name>.xml`; the node strips the extension in results. */
 private const val FIELD_EXTENSION = ".xml"

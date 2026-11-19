@@ -15,6 +15,7 @@ import java.time.Instant
  * @property task the identifier of the regraded task.
  * @property tests the identifiers of the tests the submissions are graded on.
  * @property submissions the identifiers of the submissions sent to grading again.
+ * @property stoppedAt the moment the next regrade stopped this unfinished one, or `null` if it was not stopped.
  * @since 1.0.0-beta.1
  */
 data class RegradeVo(
@@ -23,6 +24,7 @@ data class RegradeVo(
     val task: TaskId,
     val tests: List<TestId>,
     val submissions: List<SubmissionId>,
+    val stoppedAt: Instant?,
 )
 
 internal fun Regrade.toVo(): RegradeVo = RegradeVo(
@@ -31,4 +33,5 @@ internal fun Regrade.toVo(): RegradeVo = RegradeVo(
     task = data.task.id,
     tests = data.tests.ids,
     submissions = data.submissions.ids,
+    stoppedAt = data.stoppedAt,
 )

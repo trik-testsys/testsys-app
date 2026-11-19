@@ -353,9 +353,10 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                 listOf("GRADED", "'SUCCESS'", "1", "NULL"),
                 listOf("GRADED", "'GRADING_ERROR'", "NULL", "'failure'"),
                 listOf("GRADED", "'TIMEOUT'", "NULL", "NULL"),
+                listOf("GRADED", "'INVALID_SUBMISSION'", "NULL", "'failure'"),
             )
             for (status in listOf("QUEUED", "IN_PROGRESS", "GRADED", "UNKNOWN")) {
-                for (result in listOf("NULL", "'SUCCESS'", "'GRADING_ERROR'", "'TIMEOUT'", "'UNKNOWN'")) {
+                for (result in listOf("NULL", "'SUCCESS'", "'GRADING_ERROR'", "'TIMEOUT'", "'INVALID_SUBMISSION'", "'UNKNOWN'")) {
                     for (verdict in listOf("NULL", "1")) {
                         for (description in listOf("NULL", "'failure'")) {
                             add(

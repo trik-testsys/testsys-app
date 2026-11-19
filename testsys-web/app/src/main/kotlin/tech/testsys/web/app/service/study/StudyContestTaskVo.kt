@@ -8,7 +8,7 @@ import tech.testsys.web.app.service.toVo
  * Task and results shown in an entered contest.
  *
  * @property task the task data without lazy references.
- * @property bestScore the highest final score, or `null` without successful grading.
+ * @property bestScore the highest final score, or `null` if no submission has a final score.
  * @property lastSubmission the latest submission, or `null` without submissions.
  * @since 1.0.0-beta.1
  */
